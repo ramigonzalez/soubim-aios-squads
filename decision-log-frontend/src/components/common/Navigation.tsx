@@ -1,4 +1,4 @@
-import React from 'react'
+import { Fragment } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { LogOut, Home } from 'lucide-react'
@@ -22,7 +22,7 @@ export function Navigation() {
     const segments = path.split('/').filter(Boolean)
 
     const breadcrumbs = [
-      { label: 'Home', href: '/projects', icon: true },
+      { label: 'Home', href: '/projects' },
     ]
 
     if (segments.includes('projects') && segments.length > 1) {
@@ -48,15 +48,15 @@ export function Navigation() {
           {/* Breadcrumbs */}
           <div className="hidden md:flex items-center space-x-2 text-sm">
             {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.href}>
+              <Fragment key={crumb.href}>
                 {index > 0 && <span className="text-gray-400">/</span>}
                 <button
                   onClick={() => navigate(crumb.href)}
                   className="text-gray-700 hover:text-blue-600 transition"
                 >
-                  {crumb.icon ? <Home className="w-4 h-4" /> : crumb.label}
+                  {index === 0 ? <Home className="w-4 h-4" /> : crumb.label}
                 </button>
-              </React.Fragment>
+              </Fragment>
             ))}
           </div>
 

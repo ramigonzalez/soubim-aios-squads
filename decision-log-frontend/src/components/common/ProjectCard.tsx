@@ -1,4 +1,3 @@
-import React from 'react'
 import { Project } from '../../types/project'
 import { Users, FileText, Calendar } from 'lucide-react'
 

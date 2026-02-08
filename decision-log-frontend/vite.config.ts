@@ -12,4 +12,12 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    target: 'ES2020',
+  },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })
