@@ -102,11 +102,48 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8000/api/projects",
+              "raw": "http://localhost:8000/api/projects?limit=50&offset=0&archived=false",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
-              "path": ["api", "projects"]
+              "path": ["api", "projects"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": false
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "disabled": false
+                },
+                {
+                  "key": "archived",
+                  "value": "false",
+                  "disabled": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Project Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/projects/550e8400-e29b-41d4-a716-446655440000",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["api", "projects", "550e8400-e29b-41d4-a716-446655440000"]
             }
           }
         }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
@@ -17,22 +17,33 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/projects"
+        element={
+          <ProtectedRoute>
+            <Projects />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/" element={<Navigate to="/projects" replace />} />
+    </Routes>
+  )
+}
+
 export default function App() {
+  // Initialize auth state from localStorage on app startup
+  useEffect(() => {
+    useAuthStore.getState().initializeFromStorage()
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <Projects />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/projects" replace />} />
-        </Routes>
+        <AppRoutes />
       </Router>
     </QueryClientProvider>
   )

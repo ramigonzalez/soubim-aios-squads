@@ -1,8 +1,13 @@
 """SQLAlchemy ORM models for database tables."""
 
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB, VECTOR
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, relationship
+try:
+    from pgvector.sqlalchemy import Vector as VECTOR
+except ImportError:
+    # Fallback if pgvector not installed
+    VECTOR = String
 from uuid import uuid4
 from datetime import datetime
 
@@ -41,7 +46,7 @@ class Project(Base):
     archived_at = Column(DateTime)
 
     __table_args__ = (
-        Index("idx_projects_created", "created_at", desc=True),
+        Index("idx_projects_created", "created_at"),
         Index("idx_projects_archived", "archived_at"),
     )
 
@@ -124,8 +129,8 @@ class Decision(Base):
         Index("idx_decisions_project", "project_id"),
         Index("idx_decisions_discipline", "discipline"),
         Index("idx_decisions_confidence", "confidence"),
-        Index("idx_decisions_created", "created_at", desc=True),
-        Index("idx_decisions_composite", "project_id", "discipline", "created_at", desc=True),
+        Index("idx_decisions_created", "created_at"),
+        Index("idx_decisions_composite", "project_id", "discipline", "created_at"),
     )
 
 

@@ -1,78 +1,107 @@
 """Project endpoints."""
 
-from fastapi import APIRouter
-from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from sqlalchemy.orm import Session
+from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
+from app.database.session import get_db
+from app.services.project_service import (
+    get_projects,
+    get_project,
+    ProjectNotFoundError,
+    PermissionDeniedError,
+)
 
 router = APIRouter()
 
 
-class ProjectMember:
-    """Project member representation."""
-
-    def __init__(self, user_id: UUID, name: str, email: str, role: str):
-        self.user_id = user_id
-        self.name = name
-        self.email = email
-        self.role = role
-
-
-class ProjectStats:
-    """Project statistics."""
-
-    def __init__(self):
-        self.total_decisions = 0
-        self.decisions_last_week = 0
-        self.decisions_by_discipline = {}
-        self.decisions_by_meeting_type = {}
-
-
-class ProjectResponse:
-    """Project response model."""
-
-    def __init__(
-        self,
-        id: UUID,
-        name: str,
-        description: str,
-        created_at: datetime,
-        member_count: int = 0,
-        decision_count: int = 0,
-        latest_decision: Optional[datetime] = None,
-    ):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.created_at = created_at
-        self.member_count = member_count
-        self.decision_count = decision_count
-        self.latest_decision = latest_decision
-
-
 @router.get("/")
-async def list_projects(limit: int = 50, offset: int = 0):
+async def list_projects(
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    archived: bool = Query(False),
+):
     """
     List all projects accessible to current user.
 
-    TODO: Implement actual database query with user authorization
+    Query Parameters:
+    - limit: Number of results per page (default 50, max 100)
+    - offset: Pagination offset (default 0)
+    - archived: Include archived projects (default false)
+
+    Returns:
+        List of projects with pagination metadata
     """
+    # Get current user from middleware
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    # Get projects
+    projects, total = get_projects(
+        db,
+        str(user.id),
+        limit=limit,
+        offset=offset,
+        archived=archived,
+    )
+
     return {
-        "projects": [],
-        "total": 0,
+        "projects": projects,
+        "total": total,
         "limit": limit,
         "offset": offset,
     }
 
 
 @router.get("/{project_id}")
-async def get_project(project_id: UUID):
+async def get_project_detail(
+    project_id: UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     """
     Get detailed information about a specific project.
 
-    TODO: Implement actual database query with user authorization
+    Includes:
+    - Project metadata
+    - Team members
+    - Statistics (decisions by discipline, meeting type, etc.)
+
+    Returns:
+        Project details with stats
+
+    Raises:
+        401: If not authenticated
+        403: If user doesn't have access to project
+        404: If project not found
     """
-    return {
-        "error": "project_not_found",
-        "detail": f"Project {project_id} not found",
-    }
+    # Get current user from middleware
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    try:
+        # Get project details
+        project = get_project(db, str(project_id), str(user.id))
+        return project
+
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project not found",
+        )
+    except PermissionDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this project",
+        )
