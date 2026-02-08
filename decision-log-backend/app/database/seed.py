@@ -136,7 +136,7 @@ def seed_database():
 
         print(f"  ✓ Created project memberships")
 
-        # Create test decisions for Residential Tower Alpha
+        # Create test decisions for Residential Tower Alpha with varied dates
         decision1 = Decision(
             id=uuid.uuid4(),
             project_id=project1.id,
@@ -157,12 +157,12 @@ def seed_database():
                 "client": "AGREE"
             },
             confidence=0.95,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime(2026, 2, 1, 9, 5, 32),
+            updated_at=datetime(2026, 2, 1, 9, 5, 32),
         )
         db.add(decision1)
         db.flush()
-        print(f"  ✓ Created decision 1: Structural concrete spec")
+        print(f"  ✓ Created decision 1: Structural concrete spec (Feb 1)")
 
         decision2 = Decision(
             id=uuid.uuid4(),
@@ -184,12 +184,12 @@ def seed_database():
                 "client": "AGREE"
             },
             confidence=0.92,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime(2026, 2, 4, 14, 12, 15),
+            updated_at=datetime(2026, 2, 4, 14, 12, 15),
         )
         db.add(decision2)
         db.flush()
-        print(f"  ✓ Created decision 2: LED lighting system")
+        print(f"  ✓ Created decision 2: LED lighting system (Feb 4)")
 
         decision3 = Decision(
             id=uuid.uuid4(),
@@ -211,14 +211,14 @@ def seed_database():
                 "client": "AGREE"
             },
             confidence=0.88,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime(2026, 2, 7, 10, 18, 45),
+            updated_at=datetime(2026, 2, 7, 10, 18, 45),
         )
         db.add(decision3)
         db.flush()
-        print(f"  ✓ Created decision 3: HVAC system design")
+        print(f"  ✓ Created decision 3: HVAC system design (Feb 7)")
 
-        # Create test decisions for Commercial Plaza Beta
+        # Create test decisions for Commercial Plaza Beta with varied dates
         decision4 = Decision(
             id=uuid.uuid4(),
             project_id=project2.id,
@@ -239,12 +239,12 @@ def seed_database():
                 "client": "STRONGLY_AGREE"
             },
             confidence=0.96,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime(2026, 2, 2, 11, 8, 20),
+            updated_at=datetime(2026, 2, 2, 11, 8, 20),
         )
         db.add(decision4)
         db.flush()
-        print(f"  ✓ Created decision 4: Curtain wall design")
+        print(f"  ✓ Created decision 4: Curtain wall design (Feb 2)")
 
         decision5 = Decision(
             id=uuid.uuid4(),
@@ -266,12 +266,12 @@ def seed_database():
                 "client": "STRONGLY_AGREE"
             },
             confidence=0.90,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime(2026, 2, 6, 15, 22, 10),
+            updated_at=datetime(2026, 2, 6, 15, 22, 10),
         )
         db.add(decision5)
         db.flush()
-        print(f"  ✓ Created decision 5: Solar and water systems")
+        print(f"  ✓ Created decision 5: Solar and water systems (Feb 6)")
 
         db.commit()
         print(f"  ✓ Created decisions")

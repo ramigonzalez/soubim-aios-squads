@@ -10,7 +10,7 @@ interface TimelineProps {
 export function Timeline({ decisions, onSelectDecision }: TimelineProps) {
   // Group decisions by date
   const groupedDecisions = decisions.reduce((acc, decision) => {
-    const date = decision.meeting_date ? formatDate(decision.meeting_date) : 'No Date'
+    const date = decision.created_at ? formatDate(decision.created_at) : 'No Date'
     if (!acc[date]) {
       acc[date] = []
     }

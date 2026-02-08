@@ -23,7 +23,9 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
             <h2 className="text-2xl font-bold text-gray-900">{decision.decision_statement}</h2>
             <div className="flex items-center gap-2 mt-2">
               <DisciplineBadge discipline={decision.discipline} />
-              <span className="text-sm text-gray-500">{formatDateTime(decision.timestamp)}</span>
+              {(decision.created_at || decision.meeting_date) && (
+                <span className="text-sm text-gray-500">{formatDateTime(decision.created_at || decision.meeting_date || '')}</span>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

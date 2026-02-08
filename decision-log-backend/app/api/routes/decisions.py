@@ -84,6 +84,7 @@ async def list_decisions(
             "impacts": d.impacts,
             "consensus": d.consensus,
             "confidence": d.confidence,
+            "meeting_date": d.created_at.isoformat() if d.created_at else None,
             "created_at": d.created_at.isoformat() if d.created_at else None,
         }
         for d in decisions
@@ -136,6 +137,7 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
         "similar_decisions": decision.similar_decisions,
         "consistency_notes": decision.consistency_notes,
         "anomaly_flags": decision.anomaly_flags,
+        "meeting_date": decision.created_at.isoformat() if decision.created_at else None,
         "created_at": decision.created_at.isoformat() if decision.created_at else None,
         "updated_at": decision.updated_at.isoformat() if decision.updated_at else None,
     }
