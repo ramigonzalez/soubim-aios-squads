@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.api.routes import auth, health, projects, decisions, digest, webhooks
+from app.api.middleware.auth import auth_middleware
 
 
 # Initialize Sentry if configured
@@ -33,6 +34,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Add authentication middleware (must be before CORS)
+app.middleware("http")(auth_middleware)
 
 # Add CORS middleware
 app.add_middleware(

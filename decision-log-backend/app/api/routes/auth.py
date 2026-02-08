@@ -1,71 +1,135 @@
 """Authentication endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.api.models.auth import LoginRequest, TokenResponse, UserResponse
 from app.utils.security import create_access_token
+from app.services.auth_service import (
+    authenticate_user,
+    get_user_by_id,
+    get_user_projects,
+    AuthenticationError,
+    UserNotFoundError,
+)
+from app.database.session import get_db
+from app.api.middleware.auth import get_current_user
+from app.database.models import User
 
 router = APIRouter()
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest):
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
     """
-    Authenticate user and return JWT token.
+    Authenticate user with email and password.
 
-    For MVP: hardcoded test user
-    TODO: Implement actual database lookup and password verification
+    Returns JWT token and user information.
+
+    Args:
+        request: LoginRequest with email and password
+        db: Database session
+
+    Returns:
+        TokenResponse with access_token and user info
+
+    Raises:
+        401: If email not found or password incorrect
     """
-    # Placeholder: Accept any email with password "password"
-    if request.password != "password":
+    try:
+        # Authenticate user
+        user = authenticate_user(db, request.email, request.password)
+
+        # Get user's projects
+        projects = get_user_projects(db, str(user.id))
+
+        # Create JWT token
+        token = create_access_token(
+            user_id=str(user.id),
+            email=user.email,
+            role=user.role,
+        )
+
+        # Build response
+        return TokenResponse(
+            access_token=token,
+            token_type="bearer",
+            user=UserResponse(
+                id=user.id,
+                email=user.email,
+                name=user.name,
+                role=user.role,
+                projects=projects,
+            ),
+        )
+
+    except (AuthenticationError, UserNotFoundError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create token
-    token = create_access_token(
-        user_id="test-user-1",
-        email=request.email,
-        role="director",
-    )
-
-    user = UserResponse(
-        id="test-user-1",
-        email=request.email,
-        name="Test User",
-        role="director",
-        projects=[],
-    )
-
-    return TokenResponse(
-        access_token=token,
-        token_type="bearer",
-        user=user,
-    )
-
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(authorization: Optional[str] = None):
+async def get_me(request: Request, db: Session = Depends(get_db)):
     """
-    Get current authenticated user.
+    Get current authenticated user information.
 
-    TODO: Extract and validate JWT token from Authorization header
+    Requires valid JWT token in Authorization header.
+
+    Args:
+        request: HTTP request (contains user from middleware)
+        db: Database session
+
+    Returns:
+        UserResponse with user info and project list
+
+    Raises:
+        401: If not authenticated or token invalid
     """
-    # Placeholder implementation
+    # Get current user from middleware
+    user: User = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get user's projects
+    projects = get_user_projects(db, str(user.id))
+
     return UserResponse(
-        id="test-user-1",
-        email="user@example.com",
-        name="Test User",
-        role="director",
-        projects=[],
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        role=user.role,
+        projects=projects,
     )
 
 
 @router.post("/logout", status_code=204)
-async def logout():
-    """Logout endpoint (mainly for security, JWT is stateless)."""
-    # JWT is stateless, so we just return 204
-    return
+async def logout(request: Request):
+    """
+    Logout endpoint.
+
+    JWT is stateless, so this mainly validates the token exists.
+    Client should remove token from storage.
+
+    Args:
+        request: HTTP request (contains user from middleware)
+
+    Returns:
+        204 No Content
+    """
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    # Token is valid, client can discard it
+    return None
