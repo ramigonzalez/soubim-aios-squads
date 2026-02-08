@@ -15,7 +15,18 @@ from app.utils.security import hash_password
 
 
 def seed_database():
-    """Seed database with initial test data."""
+    """Seed database with initial test data.
+
+    ⚠️ SECURITY: Only runs if DEMO_MODE environment variable is set to 'true'.
+    This prevents accidentally seeding production databases with known passwords.
+    """
+    # Check if demo mode is enabled
+    demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
+    if not demo_mode:
+        print("❌ DEMO_MODE not enabled. Seeding skipped.")
+        print("   Set DEMO_MODE=true to seed development data.")
+        return
+
     db = SessionLocal()
 
     try:
@@ -25,7 +36,7 @@ def seed_database():
             print("✓ Database already seeded. Skipping...")
             return
 
-        print("🌱 Seeding database...")
+        print("🌱 Seeding database (DEMO_MODE=true)...")
 
         # Create test user (director)
         test_user = User(

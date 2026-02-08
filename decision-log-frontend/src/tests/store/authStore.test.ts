@@ -271,8 +271,12 @@ describe('Auth Store (Zustand)', () => {
       useAuthStore.getState().setAuth(testUser, 'persistent-token')
       expect(useAuthStore.getState().isAuthenticated).toBe(true)
 
-      // Simulate page refresh (new store instance)
-      useAuthStore.getState().clearAuth() // Clear current store
+      // Simulate page refresh (reset store state without clearing localStorage)
+      useAuthStore.setState({ user: null, token: null, isAuthenticated: false })
+
+      // Verify store was reset but localStorage persists
+      expect(useAuthStore.getState().isAuthenticated).toBe(false)
+      expect(localStorage.getItem('access_token')).toBe('persistent-token')
 
       // App startup - restore from localStorage
       useAuthStore.getState().initializeFromStorage()

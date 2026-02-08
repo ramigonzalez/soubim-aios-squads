@@ -20,16 +20,18 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
-    role = Column(String(50), nullable=False, index=True)
+    role = Column(String(50), nullable=False)
     created_at = Column(DateTime, nullable=False, default=func.now())
     last_login_at = Column(DateTime)
     deleted_at = Column(DateTime)
 
     __table_args__ = (
         CheckConstraint("role IN ('director', 'architect', 'client')", name="ck_user_role"),
+        Index("idx_users_email", "email"),
+        Index("idx_users_role", "role"),
         Index("idx_users_deleted", "deleted_at"),
     )
 
@@ -42,7 +44,7 @@ class Project(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String(255), nullable=False)
     description = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=func.now(), index=True)
+    created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
 
     __table_args__ = (
@@ -102,7 +104,7 @@ class Decision(Base):
     decision_statement = Column(Text, nullable=False)
     who = Column(String(255), nullable=False)
     timestamp = Column(String(20), nullable=False)
-    discipline = Column(String(100), nullable=False, index=True)
+    discipline = Column(String(100), nullable=False)
 
     # Context & reasoning
     why = Column(Text, nullable=False)

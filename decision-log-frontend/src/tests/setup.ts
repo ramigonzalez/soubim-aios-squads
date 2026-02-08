@@ -5,6 +5,9 @@ import { cleanup } from '@testing-library/react'
 // Cleanup after each test
 afterEach(() => {
   cleanup()
+  // Clear localStorage between tests
+  localStorage.clear()
+  sessionStorage.clear()
 })
 
 // Mock window.matchMedia

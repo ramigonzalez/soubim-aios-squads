@@ -47,10 +47,25 @@ def test_projects(
     db_session: Session, director_user: User, architect_user: User
 ) -> tuple:
     """Create test projects with members and decisions."""
-    # Create 3 projects
-    project1 = Project(name="Project Alpha", description="First project")
-    project2 = Project(name="Project Beta", description="Second project")
-    project3 = Project(name="Project Gamma", description="Third project")
+    # Create 3 projects with explicit timestamps for predictable sorting
+    from datetime import timedelta
+    base_time = datetime.utcnow()
+
+    project1 = Project(
+        name="Project Alpha",
+        description="First project",
+        created_at=base_time - timedelta(hours=2)  # Oldest
+    )
+    project2 = Project(
+        name="Project Beta",
+        description="Second project",
+        created_at=base_time - timedelta(hours=1)  # Middle
+    )
+    project3 = Project(
+        name="Project Gamma",
+        description="Third project",
+        created_at=base_time  # Most recent
+    )
     db_session.add_all([project1, project2, project3])
     db_session.commit()
 

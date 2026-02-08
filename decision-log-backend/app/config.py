@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     debug: bool = True
+    demo_mode: bool = False  # SECURITY: Set to False in production!
 
     # CORS
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]

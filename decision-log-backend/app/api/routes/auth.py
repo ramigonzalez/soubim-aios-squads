@@ -15,17 +15,24 @@ from app.services.auth_service import (
 )
 from app.database.session import get_db
 from app.api.middleware.auth import get_current_user
+from app.api.middleware.rate_limit import login_rate_limit
 from app.database.models import User
 
 router = APIRouter()
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+async def login(
+    request: LoginRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(login_rate_limit),
+):
     """
     Authenticate user with email and password.
 
     Returns JWT token and user information.
+
+    🛡️ RATE LIMITED: 5 attempts per 15 minutes per email/IP.
 
     Args:
         request: LoginRequest with email and password
@@ -36,6 +43,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 
     Raises:
         401: If email not found or password incorrect
+        429: If rate limit exceeded (too many login attempts)
     """
     try:
         # Authenticate user
@@ -113,10 +121,14 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
 @router.post("/logout", status_code=204)
 async def logout(request: Request):
     """
-    Logout endpoint.
+    Logout endpoint (client-side logout only).
 
-    JWT is stateless, so this mainly validates the token exists.
-    Client should remove token from storage.
+    ⚠️ SECURITY NOTE: JWTs are stateless and cannot be invalidated server-side.
+    This endpoint validates the token is valid, but the token will continue to work
+    until it expires (7 days). The client MUST delete the token from localStorage.
+
+    For production use with strict security requirements, implement a token blacklist
+    using Redis or database storage.
 
     Args:
         request: HTTP request (contains user from middleware)

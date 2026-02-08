@@ -211,7 +211,8 @@ describe('Projects Page', () => {
     })
 
     renderProjects()
-    const prevButton = screen.getByText('Previous')
+    // Find the button containing "Previous" text
+    const prevButton = screen.getByRole('button', { name: /previous/i })
     expect(prevButton).toBeDisabled()
   })
 
