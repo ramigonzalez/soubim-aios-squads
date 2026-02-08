@@ -1,4 +1,5 @@
-import { Project, Decision } from '../types'
+import { Project } from '../types/project'
+import { Decision } from '../types/decision'
 
 // Mock Projects Data
 export const mockProjects: Project[] = [
@@ -74,7 +75,7 @@ export const mockDecisions: Decision[] = [
       { type: 'timeline', change: '+2 weeks for formwork design' },
       { type: 'budget', change: '+$50K material costs' },
     ],
-    consensus: 'AGREE',
+    consensus: { engineer: 'AGREE', architect: 'AGREE', client: 'AGREE' },
     confidence: 0.95,
     anomaly_flags: [],
     created_at: '2025-02-08T10:35:00Z',
@@ -93,7 +94,7 @@ export const mockDecisions: Decision[] = [
       { type: 'budget', change: '+$150K capital, -$80K annual operating' },
       { type: 'timeline', change: '-1 week installation time' },
     ],
-    consensus: 'MIXED',
+    consensus: { engineer: 'MIXED', architect: 'AGREE', client: 'AGREE' },
     confidence: 0.78,
     anomaly_flags: [
       { type: 'dissent', severity: 'medium', description: 'Mechanical engineer concerned about maintenance accessibility' },
@@ -114,7 +115,7 @@ export const mockDecisions: Decision[] = [
       { type: 'scope', change: 'Revise grading plan for 3 trees' },
       { type: 'timeline', change: '+3 days for survey and protection measures' },
     ],
-    consensus: 'AGREE',
+    consensus: { landscape: 'AGREE', civil: 'AGREE', architect: 'AGREE' },
     confidence: 0.92,
     anomaly_flags: [],
     created_at: '2025-02-06T11:50:00Z',
@@ -186,7 +187,7 @@ export const mockApi = {
   },
 
   getDecisions: async (
-    projectId: string,
+    _projectId: string,
     filters?: {
       discipline?: string
       meeting_type?: string
@@ -222,13 +223,13 @@ export const mockApi = {
     })
   },
 
-  getDigest: async (projectId: string, dateFrom?: string, dateTo?: string) => {
+  getDigest: async (_projectId: string, _dateFrom?: string, _dateTo?: string) => {
     return new Promise((resolve) => {
       setTimeout(() => resolve(mockDigest), 600)
     })
   },
 
-  login: async (email: string, password: string) => {
+  login: async (email: string, _password: string) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({

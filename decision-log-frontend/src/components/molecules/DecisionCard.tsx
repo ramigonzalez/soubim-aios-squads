@@ -30,10 +30,12 @@ export function DecisionCard({ decision, onClick }: DecisionCardProps) {
           <Users className="w-4 h-4" />
           <span>{decision.who}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Calendar className="w-4 h-4" />
-          <span>{formatDate(decision.meeting_date)}</span>
-        </div>
+        {decision.meeting_date && (
+          <div className="flex items-center gap-1">
+            <Calendar className="w-4 h-4" />
+            <span>{formatDate(decision.meeting_date)}</span>
+          </div>
+        )}
       </div>
     </div>
   )

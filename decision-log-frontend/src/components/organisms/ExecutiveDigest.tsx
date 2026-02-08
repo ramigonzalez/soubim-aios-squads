@@ -1,4 +1,3 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { DisciplineBadge } from '../molecules/DisciplineBadge'
 import { formatDate } from '../../lib/utils'
 
@@ -36,38 +35,30 @@ export function ExecutiveDigest({ digest }: ExecutiveDigestProps) {
     <div className="space-y-6">
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900">{digest.total_decisions}</p>
-              <p className="text-sm text-gray-600 mt-1">Total Decisions</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900">{digest.meetings_count}</p>
-              <p className="text-sm text-gray-600 mt-1">Meetings</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">{digest.consensus_percentage}%</p>
-              <p className="text-sm text-gray-600 mt-1">Consensus</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-red-600">{digest.high_impact_count}</p>
-              <p className="text-sm text-gray-600 mt-1">High Impact</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">{digest.total_decisions}</p>
+            <p className="text-sm text-gray-600 mt-1">Total Decisions</p>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-gray-900">{digest.meetings_count}</p>
+            <p className="text-sm text-gray-600 mt-1">Meetings</p>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-green-600">{digest.consensus_percentage}%</p>
+            <p className="text-sm text-gray-600 mt-1">Consensus</p>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-red-600">{digest.high_impact_count}</p>
+            <p className="text-sm text-gray-600 mt-1">High Impact</p>
+          </div>
+        </div>
       </div>
 
       {/* Highlights */}

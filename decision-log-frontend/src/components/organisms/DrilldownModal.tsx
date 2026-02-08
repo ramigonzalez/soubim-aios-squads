@@ -60,22 +60,30 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
                 <h3 className="font-semibold text-gray-900 mb-2">Causation</h3>
                 <p className="text-gray-700">{decision.causation}</p>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Impacts</h3>
-                <ul className="space-y-2">
-                  {decision.impacts.map((impact, idx) => (
-                    <li key={idx} className="text-sm text-gray-700">
-                      <span className="font-medium capitalize">{impact.type}:</span> {impact.change}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Consensus</h3>
-                <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-900">
-                  {decision.consensus}
+              {decision.impacts && decision.impacts.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Impacts</h3>
+                  <ul className="space-y-2">
+                    {decision.impacts.map((impact, idx) => (
+                      <li key={idx} className="text-sm text-gray-700">
+                        <span className="font-medium capitalize">{impact.type}:</span> {impact.change}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
+              )}
+              {decision.consensus && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Consensus</h3>
+                  <div className="space-y-1">
+                    {typeof decision.consensus === 'object' && Object.entries(decision.consensus).map(([role, stance]) => (
+                      <div key={role} className="text-sm text-gray-700">
+                        <span className="font-medium capitalize">{role}:</span> {stance}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
