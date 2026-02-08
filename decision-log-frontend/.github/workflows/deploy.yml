@@ -1,0 +1,43 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'decision-log-frontend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'decision-log-frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: decision-log-frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: decision-log-frontend
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: decision-log-frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: decision-log-frontend
+        run: npm run build
+
+      - name: Test
+        working-directory: decision-log-frontend
+        run: npm test
