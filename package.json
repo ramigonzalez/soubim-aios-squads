@@ -1,0 +1,29 @@
+{
+  "name": "decision-log",
+  "version": "1.0.0",
+  "description": "DecisionLog - AI-Powered Architectural Decision System",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\" --names \"backend,frontend\" --prefix \"[{name}]\" --kill-others-on-exit",
+    "backend:dev": "cd decision-log-backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "frontend:dev": "cd decision-log-frontend && npm run dev",
+    "backend:install": "cd decision-log-backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "backend:test": "cd decision-log-backend && python -m pytest",
+    "frontend:build": "cd decision-log-frontend && npm run build",
+    "frontend:test": "cd decision-log-frontend && npm test",
+    "frontend:lint": "cd decision-log-frontend && npm run lint",
+    "build": "npm run backend:build && npm run frontend:build",
+    "test": "concurrently \"npm run backend:test\" \"npm run frontend:test\" --kill-others-on-exit"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "architecture",
+    "decisions",
+    "ai",
+    "fullstack"
+  ],
+  "author": "Development Team",
+  "license": "MIT"
+}
