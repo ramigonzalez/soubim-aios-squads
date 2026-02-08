@@ -1,15 +1,60 @@
 """SQLAlchemy ORM models for database tables."""
 
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint, func, TypeDecorator
+from sqlalchemy.dialects.postgresql import UUID as PGUID, JSONB
 from sqlalchemy.orm import declarative_base, relationship
+import uuid
 try:
     from pgvector.sqlalchemy import Vector as VECTOR
 except ImportError:
     # Fallback if pgvector not installed
     VECTOR = String
-from uuid import uuid4
 from datetime import datetime
+
+# Use JSON for SQLite compatibility
+JSONType = JSON
+
+# Create a hybrid UUID type that works with both PostgreSQL and SQLite
+class GUID(TypeDecorator):
+    """Platform-independent GUID type that uses CHAR(32) on SQLite and UUID on PostgreSQL."""
+    impl = String
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PGUID(as_uuid=True))
+        return dialect.type_descriptor(String(32))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == 'postgresql':
+            return str(value) if not isinstance(value, uuid.UUID) else value
+        # For SQLite, convert to hex without hyphens
+        if isinstance(value, uuid.UUID):
+            return value.hex
+        elif isinstance(value, str):
+            # If it's a string UUID with hyphens, convert to hex
+            try:
+                return uuid.UUID(value).hex
+            except (ValueError, AttributeError):
+                # If it's already hex format, return as is
+                return value
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, uuid.UUID):
+            return value
+        if isinstance(value, str):
+            # Handle both hex format (32 chars) and standard format (36 chars with hyphens)
+            if len(value) == 32:
+                # Add hyphens to make it standard UUID format
+                return uuid.UUID(hex=value)
+            else:
+                return uuid.UUID(value)
+        return value
 
 Base = declarative_base()
 
@@ -19,7 +64,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
@@ -41,7 +86,7 @@ class Project(Base):
 
     __tablename__ = "projects"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     created_at = Column(DateTime, nullable=False, default=func.now())
@@ -58,8 +103,8 @@ class ProjectMember(Base):
 
     __tablename__ = "project_members"
 
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     role = Column(String(50), nullable=False)
     created_at = Column(DateTime, nullable=False, default=func.now())
 
@@ -73,12 +118,12 @@ class Transcript(Base):
 
     __tablename__ = "transcripts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     webhook_id = Column(String(255), unique=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     meeting_id = Column(String(255))
     meeting_type = Column(String(50))
-    participants = Column(JSONB, nullable=False)
+    participants = Column(JSONType, nullable=False)
     transcript_text = Column(Text, nullable=False)
     duration_minutes = Column(String)
     meeting_date = Column(DateTime, nullable=False)
@@ -96,9 +141,9 @@ class Decision(Base):
 
     __tablename__ = "decisions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    transcript_id = Column(UUID(as_uuid=True), ForeignKey("transcripts.id", ondelete="CASCADE"))
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    transcript_id = Column(GUID(), ForeignKey("transcripts.id", ondelete="CASCADE"))
 
     # Core decision data
     decision_statement = Column(Text, nullable=False)
@@ -111,14 +156,14 @@ class Decision(Base):
     causation = Column(Text)
 
     # Impacts & consensus
-    impacts = Column(JSONB)
-    consensus = Column(JSONB, nullable=False)
+    impacts = Column(JSONType)
+    consensus = Column(JSONType, nullable=False)
 
     # Agent enrichment
     confidence = Column(Float)
-    similar_decisions = Column(JSONB)
+    similar_decisions = Column(JSONType)
     consistency_notes = Column(Text)
-    anomaly_flags = Column(JSONB)
+    anomaly_flags = Column(JSONType)
 
     # Vector embedding
     embedding = Column(VECTOR(384))
@@ -141,8 +186,8 @@ class DecisionRelationship(Base):
 
     __tablename__ = "decision_relationships"
 
-    from_decision_id = Column(UUID(as_uuid=True), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
-    to_decision_id = Column(UUID(as_uuid=True), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
+    from_decision_id = Column(GUID(), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
+    to_decision_id = Column(GUID(), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
     relationship_type = Column(String(50), primary_key=True)
     created_at = Column(DateTime, nullable=False, default=func.now())
 

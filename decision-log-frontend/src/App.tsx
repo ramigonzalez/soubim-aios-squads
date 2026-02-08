@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
 import { Projects } from './pages/Projects'
+import { ProjectDetail } from './pages/ProjectDetail'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
 
@@ -31,6 +32,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Projects />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id"
+          element={
+            <ProtectedRoute>
+              <ProjectDetail />
             </ProtectedRoute>
           }
         />

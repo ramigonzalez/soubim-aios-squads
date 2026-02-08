@@ -5,6 +5,7 @@ from collections import defaultdict
 from fastapi import Request, HTTPException, status
 from typing import Dict, Tuple
 import threading
+from app.config import settings
 
 
 class RateLimiter:
@@ -103,7 +104,14 @@ async def login_rate_limit(request: Request):
 
     Protects against brute force attacks.
     Uses IP-based limiting to prevent password guessing.
+
+    Note: Disabled in development mode to allow testing without rate limit blocking.
     """
+    # Skip rate limiting in development mode
+    if settings.debug or settings.environment == "development":
+        request.state.login_attempts_remaining = float('inf')
+        return
+
     client_ip = request.client.host if request.client else "unknown"
     rate_limit_key = f"login:ip:{client_ip}"
 

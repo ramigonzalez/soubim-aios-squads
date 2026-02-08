@@ -27,14 +27,20 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "development"
     debug: bool = True
-    demo_mode: bool = False  # SECURITY: Set to False in production!
+    demo_mode: bool = False  # SECURITY: Set to False in production! (enables test data seeding)
 
     # CORS
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     class Config:
-        env_file = ".env"
+        # Load from .env.development first (for development), then fall back to .env
+        env_file = ".env.development"
         case_sensitive = False
 
+
+# Try to load settings, falling back to .env if .env.development doesn't exist
+import os
+if not os.path.exists(".env.development"):
+    Settings.model_config = {"env_file": ".env"}
 
 settings = Settings()

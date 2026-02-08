@@ -67,15 +67,24 @@ fi
 source venv/bin/activate
 
 # Check if dependencies are installed
-if [ ! -f "venv/pinfo.json" ]; then
+if [ ! -f "venv/pinfo.json" ] && [ ! -d "venv/lib" ]; then
     echo "Installing backend dependencies..."
     pip install -q -r requirements.txt
 fi
 
+# Ensure .env.development exists
+if [ ! -f ".env.development" ]; then
+    echo "⚠️  .env.development not found, creating development configuration..."
+    cp .env.development .env.development 2>/dev/null || echo "Using default .env"
+fi
+
 # Start the backend server
+# Use .env.development for development configuration
+export ENV_FILE=".env.development"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 echo "✅ Backend started (PID: $BACKEND_PID)"
+echo "   Note: Backend uses SQLite for development (no PostgreSQL needed)"
 echo ""
 
 # Start Frontend

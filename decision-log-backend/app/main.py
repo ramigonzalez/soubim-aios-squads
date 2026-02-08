@@ -4,10 +4,14 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import logging
 
 from app.config import settings
 from app.api.routes import auth, health, projects, decisions, digest, webhooks
 from app.api.middleware.auth import auth_middleware
+from app.database.init_db import init_db
+
+logger = logging.getLogger(__name__)
 
 
 # Initialize Sentry if configured
@@ -23,6 +27,16 @@ if settings.sentry_dsn:
 async def lifespan(app: FastAPI):
     """Application lifespan context manager."""
     # Startup
+    try:
+        init_db()
+        logger.info("✅ Database initialization completed")
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {e}")
+        if settings.debug:
+            # In development, continue even if DB init fails
+            logger.warning("Continuing in debug mode despite DB init failure")
+        else:
+            raise
     yield
     # Shutdown
 
