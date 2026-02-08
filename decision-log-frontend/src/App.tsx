@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
 import { Projects } from './pages/Projects'
+import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
 
 const queryClient = new QueryClient()
@@ -18,19 +19,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/projects"
-        element={
-          <ProtectedRoute>
-            <Projects />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/" element={<Navigate to="/projects" replace />} />
-    </Routes>
+    <>
+      {isAuthenticated && <Navigation />}
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <Projects />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
+      </Routes>
+    </>
   )
 }
 
