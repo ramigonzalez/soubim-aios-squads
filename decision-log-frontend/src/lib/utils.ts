@@ -107,3 +107,74 @@ export function getPercentageColor(change: number): string {
   if (change < 0) return 'text-red-600'
   return 'text-gray-600'
 }
+
+/**
+ * Format date as "Friday, 7 February 2026" (full human-readable)
+ */
+export function formatFullDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/**
+ * Format timestamp as HH:MM:SS (meeting recording time)
+ */
+export function formatTimestamp(timestamp: string): string {
+  if (/^\d{2}:\d{2}:\d{2}$/.test(timestamp)) return timestamp
+  try {
+    const date = new Date(timestamp)
+    return date.toISOString().substring(11, 19)
+  } catch {
+    return timestamp
+  }
+}
+
+/**
+ * Abbreviate discipline name for compact display
+ */
+export function abbreviateDiscipline(discipline: string): string {
+  const abbreviations: Record<string, string> = {
+    architecture: 'Arch',
+    mep: 'MEP',
+    structural: 'Struct',
+    electrical: 'Elec',
+    plumbing: 'Plumb',
+    landscape: 'Land',
+    general: 'Gen',
+  }
+  return abbreviations[discipline.toLowerCase()] || discipline
+}
+
+/**
+ * Get discipline node color for timeline (returns Tailwind bg class)
+ */
+export function getDisciplineNodeColor(discipline: string): string {
+  const colorMap: Record<string, string> = {
+    architecture: 'bg-[#3B82F6]',
+    mep: 'bg-[#F97316]',
+    landscape: 'bg-[#10B981]',
+    structural: 'bg-[#8B5CF6]',
+    electrical: 'bg-[#F59E0B]',
+    plumbing: 'bg-[#06B6D4]',
+  }
+  return colorMap[discipline.toLowerCase()] || 'bg-gray-400'
+}
+
+/**
+ * Get discipline pill colors for DecisionRow (bg + text)
+ */
+export function getDisciplinePillColors(discipline: string): { bg: string; text: string } {
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    architecture: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    mep: { bg: 'bg-orange-100', text: 'text-orange-700' },
+    landscape: { bg: 'bg-green-100', text: 'text-green-700' },
+    structural: { bg: 'bg-purple-100', text: 'text-purple-700' },
+    electrical: { bg: 'bg-amber-100', text: 'text-amber-700' },
+    plumbing: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  }
+  return colorMap[discipline.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-700' }
+}
