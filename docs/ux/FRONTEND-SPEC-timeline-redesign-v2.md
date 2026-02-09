@@ -906,11 +906,13 @@ All colors MUST come from the Tailwind config design tokens, never hardcoded:
 |------|--------|
 | 2026-02-08 | Created v2 spec based on Gabriela's feedback and hand-drawn wireframe |
 | 2026-02-08 | Added `meeting_title` to DecisionRow (Row 2) — multiple meetings per day need identification |
+| 2026-02-09 | Extended by `FRONTEND-SPEC-3-layer-timeline.md` — adds 3-layer meeting hierarchy (Date > Meetings > Decisions) |
 
 ---
 
-**Related Stories:** 3.5 (Timeline), 3.6 (Filters), 3.7 (DrilldownModal), 3.8 (Executive Digest)
+**Related Stories:** 3.5 (Timeline), 3.6 (Filters), 3.7 (DrilldownModal), 3.8 (Executive Digest), 3.11 (Data Layer), 3.12 (3-Layer Timeline)
 **Supersedes:** Original Story 3.5 and 3.6 acceptance criteria for visual design (functional requirements like React Query, Zustand, testing remain valid)
+**Extended by:** `docs/ux/FRONTEND-SPEC-3-layer-timeline.md` — adds 3-layer meeting group hierarchy (Date > Meetings > Decisions) on top of this v2 spec
 
 ---
 
