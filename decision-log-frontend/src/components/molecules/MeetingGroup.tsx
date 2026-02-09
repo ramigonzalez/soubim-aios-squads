@@ -4,7 +4,7 @@ import { Decision } from '../../types/decision'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
 import { ParticipantIndicator } from '../atoms/ParticipantIndicator'
-import { getDisciplinePillColors, getDisciplineBorderColor, abbreviateDiscipline } from '../../lib/utils'
+import { getDisciplinePillColors, getMeetingTypeBorderColor, abbreviateDiscipline } from '../../lib/utils'
 
 export interface MeetingGroupData {
   meetingTitle: string
@@ -61,13 +61,10 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
   const meetingId = meeting.transcriptId || 'orphan'
   const decisionListId = `meeting-${meetingId}-decisions`
 
-  // Get the left accent border color from primary discipline
-  const primaryDiscipline = disciplines[0]
+  // Get the left accent border color from meeting type (Story 3.16)
   const borderColor = isOrphan
     ? 'border-l-gray-300'
-    : primaryDiscipline
-      ? getDisciplineBorderColor(primaryDiscipline)
-      : 'border-l-gray-300'
+    : getMeetingTypeBorderColor(meeting.meetingType)
 
   const handleToggle = () => setIsExpanded((prev) => !prev)
   const handleKeyDown = (e: React.KeyboardEvent) => {

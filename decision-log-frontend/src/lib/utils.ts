@@ -195,21 +195,6 @@ export function getDisciplinePillColors(discipline: string): { bg: string; text:
 }
 
 /**
- * Get discipline left-border color for MeetingGroup accent (Story 3.13)
- */
-export function getDisciplineBorderColor(discipline: string): string {
-  const colorMap: Record<string, string> = {
-    architecture: 'border-l-blue-400',
-    mep: 'border-l-orange-400',
-    structural: 'border-l-purple-400',
-    electrical: 'border-l-amber-400',
-    plumbing: 'border-l-cyan-400',
-    landscape: 'border-l-green-400',
-  }
-  return colorMap[discipline.toLowerCase()] || 'border-l-gray-300'
-}
-
-/**
  * Meeting type color map for filter dots and chips (Story 3.15)
  */
 export function getMeetingTypeColors(type: string): { bg: string; text: string; dot: string } {
@@ -221,4 +206,35 @@ export function getMeetingTypeColors(type: string): { bg: string; text: string; 
     'internal': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
   }
   return colorMap[type.toLowerCase()] || { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
+}
+
+/**
+ * Get meeting type left-border color for MeetingGroup accent (Story 3.16)
+ * Replaces getDisciplineBorderColor — uses meeting type instead of discipline
+ */
+export function getMeetingTypeBorderColor(type?: string): string {
+  if (!type) return 'border-l-gray-300'
+  const colorMap: Record<string, string> = {
+    'client meeting': 'border-l-rose-400',
+    'coordination': 'border-l-teal-400',
+    'design review': 'border-l-amber-400',
+    'internal review': 'border-l-blue-400',
+    'internal': 'border-l-blue-400',
+  }
+  return colorMap[type.toLowerCase()] || 'border-l-gray-300'
+}
+
+/**
+ * Get discipline dot color for filter dropdown (Story 3.16)
+ */
+export function getDisciplineDotColor(discipline: string): string {
+  const colorMap: Record<string, string> = {
+    architecture: 'bg-blue-400',
+    mep: 'bg-orange-400',
+    structural: 'bg-purple-400',
+    electrical: 'bg-amber-400',
+    plumbing: 'bg-cyan-400',
+    landscape: 'bg-green-400',
+  }
+  return colorMap[discipline.toLowerCase()] || 'bg-gray-400'
 }

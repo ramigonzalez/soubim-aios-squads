@@ -3,7 +3,7 @@ import { Search, X, Building2, Calendar, Users, Tag } from 'lucide-react'
 import { useFilterStore } from '../../store/filterStore'
 import { useDebounce } from '../../hooks/useDebounce'
 import { FilterPopover } from '../molecules/FilterPopover'
-import { getDisciplinePillColors, getMeetingTypeColors, formatDate } from '../../lib/utils'
+import { getDisciplinePillColors, getDisciplineDotColor, getMeetingTypeColors, formatDate } from '../../lib/utils'
 import { Decision } from '../../types/decision'
 
 const DISCIPLINES = ['architecture', 'mep', 'structural', 'electrical', 'plumbing', 'landscape']
@@ -25,6 +25,9 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     toggleDiscipline,
     toggleDecisionMaker,
     toggleMeetingType,
+    clearDisciplines,
+    clearDecisionMakers,
+    clearMeetingTypes,
     setDateRange,
     setSearchQuery,
     reset,
@@ -140,6 +143,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 key={d}
                 className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
               >
+                <span className={`w-2.5 h-2.5 rounded-full ${getDisciplineDotColor(d)} flex-shrink-0`} />
                 <input
                   type="checkbox"
                   checked={disciplines.includes(d)}
@@ -149,6 +153,14 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 <span className="text-sm text-gray-700 capitalize">{d}</span>
               </label>
             ))}
+            {disciplines.length > 0 && (
+              <button
+                onClick={clearDisciplines}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
+              >
+                Clear selection
+              </button>
+            )}
           </div>
         </FilterPopover>
 
@@ -180,17 +192,17 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
             </div>
             <div className="border-t border-gray-100 pt-2">
               <p className="text-xs font-medium text-gray-400 mb-1.5">Quick</p>
-              <div className="space-y-0.5">
+              <div className="flex flex-wrap gap-1.5">
                 {[
-                  { label: 'Last 7 days', value: '7days' },
-                  { label: 'Last 30 days', value: '30days' },
-                  { label: 'This month', value: 'month' },
-                  { label: 'All time', value: 'all' },
+                  { label: '7d', value: '7days' },
+                  { label: '30d', value: '30days' },
+                  { label: 'Month', value: 'month' },
+                  { label: 'All', value: 'all' },
                 ].map((preset) => (
                   <button
                     key={preset.value}
                     onClick={() => handleDatePreset(preset.value)}
-                    className="block w-full text-left text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded-md transition-colors"
+                    className="text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-gray-200 px-2.5 py-1 rounded-full transition-colors"
                   >
                     {preset.label}
                   </button>
@@ -221,22 +233,36 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
               {filteredMakers.length === 0 ? (
                 <p className="text-xs text-gray-400 py-1 px-2">No names found</p>
               ) : (
-                filteredMakers.map((name) => (
-                  <label
-                    key={name}
-                    className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={decisionMakers.includes(name)}
-                      onChange={() => toggleDecisionMaker(name)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700">{name}</span>
-                  </label>
-                ))
+                filteredMakers.map((name) => {
+                  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                  return (
+                    <label
+                      key={name}
+                      className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-medium inline-flex items-center justify-center flex-shrink-0">
+                        {initials}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={decisionMakers.includes(name)}
+                        onChange={() => toggleDecisionMaker(name)}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700">{name}</span>
+                    </label>
+                  )
+                })
               )}
             </div>
+            {decisionMakers.length > 0 && (
+              <button
+                onClick={clearDecisionMakers}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
+              >
+                Clear selection
+              </button>
+            )}
           </div>
         </FilterPopover>
 
@@ -268,6 +294,14 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                   </label>
                 )
               })
+            )}
+            {meetingTypes.length > 0 && (
+              <button
+                onClick={clearMeetingTypes}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
+              >
+                Clear selection
+              </button>
             )}
           </div>
         </FilterPopover>

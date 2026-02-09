@@ -172,4 +172,37 @@ describe('MeetingGroup', () => {
     // Only discipline badges have rounded class, no meeting type badge
     expect(screen.queryByText('Design Review')).not.toBeInTheDocument()
   })
+
+  it('applies meeting-type border color (not discipline)', () => {
+    const meeting = makeMeeting(2, { meetingType: 'Client Meeting' })
+    const { container } = render(
+      <MeetingGroup meeting={meeting} onSelectDecision={mockOnSelect} />
+    )
+    const region = container.querySelector('[role="region"]')
+    expect(region?.className).toContain('border-l-rose-400')
+    expect(region?.className).not.toContain('border-l-purple-400') // Not structural discipline color
+  })
+
+  it('uses gray border for orphan meetings', () => {
+    const orphanMeeting = makeMeeting(2, {
+      meetingTitle: 'Other Decisions',
+      transcriptId: undefined,
+      meetingType: undefined,
+      participants: [],
+    })
+    const { container } = render(
+      <MeetingGroup meeting={orphanMeeting} onSelectDecision={mockOnSelect} />
+    )
+    const region = container.querySelector('[role="region"]')
+    expect(region?.className).toContain('border-l-gray-300')
+  })
+
+  it('uses gray border for unknown meeting type', () => {
+    const meeting = makeMeeting(2, { meetingType: 'Unknown Type' })
+    const { container } = render(
+      <MeetingGroup meeting={meeting} onSelectDecision={mockOnSelect} />
+    )
+    const region = container.querySelector('[role="region"]')
+    expect(region?.className).toContain('border-l-gray-300')
+  })
 })

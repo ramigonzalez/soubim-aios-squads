@@ -19,6 +19,9 @@ interface FilterState {
   toggleDiscipline: (discipline: string) => void
   toggleDecisionMaker: (name: string) => void
   toggleMeetingType: (type: string) => void
+  clearDisciplines: () => void
+  clearDecisionMakers: () => void
+  clearMeetingTypes: () => void
   reset: () => void
 }
 
@@ -55,6 +58,10 @@ export const useFilterStore = create<FilterState>()(
           ? state.meetingTypes.filter(t => t !== type)
           : [...state.meetingTypes, type]
       })),
+
+      clearDisciplines: () => set({ disciplines: [] }),
+      clearDecisionMakers: () => set({ decisionMakers: [] }),
+      clearMeetingTypes: () => set({ meetingTypes: [] }),
 
       reset: () => set({
         disciplines: [],
