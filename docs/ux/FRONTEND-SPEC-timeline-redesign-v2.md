@@ -120,7 +120,7 @@ Gabriela provided a hand-drawn wireframe showing:
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  Install central HVAC system with zone-controlled ventilation   Mep │
-│  👤 Carlos (MEP Engineer)                                ⏱ 00:05:13 │
+│  👤 Carlos (MEP Engineer)       📋 MEP Coordination      ⏱ 00:05:13 │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -152,10 +152,10 @@ Gabriela provided a hand-drawn wireframe showing:
 | `decision_statement` | `text-sm font-medium text-gray-900 truncate flex-1` | Single line, truncated with ellipsis |
 | `discipline` | Tiny pill badge: `text-xs px-2 py-0.5 rounded-full` | Uses discipline color tokens. Abbreviate: "Architecture" → "Arch", "Structural" → "Struct", "Electrical" → "Elec" |
 
-**Row 2: Who + Timestamp**
+**Row 2: Who + Meeting Title + Timestamp**
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ 👤 {who}                                            ⏱ {timestamp}│
+│ 👤 {who}                  📋 {meeting_title}        ⏱ {timestamp}│
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -163,6 +163,8 @@ Gabriela provided a hand-drawn wireframe showing:
 |---------|-------|-------|
 | User icon | `lucide-react User`, `w-3.5 h-3.5 text-gray-400` | Tiny, muted |
 | `who` | `text-xs text-gray-500` | e.g., "Carlos (MEP Engineer)" |
+| FileText icon | `lucide-react FileText`, `w-3.5 h-3.5 text-gray-400` | Center-right, muted |
+| `meeting_title` | `text-xs text-gray-400 italic truncate max-w-[160px]` | e.g., "MEP Coordination". Hidden if null/empty. Lighter than `who` — secondary context |
 | Clock icon | `lucide-react Clock`, `w-3.5 h-3.5 text-gray-400` | Right-aligned |
 | `timestamp` | `text-xs text-gray-500 font-mono tabular-nums` | Format: `HH:MM:SS` from meeting recording |
 
@@ -171,8 +173,10 @@ Gabriela provided a hand-drawn wireframe showing:
 When grouping by Discipline, add `meeting_date` between `who` and `timestamp`:
 
 ```
-│ 👤 Carlos (MEP Engineer)         📅 Feb 7, 2026      ⏱ 00:05:13 │
+│ 👤 Carlos (MEP Engineer)   📋 MEP Coord.   📅 Feb 7, 2026   ⏱ 00:05:13 │
 ```
+
+**Note:** `meeting_title` is always shown (both grouping modes) when available, since multiple meetings can occur on the same date.
 
 #### Props Interface
 
@@ -606,6 +610,7 @@ const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
 | `id` | string | API | Key + onClick callback |
 | `decision_statement` | string | API | Row 1, truncated to 1 line |
 | `who` | string | API | Row 2, left side |
+| `meeting_title` | string? | API | Row 2, center — italic, muted. Identifies which meeting the decision came from. Hidden if null/empty |
 | `timestamp` | string | API | Row 2, right side (format: `HH:MM:SS`) |
 | `discipline` | string | API | Tiny pill badge, right of statement |
 | `meeting_date` | string | API | Group header (By Date) or inline (By Discipline) |
@@ -734,6 +739,8 @@ const decisionMakers = useMemo(() => {
 | `src/pages/ProjectDetail.tsx` | Remove sidebar layout, add FilterBar + GroupingToggle, add `groupBy` state |
 | `src/store/filterStore.ts` | Add `decisionMakers`, `toggleDecisionMaker`. Remove `meetingTypes` |
 | `src/lib/utils.ts` | Add `formatFullDate()`, `formatTimestamp()`, `abbreviateDiscipline()` |
+| `src/types/decision.ts` | Add `meeting_title?: string` field to `Decision` interface |
+| `src/lib/mockData.ts` | Add `meeting_title` to mock decision entries |
 
 ### Deprecated Files (can remove or keep for reference)
 
@@ -864,7 +871,7 @@ All colors MUST come from the Tailwind config design tokens, never hardcoded:
 ## 15. Acceptance Criteria Summary
 
 ### Must Have (MVP)
-- [ ] DecisionRow: Compact 2-line row with statement, who, timestamp, discipline pill
+- [ ] DecisionRow: Compact 2-line row with statement, who, meeting_title, timestamp, discipline pill
 - [ ] Timeline: Vertical list with timeline line and circle nodes
 - [ ] Timeline: Group by Date (default) — newest first, full date format
 - [ ] Timeline: Group by Discipline — discipline-colored nodes
@@ -898,6 +905,7 @@ All colors MUST come from the Tailwind config design tokens, never hardcoded:
 | Date | Change |
 |------|--------|
 | 2026-02-08 | Created v2 spec based on Gabriela's feedback and hand-drawn wireframe |
+| 2026-02-08 | Added `meeting_title` to DecisionRow (Row 2) — multiple meetings per day need identification |
 
 ---
 
