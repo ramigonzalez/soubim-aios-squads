@@ -30,9 +30,15 @@ async def list_decisions(
     """
     Query decisions with advanced filtering.
     """
-    # Build query with LEFT JOIN to get transcript meeting_title
+    # Build query with LEFT JOIN to get transcript meeting_title, meeting_type, participants
     query = (
-        db.query(Decision, Transcript.meeting_title, Transcript.meeting_date)
+        db.query(
+            Decision,
+            Transcript.meeting_title,
+            Transcript.meeting_date,
+            Transcript.meeting_type,
+            Transcript.participants,
+        )
         .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
         .filter(Decision.project_id == str(project_id))
     )
@@ -40,6 +46,9 @@ async def list_decisions(
     # Apply filters
     if discipline:
         query = query.filter(Decision.discipline == discipline)
+
+    if meeting_type:
+        query = query.filter(Transcript.meeting_type == meeting_type)
 
     if confidence_min is not None:
         query = query.filter(Decision.confidence >= confidence_min)
@@ -89,10 +98,12 @@ async def list_decisions(
             "consensus": d.consensus,
             "confidence": d.confidence,
             "meeting_title": transcript_title,
+            "meeting_type": t_meeting_type,
             "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (d.created_at.isoformat() if d.created_at else None),
+            "meeting_participants": t_participants,
             "created_at": d.created_at.isoformat() if d.created_at else None,
         }
-        for d, transcript_title, transcript_meeting_date in rows
+        for d, transcript_title, transcript_meeting_date, t_meeting_type, t_participants in rows
     ]
 
     # Get disciplines for facets
@@ -119,7 +130,13 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
     Get complete details for a single decision.
     """
     row = (
-        db.query(Decision, Transcript.meeting_title, Transcript.meeting_date)
+        db.query(
+            Decision,
+            Transcript.meeting_title,
+            Transcript.meeting_date,
+            Transcript.meeting_type,
+            Transcript.participants,
+        )
         .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
         .filter(Decision.id == str(decision_id))
         .first()
@@ -131,7 +148,7 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
             detail=f"Decision {decision_id} not found",
         )
 
-    decision, transcript_title, transcript_meeting_date = row
+    decision, transcript_title, transcript_meeting_date, t_meeting_type, t_participants = row
 
     return {
         "id": str(decision.id),
@@ -150,7 +167,9 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
         "consistency_notes": decision.consistency_notes,
         "anomaly_flags": decision.anomaly_flags,
         "meeting_title": transcript_title,
+        "meeting_type": t_meeting_type,
         "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (decision.created_at.isoformat() if decision.created_at else None),
+        "meeting_participants": t_participants,
         "created_at": decision.created_at.isoformat() if decision.created_at else None,
         "updated_at": decision.updated_at.isoformat() if decision.updated_at else None,
     }

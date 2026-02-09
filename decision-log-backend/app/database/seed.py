@@ -138,7 +138,7 @@ def seed_database():
 
         # ── Transcripts for Project 1 (Residential Tower Alpha) ──────────
 
-        # Feb 6 AM meeting
+        # Feb 6 AM meeting — 6+ participants with diverse disciplines
         t1 = Transcript(
             id=uuid4(),
             project_id=project1.id,
@@ -147,6 +147,10 @@ def seed_database():
             participants=[
                 {"name": "Carlos", "role": "Structural Engineer"},
                 {"name": "Gabriela", "role": "Project Director"},
+                {"name": "André", "role": "MEP Engineer"},
+                {"name": "Lucia", "role": "Architect"},
+                {"name": "Roberto", "role": "Plumbing Engineer"},
+                {"name": "Marina", "role": "Landscape Architect"},
             ],
             transcript_text="[structural design review transcript]",
             duration_minutes="45",
@@ -164,6 +168,8 @@ def seed_database():
             participants=[
                 {"name": "Carlos", "role": "MEP Engineer"},
                 {"name": "Gabriela", "role": "Project Director"},
+                {"name": "Roberto", "role": "Plumbing Engineer"},
+                {"name": "Miguel", "role": "Electrical Engineer"},
             ],
             transcript_text="[mep coordination transcript]",
             duration_minutes="60",
@@ -181,6 +187,7 @@ def seed_database():
             participants=[
                 {"name": "Gabriela", "role": "Project Director"},
                 {"name": "Carlos", "role": "MEP Engineer"},
+                {"name": "Miguel", "role": "Electrical Engineer"},
             ],
             transcript_text="[client alignment transcript]",
             duration_minutes="30",
@@ -197,6 +204,8 @@ def seed_database():
             meeting_type="Design Review",
             participants=[
                 {"name": "Gabriela", "role": "Project Director"},
+                {"name": "Marina", "role": "Landscape Architect"},
+                {"name": "Carlos", "role": "Structural Engineer"},
             ],
             transcript_text="[landscape design review transcript]",
             duration_minutes="40",
@@ -286,6 +295,112 @@ def seed_database():
             updated_at=datetime(2026, 2, 6, 9, 22, 10),
         )
         db.add(decision1b)
+
+        # Feb 6 AM — additional decisions from Structural Design Review (t1)
+        decision1c = Decision(
+            id=uuid.uuid4(),
+            project_id=project1.id,
+            transcript_id=t1.id,
+            decision_statement="Adopt seismic isolation bearings for ground floor columns",
+            who="Carlos (Structural Engineer)",
+            timestamp="00:28:45",
+            discipline="structural",
+            why="Seismic zone 3 classification requires enhanced protection for 50-floor structures",
+            causation="Updated seismic hazard map reclassified site from zone 2 to zone 3",
+            impacts={
+                "budget": "+$800K for isolation system",
+                "safety": "Significant reduction in lateral forces on superstructure",
+            },
+            consensus={"engineer": "STRONGLY_AGREE", "architect": "AGREE", "client": "AGREE"},
+            confidence=0.91,
+            created_at=datetime(2026, 2, 6, 9, 28, 45),
+            updated_at=datetime(2026, 2, 6, 9, 28, 45),
+        )
+        db.add(decision1c)
+
+        decision1d = Decision(
+            id=uuid.uuid4(),
+            project_id=project1.id,
+            transcript_id=t1.id,
+            decision_statement="Use BIM Level 3 coordination for all structural connections",
+            who="Lucia (Architect)",
+            timestamp="00:32:10",
+            discipline="architecture",
+            why="Reduces RFIs by 60% during construction phase based on industry benchmarks",
+            causation="Previous project saw 45 structural RFIs that could have been avoided with BIM",
+            impacts={
+                "schedule": "-3 weeks from reduced RFI turnaround",
+                "quality": "Clash-free structural model before construction",
+            },
+            consensus={"architect": "STRONGLY_AGREE", "engineer": "AGREE", "contractor": "AGREE"},
+            confidence=0.88,
+            created_at=datetime(2026, 2, 6, 9, 32, 10),
+            updated_at=datetime(2026, 2, 6, 9, 32, 10),
+        )
+        db.add(decision1d)
+
+        decision1e = Decision(
+            id=uuid.uuid4(),
+            project_id=project1.id,
+            transcript_id=t1.id,
+            decision_statement="Specify grade 60 rebar for all structural elements",
+            who="Carlos (Structural Engineer)",
+            timestamp="00:36:20",
+            discipline="structural",
+            why="Higher grade reduces rebar quantity by 15% while maintaining safety factor",
+            causation="Material cost analysis showed net savings despite higher unit price",
+            impacts={
+                "budget": "-$120K net material savings",
+                "construction": "Easier placement due to fewer bars",
+            },
+            consensus={"engineer": "AGREE", "contractor": "AGREE"},
+            confidence=0.93,
+            created_at=datetime(2026, 2, 6, 9, 36, 20),
+            updated_at=datetime(2026, 2, 6, 9, 36, 20),
+        )
+        db.add(decision1e)
+
+        decision1f = Decision(
+            id=uuid.uuid4(),
+            project_id=project1.id,
+            transcript_id=t1.id,
+            decision_statement="Add transfer beams at level 5 to accommodate retail podium layout",
+            who="Carlos (Structural Engineer)",
+            timestamp="00:40:55",
+            discipline="structural",
+            why="Retail tenant requires column-free spans of 12m on lower floors",
+            causation="Retail lease agreement specifies open floor plans without interior columns",
+            impacts={
+                "budget": "+$350K for heavy transfer beams",
+                "schedule": "+1 week for specialized formwork",
+            },
+            consensus={"engineer": "AGREE", "architect": "STRONGLY_AGREE", "client": "AGREE"},
+            confidence=0.87,
+            created_at=datetime(2026, 2, 6, 9, 40, 55),
+            updated_at=datetime(2026, 2, 6, 9, 40, 55),
+        )
+        db.add(decision1f)
+
+        decision1g = Decision(
+            id=uuid.uuid4(),
+            project_id=project1.id,
+            transcript_id=t1.id,
+            decision_statement="Install structural health monitoring sensors on key columns",
+            who="Gabriela (Project Director)",
+            timestamp="00:44:30",
+            discipline="structural",
+            why="Long-term monitoring ensures safety and provides data for maintenance planning",
+            causation="Insurance provider offers 10% premium discount with continuous monitoring",
+            impacts={
+                "budget": "+$180K for sensor network",
+                "maintenance": "Real-time alerts for structural anomalies",
+            },
+            consensus={"engineer": "AGREE", "client": "STRONGLY_AGREE"},
+            confidence=0.84,
+            created_at=datetime(2026, 2, 6, 9, 44, 30),
+            updated_at=datetime(2026, 2, 6, 9, 44, 30),
+        )
+        db.add(decision1g)
 
         # Feb 6 PM — from MEP Coordination (t2)
         decision2 = Decision(
@@ -379,7 +494,7 @@ def seed_database():
         db.add(decision4)
 
         db.flush()
-        print(f"  ✓ Created 6 decisions linked to transcripts (Project 1)")
+        print(f"  ✓ Created 11 decisions linked to transcripts (Project 1)")
 
         # ── Decisions for Project 2 ──────────────────────────────────────
 
