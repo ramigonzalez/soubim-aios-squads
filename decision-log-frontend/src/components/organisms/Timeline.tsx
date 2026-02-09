@@ -206,12 +206,12 @@ export function Timeline({
 
   const isDateMode = groupBy === 'date'
   const groups = isDateMode
-    ? dateGroups.map((g) => ({ key: g.date, label: formatFullDate(g.date), meetings: g.meetings, total: g.totalDecisions }))
+    ? dateGroups.map((g) => ({ key: g.date, label: formatFullDate(g.date), meetings: g.meetings, meetingCount: g.meetings.length }))
     : disciplineGroups.map((g) => ({
         key: g.discipline,
         label: g.discipline.charAt(0).toUpperCase() + g.discipline.slice(1),
         meetings: g.meetings,
-        total: g.totalDecisions,
+        meetingCount: g.meetings.length,
       }))
 
   return (
@@ -232,12 +232,12 @@ export function Timeline({
               />
               <h2
                 className="text-sm font-semibold text-gray-700 flex-1"
-                aria-label={`${group.label}, ${group.total} decision${group.total !== 1 ? 's' : ''}`}
+                aria-label={`${group.label}, ${group.meetingCount} meeting${group.meetingCount !== 1 ? 's' : ''}`}
               >
                 {group.label}
               </h2>
               <span className="text-xs text-gray-400">
-                {group.total} decision{group.total !== 1 ? 's' : ''}
+                {group.meetingCount} meeting{group.meetingCount !== 1 ? 's' : ''}
               </span>
             </div>
 

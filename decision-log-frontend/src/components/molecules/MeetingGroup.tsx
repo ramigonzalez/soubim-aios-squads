@@ -4,7 +4,7 @@ import { Decision } from '../../types/decision'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
 import { ParticipantIndicator } from '../atoms/ParticipantIndicator'
-import { getDisciplinePillColors, abbreviateDiscipline } from '../../lib/utils'
+import { getDisciplinePillColors, getDisciplineBorderColor, abbreviateDiscipline } from '../../lib/utils'
 
 export interface MeetingGroupData {
   meetingTitle: string
@@ -61,6 +61,14 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
   const meetingId = meeting.transcriptId || 'orphan'
   const decisionListId = `meeting-${meetingId}-decisions`
 
+  // Get the left accent border color from primary discipline
+  const primaryDiscipline = disciplines[0]
+  const borderColor = isOrphan
+    ? 'border-l-gray-300'
+    : primaryDiscipline
+      ? getDisciplineBorderColor(primaryDiscipline)
+      : 'border-l-gray-300'
+
   const handleToggle = () => setIsExpanded((prev) => !prev)
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -81,7 +89,7 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
     <div
       role="region"
       aria-label={`${meeting.meetingTitle}, ${meeting.decisions.length} decisions`}
-      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"
+      className={`bg-white border border-gray-200 border-l-4 ${borderColor} rounded-lg shadow-sm overflow-hidden`}
     >
       {/* Header — clickable to toggle */}
       <div
@@ -92,7 +100,7 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
         aria-label={srLabel}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className="px-4 py-3 cursor-pointer hover:bg-gray-100/50 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+        className="px-4 py-3 cursor-pointer hover:bg-gray-50/60 transition-colors select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
       >
         {/* Row 1: Title + MeetingTypeBadge */}
         <div className="flex items-center gap-2">
@@ -146,11 +154,15 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
         </div>
       </div>
 
-      {/* Decision list (collapsible) */}
+      {/* Decision list (collapsible) — gray inset background */}
       {isExpanded && (
-        <div id={decisionListId} role="list" className="border-t border-gray-100">
-          {meeting.decisions.map((decision) => (
-            <div key={decision.id} role="listitem">
+        <div id={decisionListId} role="list" className="border-t border-gray-200 bg-gray-50/80 px-2 pt-1 pb-1">
+          {meeting.decisions.map((decision, index) => (
+            <div
+              key={decision.id}
+              role="listitem"
+              className={index < meeting.decisions.length - 1 ? 'border-b border-gray-100' : ''}
+            >
               <DecisionRow
                 decision={decision}
                 onClick={onSelectDecision}
@@ -158,6 +170,7 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
                 showDiscipline={true}
                 showMeetingTitle={false}
                 showAffectedDisciplines={true}
+                inMeetingGroup={true}
               />
             </div>
           ))}

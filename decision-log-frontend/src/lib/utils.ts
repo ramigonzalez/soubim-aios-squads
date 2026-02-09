@@ -193,3 +193,32 @@ export function getDisciplinePillColors(discipline: string): { bg: string; text:
   }
   return colorMap[discipline.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-700' }
 }
+
+/**
+ * Get discipline left-border color for MeetingGroup accent (Story 3.13)
+ */
+export function getDisciplineBorderColor(discipline: string): string {
+  const colorMap: Record<string, string> = {
+    architecture: 'border-l-blue-400',
+    mep: 'border-l-orange-400',
+    structural: 'border-l-purple-400',
+    electrical: 'border-l-amber-400',
+    plumbing: 'border-l-cyan-400',
+    landscape: 'border-l-green-400',
+  }
+  return colorMap[discipline.toLowerCase()] || 'border-l-gray-300'
+}
+
+/**
+ * Meeting type color map for filter dots and chips (Story 3.15)
+ */
+export function getMeetingTypeColors(type: string): { bg: string; text: string; dot: string } {
+  const colorMap: Record<string, { bg: string; text: string; dot: string }> = {
+    'client meeting': { bg: 'bg-rose-50', text: 'text-rose-700', dot: 'bg-rose-400' },
+    'coordination': { bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-400' },
+    'design review': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+    'internal review': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
+    'internal': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
+  }
+  return colorMap[type.toLowerCase()] || { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
+}

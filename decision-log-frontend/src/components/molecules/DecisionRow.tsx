@@ -1,5 +1,5 @@
 import { Decision } from '../../types/decision'
-import { abbreviateDiscipline, formatDate, getDisciplinePillColors } from '../../lib/utils'
+import { abbreviateDiscipline, formatDate, getDisciplinePillColors, cn } from '../../lib/utils'
 import { User, Calendar, FileText } from 'lucide-react'
 
 interface DecisionRowProps {
@@ -9,6 +9,7 @@ interface DecisionRowProps {
   showDiscipline?: boolean // true when grouped by date (default)
   showMeetingTitle?: boolean // false when inside MeetingGroup
   showAffectedDisciplines?: boolean // true when inside MeetingGroup
+  inMeetingGroup?: boolean // true when rendered inside a MeetingGroup (uses different styling)
 }
 
 // Known disciplines for filtering consensus keys
@@ -32,6 +33,7 @@ export function DecisionRow({
   showDiscipline = true,
   showMeetingTitle = true,
   showAffectedDisciplines = false,
+  inMeetingGroup = false,
 }: DecisionRowProps) {
   const pillColors = getDisciplinePillColors(decision.discipline)
   const abbrev = abbreviateDiscipline(decision.discipline)
@@ -49,7 +51,12 @@ export function DecisionRow({
       tabIndex={0}
       onClick={() => onClick(decision.id)}
       onKeyDown={handleKeyDown}
-      className="bg-white border-b border-gray-100 rounded-md py-3 px-4 hover:bg-blue-50/50 active:bg-blue-50 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+      className={cn(
+        'rounded-md py-3 px-4 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
+        inMeetingGroup
+          ? 'bg-transparent hover:bg-white active:bg-white ml-1'
+          : 'bg-white border-b border-gray-100 hover:bg-blue-50/50 active:bg-blue-50'
+      )}
       aria-label={`Decision: ${decision.decision_statement}`}
     >
       {/* Row 1: Statement + Discipline Pill + Affected Disciplines */}
