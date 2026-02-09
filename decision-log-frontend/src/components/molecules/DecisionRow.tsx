@@ -1,6 +1,6 @@
 import { Decision } from '../../types/decision'
-import { abbreviateDiscipline, formatTimestamp, formatDate, getDisciplinePillColors } from '../../lib/utils'
-import { User, Clock, Calendar, FileText } from 'lucide-react'
+import { abbreviateDiscipline, formatDate, getDisciplinePillColors } from '../../lib/utils'
+import { User, Calendar, FileText } from 'lucide-react'
 
 interface DecisionRowProps {
   decision: Decision
@@ -17,7 +17,6 @@ export function DecisionRow({
 }: DecisionRowProps) {
   const pillColors = getDisciplinePillColors(decision.discipline)
   const abbrev = abbreviateDiscipline(decision.discipline)
-  const timestamp = formatTimestamp(decision.timestamp)
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -69,10 +68,6 @@ export function DecisionRow({
               <span>{formatDate(decision.meeting_date)}</span>
             </div>
           )}
-          <div className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
-            <span className="font-mono tabular-nums">{timestamp}</span>
-          </div>
         </div>
       </div>
     </article>

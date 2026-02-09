@@ -1,12 +1,26 @@
 import { useState } from 'react'
 import { Decision } from '../../types/decision'
 import { DisciplineBadge } from '../molecules/DisciplineBadge'
-import { formatDateTime } from '../../lib/utils'
-import { X } from 'lucide-react'
+import { formatDateTime, formatTimestamp, getImpactTypeColor } from '../../lib/utils'
+import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle } from 'lucide-react'
 
 interface DrilldownModalProps {
   decision: Decision | null
   onClose: () => void
+}
+
+function getStanceIcon(stance: string) {
+  const s = stance.toUpperCase()
+  if (s === 'AGREE') return <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+  if (s === 'DISAGREE' || s === 'DISSENT') return <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+  return <MinusCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+}
+
+function getStanceTextColor(stance: string) {
+  const s = stance.toUpperCase()
+  if (s === 'AGREE') return 'text-green-700'
+  if (s === 'DISAGREE' || s === 'DISSENT') return 'text-red-700'
+  return 'text-amber-700'
 }
 
 export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
@@ -14,35 +28,73 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
 
   if (!decision) return null
 
+  const consensusEntries = decision.consensus && typeof decision.consensus === 'object'
+    ? Object.entries(decision.consensus)
+    : []
+  const agreeCount = consensusEntries.filter(([, stance]) => stance.toUpperCase() === 'AGREE').length
+  const totalCount = consensusEntries.length
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
-        <div className="flex justify-between items-start p-6 border-b">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{decision.decision_statement}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              <DisciplineBadge discipline={decision.discipline} />
-              {(decision.created_at || decision.meeting_date) && (
-                <span className="text-sm text-gray-500">{formatDateTime(decision.created_at || decision.meeting_date || '')}</span>
-              )}
-            </div>
+        <div className="p-6 pb-4">
+          <div className="flex justify-between items-start">
+            <h2 className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0 pr-4">
+              {decision.decision_statement}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
+
+          <div className="mt-3 inline-block">
+            <DisciplineBadge discipline={decision.discipline} />
+          </div>
+
+          {/* Decision Context Card */}
+          <div className="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 space-y-1.5">
+            {decision.who && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <User className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                <span>{decision.who}</span>
+              </div>
+            )}
+            {decision.meeting_title && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                <span>{decision.meeting_title}</span>
+              </div>
+            )}
+            {(decision.created_at || decision.meeting_date) && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                <span>{formatDateTime(decision.created_at || decision.meeting_date || '')}</span>
+              </div>
+            )}
+            {decision.timestamp && (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
+                <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
+                <span>in recording</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b bg-gray-50">
+        <div className="flex border-b border-t bg-gray-50/80">
           {['overview', 'transcript', 'similar'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 px-4 py-3 text-sm font-medium ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'border-b-2 border-blue-600 text-blue-600 bg-white'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -54,37 +106,78 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Rationale</h3>
-                <p className="text-gray-700">{decision.why}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Causation</h3>
-                <p className="text-gray-700">{decision.causation}</p>
-              </div>
-              {decision.impacts && decision.impacts.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Impacts</h3>
-                  <ul className="space-y-2">
-                    {decision.impacts.map((impact, idx) => (
-                      <li key={idx} className="text-sm text-gray-700">
-                        <span className="font-medium capitalize">{impact.type}:</span> {impact.change}
-                      </li>
-                    ))}
-                  </ul>
+              {/* Rationale Card */}
+              <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rationale</h3>
                 </div>
-              )}
-              {decision.consensus && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Consensus</h3>
-                  <div className="space-y-1">
-                    {typeof decision.consensus === 'object' && Object.entries(decision.consensus).map(([role, stance]) => (
-                      <div key={role} className="text-sm text-gray-700">
-                        <span className="font-medium capitalize">{role}:</span> {stance}
-                      </div>
-                    ))}
+                <div className="px-4 py-3">
+                  <p className="text-sm text-gray-700 leading-relaxed">{decision.why || 'No rationale provided.'}</p>
+                </div>
+              </section>
+
+              {/* Causation Card */}
+              {decision.causation && (
+                <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Causation</h3>
                   </div>
-                </div>
+                  <div className="px-4 py-3">
+                    <p className="text-sm text-gray-700 leading-relaxed">{decision.causation}</p>
+                  </div>
+                </section>
+              )}
+
+              {/* Consensus Card */}
+              {consensusEntries.length > 0 && (
+                <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Consensus</h3>
+                    <span className="text-xs font-medium text-gray-400">
+                      {agreeCount}/{totalCount} agree
+                    </span>
+                  </div>
+                  <div className="px-4 py-3">
+                    <div className="space-y-2">
+                      {consensusEntries.map(([role, stance]) => (
+                        <div key={role} className="flex items-center gap-2">
+                          {getStanceIcon(stance)}
+                          <span className="text-sm font-medium text-gray-700 capitalize">{role}</span>
+                          <span className={`text-sm font-medium uppercase ${getStanceTextColor(stance)}`}>
+                            {stance}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* Impacts Card */}
+              {decision.impacts && decision.impacts.length > 0 && (
+                <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Impacts</h3>
+                  </div>
+                  <div className="px-4 py-3">
+                    <div className="space-y-2">
+                      {decision.impacts.map((impact, idx) => {
+                        const colors = getImpactTypeColor(impact.type)
+                        return (
+                          <div key={idx} className={`flex items-start gap-2.5 rounded-md px-3 py-2 ${colors.bg}`}>
+                            <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${colors.dot}`} />
+                            <div className="min-w-0">
+                              <span className={`text-xs font-semibold uppercase tracking-wide ${colors.text}`}>
+                                {impact.type}
+                              </span>
+                              <p className="text-sm text-gray-700 mt-0.5">{impact.change}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </section>
               )}
             </div>
           )}

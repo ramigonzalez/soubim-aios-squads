@@ -83,6 +83,21 @@ export function getImpactColor(severity: 'high' | 'medium' | 'low'): string {
 }
 
 /**
+ * Get impact type color for visual coding in drilldown
+ */
+export function getImpactTypeColor(type: string): { dot: string; bg: string; text: string } {
+  const colorMap: Record<string, { dot: string; bg: string; text: string }> = {
+    scope: { dot: 'bg-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' },
+    cost: { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700' },
+    schedule: { dot: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700' },
+    quality: { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+    risk: { dot: 'bg-rose-500', bg: 'bg-rose-50', text: 'text-rose-700' },
+    resource: { dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700' },
+  }
+  return colorMap[type.toLowerCase()] || { dot: 'bg-gray-400', bg: 'bg-gray-50', text: 'text-gray-700' }
+}
+
+/**
  * Truncate text with ellipsis
  */
 export function truncate(text: string, length: number = 100): string {
