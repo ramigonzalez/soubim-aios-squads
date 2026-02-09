@@ -1,6 +1,6 @@
 import { Decision } from '../../types/decision'
 import { abbreviateDiscipline, formatTimestamp, formatDate, getDisciplinePillColors } from '../../lib/utils'
-import { User, Clock, Calendar } from 'lucide-react'
+import { User, Clock, Calendar, FileText } from 'lucide-react'
 
 interface DecisionRowProps {
   decision: Decision
@@ -57,6 +57,12 @@ export function DecisionRow({
         </div>
 
         <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+          {decision.meeting_title && (
+            <div className="flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
+              <span className="text-gray-400 italic truncate max-w-[160px]">{decision.meeting_title}</span>
+            </div>
+          )}
           {showDate && decision.meeting_date && (
             <div className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />

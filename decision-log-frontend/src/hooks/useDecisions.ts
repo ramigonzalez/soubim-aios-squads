@@ -55,7 +55,7 @@ export function useDecisions({
     },
     {
       enabled: !!projectId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // Always refetch to get fresh data
       retry: 1,
     }
   )

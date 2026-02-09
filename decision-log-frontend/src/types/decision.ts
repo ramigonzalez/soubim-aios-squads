@@ -4,6 +4,7 @@ export interface Decision {
   who: string
   timestamp: string
   discipline: string
+  meeting_title?: string
   meeting_type?: string
   meeting_date?: string
   why: string
