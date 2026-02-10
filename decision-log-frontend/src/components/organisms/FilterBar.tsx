@@ -333,6 +333,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
           label="Who"
           icon={<Users className="w-3.5 h-3.5" />}
           activeCount={decisionMakers.length}
+          width="w-72"
         >
           <div>
             <div className="relative mb-2">
@@ -360,7 +361,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                       onChange={() => toggleDecisionMaker(name)}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                     />
-                    <span className="text-sm text-gray-700">{name}</span>
+                    <span className="text-sm text-gray-700 whitespace-nowrap">{name}</span>
                   </label>
                 ))
               )}

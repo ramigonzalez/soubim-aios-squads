@@ -112,14 +112,14 @@ export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
               return (
                 <span
                   key={disc}
-                  className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded whitespace-nowrap`}
+                  className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap`}
                 >
                   {abbreviateDiscipline(disc)}
                 </span>
               )
             })}
             {overflowCount > 0 && (
-              <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded whitespace-nowrap">
+              <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
                 +{overflowCount} more
               </span>
             )}

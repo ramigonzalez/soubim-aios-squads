@@ -76,7 +76,7 @@ export function DecisionRow({
           return (
             <span
               key={disc}
-              className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0`}
+              className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
             >
               {abbreviateDiscipline(disc)}
             </span>

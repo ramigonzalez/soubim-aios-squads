@@ -194,11 +194,20 @@ export function getDisciplineNodeColor(discipline: string): string {
 export function getDisciplinePillColors(discipline: string): { bg: string; text: string } {
   const colorMap: Record<string, { bg: string; text: string }> = {
     architecture: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    architect: { bg: 'bg-blue-100', text: 'text-blue-700' },
     mep: { bg: 'bg-orange-100', text: 'text-orange-700' },
     landscape: { bg: 'bg-green-100', text: 'text-green-700' },
     structural: { bg: 'bg-purple-100', text: 'text-purple-700' },
     electrical: { bg: 'bg-amber-100', text: 'text-amber-700' },
     plumbing: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+    engineer: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+    client: { bg: 'bg-rose-100', text: 'text-rose-700' },
+    contractor: { bg: 'bg-slate-200', text: 'text-slate-700' },
+    civil: { bg: 'bg-teal-100', text: 'text-teal-700' },
+    sustainability: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+    fire_protection: { bg: 'bg-red-100', text: 'text-red-700' },
+    acoustical: { bg: 'bg-violet-100', text: 'text-violet-700' },
+    tenant: { bg: 'bg-pink-100', text: 'text-pink-700' },
   }
   return colorMap[discipline.toLowerCase()] || { bg: 'bg-gray-100', text: 'text-gray-700' }
 }
