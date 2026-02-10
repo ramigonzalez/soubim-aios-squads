@@ -1,12 +1,24 @@
 import { useState, useMemo } from 'react'
 import { Search, X, Building2, Calendar, Users, Tag } from 'lucide-react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { useFilterStore } from '../../store/filterStore'
 import { useDebounce } from '../../hooks/useDebounce'
 import { FilterPopover } from '../molecules/FilterPopover'
-import { getDisciplinePillColors, getDisciplineDotColor, getMeetingTypeColors, formatDate } from '../../lib/utils'
+import { getDisciplinePillColors, getMeetingTypeColors, formatDate } from '../../lib/utils'
 import { Decision } from '../../types/decision'
 
 const DISCIPLINES = ['architecture', 'mep', 'structural', 'electrical', 'plumbing', 'landscape']
+
+// Inline discipline dot colors for filter dropdowns
+const DISCIPLINE_DOT_COLORS: Record<string, string> = {
+  architecture: 'bg-blue-400',
+  mep: 'bg-orange-400',
+  structural: 'bg-purple-400',
+  electrical: 'bg-amber-400',
+  plumbing: 'bg-cyan-400',
+  landscape: 'bg-green-400',
+}
 
 interface FilterBarProps {
   decisions: Decision[]
@@ -101,6 +113,106 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
   const formatMeetingType = (type: string) =>
     type.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
+  // Parse date string to Date object for DatePicker
+  const parseDate = (dateStr: string | null): Date | null => {
+    if (!dateStr) return null
+    const d = new Date(dateStr + 'T00:00:00')
+    return isNaN(d.getTime()) ? null : d
+  }
+
+  // Format Date object to YYYY-MM-DD string
+  const toDateString = (date: Date | null): string | null => {
+    if (!date) return null
+    return date.toISOString().split('T')[0]
+  }
+
+  // Helper: render a separator between chip groups
+  const chipSeparator = <span className="w-px h-4 bg-gray-200 mx-1 self-center" />
+
+  // Build chip groups for ordered display
+  const disciplineChips = disciplines.map((d) => {
+    const colors = getDisciplinePillColors(d)
+    return (
+      <span
+        key={`disc-${d}`}
+        className={`inline-flex items-center gap-1 ${colors.bg} ${colors.text} text-xs px-2 py-1 rounded-full`}
+      >
+        {d.charAt(0).toUpperCase() + d.slice(1)}
+        <button
+          onClick={() => toggleDiscipline(d)}
+          aria-label={`Remove ${d} filter`}
+          className="hover:opacity-70"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </span>
+    )
+  })
+
+  const dateChips = (dateFrom || dateTo) ? [(
+    <span key="date-range" className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+      {dateFrom ? formatDate(dateFrom) : '...'} – {dateTo ? formatDate(dateTo) : '...'}
+      <button
+        onClick={() => setDateRange(null, null)}
+        aria-label="Remove date filter"
+        className="hover:opacity-70"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </span>
+  )] : []
+
+  const whoChips = decisionMakers.map((name) => (
+    <span
+      key={`who-${name}`}
+      className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+    >
+      {name}
+      <button
+        onClick={() => toggleDecisionMaker(name)}
+        aria-label={`Remove ${name} filter`}
+        className="hover:opacity-70"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </span>
+  ))
+
+  const typeChips = meetingTypes.map((type) => {
+    const colors = getMeetingTypeColors(type)
+    return (
+      <span
+        key={`type-${type}`}
+        className={`inline-flex items-center gap-1 ${colors.bg} ${colors.text} text-xs px-2 py-1 rounded-full`}
+      >
+        {formatMeetingType(type)}
+        <button
+          onClick={() => toggleMeetingType(type)}
+          aria-label={`Remove ${type} filter`}
+          className="hover:opacity-70"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </span>
+    )
+  })
+
+  const searchChips = searchQuery ? [(
+    <span key="search" className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+      &quot;{searchQuery}&quot;
+      <button
+        onClick={() => { setSearchQuery(''); setLocalSearch('') }}
+        aria-label="Remove search filter"
+        className="hover:opacity-70"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </span>
+  )] : []
+
+  // Collect non-empty chip groups in order: Disciplines | Date | Who | Types | Search
+  const chipGroups = [disciplineChips, dateChips, whoChips, typeChips, searchChips].filter(g => g.length > 0)
+
   return (
     <nav
       className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4"
@@ -143,13 +255,13 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 key={d}
                 className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
               >
-                <span className={`w-2.5 h-2.5 rounded-full ${getDisciplineDotColor(d)} flex-shrink-0`} />
                 <input
                   type="checkbox"
                   checked={disciplines.includes(d)}
                   onChange={() => toggleDiscipline(d)}
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                 />
+                <span className={`w-2.5 h-2.5 rounded-full ${DISCIPLINE_DOT_COLORS[d] || 'bg-gray-400'} flex-shrink-0`} />
                 <span className="text-sm text-gray-700 capitalize">{d}</span>
               </label>
             ))}
@@ -174,20 +286,24 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
-              <input
-                type="date"
-                value={dateFrom || ''}
-                onChange={(e) => setDateRange(e.target.value || null, dateTo)}
+              <DatePicker
+                selected={parseDate(dateFrom)}
+                onChange={(date: Date | null) => setDateRange(toDateString(date), dateTo)}
+                dateFormat="MMM d, yyyy"
+                placeholderText="Select date"
                 className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
+                isClearable
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
-              <input
-                type="date"
-                value={dateTo || ''}
-                onChange={(e) => setDateRange(dateFrom, e.target.value || null)}
+              <DatePicker
+                selected={parseDate(dateTo)}
+                onChange={(date: Date | null) => setDateRange(dateFrom, toDateString(date))}
+                dateFormat="MMM d, yyyy"
+                placeholderText="Select date"
                 className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
+                isClearable
               />
             </div>
             <div className="border-t border-gray-100 pt-2">
@@ -229,30 +345,24 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 className="w-full pl-7 pr-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none"
               />
             </div>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
+            <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">
               {filteredMakers.length === 0 ? (
                 <p className="text-xs text-gray-400 py-1 px-2">No names found</p>
               ) : (
-                filteredMakers.map((name) => {
-                  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-                  return (
-                    <label
-                      key={name}
-                      className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-medium inline-flex items-center justify-center flex-shrink-0">
-                        {initials}
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={decisionMakers.includes(name)}
-                        onChange={() => toggleDecisionMaker(name)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-700">{name}</span>
-                    </label>
-                  )
-                })
+                filteredMakers.map((name) => (
+                  <label
+                    key={name}
+                    className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={decisionMakers.includes(name)}
+                      onChange={() => toggleDecisionMaker(name)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700">{name}</span>
+                  </label>
+                ))
               )}
             </div>
             {decisionMakers.length > 0 && (
@@ -266,7 +376,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
           </div>
         </FilterPopover>
 
-        {/* Meeting Type Filter (Story 3.15) */}
+        {/* Meeting Type Filter */}
         <FilterPopover
           label="Type"
           icon={<Tag className="w-3.5 h-3.5" />}
@@ -283,13 +393,13 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                     key={type}
                     className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    <span className={`w-2.5 h-2.5 rounded-full ${colors.dot} flex-shrink-0`} />
                     <input
                       type="checkbox"
                       checked={meetingTypes.includes(type)}
                       onChange={() => toggleMeetingType(type)}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                     />
+                    <span className={`w-2.5 h-2.5 rounded-full ${colors.dot} flex-shrink-0`} />
                     <span className="text-sm text-gray-700">{formatMeetingType(type)}</span>
                   </label>
                 )
@@ -354,88 +464,15 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         </div>
       </div>
 
-      {/* Active Filter Chips */}
+      {/* Active Filter Chips — grouped: Disciplines | Date | Who | Types | Search */}
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-          {disciplines.map((d) => {
-            const colors = getDisciplinePillColors(d)
-            return (
-              <span
-                key={`disc-${d}`}
-                className={`inline-flex items-center gap-1 ${colors.bg} ${colors.text} text-xs px-2 py-1 rounded-full`}
-              >
-                {d.charAt(0).toUpperCase() + d.slice(1)}
-                <button
-                  onClick={() => toggleDiscipline(d)}
-                  aria-label={`Remove ${d} filter`}
-                  className="hover:opacity-70"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )
-          })}
-
-          {meetingTypes.map((type) => {
-            const colors = getMeetingTypeColors(type)
-            return (
-              <span
-                key={`type-${type}`}
-                className={`inline-flex items-center gap-1 ${colors.bg} ${colors.text} text-xs px-2 py-1 rounded-full`}
-              >
-                {formatMeetingType(type)}
-                <button
-                  onClick={() => toggleMeetingType(type)}
-                  aria-label={`Remove ${type} filter`}
-                  className="hover:opacity-70"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            )
-          })}
-
-          {decisionMakers.map((name) => (
-            <span
-              key={`who-${name}`}
-              className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-            >
-              {name}
-              <button
-                onClick={() => toggleDecisionMaker(name)}
-                aria-label={`Remove ${name} filter`}
-                className="hover:opacity-70"
-              >
-                <X className="w-3 h-3" />
-              </button>
+        <div className="flex flex-wrap items-center gap-1.5 px-3 pb-3">
+          {chipGroups.map((group, i) => (
+            <span key={i} className="contents">
+              {i > 0 && chipSeparator}
+              {group}
             </span>
           ))}
-
-          {(dateFrom || dateTo) && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
-              {dateFrom ? formatDate(dateFrom) : '...'} – {dateTo ? formatDate(dateTo) : '...'}
-              <button
-                onClick={() => setDateRange(null, null)}
-                aria-label="Remove date filter"
-                className="hover:opacity-70"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-
-          {searchQuery && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
-              &quot;{searchQuery}&quot;
-              <button
-                onClick={() => { setSearchQuery(''); setLocalSearch('') }}
-                aria-label="Remove search filter"
-                className="hover:opacity-70"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
         </div>
       )}
     </nav>

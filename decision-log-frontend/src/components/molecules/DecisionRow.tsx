@@ -1,13 +1,10 @@
 import { Decision } from '../../types/decision'
-import { abbreviateDiscipline, formatDate, getDisciplinePillColors, cn } from '../../lib/utils'
-import { User, Calendar, FileText } from 'lucide-react'
+import { abbreviateDiscipline, getDisciplinePillColors, cn } from '../../lib/utils'
 
 interface DecisionRowProps {
   decision: Decision
   onClick: (id: string) => void
-  showDate?: boolean       // true when grouped by discipline
   showDiscipline?: boolean // true when grouped by date (default)
-  showMeetingTitle?: boolean // false when inside MeetingGroup
   showAffectedDisciplines?: boolean // true when inside MeetingGroup
   inMeetingGroup?: boolean // true when rendered inside a MeetingGroup (uses different styling)
 }
@@ -29,21 +26,20 @@ function getAffectedDisciplines(decision: Decision): string[] {
 export function DecisionRow({
   decision,
   onClick,
-  showDate = false,
   showDiscipline = true,
-  showMeetingTitle = true,
   showAffectedDisciplines = false,
   inMeetingGroup = false,
 }: DecisionRowProps) {
-  const pillColors = getDisciplinePillColors(decision.discipline)
-  const abbrev = abbreviateDiscipline(decision.discipline)
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       onClick(decision.id)
     }
   }
+
+  const primaryColors = getDisciplinePillColors(decision.discipline)
+  const primaryAbbrev = abbreviateDiscipline(decision.discipline)
+  const affectedDisciplines = showAffectedDisciplines ? getAffectedDisciplines(decision) : []
 
   return (
     <article
@@ -59,49 +55,37 @@ export function DecisionRow({
       )}
       aria-label={`Decision: ${decision.decision_statement}`}
     >
-      {/* Row 1: Statement + Discipline Pill + Affected Disciplines */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-900 truncate flex-1">
+      {/* Row 1: Statement only (full width, truncated) */}
+      <div className="flex items-center">
+        <span className="text-sm font-medium text-gray-900 truncate">
           {decision.decision_statement}
         </span>
-        {showDiscipline && (
-          <span
-            className={`${pillColors.bg} ${pillColors.text} text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
-          >
-            {abbrev}
-          </span>
-        )}
-        {showAffectedDisciplines && getAffectedDisciplines(decision).map((disc) => (
-          <span
-            key={disc}
-            className="bg-gray-100 text-gray-500 text-xs px-1 py-0 rounded whitespace-nowrap flex-shrink-0"
-          >
-            {disc}
-          </span>
-        ))}
       </div>
 
-      {/* Row 2: Who + (optional Date) + Timestamp */}
-      <div className="flex items-center mt-1 text-xs text-gray-500">
-        <div className="flex items-center gap-1 min-w-0">
-          <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">{decision.who}</span>
-        </div>
+      {/* Row 2: Discipline pills (all colored) + Who (right-aligned) */}
+      <div className="flex items-center mt-1 gap-1.5">
+        {showDiscipline && (
+          <span
+            className={`${primaryColors.bg} ${primaryColors.text} text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
+          >
+            {primaryAbbrev}
+          </span>
+        )}
+        {affectedDisciplines.map((disc) => {
+          const colors = getDisciplinePillColors(disc)
+          return (
+            <span
+              key={disc}
+              className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0`}
+            >
+              {abbreviateDiscipline(disc)}
+            </span>
+          )
+        })}
 
-        <div className="ml-auto flex items-center gap-3 flex-shrink-0">
-          {showMeetingTitle && decision.meeting_title && (
-            <div className="flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
-              <span className="text-gray-400 italic truncate max-w-[160px]">{decision.meeting_title}</span>
-            </div>
-          )}
-          {showDate && decision.meeting_date && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
-              <span>{formatDate(decision.meeting_date)}</span>
-            </div>
-          )}
-        </div>
+        <span className="ml-auto text-xs text-gray-500 truncate flex-shrink-0">
+          {decision.who}
+        </span>
       </div>
     </article>
   )

@@ -4,7 +4,7 @@ import { Decision } from '../../types/decision'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
 import { ParticipantIndicator } from '../atoms/ParticipantIndicator'
-import { getDisciplinePillColors, getMeetingTypeBorderColor, abbreviateDiscipline } from '../../lib/utils'
+import { getDisciplinePillColors, abbreviateDiscipline } from '../../lib/utils'
 
 export interface MeetingGroupData {
   meetingTitle: string
@@ -18,7 +18,6 @@ export interface MeetingGroupData {
 interface MeetingGroupProps {
   meeting: MeetingGroupData
   onSelectDecision: (id: string) => void
-  showDate?: boolean
 }
 
 const ROLE_DISCIPLINE_MAP: Record<string, string> = {
@@ -44,7 +43,7 @@ function getParticipantDisciplines(participants: Array<{ name: string; role: str
 const MAX_VISIBLE_DISCIPLINES = 3
 const COLLAPSE_THRESHOLD = 5
 
-export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGroupProps) {
+export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
   const defaultExpanded = meeting.decisions.length <= COLLAPSE_THRESHOLD
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
@@ -61,10 +60,7 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
   const meetingId = meeting.transcriptId || 'orphan'
   const decisionListId = `meeting-${meetingId}-decisions`
 
-  // Get the left accent border color from meeting type (Story 3.16)
-  const borderColor = isOrphan
-    ? 'border-l-gray-300'
-    : getMeetingTypeBorderColor(meeting.meetingType)
+  const borderColor = 'border-l-gray-300'
 
   const handleToggle = () => setIsExpanded((prev) => !prev)
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -163,9 +159,7 @@ export function MeetingGroup({ meeting, onSelectDecision, showDate }: MeetingGro
               <DecisionRow
                 decision={decision}
                 onClick={onSelectDecision}
-                showDate={showDate}
                 showDiscipline={true}
-                showMeetingTitle={false}
                 showAffectedDisciplines={true}
                 inMeetingGroup={true}
               />

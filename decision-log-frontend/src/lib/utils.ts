@@ -154,12 +154,21 @@ export function formatTimestamp(timestamp: string): string {
 export function abbreviateDiscipline(discipline: string): string {
   const abbreviations: Record<string, string> = {
     architecture: 'Arch',
+    architect: 'Arch',
     mep: 'MEP',
     structural: 'Struct',
     electrical: 'Elec',
     plumbing: 'Plumb',
     landscape: 'Land',
     general: 'Gen',
+    fire_protection: 'Fire',
+    acoustical: 'Acoust',
+    tenant: 'Tenant',
+    sustainability: 'Sustain',
+    civil: 'Civil',
+    engineer: 'Eng',
+    client: 'Client',
+    contractor: 'Contr',
   }
   return abbreviations[discipline.toLowerCase()] || discipline
 }
@@ -208,33 +217,3 @@ export function getMeetingTypeColors(type: string): { bg: string; text: string; 
   return colorMap[type.toLowerCase()] || { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
 }
 
-/**
- * Get meeting type left-border color for MeetingGroup accent (Story 3.16)
- * Replaces getDisciplineBorderColor — uses meeting type instead of discipline
- */
-export function getMeetingTypeBorderColor(type?: string): string {
-  if (!type) return 'border-l-gray-300'
-  const colorMap: Record<string, string> = {
-    'client meeting': 'border-l-rose-400',
-    'coordination': 'border-l-teal-400',
-    'design review': 'border-l-amber-400',
-    'internal review': 'border-l-blue-400',
-    'internal': 'border-l-blue-400',
-  }
-  return colorMap[type.toLowerCase()] || 'border-l-gray-300'
-}
-
-/**
- * Get discipline dot color for filter dropdown (Story 3.16)
- */
-export function getDisciplineDotColor(discipline: string): string {
-  const colorMap: Record<string, string> = {
-    architecture: 'bg-blue-400',
-    mep: 'bg-orange-400',
-    structural: 'bg-purple-400',
-    electrical: 'bg-amber-400',
-    plumbing: 'bg-cyan-400',
-    landscape: 'bg-green-400',
-  }
-  return colorMap[discipline.toLowerCase()] || 'bg-gray-400'
-}

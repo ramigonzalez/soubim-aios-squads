@@ -250,7 +250,6 @@ export function Timeline({
                   key={meeting.transcriptId || 'orphan'}
                   meeting={meeting}
                   onSelectDecision={onSelectDecision}
-                  showDate={!isDateMode}
                 />
               ))}
             </div>
