@@ -1,5 +1,6 @@
 import { Decision } from '../../types/decision'
-import { abbreviateDiscipline, getDisciplinePillColors, cn } from '../../lib/utils'
+import { cn } from '../../lib/utils'
+import { DisciplinePill } from '../atoms/DisciplinePill'
 
 interface DecisionRowProps {
   decision: Decision
@@ -37,8 +38,6 @@ export function DecisionRow({
     }
   }
 
-  const primaryColors = getDisciplinePillColors(decision.discipline)
-  const primaryAbbrev = abbreviateDiscipline(decision.discipline)
   const affectedDisciplines = showAffectedDisciplines ? getAffectedDisciplines(decision) : []
 
   return (
@@ -65,23 +64,11 @@ export function DecisionRow({
       {/* Row 2: Discipline pills (all colored) + Who (right-aligned) */}
       <div className="flex items-center mt-1 gap-1.5">
         {showDiscipline && (
-          <span
-            className={`${primaryColors.bg} ${primaryColors.text} text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
-          >
-            {primaryAbbrev}
-          </span>
+          <DisciplinePill discipline={decision.discipline} className="flex-shrink-0" />
         )}
-        {affectedDisciplines.map((disc) => {
-          const colors = getDisciplinePillColors(disc)
-          return (
-            <span
-              key={disc}
-              className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0`}
-            >
-              {abbreviateDiscipline(disc)}
-            </span>
-          )
-        })}
+        {affectedDisciplines.map((disc) => (
+          <DisciplinePill key={disc} discipline={disc} className="flex-shrink-0" />
+        ))}
 
         <span className="ml-auto text-xs text-gray-500 truncate flex-shrink-0">
           {decision.who}

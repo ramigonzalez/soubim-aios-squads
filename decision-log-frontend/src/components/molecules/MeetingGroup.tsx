@@ -4,7 +4,7 @@ import { Decision } from '../../types/decision'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
 import { ParticipantIndicator } from '../atoms/ParticipantIndicator'
-import { getDisciplinePillColors, abbreviateDiscipline } from '../../lib/utils'
+import { DisciplinePill } from '../atoms/DisciplinePill'
 
 export interface MeetingGroupData {
   meetingTitle: string
@@ -107,17 +107,9 @@ export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
         <div className="flex items-center gap-2 mt-1.5">
           {/* Discipline badges */}
           <div className="flex items-center gap-1 flex-1 min-w-0 flex-wrap">
-            {displayDisciplines.map((disc) => {
-              const colors = getDisciplinePillColors(disc)
-              return (
-                <span
-                  key={disc}
-                  className={`${colors.bg} ${colors.text} text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap`}
-                >
-                  {abbreviateDiscipline(disc)}
-                </span>
-              )
-            })}
+            {displayDisciplines.map((disc) => (
+              <DisciplinePill key={disc} discipline={disc} />
+            ))}
             {overflowCount > 0 && (
               <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
                 +{overflowCount} more

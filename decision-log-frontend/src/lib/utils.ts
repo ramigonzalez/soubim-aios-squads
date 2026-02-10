@@ -35,25 +35,6 @@ export function formatDateTime(date: string | Date): string {
   })
 }
 
-/**
- * Get discipline color class
- * Maps discipline to Tailwind color from design system
- */
-export function getDisciplineColor(discipline: string): {
-  bg: string
-  text: string
-  border: string
-} {
-  const colorMap: Record<string, { bg: string; text: string; border: string }> = {
-    'architecture': { bg: 'bg-blue-100', text: 'text-blue-900', border: 'border-blue-300' },
-    'mep': { bg: 'bg-orange-100', text: 'text-orange-900', border: 'border-orange-300' },
-    'landscape': { bg: 'bg-green-100', text: 'text-green-900', border: 'border-green-300' },
-    'structural': { bg: 'bg-purple-100', text: 'text-purple-900', border: 'border-purple-300' },
-    'electrical': { bg: 'bg-amber-100', text: 'text-amber-900', border: 'border-amber-300' },
-    'plumbing': { bg: 'bg-cyan-100', text: 'text-cyan-900', border: 'border-cyan-300' },
-  }
-  return colorMap[discipline.toLowerCase()] || colorMap['architecture']
-}
 
 /**
  * Get consensus color class
@@ -202,7 +183,7 @@ export function getDisciplinePillColors(discipline: string): { bg: string; text:
     plumbing: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
     engineer: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
     client: { bg: 'bg-rose-100', text: 'text-rose-700' },
-    contractor: { bg: 'bg-slate-200', text: 'text-slate-700' },
+    contractor: { bg: 'bg-amber-200', text: 'text-amber-700' },
     civil: { bg: 'bg-teal-100', text: 'text-teal-700' },
     sustainability: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
     fire_protection: { bg: 'bg-red-100', text: 'text-red-700' },
