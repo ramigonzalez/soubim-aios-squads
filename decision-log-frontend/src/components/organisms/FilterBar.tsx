@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, X, Building2, Calendar, Users, Tag } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -50,9 +50,11 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
   const debouncedSearch = useDebounce(localSearch, 300)
 
   // Sync debounced search to store
-  if (debouncedSearch !== searchQuery) {
-    setSearchQuery(debouncedSearch)
-  }
+  useEffect(() => {
+    if (debouncedSearch !== searchQuery) {
+      setSearchQuery(debouncedSearch)
+    }
+  }, [debouncedSearch, searchQuery, setSearchQuery])
 
   // Extract unique decision makers from decisions
   const availableMakers = useMemo(() => {
