@@ -1,0 +1,31 @@
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+language: en
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: '@coderabbitai summary'
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_instructions:
+    - path: 'decision-log-frontend/src/**/*.tsx'
+      instructions: |
+        React components using TypeScript, Tailwind CSS, and atomic design pattern (atoms/molecules/organisms).
+        Check for accessibility (ARIA attributes, keyboard navigation), proper TypeScript typing, and Tailwind best practices.
+    - path: 'decision-log-frontend/src/tests/**'
+      instructions: |
+        Tests use Vitest + React Testing Library + userEvent.
+        Verify meaningful assertions, proper async handling, and coverage of edge cases.
+    - path: 'decision-log-backend/**/*.py'
+      instructions: |
+        Python backend using FastAPI + SQLAlchemy.
+        Check for proper error handling, SQL injection prevention, and API response consistency.
+chat:
+  auto_reply: true
