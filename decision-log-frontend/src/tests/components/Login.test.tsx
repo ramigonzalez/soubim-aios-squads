@@ -51,13 +51,13 @@ describe('Login Component', () => {
 
     const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement
     expect(passwordInput.type).toBe('password')
-    expect(passwordInput.placeholder).toBe('••••••••')
+    expect(passwordInput.placeholder).toBe('Enter your password')
   })
 
   it('renders demo mode note', () => {
     renderLogin()
 
-    expect(screen.getByText(/demo:/i)).toBeInTheDocument()
+    expect(screen.getByText(/demo login:/i)).toBeInTheDocument()
     // Check for the demo password specifically (in code element)
     expect(screen.getByText('"password"')).toBeInTheDocument()
   })

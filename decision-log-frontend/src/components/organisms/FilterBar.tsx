@@ -85,23 +85,24 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
   const handleDatePreset = (preset: string) => {
     const now = new Date()
     let from: string | null = null
-    const to: string | null = now.toISOString().split('T')[0]
+    const to: string | null = toDateString(now)
 
     switch (preset) {
       case '7days': {
         const d = new Date(now)
         d.setDate(d.getDate() - 7)
-        from = d.toISOString().split('T')[0]
+        from = toDateString(d)
         break
       }
       case '30days': {
         const d = new Date(now)
         d.setDate(d.getDate() - 30)
-        from = d.toISOString().split('T')[0]
+        from = toDateString(d)
         break
       }
       case 'month': {
-        from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+        from = toDateString(firstDay)
         break
       }
       case 'all':
@@ -116,16 +117,21 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     type.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
   // Parse date string to Date object for DatePicker
+  // Uses local timezone to avoid off-by-one errors
   const parseDate = (dateStr: string | null): Date | null => {
     if (!dateStr) return null
-    const d = new Date(dateStr + 'T00:00:00')
-    return isNaN(d.getTime()) ? null : d
+    const [year, month, day] = dateStr.split('-').map(Number)
+    return new Date(year, month - 1, day)
   }
 
   // Format Date object to YYYY-MM-DD string
+  // Uses local timezone methods to ensure selected date matches output
   const toDateString = (date: Date | null): string | null => {
     if (!date) return null
-    return date.toISOString().split('T')[0]
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   // Helper: render a separator between chip groups
@@ -152,7 +158,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
   })
 
   const dateChips = (dateFrom || dateTo) ? [(
-    <span key="date-range" className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+    <span key="date-range" className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">
       {dateFrom ? formatDate(dateFrom) : '...'} – {dateTo ? formatDate(dateTo) : '...'}
       <button
         onClick={() => setDateRange(null, null)}
@@ -229,7 +235,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search decisions..."
-            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none bg-gray-50/50"
+            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none bg-white text-gray-700"
           />
           {localSearch && (
             <button
@@ -345,7 +351,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 value={whoSearch}
                 onChange={(e) => setWhoSearch(e.target.value)}
                 placeholder="Filter names..."
-                className="w-full pl-7 pr-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none"
+                className="w-full pl-7 pr-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
               />
             </div>
             <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">

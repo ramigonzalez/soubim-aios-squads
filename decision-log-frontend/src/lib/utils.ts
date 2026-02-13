@@ -11,9 +11,17 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format date for display
+ * Parses YYYY-MM-DD strings as local dates to avoid timezone shifts
  */
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  let d: Date
+  if (typeof date === 'string') {
+    // Parse YYYY-MM-DD as local date to avoid timezone shift
+    const [year, month, day] = date.split('-').map(Number)
+    d = new Date(year, month - 1, day)
+  } else {
+    d = date
+  }
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
