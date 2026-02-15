@@ -231,10 +231,12 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
           <input
+            id="decision-search"
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search decisions..."
+            aria-label="Search decisions by keyword"
             className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none bg-white text-gray-700"
           />
           {localSearch && (
@@ -347,10 +349,12 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
             <div className="relative mb-2">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
               <input
+                id="who-filter-search"
                 type="text"
                 value={whoSearch}
                 onChange={(e) => setWhoSearch(e.target.value)}
                 placeholder="Filter names..."
+                aria-label="Filter decision makers by name"
                 className="w-full pl-7 pr-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
               />
             </div>

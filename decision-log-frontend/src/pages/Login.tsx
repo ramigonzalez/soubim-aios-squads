@@ -78,7 +78,12 @@ export function Login() {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium flex items-start gap-2">
+              <div
+                className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium flex items-start gap-2"
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+              >
                 <span className="mt-0.5">⚠️</span>
                 <span>{error}</span>
               </div>
