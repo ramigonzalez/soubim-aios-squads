@@ -1,16 +1,18 @@
+/**
+ * @deprecated Replaced by FilterBar (Story 3.6 v2 redesign)
+ * Kept for reference only — not imported anywhere.
+ */
+
 import { useFilterStore } from '../../store/filterStore'
 import { Search, X } from 'lucide-react'
 
 const DISCIPLINES = ['architecture', 'mep', 'landscape', 'structural', 'electrical', 'plumbing']
-const MEETING_TYPES = ['Design Review', 'Coordination', 'Site Planning', 'Client Meeting', 'Internal Review']
 
 export function FiltersSidebar() {
   const {
     disciplines,
-    meetingTypes,
     searchQuery,
     toggleDiscipline,
-    toggleMeetingType,
     setSearchQuery,
     reset,
   } = useFilterStore()
@@ -60,26 +62,8 @@ export function FiltersSidebar() {
         </div>
       </div>
 
-      {/* Meeting Types */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Meeting Types</h3>
-        <div className="space-y-2">
-          {MEETING_TYPES.map((type) => (
-            <label key={type} className="flex items-center">
-              <input
-                type="checkbox"
-                checked={meetingTypes.includes(type)}
-                onChange={() => toggleMeetingType(type)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">{type}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
       {/* Active Filters Summary */}
-      {(disciplines.length > 0 || meetingTypes.length > 0 || searchQuery) && (
+      {(disciplines.length > 0 || searchQuery) && (
         <div className="pt-6 border-t border-gray-200">
           <p className="text-xs font-medium text-gray-600 mb-2">Active Filters:</p>
           <div className="flex flex-wrap gap-2">

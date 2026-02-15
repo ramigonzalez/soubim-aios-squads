@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDecisions } from '../hooks/useDecisions'
 import { Timeline } from '../components/organisms/Timeline'
 import { ExecutiveDigest } from '../components/organisms/ExecutiveDigest'
-import { FiltersSidebar } from '../components/organisms/FiltersSidebar'
+import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
-import { Loader, AlertCircle } from 'lucide-react'
+import { useFilterStore } from '../store/filterStore'
+import { AlertCircle } from 'lucide-react'
 import { Decision } from '../types/decision'
 
 type View = 'timeline' | 'digest'
@@ -13,12 +14,23 @@ type View = 'timeline' | 'digest'
 /**
  * Project detail page displaying decisions timeline and executive digest.
  *
- * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8
+ * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8, 3.13, 3.14, 3.15
+ * v3: FilterBar includes group-by toggle inline, meeting type filter added
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
   const [view, setView] = useState<View>('timeline')
   const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null)
+  const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
+
+  const {
+    disciplines,
+    decisionMakers,
+    meetingTypes,
+    dateFrom,
+    dateTo,
+    searchQuery,
+  } = useFilterStore()
 
   if (!projectId) {
     return (
@@ -31,20 +43,70 @@ export function ProjectDetail() {
     )
   }
 
-  const { data, isLoading, error } = useDecisions({ projectId })
+  const { data, isLoading, error, refetch } = useDecisions({ projectId })
   const decisions = data?.decisions || []
+
+  // Apply all filters client-side
+  const filteredDecisions = useMemo(() => {
+    let filtered = decisions
+
+    // Discipline filter
+    if (disciplines.length > 0) {
+      filtered = filtered.filter(d =>
+        disciplines.includes(d.discipline?.toLowerCase())
+      )
+    }
+
+    // Decision maker filter
+    if (decisionMakers.length > 0) {
+      filtered = filtered.filter(d =>
+        decisionMakers.includes(d.who)
+      )
+    }
+
+    // Meeting type filter (Story 3.15)
+    if (meetingTypes.length > 0) {
+      filtered = filtered.filter(d =>
+        d.meeting_type && meetingTypes.includes(d.meeting_type.toLowerCase())
+      )
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      filtered = filtered.filter(d => {
+        const dDate = d.meeting_date || d.created_at
+        return dDate >= dateFrom
+      })
+    }
+    if (dateTo) {
+      filtered = filtered.filter(d => {
+        const dDate = d.meeting_date || d.created_at
+        return dDate <= dateTo + 'T23:59:59'
+      })
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      filtered = filtered.filter(d =>
+        d.decision_statement?.toLowerCase().includes(q) ||
+        d.who?.toLowerCase().includes(q) ||
+        d.meeting_title?.toLowerCase().includes(q)
+      )
+    }
+
+    return filtered
+  }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
 
   // Create mock digest data from decisions for Executive Digest view
   const mockDigest = {
-    total_decisions: decisions.length,
-    meetings_count: [...new Set(decisions.map(d => d.meeting?.id).filter(Boolean))].length,
-    consensus_percentage: 85, // TODO: Calculate from actual consensus data
-    high_impact_count: decisions.filter(d => {
-      // impacts is a JSON object, check if it has multiple keys or significant values
+    total_decisions: filteredDecisions.length,
+    meetings_count: [...new Set(filteredDecisions.map(d => d.meeting?.id).filter(Boolean))].length,
+    consensus_percentage: 85,
+    high_impact_count: filteredDecisions.filter(d => {
       return d.impacts && Object.keys(d.impacts).length > 1
     }).length,
-    highlights: decisions.slice(0, 5).map(d => {
-      // Determine impact level based on confidence or number of impacts
+    highlights: filteredDecisions.slice(0, 5).map(d => {
       let impact_level: 'high' | 'medium' | 'low' = 'medium'
       if (d.confidence !== undefined) {
         if (d.confidence >= 0.9) impact_level = 'high'
@@ -60,15 +122,20 @@ export function ProjectDetail() {
     }),
   }
 
+  const handleSelectDecision = (id: string) => {
+    const decision = filteredDecisions.find(d => d.id === id)
+    setSelectedDecision(decision || null)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with View Switcher */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Project Decisions</h1>
-            <p className="text-gray-600">
-              {decisions.length} decision{decisions.length !== 1 ? 's' : ''} found
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Decisions</h1>
+            <p className="text-sm text-gray-600">
+              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
@@ -97,54 +164,30 @@ export function ProjectDetail() {
           </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* Filters Sidebar (Story 3.6) */}
-          <aside className="w-80 flex-shrink-0">
-            <FiltersSidebar />
-          </aside>
+        {/* Filter Bar with inline Group-by Toggle (Stories 3.14, 3.15) */}
+        {view === 'timeline' && (
+          <FilterBar
+            decisions={decisions}
+            groupBy={groupBy}
+            onGroupByChange={setGroupBy}
+          />
+        )}
 
-          {/* Main Content */}
-          <main className="flex-1">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Loader className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                <p className="text-gray-600">Loading decisions...</p>
-              </div>
-            ) : error ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-8 flex items-start space-x-4">
-                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="text-lg font-semibold text-red-900 mb-1">
-                    Failed to Load Decisions
-                  </h3>
-                  <p className="text-red-700 text-sm">
-                    {error instanceof Error
-                      ? error.message
-                      : 'An error occurred while fetching decisions.'}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
-                  >
-                    Retry
-                  </button>
-                </div>
-              </div>
-            ) : view === 'timeline' ? (
-              /* Timeline View (Story 3.5) */
-              <Timeline
-                decisions={decisions}
-                onSelectDecision={(id) => {
-                  const decision = decisions.find(d => d.id === id)
-                  setSelectedDecision(decision || null)
-                }}
-              />
-            ) : (
-              /* Executive Digest View (Story 3.8) */
-              <ExecutiveDigest digest={mockDigest} />
-            )}
-          </main>
-        </div>
+        {/* Main Content — full-width, no sidebar */}
+        <main>
+          {view === 'timeline' ? (
+            <Timeline
+              decisions={filteredDecisions}
+              onSelectDecision={handleSelectDecision}
+              groupBy={groupBy}
+              isLoading={isLoading}
+              error={error || undefined}
+              onRetry={() => refetch()}
+            />
+          ) : (
+            <ExecutiveDigest digest={mockDigest} />
+          )}
+        </main>
 
         {/* Drilldown Modal (Story 3.7) */}
         <DrilldownModal

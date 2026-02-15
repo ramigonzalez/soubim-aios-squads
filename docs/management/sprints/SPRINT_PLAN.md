@@ -352,6 +352,91 @@ Sprint 4 (Testing + Polish + Launch)
 
 ---
 
+## SPRINT 5: Timeline Redesign (Client Feedback Sprint)
+**Dates:** TBD (extends timeline redesign work)
+**Goal:** Implement Gabriela's timeline redesign feedback — compact rows, filters, 3-layer meeting hierarchy
+
+### Stories Included
+
+#### Timeline Redesign v2 (In Progress)
+- **3.5 (v2): Decision Timeline Component** (8 pts) - Frontend - Compact rows, 2 grouping modes
+- **3.6 (v2): Filters & Search Bar** (8 pts) - Frontend - Horizontal FilterBar replacing sidebar
+
+#### Meeting Group Layer (NEW)
+- **3.11: Meeting Group Data Layer** (3 pts) - Backend + Frontend Types
+  - Add `meeting_type`, `meeting_participants` to decisions API
+  - Add `transcript_id`, `meeting_participants` to frontend `Decision` type
+  - Expand seed data for testing
+- **3.12: 3-Layer Meeting Group Timeline** (8 pts) - Frontend
+  - **Blocked by:** 3.11
+  - MeetingGroup molecule (collapsible meeting card)
+  - MeetingTypeBadge atom (color-coded meeting type)
+  - ParticipantIndicator atom (participant count + tooltip)
+  - 3-layer grouping: Date > Meetings > Decisions
+  - Multi-discipline display at meeting and decision levels
+
+#### Timeline Polish v3 (NEW — Rami feedback Feb 9)
+- **3.13: Meeting-Decision Visual Hierarchy** (3 pts) - Frontend
+  - Discipline-colored left accent border on meeting cards
+  - Gray-50 inset background for decision rows
+  - Day counter: "X meetings" instead of "X decisions"
+- **3.14: Filter Bar Redesign** (5 pts) - Frontend
+  - Labeled pill-style filter buttons with icons
+  - Styled checkboxes and date inputs (replace dark defaults)
+  - Group-by toggle moved inline as segmented control
+- **3.15: Meeting Type Filter** (3 pts) - Frontend
+  - **Blocked by:** 3.14
+  - New "Type" filter for meeting types
+  - Color-coded popover with meeting type dots
+  - Add `meetingTypes` to filterStore
+
+### Sprint 5 Totals
+- **Total Points:** 38 (27 + 11 new)
+- **Team Split:**
+  - Frontend: 1-2 developers (timeline, filters, meeting groups, polish)
+  - Backend: 1 developer (API updates for Story 3.11, 0.5 day)
+- **Risk:** Story 3.12 depends on 3.11 completion; 3.15 depends on 3.14 filter bar refactor
+
+### Sprint 5 Dependencies
+```
+3.5 (v2) ─────────────────── parallel ─── 3.6 (v2)
+                                              │
+3.11 (Data Layer, 1 day) ────────────────────┤
+   │                                          │
+   └──► 3.12 (3-Layer Timeline, 3-4 days) ──┘
+                    │
+   3.13 (Visual Hierarchy) ── parallel ── 3.14 (Filter Redesign)
+                                              │
+                                    3.15 (Meeting Type Filter)
+```
+
+### Sprint 5 Deliverables
+- Compact timeline with 10-15 decisions visible per screen
+- Horizontal filter bar with discipline, date, who, and meeting type filters
+- 3-layer hierarchy: Date > Meetings > Decisions
+- Meeting type badges, participant tooltips, discipline awareness
+- Collapsible meeting groups
+- Clear visual hierarchy: colored accent borders + inset decision rows
+- Labeled, icons-based, pill-style filter controls
+- Day headers show meeting counts (not decision counts)
+
+### Sprint 5 Success Criteria
+- [ ] Timeline shows compact rows grouped by date or discipline
+- [ ] Filter bar replaces sidebar with discipline, date range, who, and meeting type filters
+- [ ] Decisions grouped by meeting within each date
+- [ ] Meeting type badges display correctly (Client/Coordination/Design Review)
+- [ ] Participant tooltip shows names and roles
+- [ ] Meeting collapse works (<=5 expanded, >5 collapsed)
+- [ ] Orphan decisions (no transcript) handled gracefully
+- [ ] Meeting cards have discipline-colored left accent border
+- [ ] Decision rows have gray-50 inset background
+- [ ] Day headers show "X meetings" not "X decisions"
+- [ ] All filter buttons have visible icons + labels
+- [ ] Meeting Type filter works with color-coded popover
+- [ ] Group-by toggle inline with filters as segmented control
+
+---
+
 ## BACKLOG (Phase 2+)
 
 Stories not in MVP but planned for Phase 2+:
