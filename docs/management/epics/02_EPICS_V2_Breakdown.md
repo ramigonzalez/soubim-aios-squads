@@ -1,8 +1,9 @@
 # DecisionLog V2: Epics Breakdown
 
-**Document Version:** 2.0
+**Document Version:** 2.1
 **Date Created:** 2026-02-16
-**Status:** Draft — Pending Review
+**Last Updated:** 2026-02-16
+**Status:** Draft — Pending Review (v2.1 with feedback applied)
 **Product Owner:** Morgan (PM)
 **For:** DecisionLog V2 Enhancement
 **Source PRD:** `docs/management/prd/02_DecisionLog_V2_PRD.md`
@@ -30,11 +31,11 @@
 **Owner:** @dev (Backend + Frontend)
 **Depends on:** V1 Complete (E1-E4)
 **Blocks:** E6, E7, E8, E9
-**Related PRD Sections:** Item Type Taxonomy, Data Model Evolution, FR1-FR5
+**Related PRD FRs:** FR1-FR7
 
 ### Epic Description
 
-Evolve the core data model from "Decision-only" to "Project Item" with 5 types (idea, topic, decision, action_item, information), multi-discipline support, milestone flagging, and multi-source tracking. This is the foundational migration that every V2 feature depends on.
+Evolve the core data model from "Decision-only" to "Project Item" with 5 types (idea, topic, decision, action_item, information), multi-discipline support (`affected_disciplines[]`), milestone flagging, action item `is_done` toggle, structured `impacts`/`consensus` schemas, and multi-source tracking. Each source independently distills items — no cross-source lifecycle tracking.
 
 ### Business Value
 
@@ -46,10 +47,11 @@ Evolve the core data model from "Decision-only" to "Project Item" with 5 types (
 ### Success Criteria
 
 - [ ] Database migration completes without data loss
-- [ ] All V1 API endpoints continue to function
-- [ ] AI extraction identifies all 5 item types at 90%+ accuracy
+- [ ] All V1 API endpoints continue to function (backward compatibility)
+- [ ] AI extraction identifies all 5 item types at 99%+ accuracy
 - [ ] Frontend renders V1 data correctly through new types
 - [ ] All existing tests pass post-migration
+- [ ] Prompt files in `app/prompts/` loaded at runtime (not hardcoded)
 
 ### Stories (5)
 
@@ -60,6 +62,15 @@ Evolve the core data model from "Decision-only" to "Project Item" with 5 types (
 | 5.3 | Frontend Types & Hooks Migration | M | Critical |
 | 5.4 | AI Extraction Prompt Evolution | L | Critical |
 | 5.5 | Seed Data & Test Suite Update | S | High |
+
+### Key Changes from v2.0
+- No `promoted_from_id` — system is documentative, not lifecycle tracking
+- `is_done` boolean added for action items (simple done/undone toggle)
+- `affected_disciplines[]` replaces `disciplines[]` naming
+- Structured `impacts` and `consensus` JSON schemas defined
+- `raw_content` stored in Source for traceability
+- `ProjectParticipant` entity added for LLM context
+- AI prompts stored in `app/prompts/` directory (not hardcoded)
 
 ### Agent Assignment
 
@@ -80,33 +91,35 @@ Evolve the core data model from "Decision-only" to "Project Item" with 5 types (
 **Timeline:** Phase 1, Week 3
 **Owner:** @dev (Full-stack)
 **Depends on:** E5
-**Blocks:** E8 (stage schedule needed for Milestone Timeline)
-**Related PRD Sections:** FR18-FR23, Project CRUD
+**Blocks:** E8 (stage schedule needed for Dot Timeline)
+**Related PRD FRs:** FR21-FR27
 
 ### Epic Description
 
-Enable full project lifecycle management with creation form, stage scheduling with predefined templates, and project list enhancement showing current stage status.
+Enable full project lifecycle management with creation form, stage scheduling with predefined templates, participant roster management (name, email, discipline), and project list enhancement showing current stage status.
 
 ### Business Value
 
 - Projects have defined lifecycle stages (Briefing → Acompanhamento de Obra)
+- Participant roster provides LLM context for discipline inference
 - Gabriela can set up projects before first meeting
 - Current stage visible at a glance from project list
-- Foundation for Milestone Timeline's Gantt-style stage bar
+- Foundation for Dot Timeline's stage nodes
 
 ### Success Criteria
 
-- [ ] Projects created with stage schedules via form
+- [ ] Projects created with stage schedules + participant rosters via form
 - [ ] Predefined templates load correctly
 - [ ] Date validation prevents overlapping stages
 - [ ] Project list shows current stage badge
 - [ ] V1 projects (without stages) display gracefully
+- [ ] Participant CRUD fully functional
 
 ### Stories (3)
 
 | Story | Title | Effort | Priority |
 |-------|-------|--------|----------|
-| 6.1 | Backend — Project CRUD & Stage Schedule | M | High |
+| 6.1 | Backend — Project CRUD, Stage Schedule & Participants | L | High |
 | 6.2 | Frontend — Project Create/Edit Form | L | High |
 | 6.3 | Frontend — Project List Enhancement | S | Medium |
 
@@ -128,27 +141,28 @@ Enable full project lifecycle management with creation form, stage scheduling wi
 **Owner:** @dev (Backend + Frontend)
 **Depends on:** E5
 **Blocks:** E10
-**Related PRD Sections:** FR6-FR17, Ingestion Approval
+**Related PRD FRs:** FR8-FR20
 
 ### Epic Description
 
-Build the ingestion approval workflow where admins review incoming source materials before ETL processing. Extend the capture pipeline beyond meetings to support manual input. Gmail API integration (Story 7.4) ships in Phase 4.
+Build the ingestion approval workflow where admins review incoming source materials before ETL processing. All sources store `raw_content` for traceability. Extend the capture pipeline beyond meetings to support manual input (with defined form fields). Gmail API integration (Story 7.4) ships in Phase 4 with polling frequency configurable via env variable.
 
 ### Business Value
 
 - Admin control over what enters the system (no unwanted meeting noise)
 - Manual input captures informal decisions and conversations
+- Raw content stored for re-processing and validation
 - Unified pipeline for all source types
 - Quality gate before AI processing
 
 ### Success Criteria
 
-- [ ] Tactiq webhooks create pending Source records (not direct processing)
-- [ ] Ingestion Approval page displays pending sources
+- [ ] Tactiq webhooks create pending Source records with `raw_content` stored
+- [ ] Ingestion Approval page displays meetings, emails, and documents distinctly
 - [ ] Admin can approve/reject sources individually and in batch
-- [ ] Approved sources trigger existing ETL pipeline
-- [ ] Manual input form creates items directly (bypasses approval)
-- [ ] Gmail poller creates pending email sources (Phase 4)
+- [ ] Approved sources trigger ETL with `ProjectParticipant[]` as LLM context
+- [ ] Manual input form with all defined fields creates items directly
+- [ ] Gmail poller respects `GMAIL_POLL_INTERVAL_MINUTES` env var (Phase 4)
 
 ### Stories (4)
 
@@ -178,11 +192,11 @@ Build the ingestion approval workflow where admins review incoming source materi
 **Owner:** @dev (Frontend) + @ux-design-expert
 **Depends on:** E5 (item types + milestone flag), E6 (stage schedule)
 **Blocks:** None
-**Related PRD Sections:** FR24-FR29, Milestone Timeline
+**Related PRD FRs:** FR28-FR34
 
 ### Epic Description
 
-Deliver Gabriela's "60-second project understanding" tool. A Gantt-style project stage bar with milestone items plotted chronologically. Elegant, minimalist design per client requirement.
+Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** — a vertical line with dot nodes where **Project Stages** appear on the left and **Milestone Items** on the right. Current stage highlighted, "Today" marker, elegant minimalist design. Stages and milestones are visually distinct (stages = structural anchors, milestones = content).
 
 ### Business Value
 
@@ -193,19 +207,21 @@ Deliver Gabriela's "60-second project understanding" tool. A Gantt-style project
 
 ### Success Criteria
 
-- [ ] Gantt-style stage bar renders with current stage highlighted
-- [ ] "You are here" marker on current date
+- [ ] Vertical Dot Timeline renders with stages (left) and milestones (right)
+- [ ] Current stage visually distinguished with accent color + "Current" label
+- [ ] "Today" marker on vertical line at current date
+- [ ] Stages and milestones are visually distinct from each other
 - [ ] Only milestone-flagged items appear
-- [ ] Milestone toggle works from any view
+- [ ] Milestone toggle works from any view (admin only)
 - [ ] Filters by source type and item type
 - [ ] Loads in <2 seconds with 50 milestones
-- [ ] Elegant, minimalist design (Gabriela approval)
+- [ ] Elegant, minimalist design (Gabriela approval via @ux-design-expert wireframe)
 
 ### Stories (3)
 
 | Story | Title | Effort | Priority |
 |-------|-------|--------|----------|
-| 8.1 | Frontend — Milestone Timeline Component | L | High |
+| 8.1 | Frontend — Milestone Timeline Component (Dot Timeline) | L | High |
 | 8.2 | Frontend — Milestone Flag Toggle | M | High |
 | 8.3 | Frontend — Milestone Timeline Filters | M | Medium |
 
@@ -227,28 +243,29 @@ Deliver Gabriela's "60-second project understanding" tool. A Gantt-style project
 **Owner:** @dev (Frontend) + @ux-design-expert
 **Depends on:** E5 (item types, multi-discipline)
 **Blocks:** None
-**Related PRD Sections:** FR30-FR36, UI Enhancement Goals
+**Related PRD FRs:** FR35-FR42
 
 ### Epic Description
 
-Evolve the existing Timeline into "Project History" with improved visual hierarchy (3-layer typography), item type badges, source icons, expandable meeting summaries, multi-discipline badges, and advanced filtering by source/item type.
+Evolve the existing Timeline into "Project History" using a **Dense Rows** layout inspired by Linear/Notion. Row-based list view with collapsible source groups (meetings as accordions), optimized for information density and scanning 50+ items. Features: UPPERCASE date headers, `border-l-2` source groups, single-line item rows with compact badges, single-letter discipline circles, expandable meeting summaries, and advanced filtering by source/item type.
 
 ### Business Value
 
 - Clear visual hierarchy eliminates layer confusion (Gabriela's original feedback)
-- Item type differentiation shows what kind of information at a glance
-- Meeting summaries provide quick context without reading all items
-- Advanced filters enable targeted information retrieval
-- Multi-discipline badges show cross-team involvement
+- Dense rows enable scanning 50+ items efficiently
+- Item type badges show information kind at a glance
+- Meeting summaries provide quick context
+- Advanced filters enable targeted retrieval
+- Multi-discipline circles show cross-team involvement
 
 ### Success Criteria
 
-- [ ] Typography hierarchy clearly separates 3 layers
-- [ ] Item type badges render distinct colors/icons for all 5 types
+- [ ] Dense Rows layout: UPPERCASE dates, accordion sources, single-line item rows (32-40px)
+- [ ] Item type badges with distinct colors/icons for all 5 types
 - [ ] Source icons distinguish all 4 source types
-- [ ] Multi-discipline badges show all involved disciplines
-- [ ] Meeting summaries expand/collapse smoothly
-- [ ] Advanced filters work in combination (source + item type + discipline + date)
+- [ ] Single-letter discipline circles with primary ring indicator
+- [ ] Meeting summaries expand/collapse
+- [ ] Advanced filters (source + item type + discipline + date + search)
 - [ ] "Timeline" renamed to "Project History" across UI
 
 ### Stories (5)
@@ -256,8 +273,8 @@ Evolve the existing Timeline into "Project History" with improved visual hierarc
 | Story | Title | Effort | Priority |
 |-------|-------|--------|----------|
 | 9.1 | Component Evolution — Item Type Badges & Source Icons | M | High |
-| 9.2 | Typography Hierarchy & Visual Layer Separation | M | High |
-| 9.3 | Multi-Discipline Badges | S | Medium |
+| 9.2 | Dense Rows Layout & Visual Layer Separation | M | High |
+| 9.3 | Multi-Discipline Circles | S | Medium |
 | 9.4 | Meeting Summary & Advanced Filters | L | Medium |
 | 9.5 | Rename & Navigation Update | S | Low |
 
@@ -276,16 +293,16 @@ Evolve the existing Timeline into "Project History" with improved visual hierarc
 ## EPIC 10: Email & Document Integration (Phase 2)
 
 **Epic ID:** E10
-**Priority:** LOW (Phase 2 — Weeks 11-12)
+**Priority:** LOW (Phase 4 — Weeks 11-12)
 **Timeline:** Phase 4, Weeks 11-12
 **Owner:** @dev (Backend)
 **Depends on:** E7 (Ingestion Pipeline operational)
 **Blocks:** None
-**Related PRD Sections:** FR9, E10 stories
+**Related PRD FRs:** FR11, E10 stories
 
 ### Epic Description
 
-Extend the ingestion pipeline to process emails and documents as sources of project items. Includes AI extraction adaptation for email/document content and Google Drive folder monitoring.
+Extend the ingestion pipeline to process emails and documents as sources of project items. Includes AI extraction prompts (`extract_email.md`, `extract_document.md`) in the prompts directory, adapted for email/document content structures. Google Drive folder monitoring for automatic document discovery. All sources store `raw_content` for traceability.
 
 ### Business Value
 
@@ -297,10 +314,11 @@ Extend the ingestion pipeline to process emails and documents as sources of proj
 ### Success Criteria
 
 - [ ] Email extraction pipeline produces items from email bodies
-- [ ] Document upload (PDF/DOCX) creates Source records
+- [ ] Document upload (PDF/DOCX) creates Source records with `raw_content`
 - [ ] Google Drive monitoring discovers new files
-- [ ] All extracted items display correctly in Project History
-- [ ] Source-specific icons and metadata in all views
+- [ ] `ProjectParticipant[]` roster used for discipline inference in all extractors
+- [ ] All extracted items display correctly in Project History and Milestone Timeline
+- [ ] Source-specific prompt files in `app/prompts/`
 
 ### Stories (3)
 
@@ -335,18 +353,17 @@ V1 COMPLETE (E1-E4)
        ▼                ▼                  ▼
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
 │ E6: Project  │ │ E7: Ingest   │ │ E9: Project  │
-│    CRUD      │ │   Pipeline   │ │   History    │
+│ CRUD + Parts │ │   Pipeline   │ │   History    │
 │  (Week 3)    │ │  (Week 4-5)  │ │  (Week 7-8)  │
 └──────┬───────┘ └──────┬───────┘ └──────────────┘
        │                │
        ├────────┐       │
-       ▼        │       │
-┌──────────────┐│       ▼
-│ E8: Milestone││ ┌──────────────┐
-│  Timeline    ││ │ E10: Email & │
-│  (Week 5-6)  │◄┘ │  Documents   │
-└──────────────┘  │  (Week 11-12) │
-                  └──────────────┘
+       ▼        │       ▼
+┌──────────────┐│ ┌──────────────┐
+│ E8: Dot      ││ │ E10: Email & │
+│  Timeline    │◄┘ │  Documents   │
+│  (Week 5-6)  │  │  (Week 11-12) │
+└──────────────┘  └──────────────┘
 ```
 
 ---
@@ -354,13 +371,13 @@ V1 COMPLETE (E1-E4)
 ## DELIVERY TIMELINE
 
 ### Phase 1: Foundation (Weeks 1-3)
-**Gate:** All V1 features work with new data model. Projects have stage schedules.
+**Gate:** All V1 features work with new data model. Projects have stage schedules and participant rosters.
 
 ### Phase 2: Core V2 (Weeks 4-6)
-**Gate:** Gabriela can approve meetings, create manual items, view Milestone Timeline, flag milestones.
+**Gate:** Gabriela can approve meetings, create manual items, view Dot Timeline with stages + milestones, flag milestones.
 
 ### Phase 3: Enhancement (Weeks 7-8)
-**Gate:** Project History fully enhanced with V2 visual improvements.
+**Gate:** Project History fully enhanced with Dense Rows layout and V2 visual improvements.
 
 ### Phase 4: Email Integration (Weeks 9-12)
 **Gate:** Full multi-source platform operational.
@@ -373,6 +390,9 @@ V1 COMPLETE (E1-E4)
 | 2 | E7 (partial), E8 | 6 | 4-6 |
 | 3 | E9 | 5 | 7-8 |
 | 4 | E7.4, E10 | 4 | 9-12 |
+
+### Prerequisite (Before Phase 2)
+- **UX/UI Guidelines Document** — @ux-design-expert must create consolidated guidelines covering color system, typography, spacing, component patterns, interaction patterns, accessibility. Currently informal/embedded in stories — insufficient for V2 scope.
 
 ---
 
