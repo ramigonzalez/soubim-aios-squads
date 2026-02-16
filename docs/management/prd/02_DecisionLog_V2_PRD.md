@@ -1,9 +1,9 @@
 # DecisionLog V2: Brownfield Enhancement PRD
 
-**Document Version:** 2.1
+**Document Version:** 2.2
 **Date Created:** 2026-02-16
 **Last Updated:** 2026-02-16
-**Status:** Draft — Pending Review (v2.1 with feedback applied)
+**Status:** Draft — Pending Review (v2.2 with Story 8.1 refinement)
 **Product Owner:** Morgan (PM)
 **For:** souBIM Architecture Company
 **Supersedes:** Extends PRD v1.0 (01_DecisionLog_PRD.md)
@@ -39,7 +39,7 @@ DecisionLog V2 evolves from a **decision-only capture system** into a **comprehe
 **V2 introduces:**
 
 - **Project Item Taxonomy** — Capture 5 types of valuable information (not just decisions): decisions, topics, action items, ideas, and information
-- **Milestone Timeline** — A curated view of only the most important project items, overlaid on a Dot Timeline (a vertical line with dots) representing project stage schedule on left side and Milestones on right side.
+- **Milestone Timeline** — A curated view of only the most important project items, overlaid on a Dot Timeline (a vertical line with dots) where large stage dots group and encapsulate milestones (smaller dots) within their date range. Project Stages on the left side, Milestone Items on the right side. Supports read-only shared links and PDF/JPEG export for client/provider communication.
 - **Project History** — The existing timeline, enhanced with multi-source items, meeting summaries, and advanced filtering (renamed from "Timeline")
 - **Multi-Source Ingestion** — Capture project items from 4 sources: Meetings, Emails, Documents, and Manual Input
 - **Ingestion Approval** — A review stage where admins select which source materials get processed into the system
@@ -173,13 +173,39 @@ How to determine which disciplines to include in `affected_disciplines[]` for ea
 
 | Item Type | Inference Rule | Example |
 |-----------|---------------|---------|
-| **decision** | All disciplines whose representatives are in the `consensus` AGREE list. If consensus is not explicit, infer from participants who voiced agreement. | Decision on structural approach → `[Structural, Architecture]` if both agreed |
+| **decision** | All disciplines with `AGREE` status in `consensus.disciplines[]`. If consensus is not explicit, infer from participants who voiced agreement. | Decision on structural approach → `[architecture, structural]` if both agreed |
 | **topic** | All disciplines actively participating in the discussion (speakers on this topic). | Foundation discussion between structural and MEP → `[Structural, MEP]` |
 | **idea** | The discipline of the person who proposed it, plus any disciplines explicitly mentioned as affected. | "What if we changed the MEP routing?" proposed by Architect → `[Architecture, MEP]` |
 | **action_item** | The discipline of the `owner`, plus any disciplines the deliverable impacts. | "Carlos (Structural) will update load calcs affecting MEP" → `[Structural, MEP]` |
 | **information** | Disciplines explicitly referenced in or impacted by the factual statement. | "City approved the environmental permit" → `[Landscape, Architecture]` |
 
 **Key context:** The system uses `ProjectParticipant` records (name, email, discipline) to help the LLM map speakers → disciplines. This participant roster is sent as context in every extraction prompt.
+
+### Discipline Enum & Color Map
+
+All discipline references in the system use this closed enum. Each discipline has a fixed color for consistent visual representation across all views (badges, circles, timeline nodes, charts).
+
+| Value | Label | Abbreviation | Color (Hex) | Tailwind Family |
+|-------|-------|-------------|-------------|-----------------|
+| `architecture` | Architecture | Arch | #3B82F6 | blue |
+| `structural` | Structural | Struct | #8B5CF6 | purple |
+| `mep` | MEP | MEP | #F97316 | orange |
+| `electrical` | Electrical | Elec | #F59E0B | amber |
+| `plumbing` | Plumbing | Plumb | #06B6D4 | cyan |
+| `landscape` | Landscape | Land | #10B981 | green |
+| `fire_protection` | Fire Protection | Fire | #EF4444 | red |
+| `acoustical` | Acoustical | Acoust | #7C3AED | violet |
+| `sustainability` | Sustainability | Sustain | #059669 | emerald |
+| `civil` | Civil | Civil | #14B8A6 | teal |
+| `client` | Client | Client | #F43F5E | rose |
+| `contractor` | Contractor | Contr | #D97706 | amber-dark |
+| `tenant` | Tenant | Tenant | #EC4899 | pink |
+| `engineer` | Engineer | Eng | #6366F1 | indigo |
+| `general` | General | Gen | #6B7280 | gray |
+
+**Source of truth:** This table is the canonical definition for discipline values and colors. The frontend implementation in `src/lib/utils.ts` (`getDisciplineNodeColor`, `getDisciplinePillColors`, `abbreviateDiscipline`) must mirror this table exactly.
+
+**Usage:** `affected_disciplines[]` stores `Discipline` enum values. `ProjectParticipant.discipline` stores a `Discipline` enum value. `consensus.disciplines[].discipline` stores a `Discipline` enum value.
 
 ### Why 5 Types (Not 6)
 
@@ -241,12 +267,16 @@ Items of type `action_item` can be marked as **done** (`is_done: boolean`, defau
 
 **Milestone Timeline (FR28-FR34)**
 - **FR28:** The system SHALL provide a Milestone Timeline view showing only items marked as `is_milestone: true`
-- **FR29:** The Milestone Timeline SHALL use a **Dot Timeline** layout: a vertical line with dot nodes, where **Project Stages** are represented on the left side of the line and **Milestone Items** are displayed on the right side. Each dot on the vertical line represents a temporal anchor point (stage boundary or milestone date).
-- **FR30:** Project Stages on the left side SHALL display: stage name, date range (from → to). The current active stage SHALL be visually distinguished (e.g., highlighted dot, accent color, "Current" label).
-- **FR31:** Milestone Items on the right side SHALL display: item_type badge, statement, source icon, date, affected_disciplines[] badges. Items SHALL be visually distinct from stage nodes.
+- **FR29:** The Milestone Timeline SHALL use a **Dot Timeline** layout: a vertical line running top-to-bottom with dot nodes at temporal anchor points. **Project Stages** are represented as **large dots** that visually group and encapsulate the milestones within their date range. **Milestone Items** are represented as **smaller dots** on the same line, positioned chronologically within their parent stage's period. **Project Stages** are displayed on the left side, **Milestone Items** on the right side.
+- **FR30:** Project Stages SHALL render as **large dots** on the vertical line with stage information on the **left side**: stage name, date range (from → to). Stages act as visual dividers — clearly identifying which milestones belong to each stage period. The current active stage SHALL be visually distinguished (highlighted dot, accent color, "Current" label).
+- **FR31:** Milestone Items SHALL render as **smaller dots** on the vertical line, positioned within their parent stage's date range, with content on the **right side**. Each milestone SHALL display: item_type badge, statement, source icon, date, `affected_disciplines[]` badges. Milestones SHALL be visually distinct from stage dots (smaller size, different style).
 - **FR32:** The Milestone Timeline SHALL indicate the current date position on the vertical line with a "Today" marker.
 - **FR33:** Admin users SHALL be able to mark/unmark items as milestones from any view (Project History, Drill-Down, Milestone Timeline)
 - **FR34:** The Milestone Timeline SHALL support filtering by source type and item type
+
+**Milestone Timeline Sharing & Export (FR43-FR44)**
+- **FR43:** The Milestone Timeline SHALL support **read-only shared links** — a unique URL that displays the timeline visualization without requiring authentication, enabling client/provider communication
+- **FR44:** The Milestone Timeline SHALL support **exporting** the visualization as PDF and JPEG formats for offline sharing and presentations
 
 **Project History Enhancement (FR35-FR42)**
 - **FR35:** The existing Timeline SHALL be renamed to "Project History"
@@ -303,7 +333,7 @@ State management continues with **React Query** (server state) + **Zustand** (cl
 | **Project List** (`/projects`) | Modified | Add "Create Project" button, show current stage badge |
 | **Project Create/Edit** (`/projects/new`, `/projects/:id/edit`) | New | Project CRUD form with stage schedule builder and participant roster |
 | **Project Detail** (`/projects/:id`) | Modified | Add tab/toggle: "Milestone Timeline" \| "Project History". Add source/item type filters |
-| **Milestone Timeline** (tab within Project Detail) | New | Dot Timeline: vertical line with dot nodes. Project Stages on left side, Milestone Items on right side. Current stage highlighted, "Today" marker on vertical line. Elegant, minimalist. |
+| **Milestone Timeline** (tab within Project Detail) | New | Dot Timeline: vertical line with dot nodes. Large stage dots (left side) group and encapsulate smaller milestone dots (right side) within their date range. Current stage highlighted, "Today" marker. Read-only shared links + PDF/JPEG export. Elegant, minimalist. |
 | **Project History** (tab within Project Detail) | Modified | Renamed from Timeline. Dense Rows layout (Linear/Notion style): row-based, collapsible source groups, UPPERCASE date headers, single-line item rows, accordion meetings. Optimized for scanning 50+ items. |
 | **Ingestion Approval** (`/ingestion`) | New | Table of pending source materials (meetings, emails, documents) with approve/reject controls |
 | **Manual Input** (`/projects/:id/items/new`) | New | Form for manually creating project items with type-specific fields |
@@ -441,7 +471,7 @@ ProjectItem {
   // Classification
   item_type: enum('idea', 'topic', 'decision', 'action_item', 'information')
   source_type: enum('meeting', 'email', 'document', 'manual_input')
-  affected_disciplines: string[] // All disciplines involved (replaces single discipline)
+  affected_disciplines: Discipline[] // All disciplines involved (enum values, replaces single discipline)
   is_milestone: boolean          // Appears on Milestone Timeline (default: false)
 
   // Context
@@ -458,12 +488,14 @@ ProjectItem {
   }?
 
   // Consensus tracking (for decisions)
-  consensus: {                   // Agreement tracking (structured JSON)
-    status: enum('unanimous', 'majority', 'disputed', 'pending')
-    agree: string[]              // Names/roles who agreed
-    disagree: string[]?          // Names/roles who disagreed
-    abstain: string[]?           // Names/roles who abstained
-    notes: string?               // Additional context
+  consensus: {                   // Discipline-level agreement tracking (structured JSON)
+    disciplines: [               // Each participating discipline's vote
+      {
+        discipline: Discipline   // Discipline enum value
+        status: enum('AGREE', 'DISAGREE', 'ABSTAIN')
+        notes: string?           // Optional per-discipline notes
+      }
+    ]
   }?
 
   // Action Item specific
@@ -538,7 +570,7 @@ ProjectParticipant {
   project_id: UUID (FK → Project)
   name: string                   // Participant full name
   email: string?                 // Email address
-  discipline: string             // e.g., "Structural", "MEP", "Architecture"
+  discipline: Discipline          // Discipline enum value (e.g., architecture, structural, mep)
   role: string?                  // e.g., "Lead", "Consultant", "Client"
   created_at: datetime
   updated_at: datetime
@@ -1011,14 +1043,15 @@ so that I understand the project's current state in under 60 seconds.
 **Acceptance Criteria:**
 1. `MilestoneTimeline` organism component renders within Project Detail page
 2. **Dot Timeline layout:** a vertical line running top-to-bottom with dot nodes at temporal anchor points
-3. **Left side — Project Stages:** each stage rendered as a labeled node showing `stage_name` and `date range (from → to)`. Stages flow chronologically top-to-bottom.
-4. **Right side — Milestone Items:** each milestone rendered as a card/node showing `item_type` badge, `statement`, `source` icon, `date`, `affected_disciplines[]` badges
+3. **Stage dots (large) — left side:** each project stage rendered as a large dot on the line with `stage_name` and `date range (from → to)` displayed on the left. Stages flow chronologically top-to-bottom and visually group/encapsulate the milestones within their date range — clearly identifying that a milestone belongs to that stage.
+4. **Milestone dots (small) — right side:** each milestone rendered as a smaller dot on the line within its parent stage, with content on the right showing `item_type` badge, `statement`, `source` icon, `date`, `affected_disciplines[]` badges.
 5. **Current stage** visually distinguished: highlighted dot node, accent color, "Current" label
 6. **"Today" marker** on the vertical line indicating the current date position
-7. Project Stages and Milestone Items SHALL be visually distinct from each other (different node styles, colors, or sizing — stages are structural anchors, milestones are content)
-8. Empty state: "No milestones yet. Mark important items as milestones from the Project History."
-9. Elegant, minimalist design (per client request — @ux-design-expert to provide detailed wireframe)
-10. Responsive: vertical layout works on mobile
+7. Stage dots and milestone dots SHALL be visually distinct (different sizes, styles — stages are structural dividers, milestones are content)
+8. Display sufficient context to situate Gabriela or a client: stage names, date ranges, milestone statements, item types, and discipline badges
+9. Empty state: "No milestones yet. Mark important items as milestones from the Project History."
+10. Elegant, minimalist design (per client request — @ux-design-expert to provide detailed wireframe)
+11. Responsive: vertical layout works on mobile
 
 **Integration Verification:**
 - IV1: Stage nodes render correctly from project stage schedule data
@@ -1063,6 +1096,28 @@ so that I can focus on specific aspects of the project.
 **Integration Verification:**
 - IV1: Filtering reduces visible milestones correctly
 - IV2: URL with filter params loads correct filter state
+
+#### Story 8.4: Milestone Timeline Sharing & Export
+
+As **Gabriela**,
+I want to share a read-only link of the Milestone Timeline with clients and export it as PDF/JPEG,
+so that I can communicate project status without requiring system access.
+
+**Acceptance Criteria:**
+1. "Share" button on Milestone Timeline generates a unique read-only URL
+2. Shared link renders the Milestone Timeline visualization without requiring authentication
+3. Shared link shows project name, stage schedule, and milestone items (same as authenticated view minus edit controls)
+4. Shared link expires after a configurable period (default: 30 days) or can be revoked
+5. "Export" button offers PDF and JPEG format options
+6. Exported file includes: project name, date of export, Dot Timeline with all visible stages and milestones
+7. Export respects current filter state (exports what is currently visible)
+8. Only admin users can generate shared links and export
+9. Shared link tracking: log when links are accessed (view count)
+
+**Integration Verification:**
+- IV1: Shared link opens in incognito browser without login prompt
+- IV2: PDF export renders legibly at A4/Letter size
+- IV3: JPEG export renders at sufficient resolution for presentations
 
 ---
 
@@ -1241,7 +1296,7 @@ so that project documents are automatically discovered.
 |------|------|---------|-------------|
 | 4 | E7 | 7.1, 7.2 | Ingestion approval page, meeting approval flow |
 | 5 | E7, E8 | 7.3, 8.1 | Manual input, Dot Timeline component |
-| 6 | E8 | 8.2, 8.3 | Milestone flagging, milestone filters |
+| 6 | E8 | 8.2, 8.3, 8.4 | Milestone flagging, filters, sharing & export |
 
 **Phase 2 Gate:** Gabriela can: approve meetings, create manual items, view Dot Timeline with stages + milestones, flag milestones.
 
@@ -1314,13 +1369,14 @@ so that project documents are automatically discovered.
 | **Affected Disciplines** | The array of disciplines involved in or impacted by a project item. Inferred per item type (see Discipline Inference Guidelines). |
 | **Milestone** | A project item flagged as especially important. Appears on the Milestone Timeline. Any item type can be a milestone. |
 | **Project History** | The comprehensive, detailed chronological view of all project items using Dense Rows layout (formerly "Timeline") |
-| **Milestone Timeline** | The curated, high-level Dot Timeline view showing project stages (left) and milestone items (right) on a vertical timeline |
-| **Dot Timeline** | The visual layout pattern: a vertical line with dot nodes representing temporal anchor points — stages on left, milestones on right |
+| **Milestone Timeline** | The curated, high-level Dot Timeline view showing project stages (large dots, left side) and milestone items (smaller dots, right side) on a vertical timeline. Supports read-only shared links and PDF/JPEG export for client/provider communication. |
+| **Dot Timeline** | The visual layout pattern: a vertical line with dot nodes — large stage dots (left side) group and encapsulate smaller milestone dots (right side) within their date range |
 | **Stage Schedule** | A project's lifecycle phases with date ranges (e.g., Briefing → Levantamento → Estudo Preliminar...) |
 | **Actual Stage** | The current active stage in the project's stage schedule |
 | **Ingestion Approval** | The review workflow where admins approve/reject source materials before AI processing |
 | **Project Participant** | A team member associated with a project, with name, email, and discipline. Used as LLM context for discipline inference. |
-| **Discipline** | An architecture discipline involved in a project item (Structural, MEP, Architecture, Landscape, Electrical, Interior Design) |
+| **Discipline** | A typed enum (15 values) representing a project discipline with a fixed associated color. See "Discipline Enum & Color Map" for the full list. |
+| **Consensus** | Discipline-level agreement tracking for decision items. Each participating discipline records their status (AGREE, DISAGREE, ABSTAIN) with optional notes. |
 | **Dense Rows** | The UI layout pattern for Project History: row-based, Linear/Notion inspired, collapsible groups, optimized for scanning 50+ items |
 | **Raw Content** | The original unprocessed text from a source (transcript text, email body, document text), stored for traceability |
 
@@ -1332,6 +1388,7 @@ so that project documents are automatically discovered.
 |--------|------|---------|-------------|--------|
 | Initial draft | 2026-02-16 | 2.0 | Complete brownfield PRD for DecisionLog V2 | Morgan (PM) |
 | Review feedback applied | 2026-02-16 | 2.1 | FR3 rewritten (documentative, no promotion tracking). Added: discipline inference guidelines, structured body per item type, `is_done` for action items, `ProjectParticipant` entity, document ingestion FR, raw source storage, prompt files directory, manual input form fields, Dot Timeline definition, Dense Rows layout, `impacts`/`consensus` schemas. Removed: lifecycle tracking, `promoted_from_id`. Updated: FR renumbering (FR1-FR42), NFR5 to 99%, all stories and epics for consistency. | Morgan (PM) |
+| Story 8.1 refinement | 2026-02-16 | 2.2 | **Dot Timeline:** refined vertical layout — large stage dots (left side) encapsulate smaller milestone dots (right side), inspired by Gabriela's cronograma node concept. **Consensus:** simplified from name-based to discipline-based tracking (each discipline votes AGREE/DISAGREE/ABSTAIN with optional notes, removed top-level status enum). **Disciplines:** defined as typed enum with 15 values and fixed color map (source of truth in PRD). **New FRs:** FR43 (read-only shared links), FR44 (PDF/JPEG export). **New Story:** 8.4 (Sharing & Export). Updated: FR29-FR32, data model schemas, glossary. | Morgan (PM) |
 
 ---
 

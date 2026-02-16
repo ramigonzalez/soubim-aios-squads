@@ -1,9 +1,9 @@
 # DecisionLog V2: Epics Breakdown
 
-**Document Version:** 2.1
+**Document Version:** 2.2
 **Date Created:** 2026-02-16
 **Last Updated:** 2026-02-16
-**Status:** Draft — Pending Review (v2.1 with feedback applied)
+**Status:** Draft — Pending Review (v2.2 with Story 8.1 refinement)
 **Product Owner:** Morgan (PM)
 **For:** DecisionLog V2 Enhancement
 **Source PRD:** `docs/management/prd/02_DecisionLog_V2_PRD.md`
@@ -35,7 +35,7 @@
 
 ### Epic Description
 
-Evolve the core data model from "Decision-only" to "Project Item" with 5 types (idea, topic, decision, action_item, information), multi-discipline support (`affected_disciplines[]`), milestone flagging, action item `is_done` toggle, structured `impacts`/`consensus` schemas, and multi-source tracking. Each source independently distills items — no cross-source lifecycle tracking.
+Evolve the core data model from "Decision-only" to "Project Item" with 5 types (idea, topic, decision, action_item, information), multi-discipline support (`affected_disciplines: Discipline[]` typed enum), milestone flagging, action item `is_done` toggle, structured `impacts` schema and discipline-level `consensus` tracking (each discipline votes AGREE/DISAGREE/ABSTAIN), and multi-source tracking. Each source independently distills items — no cross-source lifecycle tracking.
 
 ### Business Value
 
@@ -66,11 +66,17 @@ Evolve the core data model from "Decision-only" to "Project Item" with 5 types (
 ### Key Changes from v2.0
 - No `promoted_from_id` — system is documentative, not lifecycle tracking
 - `is_done` boolean added for action items (simple done/undone toggle)
-- `affected_disciplines[]` replaces `disciplines[]` naming
-- Structured `impacts` and `consensus` JSON schemas defined
+- `affected_disciplines: Discipline[]` — typed enum replaces free-form strings
+- `Discipline` enum defined with 15 values and fixed color map (source of truth in PRD)
+- `consensus` simplified: discipline-level voting (AGREE/DISAGREE/ABSTAIN per discipline, no top-level status)
 - `raw_content` stored in Source for traceability
 - `ProjectParticipant` entity added for LLM context
 - AI prompts stored in `app/prompts/` directory (not hardcoded)
+
+### Key Changes from v2.1
+- Dot Timeline: refined vertical layout with large stage dots (left) + smaller milestone dots (right)
+- New Story 8.4: Milestone Timeline Sharing & Export (read-only links + PDF/JPEG)
+- New FRs: FR43 (shared links), FR44 (export)
 
 ### Agent Assignment
 
@@ -192,11 +198,11 @@ Build the ingestion approval workflow where admins review incoming source materi
 **Owner:** @dev (Frontend) + @ux-design-expert
 **Depends on:** E5 (item types + milestone flag), E6 (stage schedule)
 **Blocks:** None
-**Related PRD FRs:** FR28-FR34
+**Related PRD FRs:** FR28-FR34, FR43-FR44
 
 ### Epic Description
 
-Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** — a vertical line with dot nodes where **Project Stages** appear on the left and **Milestone Items** on the right. Current stage highlighted, "Today" marker, elegant minimalist design. Stages and milestones are visually distinct (stages = structural anchors, milestones = content).
+Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** — a vertical line with dot nodes where **Project Stages** appear as large dots (left side) that group and encapsulate **Milestone Items** (smaller dots, right side) within their date range. Current stage highlighted, "Today" marker, elegant minimalist design. Supports read-only shared links and PDF/JPEG export for client/provider communication.
 
 ### Business Value
 
@@ -207,7 +213,7 @@ Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** �
 
 ### Success Criteria
 
-- [ ] Vertical Dot Timeline renders with stages (left) and milestones (right)
+- [ ] Vertical Dot Timeline renders with large stage dots (left) and smaller milestone dots (right)
 - [ ] Current stage visually distinguished with accent color + "Current" label
 - [ ] "Today" marker on vertical line at current date
 - [ ] Stages and milestones are visually distinct from each other
@@ -216,14 +222,17 @@ Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** �
 - [ ] Filters by source type and item type
 - [ ] Loads in <2 seconds with 50 milestones
 - [ ] Elegant, minimalist design (Gabriela approval via @ux-design-expert wireframe)
+- [ ] Read-only shared links generate unique URL for unauthenticated viewing
+- [ ] Export as PDF/JPEG produces shareable output
 
-### Stories (3)
+### Stories (4)
 
 | Story | Title | Effort | Priority |
 |-------|-------|--------|----------|
 | 8.1 | Frontend — Milestone Timeline Component (Dot Timeline) | L | High |
 | 8.2 | Frontend — Milestone Flag Toggle | M | High |
 | 8.3 | Frontend — Milestone Timeline Filters | M | Medium |
+| 8.4 | Milestone Timeline Sharing & Export | M | Medium |
 
 ### Agent Assignment
 
@@ -232,6 +241,7 @@ Deliver Gabriela's "60-second project understanding" tool. A **Dot Timeline** �
 | 8.1 | @dev | @qa | @ux-design-expert |
 | 8.2 | @dev | @qa | — |
 | 8.3 | @dev | @qa | — |
+| 8.4 | @dev | @qa | @architect |
 
 ---
 
@@ -382,7 +392,7 @@ V1 COMPLETE (E1-E4)
 ### Phase 4: Email Integration (Weeks 9-12)
 **Gate:** Full multi-source platform operational.
 
-### Total: 23 Stories across 6 Epics, ~12 weeks
+### Total: 24 Stories across 6 Epics, ~12 weeks
 
 | Phase | Epics | Stories | Weeks |
 |-------|-------|---------|-------|
