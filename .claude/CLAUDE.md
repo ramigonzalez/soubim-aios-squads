@@ -65,8 +65,8 @@ When an agent is active:
 └── core-config.yaml  # Framework configuration
 
 docs/
-├── architecture/   # Technical specs (numbered 01-07)
-├── management/     # Brief, PRD, epics, product-stories, sprints
+├── architecture/   # Technical specs (numbered 01-10)
+├── management/     # Brief, PRD, epics, product-stories, sprints, handoffs
 ├── stories/        # Individual dev stories ({epic}.{story}-name.md)
 ├── qa/             # Spec critiques, test suite reports
 └── ux/             # UX research, design system analysis

@@ -6,10 +6,10 @@ Navigation hub for all project documentation.
 
 | Directory | Contents | README |
 |-----------|----------|--------|
-| `architecture/` | Technical specs (01-07), validation reports | [architecture/README.md](architecture/README.md) |
-| `management/` | Brief, PRD, epics, product-stories, sprints | [management/README.md](management/README.md) |
+| `architecture/` | Technical specs (01-10) | [architecture/README.md](architecture/README.md) |
+| `management/` | Brief, PRD, epics, product-stories, sprints, handoffs | [management/README.md](management/README.md) |
 | `stories/` | Individual dev stories (`{epic}.{story}-name.md`) | [STORY_CREATION_PROGRESS.md](stories/STORY_CREATION_PROGRESS.md) |
-| `qa/` | Spec critiques, test suite reports, handoff notes | — |
+| `qa/` | Spec critiques, test suite reports | — |
 | `ux/` | UX research, design system analysis | [ux/README.md](ux/README.md) |
 
 ## Key Distinction

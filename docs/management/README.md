@@ -9,11 +9,10 @@
 ```
 management/
 ├── README.md                          # This file
-├── 01_HANDOFF_To_Team.md             # Team handoff guide (roles, timeline)
-├── 02_WEEK_1_COMPLETION_SUMMARY.md   # Week 1 deliverables + next steps
 │
 ├── briefs/
-│   └── 01_DecisionLog_Project_Brief.md          # Strategic context + vision
+│   ├── 01_DecisionLog_Project_Brief.md          # Strategic context + vision
+│   └── 01_HANDOFF_To_Team.md                    # Team handoff guide (roles, timeline)
 │
 ├── prd/
 │   └── 01_DecisionLog_PRD.md                    # Product requirements (10 features)
@@ -27,20 +26,16 @@ management/
 │   ├── 03_EPIC_3_User_Stories.md               # Dashboard & Visualization (10 stories)
 │   └── 04_EPIC_4_User_Stories.md               # Access Control (9 stories)
 │
-└── sprints/
-    └── SPRINT_PLAN.md                           # 8-week sprint plan (4 sprints)
+├── sprints/
+│   └── SPRINT_PLAN.md                           # 8-week sprint plan (4 sprints)
+│
+└── handoffs/
+    └── (agent-to-agent handoff documents)
 ```
 
 ---
 
 ## 📚 DOCUMENTS AT A GLANCE
-
-### Strategic Documents (Top Level)
-
-| Document | Purpose | Audience | When to Read |
-|----------|---------|----------|--------------|
-| **HANDOFF_To_Team.md** | Team role assignments, timeline, expectations | Everyone | Week 1 |
-| **WEEK_1_COMPLETION_SUMMARY.md** | What was delivered, what's next | Team leads | Week 2 |
 
 ### Project Context (briefs/)
 
