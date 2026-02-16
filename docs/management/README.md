@@ -21,7 +21,7 @@ management/
 ├── epics/
 │   └── 01_EPICS_Breakdown.md                    # 4 epics mapping to features
 │
-├── stories/
+├── product-stories/
 │   ├── 01_EPIC_1_User_Stories.md               # Capture & Extraction (11 stories)
 │   ├── 02_EPIC_2_User_Stories.md               # Vector Search (7 stories)
 │   ├── 03_EPIC_3_User_Stories.md               # Dashboard & Visualization (10 stories)
@@ -60,7 +60,7 @@ management/
 |----------|---------|-------|---------|
 | **EPICS_Breakdown.md** | 4 epics mapping to MVP features | 32 | Epic scope, components, success criteria, team assignments, timeline |
 
-### User Stories (stories/)
+### User Stories (product-stories/)
 
 | Document | Stories | Points | Details |
 |----------|---------|--------|---------|

@@ -417,16 +417,16 @@ Frontend:
 - `/docs/stories/1.5-frontend-projects-list.md` ✅
 
 ### Completion Reports Created
-- `/docs/STORY_1_1_COMPLETION_REPORT.md` ✅
-- `/docs/STORY_1_2_COMPLETION_REPORT.md` ✅
-- `/docs/STORY_1_3_COMPLETION_REPORT.md` ✅
-- `/docs/STORY_1_4_COMPLETION_REPORT.md` ✅
-- `/docs/STORY_1_5_COMPLETION_REPORT.md` ✅
+- `/docs/management/sprints/STORY_1_1_COMPLETION_REPORT.md` ✅
+- `/docs/management/sprints/STORY_1_2_COMPLETION_REPORT.md` ✅
+- `/docs/management/sprints/STORY_1_3_COMPLETION_REPORT.md` ✅
+- `/docs/management/sprints/STORY_1_4_COMPLETION_REPORT.md` ✅
+- `/docs/management/sprints/STORY_1_5_COMPLETION_REPORT.md` ✅
 
 ### Planning Documents
-- `/docs/SPRINT_1_PLAN.md` ✅
-- `/docs/SPRINT_1_PROGRESS_UPDATE.md` ✅
-- `/docs/SPRINT_1_COMPLETION_SUMMARY.md` ✅ (this file)
+- `/docs/management/sprints/SPRINT_1_PLAN.md` ✅
+- `/docs/management/sprints/SPRINT_1_PROGRESS_UPDATE.md` ✅
+- `/docs/management/sprints/SPRINT_1_COMPLETION_SUMMARY.md` ✅ (this file)
 
 ### Backend Files
 - `alembic/versions/001_initial.py` - Migrations

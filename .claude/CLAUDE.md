@@ -27,6 +27,14 @@ When an agent is active:
 3. **Track changes** - Maintain the File List section in the story
 4. **Follow criteria** - Implement exactly what the acceptance criteria specify
 
+### Adding a New Feature (Step-by-Step)
+1. Find or create story in `docs/stories/` (format: `{epic}.{story}-kebab-case.md`)
+2. Read the AC and check `Blocked By` dependencies
+3. Create files following naming conventions (see Naming Conventions section)
+4. Write tests in `src/tests/` mirroring the source structure
+5. Update story checkboxes `[x]` and File List section
+6. Run `npm run frontend:test` and `npm run frontend:lint`
+
 ### Code Standards
 - Write clean, self-documenting code
 - Follow existing patterns in the codebase
@@ -44,20 +52,81 @@ When an agent is active:
 ## AIOS Framework Structure
 
 ```
-aios-core/
-├── agents/         # Agent persona definitions (YAML/Markdown)
-├── tasks/          # Executable task workflows
-├── workflows/      # Multi-step workflow definitions
-├── templates/      # Document and code templates
-├── checklists/     # Validation and review checklists
-└── rules/          # Framework rules and patterns
+.aios-core/
+├── development/
+│   ├── agents/       # Agent persona definitions (12 agents)
+│   ├── tasks/        # Executable task workflows
+│   ├── workflows/    # Multi-step workflow definitions
+│   ├── templates/    # Document and code templates
+│   └── checklists/   # Validation and review checklists
+├── core/             # Framework runtime (elicitation, config, orchestration)
+├── product/          # Product-level checklists and templates
+├── infrastructure/   # Deployment scripts and schemas
+└── core-config.yaml  # Framework configuration
 
 docs/
-├── stories/        # Development stories (numbered)
-├── prd/            # Product requirement documents
-├── architecture/   # System architecture documentation
-└── guides/         # User and developer guides
+├── architecture/   # Technical specs (numbered 01-07)
+├── management/     # Brief, PRD, epics, product-stories, sprints
+├── stories/        # Individual dev stories ({epic}.{story}-name.md)
+├── qa/             # Spec critiques, test suite reports
+└── ux/             # UX research, design system analysis
 ```
+
+## DecisionLog Project Structure
+
+```
+soubim-aios-squads/
+├── decision-log-backend/    # FastAPI + SQLAlchemy (Python)
+│   └── app/
+│       ├── api/routes/      # Endpoint handlers
+│       ├── api/models/      # Pydantic models
+│       ├── api/middleware/   # Auth middleware
+│       ├── database/        # SQLAlchemy models, seeds
+│       ├── services/        # Business logic
+│       └── utils/           # Shared utilities
+├── decision-log-frontend/   # React + Vite + TypeScript + Tailwind
+│   └── src/
+│       ├── components/
+│       │   ├── common/      # Shared (Navigation, ProjectCard)
+│       │   ├── molecules/   # Composed display (DecisionCard, DisciplineBadge)
+│       │   ├── organisms/   # Complex w/ state (Timeline, FiltersSidebar)
+│       │   └── templates/   # Page layouts
+│       ├── pages/           # Route components
+│       ├── hooks/           # Custom hooks (useDecisions, useAuth)
+│       ├── store/           # Zustand stores
+│       ├── services/        # API client layer
+│       ├── types/           # TypeScript definitions
+│       ├── lib/             # Utils (cn(), color maps)
+│       └── tests/           # Vitest + RTL tests
+└── docs/                    # See AIOS Framework Structure above
+```
+
+## Naming Conventions
+
+- **Stories:** `{epic}.{story}-kebab-case.md` (e.g., `3.5-decision-timeline-component.md`)
+- **Architecture docs:** `{NN}-UPPER-KEBAB.md` (e.g., `01-SYSTEM-OVERVIEW.md`)
+- **Frontend components:** `PascalCase.tsx`
+- **Hooks:** `useFeatureName.ts`
+- **Stores:** `featureStore.ts`
+- **Backend routes/services:** `snake_case.py`
+- **Tests:** mirror `src/` structure in `src/tests/`
+
+## Frontend Component Architecture
+
+Hybrid atomic + feature-based pattern:
+- `common/` — shared across pages (Navigation, ProjectCard)
+- `molecules/` — composed display components (DecisionCard, DisciplineBadge)
+- `organisms/` — complex components with state/API (Timeline, FiltersSidebar)
+- `templates/` — page layout wrappers
+
+**State management:** React Query (server state) + Zustand (client state)
+**Utils:** centralized in `src/lib/utils.ts` (`cn()`, discipline color maps)
+
+### Where to place new components
+- Used across multiple pages? → `common/`
+- Pure display, no side effects? → `molecules/`
+- Has internal state, API calls, or complex logic? → `organisms/`
+- Wraps a page layout? → `templates/`
 
 ## Workflow Execution
 
@@ -120,20 +189,15 @@ const template = await loadTemplate('template-name');
 const rendered = await renderTemplate(template, context);
 ```
 
-### Agent Command Handling
+### Agent Command Handling (Conceptual Pattern)
+Agent commands work via the `*` prefix in conversation (e.g., `*help`, `*create-story`).
+Stories are loaded from `docs/stories/` by convention (configured in `core-config.yaml` as `devStoryLocation`).
 ```javascript
+// Conceptual — not a callable API
 if (command.startsWith('*')) {
   const agentCommand = command.substring(1);
   await executeAgentCommand(agentCommand, args);
 }
-```
-
-### Story Updates
-```javascript
-// Update story progress
-const story = await loadStory(storyId);
-story.updateTask(taskId, { status: 'completed' });
-await story.save();
 ```
 
 ## Environment Setup
@@ -145,9 +209,10 @@ await story.save();
 - Your preferred package manager (npm/yarn/pnpm)
 
 ### Configuration Files
-- `.aios/config.yaml` - Framework configuration
-- `.env` - Environment variables
-- `aios.config.js` - Project-specific settings
+- `.aios-core/core-config.yaml` - Framework configuration
+- `.env` - Root environment variables
+- `decision-log-backend/.env` - Backend config (DB, JWT, CORS)
+- `decision-log-frontend/vite.config.ts` - Vite bundler config
 
 ## Common Commands
 
@@ -158,26 +223,23 @@ await story.save();
 - `*workflow {name}` - Run workflow
 
 ### Development Commands
-- `npm run dev` - Start development
-- `npm test` - Run tests
-- `npm run lint` - Check code style
-- `npm run build` - Build project
+- `./dev.sh` - Start both frontend + backend servers
+- `npm run dev` - Same via concurrently
+- `npm run frontend:dev` - Frontend only (localhost:5173)
+- `npm run backend:dev` - Backend only (localhost:8000)
+- `npm run frontend:test` - Vitest test suite
+- `npm run frontend:lint` - ESLint check
+- Use `python3` not `python` on this machine
 
 ## Debugging
+
+### Debug Log (configured in core-config.yaml, created on first use)
+- `.ai/debug-log.md` - Dev debug log
+- `.ai/decision-logs-index.md` - Decision log index
 
 ### Enable Debug Mode
 ```bash
 export AIOS_DEBUG=true
-```
-
-### View Agent Logs
-```bash
-tail -f .aios/logs/agent.log
-```
-
-### Trace Workflow Execution
-```bash
-npm run trace -- workflow-name
 ```
 
 ## Claude Code Specific Configuration
