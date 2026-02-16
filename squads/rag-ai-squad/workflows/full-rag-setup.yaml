@@ -1,0 +1,214 @@
+---
+workflow: Full RAG Pipeline Setup
+description: "End-to-end RAG pipeline orchestration from design to production monitoring. Orchestrates Atlas → Lyra → Vex → Atlas → Sage."
+version: 1.0.0
+author: Ramiro Gonzalez
+squad: rag-ai-squad
+
+phases:
+  - phase: 1
+    name: Design
+    description: "Architect the RAG pipeline, choose chunking strategy, and design agent workflow"
+    agent: "@rag-ai-engineer"
+    tasks:
+      - name: design-rag
+        command: "*design-rag"
+        description: "Design end-to-end RAG pipeline architecture"
+        required: true
+        artifacts:
+          - architecture_doc
+          - tech_decisions
+      - name: choose-chunking
+        command: "*choose-chunking"
+        description: "Select optimal chunking strategy for the use case"
+        required: true
+        artifacts:
+          - strategy_recommendation
+          - implementation_code
+      - name: design-graph
+        command: "*design-graph"
+        description: "Design LangGraph state machine for agent workflow"
+        required: false
+        artifacts:
+          - graph_definition
+          - node_configs
+    exit_criteria:
+      - "Architecture document approved"
+      - "Chunking strategy selected and justified"
+      - "Tech stack decisions documented"
+
+  - phase: 2
+    name: Prompts
+    description: "Craft and test prompts for RAG chains and agent instructions"
+    agent: "@prompt-engineer"
+    depends_on: [1]
+    tasks:
+      - name: design-prompt
+        command: "*design-prompt"
+        description: "Design prompts for RAG retrieval and generation"
+        required: true
+        artifacts:
+          - prompt_template
+          - system_prompt
+      - name: create-prompt-template
+        command: "*create-prompt-template"
+        description: "Create reusable prompt templates"
+        required: true
+        artifacts:
+          - prompt_templates
+          - variable_docs
+    exit_criteria:
+      - "System prompts designed and tested"
+      - "Prompt templates created with variables"
+
+  - phase: 3
+    name: Infrastructure
+    description: "Build retrieval infrastructure — VectorDB, embeddings, search stack, cache"
+    agent: "@vectordb-advisor"
+    depends_on: [1]
+    tasks:
+      - name: compare-vectordbs
+        command: "*compare-vectordbs"
+        description: "Select the best VectorDB for the use case"
+        required: true
+        artifacts:
+          - comparison_matrix
+          - recommendation
+      - name: configure-index
+        command: "*configure-index"
+        description: "Configure vector index with optimal settings"
+        required: true
+        artifacts:
+          - index_config
+          - distance_metric
+      - name: select-embeddings
+        command: "*select-embeddings"
+        description: "Select and configure embedding model"
+        required: true
+        artifacts:
+          - model_recommendation
+          - dimension_config
+      - name: setup-hybrid-search
+        command: "*setup-hybrid-search"
+        description: "Implement hybrid search (semantic + BM25)"
+        required: false
+        artifacts:
+          - hybrid_config
+          - fusion_strategy
+      - name: implement-cache
+        command: "*implement-cache"
+        description: "Implement semantic caching layer"
+        required: false
+        artifacts:
+          - semantic_cache
+          - eviction_policy
+    exit_criteria:
+      - "VectorDB selected and configured"
+      - "Embedding model benchmarked and configured"
+      - "Search stack operational"
+
+  - phase: 4
+    name: Build
+    description: "Implement the RAG pipeline, retrieval chain, and production agent"
+    agent: "@rag-ai-engineer"
+    depends_on: [2, 3]
+    tasks:
+      - name: build-pipeline
+        command: "*build-pipeline"
+        description: "Build the complete RAG pipeline"
+        required: true
+        artifacts:
+          - working_pipeline
+          - integration_tests
+      - name: implement-retrieval
+        command: "*implement-retrieval"
+        description: "Implement the retrieval chain with reranking"
+        required: true
+        artifacts:
+          - retrieval_chain
+          - test_queries
+      - name: build-agent
+        command: "*build-agent"
+        description: "Build production agent with LangGraph"
+        required: false
+        artifacts:
+          - langgraph_agent
+          - state_machine
+    exit_criteria:
+      - "RAG pipeline functional end-to-end"
+      - "Integration tests passing"
+      - "Retrieval quality meets requirements"
+
+  - phase: 5
+    name: Quality
+    description: "Setup observability, run evaluations, implement guardrails, and monitor production"
+    agent: "@eval-guardian"
+    depends_on: [4]
+    tasks:
+      - name: setup-langsmith
+        command: "*setup-langsmith"
+        description: "Setup LangSmith observability and tracing"
+        required: true
+        artifacts:
+          - langsmith_project
+          - trace_setup
+      - name: create-eval-dataset
+        command: "*create-eval-dataset"
+        description: "Create golden evaluation dataset"
+        required: true
+        artifacts:
+          - golden_dataset
+          - qa_pairs
+      - name: run-evaluation
+        command: "*run-evaluation"
+        description: "Run RAGAS and DeepEval evaluation suite"
+        required: true
+        artifacts:
+          - ragas_scores
+          - deepeval_report
+      - name: check-groundedness
+        command: "*check-groundedness"
+        description: "Implement groundedness checks"
+        required: true
+        artifacts:
+          - guardrail_chain
+          - fact_check_logic
+      - name: setup-guardrails
+        command: "*setup-guardrails"
+        description: "Setup input/output guardrails"
+        required: true
+        artifacts:
+          - guardrail_config
+          - input_filters
+      - name: monitor-production
+        command: "*monitor-production"
+        description: "Setup production monitoring and alerts"
+        required: true
+        artifacts:
+          - dashboard_config
+          - alert_rules
+    exit_criteria:
+      - "LangSmith tracing active"
+      - "Evaluation baseline established"
+      - "Guardrails configured and tested"
+      - "Production monitoring active"
+      - "Hallucination rate below threshold"
+
+completion:
+  summary: |
+    RAG pipeline fully operational:
+    - Architecture designed and documented
+    - Chunking strategy selected and implemented
+    - VectorDB configured and optimized
+    - Retrieval chain with reranking active
+    - Prompts crafted and tested
+    - LangSmith observability enabled
+    - Evaluation baseline established
+    - Guardrails protecting against hallucinations
+    - Production monitoring and alerts configured
+  next_steps:
+    - "Run *regression-test before each deployment"
+    - "Use *track-costs to monitor spend"
+    - "Use *optimize-prompt to reduce token costs"
+    - "Run *benchmark-retrieval periodically"
+    - "Use *analyze-squad to check squad health"

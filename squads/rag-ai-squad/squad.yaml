@@ -1,0 +1,106 @@
+name: rag-ai-squad
+version: 1.0.0
+description: "Production-grade RAG & Agentic AI Engineering squad specializing in RAG pipelines, chunking strategies, VectorDB optimization, LangChain/LangGraph agents, call transcript extraction, and LangSmith observability"
+author: Ramiro Gonzalez
+license: MIT
+slashPrefix: rag-ai
+domain: rag-agentic-ai-engineering
+
+aios:
+  minVersion: "2.1.0"
+  type: squad
+
+components:
+  agents:
+    - rag-ai-engineer.md
+    - vectordb-advisor.md
+    - eval-guardian.md
+    - prompt-engineer.md
+  tasks:
+    # Atlas (rag-ai-engineer)
+    - rag-ai-engineer-design-rag.md
+    - rag-ai-engineer-build-pipeline.md
+    - rag-ai-engineer-choose-chunking.md
+    - rag-ai-engineer-implement-retrieval.md
+    - rag-ai-engineer-extract-transcript.md
+    - rag-ai-engineer-build-agent.md
+    - rag-ai-engineer-design-graph.md
+    # Vex (vectordb-advisor)
+    - vectordb-advisor-compare-vectordbs.md
+    - vectordb-advisor-configure-index.md
+    - vectordb-advisor-optimize-search.md
+    - vectordb-advisor-benchmark-retrieval.md
+    - vectordb-advisor-setup-hybrid-search.md
+    - vectordb-advisor-implement-cache.md
+    - vectordb-advisor-select-embeddings.md
+    # Sage (eval-guardian)
+    - eval-guardian-setup-langsmith.md
+    - eval-guardian-create-eval-dataset.md
+    - eval-guardian-run-evaluation.md
+    - eval-guardian-check-groundedness.md
+    - eval-guardian-monitor-production.md
+    - eval-guardian-manage-prompts.md
+    - eval-guardian-regression-test.md
+    - eval-guardian-track-costs.md
+    - eval-guardian-setup-guardrails.md
+    # Lyra (prompt-engineer)
+    - prompt-engineer-design-prompt.md
+    - prompt-engineer-test-prompt.md
+    - prompt-engineer-optimize-prompt.md
+    - prompt-engineer-create-prompt-template.md
+    - prompt-engineer-compare-prompts.md
+  workflows:
+    - full-rag-setup.yaml
+  checklists:
+    - production-readiness.md
+    - rag-pipeline-review.md
+  templates:
+    - rag-architecture-doc.md
+    - evaluation-report.md
+  tools: []
+  scripts: []
+
+config:
+  extends: extend
+  coding-standards: config/coding-standards.md
+  tech-stack: config/tech-stack.md
+  source-tree: config/source-tree.md
+
+dependencies:
+  python:
+    - langchain
+    - langgraph
+    - langsmith
+    - openai
+    - cohere
+    - chromadb
+    - pinecone-client
+    - qdrant-client
+    - weaviate-client
+    - faiss-cpu
+    - sentence-transformers
+    - ragas
+    - deepeval
+    - fastapi
+    - pydantic
+  node: []
+  squads: []
+
+tags:
+  - rag
+  - ai-engineering
+  - langchain
+  - langgraph
+  - langsmith
+  - vectordb
+  - chunking
+  - agentic-workflows
+  - production
+  - observability
+
+metadata:
+  created_at: "2026-02-06T00:00:00Z"
+  created_by: "Craft (squad-creator)"
+  blueprint: ".designs/rag-ai-squad-design.yaml"
+  overall_confidence: 0.94
+  delegation_model: "Atlas designs > Lyra crafts prompts > Vex builds infra > Atlas implements > Sage ensures quality"

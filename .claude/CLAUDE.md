@@ -171,6 +171,18 @@ try {
 
 ## Git & GitHub Integration
 
+### ⚠️ CRITICAL: Git Commit Control (Dev Agent)
+**User maintains control of all commits. No exceptions.**
+
+**@dev Agent Rules:**
+- NEVER execute `git commit` without explicit user confirmation
+- ALWAYS ask before committing: "Ready to commit. Should I proceed?"
+- Allowed workflow: Stage changes → Ask for confirmation → Wait for "yes" → Commit
+- EXCEPTION: Only auto-commit if user activates `*yolo` mode (not default)
+- Reason: Unconfirmed commits = loss of repository control for user
+
+**This is the single most important git rule.** If violated, you lose control of what enters your codebase.
+
 ### Commit Conventions
 - Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, etc.
 - Reference story ID: `feat: implement IDE detection [Story 2.1]`

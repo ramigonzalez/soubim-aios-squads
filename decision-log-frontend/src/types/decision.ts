@@ -4,8 +4,11 @@ export interface Decision {
   who: string
   timestamp: string
   discipline: string
+  transcript_id?: string
+  meeting_title?: string
   meeting_type?: string
   meeting_date?: string
+  meeting_participants?: Array<{ name: string; role: string }>
   why: string
   causation?: string
   consensus?: Record<string, string>

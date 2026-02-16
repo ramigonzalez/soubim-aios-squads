@@ -123,6 +123,7 @@ class Transcript(Base):
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     meeting_id = Column(String(255))
     meeting_type = Column(String(50))
+    meeting_title = Column(String(255))
     participants = Column(JSONType, nullable=False)
     transcript_text = Column(Text, nullable=False)
     duration_minutes = Column(String)

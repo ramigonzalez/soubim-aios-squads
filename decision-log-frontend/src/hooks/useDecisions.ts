@@ -12,7 +12,7 @@ interface UseDecisionsOptions {
 /**
  * Custom hook to fetch decisions for a project with filtering and pagination.
  *
- * Uses global filter store for discipline and meeting type filters.
+ * Uses global filter store for discipline, decision maker, and date filters.
  * Epic 3 - Story 3.5 (Timeline), Story 3.6 (Filters)
  */
 export function useDecisions({
@@ -20,10 +20,10 @@ export function useDecisions({
   limit = 50,
   offset = 0
 }: UseDecisionsOptions) {
-  const { disciplines, meetingTypes, searchQuery } = useFilterStore()
+  const { disciplines, decisionMakers, dateFrom, dateTo, searchQuery } = useFilterStore()
 
   return useQuery<DecisionsResponse, Error>(
-    ['decisions', projectId, { disciplines, meetingTypes, searchQuery, limit, offset }],
+    ['decisions', projectId, { disciplines, decisionMakers, dateFrom, dateTo, searchQuery, limit, offset }],
     async () => {
       const params = new URLSearchParams({
         limit: limit.toString(),
@@ -34,8 +34,16 @@ export function useDecisions({
         params.append('disciplines', disciplines.join(','))
       }
 
-      if (meetingTypes.length > 0) {
-        params.append('meeting_types', meetingTypes.join(','))
+      if (decisionMakers.length > 0) {
+        params.append('who', decisionMakers.join(','))
+      }
+
+      if (dateFrom) {
+        params.append('date_from', dateFrom)
+      }
+
+      if (dateTo) {
+        params.append('date_to', dateTo)
       }
 
       if (searchQuery) {
@@ -47,7 +55,7 @@ export function useDecisions({
     },
     {
       enabled: !!projectId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // Always refetch to get fresh data
       retry: 1,
     }
   )

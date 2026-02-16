@@ -6,7 +6,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.database.models import Decision
+from app.database.models import Decision, Transcript
 
 router = APIRouter()
 
@@ -30,12 +30,25 @@ async def list_decisions(
     """
     Query decisions with advanced filtering.
     """
-    # Build query
-    query = db.query(Decision).filter(Decision.project_id == str(project_id))
+    # Build query with LEFT JOIN to get transcript meeting_title, meeting_type, participants
+    query = (
+        db.query(
+            Decision,
+            Transcript.meeting_title,
+            Transcript.meeting_date,
+            Transcript.meeting_type,
+            Transcript.participants,
+        )
+        .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
+        .filter(Decision.project_id == str(project_id))
+    )
 
     # Apply filters
     if discipline:
         query = query.filter(Decision.discipline == discipline)
+
+    if meeting_type:
+        query = query.filter(Transcript.meeting_type == meeting_type)
 
     if confidence_min is not None:
         query = query.filter(Decision.confidence >= confidence_min)
@@ -66,8 +79,8 @@ async def list_decisions(
     # Apply pagination
     query = query.limit(limit).offset(offset)
 
-    # Get decisions
-    decisions = query.all()
+    # Get decisions (each row is a tuple: Decision, transcript_title, transcript_meeting_date)
+    rows = query.all()
 
     # Format response
     decisions_list = [
@@ -84,17 +97,20 @@ async def list_decisions(
             "impacts": d.impacts,
             "consensus": d.consensus,
             "confidence": d.confidence,
-            "meeting_date": d.created_at.isoformat() if d.created_at else None,
+            "meeting_title": transcript_title,
+            "meeting_type": t_meeting_type,
+            "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (d.created_at.isoformat() if d.created_at else None),
+            "meeting_participants": t_participants,
             "created_at": d.created_at.isoformat() if d.created_at else None,
         }
-        for d in decisions
+        for d, transcript_title, transcript_meeting_date, t_meeting_type, t_participants in rows
     ]
 
-    # Get disciplines and meeting types for facets
+    # Get disciplines for facets
     all_decisions = db.query(Decision).filter(Decision.project_id == str(project_id)).all()
-    disciplines = {}
+    disciplines_facet = {}
     for d in all_decisions:
-        disciplines[d.discipline] = disciplines.get(d.discipline, 0) + 1
+        disciplines_facet[d.discipline] = disciplines_facet.get(d.discipline, 0) + 1
 
     return {
         "decisions": decisions_list,
@@ -102,7 +118,7 @@ async def list_decisions(
         "limit": limit,
         "offset": offset,
         "facets": {
-            "disciplines": disciplines,
+            "disciplines": disciplines_facet,
             "meeting_types": {},
         },
     }
@@ -113,13 +129,26 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
     """
     Get complete details for a single decision.
     """
-    decision = db.query(Decision).filter(Decision.id == str(decision_id)).first()
+    row = (
+        db.query(
+            Decision,
+            Transcript.meeting_title,
+            Transcript.meeting_date,
+            Transcript.meeting_type,
+            Transcript.participants,
+        )
+        .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
+        .filter(Decision.id == str(decision_id))
+        .first()
+    )
 
-    if not decision:
+    if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Decision {decision_id} not found",
         )
+
+    decision, transcript_title, transcript_meeting_date, t_meeting_type, t_participants = row
 
     return {
         "id": str(decision.id),
@@ -137,7 +166,10 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
         "similar_decisions": decision.similar_decisions,
         "consistency_notes": decision.consistency_notes,
         "anomaly_flags": decision.anomaly_flags,
-        "meeting_date": decision.created_at.isoformat() if decision.created_at else None,
+        "meeting_title": transcript_title,
+        "meeting_type": t_meeting_type,
+        "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (decision.created_at.isoformat() if decision.created_at else None),
+        "meeting_participants": t_participants,
         "created_at": decision.created_at.isoformat() if decision.created_at else None,
         "updated_at": decision.updated_at.isoformat() if decision.updated_at else None,
     }
