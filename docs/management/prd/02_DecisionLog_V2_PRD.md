@@ -93,7 +93,7 @@ After the MVP launch, Gabriela validated the core value proposition: centralizin
 - [x] Source Tree/Architecture (CLAUDE.md, architecture docs)
 - [x] API Documentation (PRD v1.0, routes)
 - [x] Coding Standards (CLAUDE.md)
-- [ ] **UX/UI Guidelines** — MISSING. Currently informal, embedded in stories. **ACTION REQUIRED:** Create a consolidated UX/UI Guidelines document before V2 development begins. Delegate to @ux-design-expert. Should cover: color system, typography scale, spacing, component patterns, interaction patterns, accessibility standards, responsive breakpoints.
+- [x] **UX/UI Guidelines** — `docs/ux/UX-UI-GUIDELINES.md` (v1.0, created 2026-02-16 by @ux-design-expert). Covers: color system, typography scale, spacing, component patterns, interaction patterns, accessibility standards, responsive breakpoints, V2 visual patterns (Dot Timeline, Dense Rows, ItemTypeBadge, SourceIcon, DisciplineCircle).
 - [ ] Technical Debt Documentation
 
 ---
@@ -314,7 +314,7 @@ Items of type `action_item` can be marked as **done** (`is_done: boolean`, defau
 ### Prerequisites
 
 **UX/UI Guidelines Document (Required before V2 development):**
-A consolidated UX/UI Guidelines document must be created by @ux-design-expert covering: color system, typography scale, spacing conventions, component patterns, interaction patterns, accessibility standards, responsive breakpoints. Currently these are informally embedded in stories — this is insufficient for the V2 scope.
+~~A consolidated UX/UI Guidelines document must be created by @ux-design-expert.~~ **COMPLETED** — See `docs/ux/UX-UI-GUIDELINES.md` (v1.0). Covers: color system (disciplines, consensus, impact, item types, source types, meeting types), typography scale, spacing conventions, component architecture (Atomic Design inventory), interaction patterns, animation/motion, iconography, accessibility (WCAG 2.1 AA), responsive breakpoints, V2 visual patterns (Dot Timeline, Dense Rows, DisciplineCircle, ItemTypeBadge, SourceIcon), print/export styles.
 
 ### Integration with Existing UI
 
@@ -1389,6 +1389,7 @@ so that project documents are automatically discovered.
 | Initial draft | 2026-02-16 | 2.0 | Complete brownfield PRD for DecisionLog V2 | Morgan (PM) |
 | Review feedback applied | 2026-02-16 | 2.1 | FR3 rewritten (documentative, no promotion tracking). Added: discipline inference guidelines, structured body per item type, `is_done` for action items, `ProjectParticipant` entity, document ingestion FR, raw source storage, prompt files directory, manual input form fields, Dot Timeline definition, Dense Rows layout, `impacts`/`consensus` schemas. Removed: lifecycle tracking, `promoted_from_id`. Updated: FR renumbering (FR1-FR42), NFR5 to 99%, all stories and epics for consistency. | Morgan (PM) |
 | Story 8.1 refinement | 2026-02-16 | 2.2 | **Dot Timeline:** refined vertical layout — large stage dots (left side) encapsulate smaller milestone dots (right side), inspired by Gabriela's cronograma node concept. **Consensus:** simplified from name-based to discipline-based tracking (each discipline votes AGREE/DISAGREE/ABSTAIN with optional notes, removed top-level status enum). **Disciplines:** defined as typed enum with 15 values and fixed color map (source of truth in PRD). **New FRs:** FR43 (read-only shared links), FR44 (PDF/JPEG export). **New Story:** 8.4 (Sharing & Export). Updated: FR29-FR32, data model schemas, glossary. | Morgan (PM) |
+| UX/UI Guidelines created | 2026-02-16 | 2.2 | Prerequisite fulfilled: `docs/ux/UX-UI-GUIDELINES.md` v1.0 created by @ux-design-expert. Checked off UX/UI Guidelines in Available Documentation. Updated prerequisites section to mark as COMPLETED. | Uma (UX) |
 
 ---
 

@@ -14,9 +14,13 @@ This folder contains complete UX research, design system analysis, and requireme
 
 | Document | Purpose | Audience |
 |---|---|---|
+| **UX-UI-GUIDELINES.md** | **Single source of truth** for all visual & interaction standards: colors, typography, spacing, components, accessibility, V2 patterns | Everyone (Design, Dev, QA) |
 | **RESEARCH-AND-DESIGN-SYSTEM-ANALYSIS.md** | Complete user research findings + design system market analysis | Product, Design, Architecture |
 | **REQUIREMENTS-TRANSLATION-GUIDE.md** | How to convert research insights into user stories and tasks | Product, Development |
 | **AIOS-WORKFLOW-INTEGRATION.md** | How to use AIOS story-driven workflow with this research | Product, Scrum Master |
+| **FRONTEND-SPEC-3-layer-timeline.md** | V1 3-layer timeline component spec (Date > Meeting > Decision) | Dev |
+| **FRONTEND-SPEC-timeline-redesign-v2.md** | V1 timeline redesign spec (compact rows, filter bar) | Dev |
+| **FRONTEND-SPEC-timeline-polish-v3.md** | V1 timeline polish spec | Dev |
 | **README.md** (this file) | Navigation and quick start | Everyone |
 
 ---
