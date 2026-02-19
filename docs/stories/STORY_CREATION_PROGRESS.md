@@ -227,8 +227,67 @@ All story files are located in `docs/stories/`:
 
 ---
 
-**Last Updated:** 2026-02-08
-**Status:** ✅ ALL STORIES COMPLETE
-**Next Session:** Story refinement and sprint planning
+## V2 Stories — Creation Progress
 
-— Aria, arquitetando o futuro 🏗️
+**Date Started:** 2026-02-17
+**Total V2 Stories:** 24 (across 6 epics)
+**Architect Review:** CONDITIONAL APPROVAL (5 blockers resolved, 10 advisories incorporated)
+
+### Wave 1: Foundation (E5 + E6) — 8 stories ✅ COMPLETE
+
+#### EPIC 5: Data Model Evolution (5 stories) — ✅ COMPLETE
+- ✅ 5.1: Database Migration — Decision to Project Item (13 SP, critical path)
+- ✅ 5.2: Backend API — Project Items CRUD (8 SP, co-dependent with 5.3)
+- ✅ 5.3: Frontend Types & Hooks Migration (5 SP, co-dependent with 5.2)
+- ✅ 5.4: AI Extraction Prompt Evolution (8 SP)
+- ✅ 5.5: Seed Data & Test Suite Update (3 SP)
+
+#### EPIC 6: Project Management Foundation (3 stories) — ✅ COMPLETE
+- ✅ 6.1: Backend — Project CRUD, Stage Schedule & Participants (8 SP)
+- ✅ 6.2: Frontend — Project Create/Edit Form (8 SP)
+- ✅ 6.3: Frontend — Project List Enhancement (3 SP)
+
+### Wave 2: Core V2 (E7 + E8) — 8 stories ⏳ PENDING
+- ⏳ 7.1: Backend — Source Entity & Ingestion Queue
+- ⏳ 7.2: Frontend — Ingestion Approval Page
+- ✅ 7.3: Manual Input — Create Project Item Form
+- ⏳ 7.4: Backend — Gmail API Poller
+- ⏳ 8.1: Frontend — Milestone Timeline Component (Dot Timeline)
+- ⏳ 8.2: Frontend — Milestone Flag Toggle
+- ⏳ 8.3: Frontend — Milestone Timeline Filters
+- ⏳ 8.4: Milestone Timeline Sharing & Export
+
+### Wave 3: Enhancement (E9 + E10) — 8 stories ⏳ PENDING
+- ⏳ 9.1: Component Evolution — Item Type Badges & Source Icons
+- ⏳ 9.2: Dense Rows Layout & Visual Layer Separation
+- ⏳ 9.3: Multi-Discipline Circles
+- ⏳ 9.4: Meeting Summary & Advanced Filters
+- ⏳ 9.5: Rename & Navigation Update
+- ⏳ 10.1: Email Item Extraction Pipeline
+- ⏳ 10.2: Document Ingestion (PDF & DOCX)
+- ⏳ 10.3: Google Drive Folder Monitoring
+
+### V2 Story Files Created
+
+**EPIC 5:**
+- 5.1-database-migration-decision-to-project-item.md
+- 5.2-backend-api-project-items-crud.md
+- 5.3-frontend-types-hooks-migration.md
+- 5.4-ai-extraction-prompt-evolution.md
+- 5.5-seed-data-test-suite-update.md
+
+**EPIC 6:**
+- 6.1-backend-project-crud-stages-participants.md
+- 6.2-frontend-project-create-edit-form.md
+- 6.3-frontend-project-list-enhancement.md
+
+**EPIC 7 (partial):**
+- 7.3-manual-input-create-project-item-form.md
+
+---
+
+**Last Updated:** 2026-02-19
+**Status:** Wave 1 COMPLETE (8/24) — Wave 2 in progress (1/8 done)
+**Next Session:** Wave 2 story creation (E7 + E8)
+
+— River, removendo obstáculos 🌊
