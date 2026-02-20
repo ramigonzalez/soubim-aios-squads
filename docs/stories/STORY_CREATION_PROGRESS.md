@@ -247,17 +247,21 @@ All story files are located in `docs/stories/`:
 - ✅ 6.2: Frontend — Project Create/Edit Form (8 SP)
 - ✅ 6.3: Frontend — Project List Enhancement (3 SP)
 
-### Wave 2: Core V2 (E7 + E8) — 8 stories ⏳ PENDING
-- ⏳ 7.1: Backend — Source Entity & Ingestion Queue
-- ⏳ 7.2: Frontend — Ingestion Approval Page
-- ✅ 7.3: Manual Input — Create Project Item Form
-- ⏳ 7.4: Backend — Gmail API Poller
-- ⏳ 8.1: Frontend — Milestone Timeline Component (Dot Timeline)
-- ⏳ 8.2: Frontend — Milestone Flag Toggle
-- ⏳ 8.3: Frontend — Milestone Timeline Filters
-- ⏳ 8.4: Milestone Timeline Sharing & Export
+### Wave 2: Core V2 (E7 + E8) — 7 stories ✅ COMPLETE
 
-### Wave 3: Enhancement (E9 + E10) — 8 stories ⏳ PENDING
+#### EPIC 7: Multi-Source Ingestion Pipeline (4 stories) — ✅ COMPLETE
+- ✅ 7.1: Backend — Source Entity & Ingestion Queue (8 SP)
+- ✅ 7.2: Frontend — Ingestion Approval Page (8 SP)
+- ✅ 7.3: Manual Input — Create Project Item Form (5 SP)
+- ✅ 7.4: Backend — Gmail API Poller (8 SP)
+
+#### EPIC 8: Milestone Timeline (3 stories) — ✅ COMPLETE
+- ✅ 8.1: Frontend — Milestone Timeline Component (13 SP, Dot Timeline)
+- ✅ 8.2: Frontend — Milestone Flag Toggle (5 SP)
+- ✅ 8.3: Frontend — Milestone Timeline Filters (5 SP)
+
+### Wave 3: Enhancement (E8 cont. + E9 + E10) — 9 stories ⏳ PENDING
+- ⏳ 8.4: Milestone Timeline Sharing & Export
 - ⏳ 9.1: Component Evolution — Item Type Badges & Source Icons
 - ⏳ 9.2: Dense Rows Layout & Visual Layer Separation
 - ⏳ 9.3: Multi-Discipline Circles
@@ -281,13 +285,21 @@ All story files are located in `docs/stories/`:
 - 6.2-frontend-project-create-edit-form.md
 - 6.3-frontend-project-list-enhancement.md
 
-**EPIC 7 (partial):**
+**EPIC 7:**
+- 7.1-backend-source-entity-ingestion-queue.md
+- 7.2-frontend-ingestion-approval-page.md
 - 7.3-manual-input-create-project-item-form.md
+- 7.4-backend-gmail-api-poller.md
+
+**EPIC 8 (partial — 8.4 deferred to Wave 3):**
+- 8.1-frontend-milestone-timeline-component.md
+- 8.2-frontend-milestone-flag-toggle.md
+- 8.3-frontend-milestone-timeline-filters.md
 
 ---
 
 **Last Updated:** 2026-02-19
-**Status:** Wave 1 COMPLETE (8/24) — Wave 2 in progress (1/8 done)
-**Next Session:** Wave 2 story creation (E7 + E8)
+**Status:** Wave 1 + Wave 2 COMPLETE (15/24) — Wave 3 pending (9 stories)
+**Next Session:** Wave 3 story creation (E8.4 + E9 + E10)
 
 — River, removendo obstáculos 🌊
