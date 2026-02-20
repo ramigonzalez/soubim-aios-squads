@@ -27,6 +27,12 @@ When an agent is active:
 3. **Track changes** - Maintain the File List section in the story
 4. **Follow criteria** - Implement exactly what the acceptance criteria specify
 
+### @dev Agent: Required Pre-Work Before Each Sprint
+**@dev must read these before beginning story development:**
+1. `.claude/CLAUDE.md` — Project rules & standards (this file)
+2. `docs/development/BRANCHING_STRATEGY.md` — Git branching workflow (REQUIRED for all V2 development)
+3. Story file — `docs/stories/{epic}.{story}-kebab-case.md` (specific story you're implementing)
+
 ### Adding a New Feature (Step-by-Step)
 1. Find or create story in `docs/stories/` (format: `{epic}.{story}-kebab-case.md`)
 2. Read the AC and check `Blocked By` dependencies
@@ -183,15 +189,30 @@ try {
 
 **This is the single most important git rule.** If violated, you lose control of what enters your codebase.
 
+### Branching Strategy
+**AUTHORITATIVE SOURCE:** `docs/development/BRANCHING_STRATEGY.md` (read this first!)
+
+**Quick Reference:**
+- **Branch naming:** `feature/{EPIC}.{STORY}-kebab-case` (e.g., `feature/5.1-database-migration-v2`)
+- **Workflow:** Create local → Develop → Commit (ask user) → Push via @github-devops
+- **Rules:** One branch per story, short-lived, deleted after merge
+- **Responsibilities:** @dev creates/commits locally, @github-devops pushes/creates PR/merges
+- **Conflicts:** Ask @github-devops for rebase on main
+- **Multiple people on same branch:** Coordinate via Slack, pull before each commit
+
+See `docs/development/BRANCHING_STRATEGY.md` for complete details, examples, troubleshooting, and all scenarios.
+
 ### Commit Conventions
 - Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`, etc.
-- Reference story ID: `feat: implement IDE detection [Story 2.1]`
+- Reference story ID: `feat: database migration [Story 5.1]`
 - Keep commits atomic and focused
+- Format: `{type}: {summary} [Story {EPIC}.{STORY}]` with optional body
 
 ### GitHub CLI Usage
 - Ensure authenticated: `gh auth status`
-- Use for PR creation: `gh pr create`
+- Use for PR creation: `gh pr create` (only @github-devops)
 - Check org access: `gh api user/memberships`
+- **@dev cannot use:** No direct gh push, pr create, or pr merge (delegate to @github-devops)
 
 ## AIOS-Specific Patterns
 
