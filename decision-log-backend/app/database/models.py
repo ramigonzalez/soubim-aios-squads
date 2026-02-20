@@ -1,13 +1,21 @@
-"""SQLAlchemy ORM models for database tables."""
+"""SQLAlchemy ORM models for database tables.
 
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Float, Index, CheckConstraint, func, TypeDecorator
+V2 Migration (Story 5.1): Decision → ProjectItem taxonomy.
+- decisions table renamed to project_items
+- New tables: sources, project_participants
+- Decision class kept as alias for backward compatibility
+"""
+
+from sqlalchemy import (
+    Boolean, Column, String, Text, DateTime, ForeignKey, JSON, Float,
+    Index, CheckConstraint, Integer, func, TypeDecorator,
+)
 from sqlalchemy.dialects.postgresql import UUID as PGUID, JSONB
 from sqlalchemy.orm import declarative_base, relationship
 import uuid
 try:
     from pgvector.sqlalchemy import Vector as VECTOR
 except ImportError:
-    # Fallback if pgvector not installed
     VECTOR = String
 from datetime import datetime
 
@@ -34,11 +42,9 @@ class GUID(TypeDecorator):
         if isinstance(value, uuid.UUID):
             return value.hex
         elif isinstance(value, str):
-            # If it's a string UUID with hyphens, convert to hex
             try:
                 return uuid.UUID(value).hex
             except (ValueError, AttributeError):
-                # If it's already hex format, return as is
                 return value
         return value
 
@@ -48,9 +54,7 @@ class GUID(TypeDecorator):
         if isinstance(value, uuid.UUID):
             return value
         if isinstance(value, str):
-            # Handle both hex format (32 chars) and standard format (36 chars with hyphens)
             if len(value) == 32:
-                # Add hyphens to make it standard UUID format
                 return uuid.UUID(hex=value)
             else:
                 return uuid.UUID(value)
@@ -89,8 +93,15 @@ class Project(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     description = Column(Text)
+    project_type = Column(String(100))  # V2: residential, commercial, mixed-use, etc.
+    actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
     created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
+
+    # Relationships
+    items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan")
+    sources = relationship("Source", back_populates="project", cascade="all, delete-orphan")
+    participants = relationship("ProjectParticipant", back_populates="project", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_projects_created", "created_at"),
@@ -114,7 +125,7 @@ class ProjectMember(Base):
 
 
 class Transcript(Base):
-    """Transcript model for meeting recordings."""
+    """Transcript model for meeting recordings (V1 legacy — kept as read-only archive)."""
 
     __tablename__ = "transcripts"
 
@@ -137,20 +148,110 @@ class Transcript(Base):
     )
 
 
-class Decision(Base):
-    """Decision model for extracted decisions."""
+class Source(Base):
+    """Source model for meeting, email, document, and manual input sources (V2)."""
 
-    __tablename__ = "decisions"
+    __tablename__ = "sources"
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    transcript_id = Column(GUID(), ForeignKey("transcripts.id", ondelete="CASCADE"))
+    source_type = Column(String(50), nullable=False)
+    title = Column(String(500))
+    occurred_at = Column(DateTime, nullable=False)
+    ingestion_status = Column(String(50), nullable=False, default="pending")
+    ai_summary = Column(Text)
+    approved_by = Column(GUID(), ForeignKey("users.id"))
+    approved_at = Column(DateTime)
+    raw_content = Column(Text)
 
-    # Core decision data
-    decision_statement = Column(Text, nullable=False)
+    # Meeting-specific
+    meeting_type = Column(String(50))
+    participants = Column(JSONType)
+    duration_minutes = Column(Integer)
+    webhook_id = Column(String(255))
+
+    # Email-specific
+    email_from = Column(String(500))
+    email_to = Column(JSONType)
+    email_cc = Column(JSONType)
+    email_thread_id = Column(String(255))
+
+    # Document-specific
+    file_url = Column(String(1000))
+    file_type = Column(String(50))
+    file_size = Column(Integer)
+    drive_folder_id = Column(String(255))
+
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    # Relationships
+    project = relationship("Project", back_populates="sources")
+    items = relationship("ProjectItem", back_populates="source")
+
+    __table_args__ = (
+        CheckConstraint(
+            "source_type IN ('meeting', 'email', 'document', 'manual_input')",
+            name="ck_source_type_valid",
+        ),
+        CheckConstraint(
+            "ingestion_status IN ('pending', 'approved', 'rejected', 'processed')",
+            name="ck_ingestion_status_valid",
+        ),
+        Index("idx_sources_project", "project_id"),
+        Index("idx_sources_status", "ingestion_status"),
+        Index("idx_sources_type", "source_type"),
+        Index("idx_sources_occurred", "occurred_at"),
+    )
+
+
+class ProjectParticipant(Base):
+    """Project participant model (V2) — distinct from ProjectMember (auth users)."""
+
+    __tablename__ = "project_participants"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255))
+    discipline = Column(String(100))
+    role = Column(String(100))
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    # Relationships
+    project = relationship("Project", back_populates="participants")
+
+    __table_args__ = (
+        Index("idx_participants_project", "project_id"),
+    )
+
+
+class ProjectItem(Base):
+    """Project item model (V2) — formerly Decision. Supports decision, topic, idea, action_item, information."""
+
+    __tablename__ = "project_items"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    transcript_id = Column(GUID(), ForeignKey("transcripts.id", ondelete="CASCADE"))  # Legacy FK preserved
+    source_id = Column(GUID(), ForeignKey("sources.id"))  # V2: link to Source
+
+    # V2 taxonomy fields
+    item_type = Column(String(50), nullable=False, default="decision")
+    source_type = Column(String(50), nullable=False, default="meeting")
+    is_milestone = Column(Boolean, nullable=False, default=False)
+    is_done = Column(Boolean, nullable=False, default=False)
+    affected_disciplines = Column(JSONType, nullable=False, default=list)
+    owner = Column(String(255))  # Nullable — primarily for action_items
+    source_excerpt = Column(Text)
+
+    # Core item data (V1 fields preserved)
+    statement = Column(Text)  # V2 alias for decision_statement
+    decision_statement = Column(Text, nullable=False)  # V1 preserved for backward compat
     who = Column(String(255), nullable=False)
     timestamp = Column(String(20), nullable=False)
-    discipline = Column(String(100), nullable=False)
+    discipline = Column(String(100), nullable=False)  # V1 preserved for backward compat
 
     # Context & reasoning
     why = Column(Text, nullable=False)
@@ -172,23 +273,42 @@ class Decision(Base):
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
 
+    # Relationships
+    project = relationship("Project", back_populates="items")
+    source = relationship("Source", back_populates="items")
+
     __table_args__ = (
-        CheckConstraint("confidence BETWEEN 0 AND 1", name="ck_confidence_range"),
-        Index("idx_decisions_project", "project_id"),
-        Index("idx_decisions_discipline", "discipline"),
-        Index("idx_decisions_confidence", "confidence"),
-        Index("idx_decisions_created", "created_at"),
-        Index("idx_decisions_composite", "project_id", "discipline", "created_at"),
+        CheckConstraint("confidence BETWEEN 0 AND 1", name="ck_project_items_confidence_range"),
+        CheckConstraint(
+            "item_type IN ('idea', 'topic', 'decision', 'action_item', 'information')",
+            name="ck_item_type",
+        ),
+        CheckConstraint(
+            "source_type IN ('meeting', 'email', 'document', 'manual_input')",
+            name="ck_source_type",
+        ),
+        Index("idx_project_items_project", "project_id"),
+        Index("idx_project_items_discipline", "discipline"),
+        Index("idx_project_items_confidence", "confidence"),
+        Index("idx_project_items_created", "created_at"),
+        Index("idx_project_items_composite", "project_id", "discipline", "created_at"),
+        Index("idx_project_items_type", "item_type"),
+        Index("idx_project_items_source_type", "source_type"),
+        Index("idx_project_items_source", "source_id"),
     )
 
 
+# Backward compatibility alias — existing code can still import Decision
+Decision = ProjectItem
+
+
 class DecisionRelationship(Base):
-    """Decision relationship model for tracking relationships between decisions."""
+    """Decision relationship model for tracking relationships between decisions/project items."""
 
     __tablename__ = "decision_relationships"
 
-    from_decision_id = Column(GUID(), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
-    to_decision_id = Column(GUID(), ForeignKey("decisions.id", ondelete="CASCADE"), primary_key=True)
+    from_decision_id = Column(GUID(), ForeignKey("project_items.id", ondelete="CASCADE"), primary_key=True)
+    to_decision_id = Column(GUID(), ForeignKey("project_items.id", ondelete="CASCADE"), primary_key=True)
     relationship_type = Column(String(50), primary_key=True)
     created_at = Column(DateTime, nullable=False, default=func.now())
 

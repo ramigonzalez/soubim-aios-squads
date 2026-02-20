@@ -6,7 +6,10 @@ from datetime import datetime, timedelta
 from typing import Tuple, List, Dict
 from uuid import UUID
 
-from app.database.models import Project, ProjectMember, Decision, User
+from app.database.models import Project, ProjectMember, ProjectItem, User
+
+# Backward compatibility alias
+Decision = ProjectItem
 
 
 class ProjectNotFoundError(Exception):

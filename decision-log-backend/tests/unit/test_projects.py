@@ -4,7 +4,10 @@ import pytest
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
-from app.database.models import User, Project, ProjectMember, Decision, Transcript
+from app.database.models import User, Project, ProjectMember, ProjectItem, Transcript
+
+# Backward compatibility alias
+Decision = ProjectItem
 from app.services.project_service import (
     get_projects,
     get_project,
