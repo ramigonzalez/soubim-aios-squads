@@ -227,8 +227,112 @@ All story files are located in `docs/stories/`:
 
 ---
 
-**Last Updated:** 2026-02-08
-**Status:** ✅ ALL STORIES COMPLETE
-**Next Session:** Story refinement and sprint planning
+## V2 Stories — Creation Progress
 
-— Aria, arquitetando o futuro 🏗️
+**Date Started:** 2026-02-17
+**Total V2 Stories:** 24 (across 6 epics)
+**Architect Review:** CONDITIONAL APPROVAL (5 blockers resolved, 10 advisories incorporated)
+
+### Wave 1: Foundation (E5 + E6) — 8 stories ✅ COMPLETE
+
+#### EPIC 5: Data Model Evolution (5 stories) — ✅ COMPLETE
+- ✅ 5.1: Database Migration — Decision to Project Item (13 SP, critical path)
+- ✅ 5.2: Backend API — Project Items CRUD (8 SP, co-dependent with 5.3)
+- ✅ 5.3: Frontend Types & Hooks Migration (5 SP, co-dependent with 5.2)
+- ✅ 5.4: AI Extraction Prompt Evolution (8 SP)
+- ✅ 5.5: Seed Data & Test Suite Update (3 SP)
+
+#### EPIC 6: Project Management Foundation (3 stories) — ✅ COMPLETE
+- ✅ 6.1: Backend — Project CRUD, Stage Schedule & Participants (8 SP)
+- ✅ 6.2: Frontend — Project Create/Edit Form (8 SP)
+- ✅ 6.3: Frontend — Project List Enhancement (3 SP)
+
+### Wave 2: Core V2 (E7 + E8) — 7 stories ✅ COMPLETE
+
+#### EPIC 7: Multi-Source Ingestion Pipeline (4 stories) — ✅ COMPLETE
+- ✅ 7.1: Backend — Source Entity & Ingestion Queue (8 SP)
+- ✅ 7.2: Frontend — Ingestion Approval Page (8 SP)
+- ✅ 7.3: Manual Input — Create Project Item Form (5 SP)
+- ✅ 7.4: Backend — Gmail API Poller (8 SP)
+
+#### EPIC 8: Milestone Timeline (3 stories) — ✅ COMPLETE
+- ✅ 8.1: Frontend — Milestone Timeline Component (13 SP, Dot Timeline)
+- ✅ 8.2: Frontend — Milestone Flag Toggle (5 SP)
+- ✅ 8.3: Frontend — Milestone Timeline Filters (5 SP)
+
+### Wave 3: Enhancement (E8 cont. + E9 + E10) — 9 stories ✅ COMPLETE
+
+#### EPIC 8: Milestone Timeline — final story ✅ COMPLETE
+- ✅ 8.4: Milestone Timeline Sharing & Export (5 SP)
+
+#### EPIC 9: Project History Enhancement (5 stories) — ✅ COMPLETE
+- ✅ 9.1: Component Evolution — Item Type Badges & Source Icons (5 SP)
+- ✅ 9.2: Dense Rows Layout & Visual Layer Separation (8 SP)
+- ✅ 9.3: Multi-Discipline Circles (5 SP)
+- ✅ 9.4: Meeting Summary & Advanced Filters (8 SP)
+- ✅ 9.5: Rename & Navigation Update (3 SP)
+
+#### EPIC 10: Email & Document Integration (3 stories) — ✅ COMPLETE
+- ✅ 10.1: Email Item Extraction Pipeline (8 SP)
+- ✅ 10.2: Document Ingestion — PDF & DOCX (8 SP)
+- ✅ 10.3: Google Drive Folder Monitoring (8 SP)
+
+### V2 Story Files Created
+
+**EPIC 5:**
+- 5.1-database-migration-decision-to-project-item.md
+- 5.2-backend-api-project-items-crud.md
+- 5.3-frontend-types-hooks-migration.md
+- 5.4-ai-extraction-prompt-evolution.md
+- 5.5-seed-data-test-suite-update.md
+
+**EPIC 6:**
+- 6.1-backend-project-crud-stages-participants.md
+- 6.2-frontend-project-create-edit-form.md
+- 6.3-frontend-project-list-enhancement.md
+
+**EPIC 7:**
+- 7.1-backend-source-entity-ingestion-queue.md
+- 7.2-frontend-ingestion-approval-page.md
+- 7.3-manual-input-create-project-item-form.md
+- 7.4-backend-gmail-api-poller.md
+
+**EPIC 8:**
+- 8.1-frontend-milestone-timeline-component.md
+- 8.2-frontend-milestone-flag-toggle.md
+- 8.3-frontend-milestone-timeline-filters.md
+- 8.4-milestone-timeline-sharing-export.md
+
+**EPIC 9:**
+- 9.1-component-evolution-item-type-badges-source-icons.md
+- 9.2-dense-rows-layout-visual-separation.md
+- 9.3-multi-discipline-circles.md
+- 9.4-meeting-summary-advanced-filters.md
+- 9.5-rename-navigation-update.md
+
+**EPIC 10:**
+- 10.1-email-item-extraction-pipeline.md
+- 10.2-document-ingestion-pdf-docx.md
+- 10.3-google-drive-folder-monitoring.md
+
+---
+
+## V2 Story Points Summary
+
+| Epic | Stories | Total SP | Phase |
+|------|---------|----------|-------|
+| E5: Data Model Evolution | 5 | 37 | 1 (Weeks 1-2) |
+| E6: Project Management | 3 | 19 | 1 (Week 3) |
+| E7: Ingestion Pipeline | 4 | 29 | 2 (Weeks 4-5) + 4 (Weeks 9-10) |
+| E8: Milestone Timeline | 4 | 28 | 2 (Weeks 5-6) |
+| E9: Project History | 5 | 29 | 3 (Weeks 7-8) |
+| E10: Email & Document | 3 | 24 | 4 (Weeks 11-12) |
+| **Total** | **24** | **166** | **12 weeks** |
+
+---
+
+**Last Updated:** 2026-02-20
+**Status:** ALL V2 STORIES COMPLETE — 24/24 (100%)
+**All 3 waves finished. Ready for development kickoff.**
+
+— River, removendo obstáculos 🌊
