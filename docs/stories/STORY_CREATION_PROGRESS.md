@@ -260,16 +260,22 @@ All story files are located in `docs/stories/`:
 - ✅ 8.2: Frontend — Milestone Flag Toggle (5 SP)
 - ✅ 8.3: Frontend — Milestone Timeline Filters (5 SP)
 
-### Wave 3: Enhancement (E8 cont. + E9 + E10) — 9 stories ⏳ PENDING
-- ⏳ 8.4: Milestone Timeline Sharing & Export
-- ⏳ 9.1: Component Evolution — Item Type Badges & Source Icons
-- ⏳ 9.2: Dense Rows Layout & Visual Layer Separation
-- ⏳ 9.3: Multi-Discipline Circles
-- ⏳ 9.4: Meeting Summary & Advanced Filters
-- ⏳ 9.5: Rename & Navigation Update
-- ⏳ 10.1: Email Item Extraction Pipeline
-- ⏳ 10.2: Document Ingestion (PDF & DOCX)
-- ⏳ 10.3: Google Drive Folder Monitoring
+### Wave 3: Enhancement (E8 cont. + E9 + E10) — 9 stories ✅ COMPLETE
+
+#### EPIC 8: Milestone Timeline — final story ✅ COMPLETE
+- ✅ 8.4: Milestone Timeline Sharing & Export (5 SP)
+
+#### EPIC 9: Project History Enhancement (5 stories) — ✅ COMPLETE
+- ✅ 9.1: Component Evolution — Item Type Badges & Source Icons (5 SP)
+- ✅ 9.2: Dense Rows Layout & Visual Layer Separation (8 SP)
+- ✅ 9.3: Multi-Discipline Circles (5 SP)
+- ✅ 9.4: Meeting Summary & Advanced Filters (8 SP)
+- ✅ 9.5: Rename & Navigation Update (3 SP)
+
+#### EPIC 10: Email & Document Integration (3 stories) — ✅ COMPLETE
+- ✅ 10.1: Email Item Extraction Pipeline (8 SP)
+- ✅ 10.2: Document Ingestion — PDF & DOCX (8 SP)
+- ✅ 10.3: Google Drive Folder Monitoring (8 SP)
 
 ### V2 Story Files Created
 
@@ -291,15 +297,42 @@ All story files are located in `docs/stories/`:
 - 7.3-manual-input-create-project-item-form.md
 - 7.4-backend-gmail-api-poller.md
 
-**EPIC 8 (partial — 8.4 deferred to Wave 3):**
+**EPIC 8:**
 - 8.1-frontend-milestone-timeline-component.md
 - 8.2-frontend-milestone-flag-toggle.md
 - 8.3-frontend-milestone-timeline-filters.md
+- 8.4-milestone-timeline-sharing-export.md
+
+**EPIC 9:**
+- 9.1-component-evolution-item-type-badges-source-icons.md
+- 9.2-dense-rows-layout-visual-separation.md
+- 9.3-multi-discipline-circles.md
+- 9.4-meeting-summary-advanced-filters.md
+- 9.5-rename-navigation-update.md
+
+**EPIC 10:**
+- 10.1-email-item-extraction-pipeline.md
+- 10.2-document-ingestion-pdf-docx.md
+- 10.3-google-drive-folder-monitoring.md
 
 ---
 
-**Last Updated:** 2026-02-19
-**Status:** Wave 1 + Wave 2 COMPLETE (15/24) — Wave 3 pending (9 stories)
-**Next Session:** Wave 3 story creation (E8.4 + E9 + E10)
+## V2 Story Points Summary
+
+| Epic | Stories | Total SP | Phase |
+|------|---------|----------|-------|
+| E5: Data Model Evolution | 5 | 37 | 1 (Weeks 1-2) |
+| E6: Project Management | 3 | 19 | 1 (Week 3) |
+| E7: Ingestion Pipeline | 4 | 29 | 2 (Weeks 4-5) + 4 (Weeks 9-10) |
+| E8: Milestone Timeline | 4 | 28 | 2 (Weeks 5-6) |
+| E9: Project History | 5 | 29 | 3 (Weeks 7-8) |
+| E10: Email & Document | 3 | 24 | 4 (Weeks 11-12) |
+| **Total** | **24** | **166** | **12 weeks** |
+
+---
+
+**Last Updated:** 2026-02-20
+**Status:** ALL V2 STORIES COMPLETE — 24/24 (100%)
+**All 3 waves finished. Ready for development kickoff.**
 
 — River, removendo obstáculos 🌊
