@@ -2,11 +2,15 @@
 
 import pytest
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
 from app.database.models import Base
+
+# PostgreSQL integration test support
+_PG_URL = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL", "")
+_POSTGRES_AVAILABLE = bool(_PG_URL and "postgresql" in _PG_URL.lower())
 
 
 @pytest.fixture(scope="function")
@@ -70,3 +74,40 @@ def db_session() -> Session:
         Base.metadata.drop_all(bind=engine)
     except:
         pass  # Ignore cleanup errors
+
+
+@pytest.fixture(scope="function")
+def pg_engine():
+    """
+    PostgreSQL engine for integration tests.
+    Skips automatically if PostgreSQL is not configured via TEST_DATABASE_URL or DATABASE_URL.
+    """
+    if not _POSTGRES_AVAILABLE:
+        pytest.skip(
+            "PostgreSQL not configured. "
+            "Set TEST_DATABASE_URL=postgresql://... to run PostgreSQL integration tests."
+        )
+    engine = create_engine(_PG_URL, echo=False)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:
+        pytest.skip(f"PostgreSQL connection failed: {exc}")
+    yield engine
+    try:
+        Base.metadata.drop_all(bind=engine)
+    except Exception:
+        pass
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def pg_session(pg_engine) -> Session:
+    """
+    PostgreSQL-only ORM session. Skips if PostgreSQL not configured.
+    Use this instead of db_session when a test requires PostgreSQL-specific features
+    (GIN indexes, @> operator, vector search, transactional DDL).
+    """
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=pg_engine)
+    db = SessionLocal()
+    yield db
+    db.close()
