@@ -150,7 +150,7 @@ ALTER INDEX idx_project_items_discipline RENAME TO idx_decisions_discipline;
 ALTER INDEX idx_project_items_confidence RENAME TO idx_decisions_confidence;
 ALTER INDEX idx_project_items_created RENAME TO idx_decisions_created;
 ALTER INDEX idx_project_items_composite RENAME TO idx_decisions_composite;
-ALTER INDEX ck_project_items_confidence_range RENAME TO ck_confidence_range;
+ALTER TABLE project_items RENAME CONSTRAINT ck_project_items_confidence_range TO ck_confidence_range;
 
 -- Rename table back
 ALTER TABLE project_items RENAME TO decisions;

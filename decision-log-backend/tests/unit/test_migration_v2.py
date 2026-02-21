@@ -11,10 +11,19 @@ Validates the decisions → project_items migration:
 - project_participants table created with indexes
 - Source records linkable to project items
 - Backward compatibility (Decision alias)
+
+PostgreSQL integration tests (require TEST_DATABASE_URL or DATABASE_URL=postgresql://...):
+- GIN index @> (contains) query on affected_disciplines
+- Down migration restores V1 schema via transactional DDL rollback
+- Vector search (cosine distance) on migrated project_items
 """
 
+import importlib.util
+import os
+import pathlib
+
 import pytest
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from datetime import datetime
 from uuid import uuid4
 
@@ -23,6 +32,15 @@ from app.database.models import (
     Source, ProjectParticipant, DecisionRelationship,
     Transcript,
 )
+
+
+def _load_migration_sql(filename: str) -> object:
+    """Load a migration module by filename (handles digit-prefixed module names)."""
+    migrations_dir = pathlib.Path(__file__).parent.parent.parent / "app" / "database" / "migrations"
+    spec = importlib.util.spec_from_file_location(f"migration_{filename}", migrations_dir / filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestTableRename:
@@ -584,3 +602,248 @@ class TestBackwardCompatibility:
 
         retrieved = db_session.query(ProjectItem).first()
         assert retrieved.transcript_id == transcript.id
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PostgreSQL Integration Tests — TEST-001 (QA Gate Story 5.1)
+# Require a live PostgreSQL instance: set TEST_DATABASE_URL or DATABASE_URL.
+# These tests are automatically skipped when only SQLite is available.
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestGINIndexQuery:
+    """GIN index on affected_disciplines supports JSONB @> (contains) queries.
+
+    AC: "Test: GIN index on affected_disciplines supports @> queries"
+    Requires PostgreSQL (GIN + JSONB @> is PostgreSQL-specific).
+    """
+
+    @pytest.fixture
+    def project(self, pg_session):
+        p = Project(name="GIN Test Project")
+        pg_session.add(p)
+        pg_session.commit()
+        return p
+
+    def test_gin_contains_single_discipline(self, pg_session, project):
+        """@> returns items whose affected_disciplines array contains the target."""
+        structural = ProjectItem(
+            project_id=project.id, decision_statement="Steel frame",
+            who="Engineer", timestamp="00:00:00", discipline="structural",
+            affected_disciplines=["structural", "architecture"],
+            why="Cost efficiency", consensus={},
+        )
+        mep_only = ProjectItem(
+            project_id=project.id, decision_statement="HVAC routing",
+            who="MEP Eng", timestamp="00:01:00", discipline="mep",
+            affected_disciplines=["mep"],
+            why="Space constraints", consensus={},
+        )
+        pg_session.add_all([structural, mep_only])
+        pg_session.commit()
+
+        # Cast json→jsonb: the ORM stores affected_disciplines as json (SQLite compat).
+        # The @> (contains) operator requires jsonb. Cast is safe and lossless.
+        # Queries are scoped to the test project to isolate from existing seed data.
+        rows = pg_session.execute(
+            text(
+                "SELECT id FROM project_items "
+                "WHERE project_id = :pid "
+                "AND affected_disciplines::jsonb @> '[\"structural\"]'::jsonb"
+            ),
+            {"pid": str(project.id)},
+        ).fetchall()
+
+        assert len(rows) == 1, "Only the structural item should match"
+        assert str(rows[0][0]) == str(structural.id)
+
+    def test_gin_contains_multiple_disciplines(self, pg_session, project):
+        """@> with multiple values only matches items containing ALL of them."""
+        cross_discipline = ProjectItem(
+            project_id=project.id, decision_statement="Coordination decision",
+            who="PM", timestamp="00:00:00", discipline="architecture",
+            affected_disciplines=["architecture", "structural", "mep"],
+            why="Cross-discipline coordination", consensus={},
+        )
+        single_discipline = ProjectItem(
+            project_id=project.id, decision_statement="Arch only",
+            who="Arch", timestamp="00:01:00", discipline="architecture",
+            affected_disciplines=["architecture"],
+            why="Internal decision", consensus={},
+        )
+        pg_session.add_all([cross_discipline, single_discipline])
+        pg_session.commit()
+
+        rows = pg_session.execute(
+            text(
+                "SELECT id FROM project_items "
+                "WHERE project_id = :pid "
+                "AND affected_disciplines::jsonb @> '[\"architecture\", \"mep\"]'::jsonb"
+            ),
+            {"pid": str(project.id)},
+        ).fetchall()
+
+        assert len(rows) == 1, "Only the cross-discipline item should match both"
+        assert str(rows[0][0]) == str(cross_discipline.id)
+
+    def test_gin_no_match_returns_empty(self, pg_session, project):
+        """@> returns empty result when no items match the target discipline."""
+        item = ProjectItem(
+            project_id=project.id, decision_statement="Structural only",
+            who="Eng", timestamp="00:00:00", discipline="structural",
+            affected_disciplines=["structural"],
+            why="Isolated decision", consensus={},
+        )
+        pg_session.add(item)
+        pg_session.commit()
+
+        rows = pg_session.execute(
+            text(
+                "SELECT id FROM project_items "
+                "WHERE project_id = :pid "
+                "AND affected_disciplines::jsonb @> '[\"landscape\"]'::jsonb"
+            ),
+            {"pid": str(project.id)},
+        ).fetchall()
+
+        assert len(rows) == 0
+
+
+class TestDownMigration:
+    """Down migration restores V1 schema (decisions table, no V2 columns).
+
+    AC: "Test: down migration restores V1 schema (when no V2-specific data exists)"
+
+    Uses PostgreSQL transactional DDL: the downgrade SQL runs inside a transaction
+    that is rolled back at the end, restoring the V2 schema for subsequent tests.
+    """
+
+    def test_down_migration_001_002_restores_decisions_table(self, pg_engine):
+        """Full downgrade (002 → 001) restores decisions table and removes V2 structures."""
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+
+        # Strip BEGIN/COMMIT — SQLAlchemy manages the transaction boundary
+        def strip_tx(sql: str) -> str:
+            return sql.replace("BEGIN;", "").replace("COMMIT;", "").strip()
+
+        down_002 = strip_tx(migration_002.DOWNGRADE_SQL)
+        down_001 = strip_tx(migration_001.DOWNGRADE_SQL)
+
+        # engine.connect() auto-begins a transaction; exiting without commit → rollback.
+        # PostgreSQL DDL is transactional, so rollback restores the original V2 schema.
+        with pg_engine.connect() as conn:
+            try:
+                # Run downgrade 002 first (removes FK + drops sources/participants)
+                conn.execute(text(down_002))
+                # Run downgrade 001 (drops V2 columns, renames project_items → decisions)
+                conn.execute(text(down_001))
+
+                # ── Verify V1 state ──────────────────────────────────────────
+                tables = conn.execute(
+                    text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+                ).fetchall()
+                table_names = {row[0] for row in tables}
+
+                assert "decisions" in table_names, "decisions table must exist after downgrade"
+                assert "project_items" not in table_names, "project_items must not exist after downgrade"
+                assert "sources" not in table_names, "sources table must be dropped"
+                assert "project_participants" not in table_names, "project_participants must be dropped"
+
+                # Verify V2 columns are gone from decisions
+                cols = conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'decisions' AND table_schema = 'public'"
+                )).fetchall()
+                col_names = {row[0] for row in cols}
+
+                assert "decision_statement" in col_names, "V1 column decision_statement must be preserved"
+                assert "discipline" in col_names, "V1 column discipline must be preserved"
+                assert "item_type" not in col_names, "V2 column item_type must be removed"
+                assert "source_type" not in col_names, "V2 column source_type must be removed"
+                assert "affected_disciplines" not in col_names, "V2 column affected_disciplines must be removed"
+                assert "is_milestone" not in col_names, "V2 column is_milestone must be removed"
+                assert "is_done" not in col_names, "V2 column is_done must be removed"
+
+            finally:
+                # Always rollback — restores V2 schema regardless of test outcome
+                conn.rollback()
+
+
+class TestVectorSearchPostMigration:
+    """Vector search (cosine distance) works on project_items after migration.
+
+    AC: "Test: vector search still works on migrated data"
+    Requires PostgreSQL + pgvector extension.
+    """
+
+    @pytest.fixture
+    def project(self, pg_session):
+        p = Project(name="Vector Test Project")
+        pg_session.add(p)
+        pg_session.commit()
+        return p
+
+    def test_vector_search_nearest_neighbor(self, pg_session, project):
+        """Items with embeddings are retrievable via cosine distance (<=>)."""
+        # 384-dimensional embeddings (all-MiniLM-L6-v2 shape)
+        embedding_a = [0.1] * 384
+        embedding_b = [0.9] * 384  # Far from A
+
+        item_a = ProjectItem(
+            project_id=project.id, decision_statement="Use precast concrete panels",
+            who="Engineer", timestamp="00:00:00", discipline="structural",
+            why="Speed of construction", consensus={}, embedding=embedding_a,
+        )
+        item_b = ProjectItem(
+            project_id=project.id, decision_statement="Install green roof",
+            who="Architect", timestamp="00:01:00", discipline="architecture",
+            why="Sustainability", consensus={}, embedding=embedding_b,
+        )
+        pg_session.add_all([item_a, item_b])
+        pg_session.commit()
+
+        # Query for the nearest neighbor to embedding_a
+        query_embedding = str(embedding_a)  # pgvector accepts Python list as string
+        result = pg_session.execute(
+            text(
+                "SELECT id, embedding <=> CAST(:emb AS vector) AS distance "
+                "FROM project_items "
+                "WHERE embedding IS NOT NULL "
+                "ORDER BY distance ASC "
+                "LIMIT 1"
+            ),
+            {"emb": query_embedding},
+        ).fetchone()
+
+        assert result is not None, "Vector search must return at least one result"
+        assert str(result[0]) == str(item_a.id), "Nearest neighbor should be item_a (identical embedding)"
+        assert float(result[1]) < 0.001, "Cosine distance to identical vector should be ~0"
+
+    def test_vector_search_items_without_embedding_excluded(self, pg_session, project):
+        """Items without embeddings are excluded from vector search."""
+        item_with_embedding = ProjectItem(
+            project_id=project.id, decision_statement="Concrete decision",
+            who="Eng", timestamp="00:00:00", discipline="structural",
+            why="Testing", consensus={}, embedding=[0.5] * 384,
+        )
+        item_without_embedding = ProjectItem(
+            project_id=project.id, decision_statement="Manual entry",
+            who="PM", timestamp="00:01:00", discipline="client",
+            why="No embedding", consensus={},
+        )
+        pg_session.add_all([item_with_embedding, item_without_embedding])
+        pg_session.commit()
+
+        rows = pg_session.execute(
+            text(
+                "SELECT id FROM project_items "
+                "WHERE embedding IS NOT NULL "
+                "ORDER BY embedding <=> CAST(:emb AS vector) ASC LIMIT 5"
+            ),
+            {"emb": str([0.5] * 384)},
+        ).fetchall()
+
+        result_ids = {str(row[0]) for row in rows}
+        assert str(item_with_embedding.id) in result_ids
+        assert str(item_without_embedding.id) not in result_ids
