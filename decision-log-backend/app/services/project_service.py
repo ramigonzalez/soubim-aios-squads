@@ -1,12 +1,12 @@
 """Project service for querying and filtering projects."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
 from datetime import datetime, timedelta
-from typing import Tuple, List, Dict
-from uuid import UUID
+from typing import Dict, List, Tuple
 
-from app.database.models import Project, ProjectMember, ProjectItem, User
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.database.models import Project, ProjectItem, ProjectMember, User
 
 # Backward compatibility alias
 Decision = ProjectItem

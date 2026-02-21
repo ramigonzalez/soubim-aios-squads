@@ -5,23 +5,27 @@ V2 Migration (Story 5.1): Uses ProjectItem model with V2 fields
 Includes Source records linked to transcripts and ProjectParticipant records.
 """
 
-from sqlalchemy.orm import Session
-from uuid import uuid4
+import os
+import sys
 import uuid
 from datetime import datetime
-import sys
-import os
+from uuid import uuid4
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from app.database.models import (
-    User, Project, ProjectMember, ProjectItem, Transcript,
-    Source, ProjectParticipant,
-)
-from app.database.session import SessionLocal, engine
-from app.utils.security import hash_password
 from app.config import settings
+from app.database.models import (
+    Project,
+    ProjectItem,
+    ProjectMember,
+    ProjectParticipant,
+    Source,
+    Transcript,
+    User,
+)
+from app.database.session import SessionLocal
+from app.utils.security import hash_password
 
 
 def seed_database():
@@ -59,7 +63,7 @@ def seed_database():
         )
         db.add(test_user)
         db.flush()
-        print(f"  ✓ Created user: test@example.com")
+        print("  ✓ Created user: test@example.com")
 
         # Create additional test users
         gabriela = User(
@@ -72,7 +76,7 @@ def seed_database():
         )
         db.add(gabriela)
         db.flush()
-        print(f"  ✓ Created user: gabriela@soubim.com")
+        print("  ✓ Created user: gabriela@soubim.com")
 
         carlos = User(
             id=uuid4(),
@@ -84,7 +88,7 @@ def seed_database():
         )
         db.add(carlos)
         db.flush()
-        print(f"  ✓ Created user: carlos@mep.com")
+        print("  ✓ Created user: carlos@mep.com")
 
         # Create test project
         project1 = Project(
@@ -96,7 +100,7 @@ def seed_database():
         )
         db.add(project1)
         db.flush()
-        print(f"  ✓ Created project: Residential Tower Alpha")
+        print("  ✓ Created project: Residential Tower Alpha")
 
         # Create second project
         project2 = Project(
@@ -108,7 +112,7 @@ def seed_database():
         )
         db.add(project2)
         db.flush()
-        print(f"  ✓ Created project: Commercial Plaza Beta")
+        print("  ✓ Created project: Commercial Plaza Beta")
 
         # Add project members
         member1 = ProjectMember(
@@ -144,7 +148,7 @@ def seed_database():
         db.add(member4)
         db.flush()
 
-        print(f"  ✓ Created project memberships")
+        print("  ✓ Created project memberships")
 
         # ── Project Participants (V2) ───────────────────────────────────
         participants_p1 = [
@@ -277,7 +281,7 @@ def seed_database():
         db.add(t6)
 
         db.flush()
-        print(f"  ✓ Created 6 transcripts with meeting titles")
+        print("  ✓ Created 6 transcripts with meeting titles")
 
         # ── Source records from transcripts (V2) ────────────────────────
         s1 = Source(
@@ -356,7 +360,7 @@ def seed_database():
         )
         db.add_all([s1, s2, s3, s4, s5, s6])
         db.flush()
-        print(f"  ✓ Created 6 source records from transcripts")
+        print("  ✓ Created 6 source records from transcripts")
 
         # ── Project Items (V2) — formerly Decisions ─────────────────────
         # All existing decisions get: item_type='decision', source_type='meeting',
@@ -555,7 +559,7 @@ def seed_database():
         db.add(item4)
 
         db.flush()
-        print(f"  ✓ Created 11 project items (decisions) linked to transcripts/sources (Project 1)")
+        print("  ✓ Created 11 project items (decisions) linked to transcripts/sources (Project 1)")
 
         # ── V2 mixed item types for Project 1 ──────────────────────────
         # Add non-decision item types: topic, idea, action_item, information
@@ -614,7 +618,7 @@ def seed_database():
 
         db.add_all([topic1, idea1, action1, info1])
         db.flush()
-        print(f"  ✓ Created 4 V2 mixed item types (topic, idea, action_item, information)")
+        print("  ✓ Created 4 V2 mixed item types (topic, idea, action_item, information)")
 
         # ── Project Items for Project 2 ─────────────────────────────────
 
@@ -682,10 +686,10 @@ def seed_database():
 
         db.add_all([topic2, action2])
         db.flush()
-        print(f"  ✓ Created 4 project items (Project 2) incl. V2 types")
+        print("  ✓ Created 4 project items (Project 2) incl. V2 types")
 
         db.commit()
-        print(f"  ✓ Committed all data")
+        print("  ✓ Committed all data")
 
         print("✅ Database seeded successfully!")
 

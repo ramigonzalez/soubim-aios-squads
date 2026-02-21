@@ -6,18 +6,30 @@ V2 Migration (Story 5.1): Decision → ProjectItem taxonomy.
 - Decision class kept as alias for backward compatibility
 """
 
-from sqlalchemy import (
-    Boolean, Column, String, Text, DateTime, ForeignKey, JSON, Float,
-    Index, CheckConstraint, Integer, func, TypeDecorator,
-)
-from sqlalchemy.dialects.postgresql import UUID as PGUID, JSONB
-from sqlalchemy.orm import declarative_base, relationship
 import uuid
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID as PGUID
+from sqlalchemy.orm import declarative_base, relationship
+
 try:
     from pgvector.sqlalchemy import Vector as VECTOR
 except ImportError:
     VECTOR = String
-from datetime import datetime
 
 # Use JSON for SQLite compatibility
 JSONType = JSON
