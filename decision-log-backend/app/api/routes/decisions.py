@@ -1,12 +1,16 @@
-"""Decision endpoints."""
+"""Decision endpoints (V1 backward-compatible, queries project_items table)."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.database.models import ProjectItem, Transcript
 from app.database.session import get_db
-from app.database.models import Decision, Transcript
+
+# Backward compatibility alias for route internals
+Decision = ProjectItem
 
 router = APIRouter()
 

@@ -1,4 +1,8 @@
-"""Tests for database schema and models."""
+"""Tests for database schema and models.
+
+V2 Migration (Story 5.1): Updated for project_items table (formerly decisions),
+plus new Source and ProjectParticipant models.
+"""
 
 import pytest
 from sqlalchemy import inspect, text
@@ -6,7 +10,11 @@ from datetime import datetime
 from uuid import uuid4
 
 from app.database.session import engine, SessionLocal
-from app.database.models import User, Project, ProjectMember, Transcript, Decision, DecisionRelationship, Base
+from app.database.models import (
+    User, Project, ProjectMember, Transcript,
+    ProjectItem, Decision, DecisionRelationship,
+    Source, ProjectParticipant, Base,
+)
 from app.utils.security import hash_password, verify_password
 
 
@@ -115,7 +123,7 @@ class TestProjectTable:
         """Verify all required columns exist."""
         inspector = inspect(engine)
         columns = {col["name"] for col in inspector.get_columns("projects")}
-        required = {"id", "name", "description", "created_at", "archived_at"}
+        required = {"id", "name", "description", "created_at", "archived_at", "project_type", "actual_stage_id"}
         assert required.issubset(columns)
 
     def test_project_soft_archive(self, db_session):
@@ -150,7 +158,6 @@ class TestProjectMembersTable:
 
     def test_project_member_foreign_keys(self, db_session):
         """Verify foreign key constraints work."""
-        # Should fail without valid project_id and user_id
         member = ProjectMember(
             project_id=uuid4(),
             user_id=uuid4(),
@@ -221,36 +228,47 @@ class TestTranscriptTable:
         assert retrieved.participants == participants
 
 
-class TestDecisionsTable:
-    """Test decisions table schema and pgvector."""
+class TestProjectItemsTable:
+    """Test project_items table schema (V2, formerly decisions)."""
 
-    def test_decisions_table_exists(self, db_session):
-        """Verify decisions table exists."""
+    def test_project_items_table_exists(self, db_session):
+        """Verify project_items table exists (V2 renamed from decisions)."""
         inspector = inspect(engine)
         tables = inspector.get_table_names()
-        assert "decisions" in tables
+        assert "project_items" in tables
 
-    def test_decision_required_columns(self, db_session):
-        """Verify all required columns exist."""
+    def test_project_item_required_columns(self, db_session):
+        """Verify all required columns exist including V2 additions."""
         inspector = inspect(engine)
-        columns = {col["name"] for col in inspector.get_columns("decisions")}
-        required = {
+        columns = {col["name"] for col in inspector.get_columns("project_items")}
+        # V1 columns
+        v1_required = {
             "id", "project_id", "transcript_id",
             "decision_statement", "who", "timestamp", "discipline",
             "why", "causation", "impacts", "consensus",
             "confidence", "similar_decisions", "consistency_notes", "anomaly_flags",
             "embedding", "created_at", "updated_at"
         }
-        assert required.issubset(columns)
+        # V2 new columns
+        v2_required = {
+            "item_type", "source_type", "is_milestone", "is_done",
+            "affected_disciplines", "owner", "source_id", "source_excerpt",
+            "statement",
+        }
+        assert v1_required.issubset(columns), f"Missing V1 columns: {v1_required - columns}"
+        assert v2_required.issubset(columns), f"Missing V2 columns: {v2_required - columns}"
 
-    def test_decision_confidence_constraint(self, db_session):
+    def test_decision_alias_works(self, db_session):
+        """Verify Decision alias still works (backward compatibility)."""
+        assert Decision is ProjectItem
+
+    def test_project_item_confidence_constraint(self, db_session):
         """Verify confidence CHECK constraint (0-1)."""
         project = Project(name="Test Project")
         db_session.add(project)
         db_session.commit()
 
-        # Invalid: confidence = 1.5
-        decision = Decision(
+        item = ProjectItem(
             project_id=project.id,
             decision_statement="Test decision",
             who="Test User",
@@ -260,10 +278,69 @@ class TestDecisionsTable:
             consensus={"architecture": "AGREE"},
             confidence=1.5,  # Invalid!
         )
-        db_session.add(decision)
+        db_session.add(item)
 
         with pytest.raises(Exception):  # IntegrityError
             db_session.commit()
+
+    def test_project_item_v2_defaults(self, db_session):
+        """Verify V2 columns have correct defaults."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        item = ProjectItem(
+            project_id=project.id,
+            decision_statement="Test decision",
+            who="Test User",
+            timestamp="00:00:00",
+            discipline="architecture",
+            why="Test reasoning",
+            consensus={"architecture": "AGREE"},
+            confidence=0.85,
+        )
+        db_session.add(item)
+        db_session.commit()
+
+        retrieved = db_session.query(ProjectItem).first()
+        assert retrieved.item_type == "decision"
+        assert retrieved.source_type == "meeting"
+        assert retrieved.is_milestone is False
+        assert retrieved.is_done is False
+        assert retrieved.affected_disciplines == []
+        assert retrieved.owner is None
+        assert retrieved.source_id is None
+
+    def test_project_item_with_v2_fields(self, db_session):
+        """Verify V2 fields can be set explicitly."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        item = ProjectItem(
+            project_id=project.id,
+            item_type="action_item",
+            source_type="meeting",
+            decision_statement="Prepare load analysis by Feb 14",
+            statement="Prepare load analysis by Feb 14",
+            who="Miguel",
+            timestamp="00:20:00",
+            discipline="electrical",
+            affected_disciplines=["electrical", "mep"],
+            why="Need analysis before finalizing specs",
+            consensus={},
+            owner="Miguel",
+            is_done=False,
+            is_milestone=False,
+        )
+        db_session.add(item)
+        db_session.commit()
+
+        retrieved = db_session.query(ProjectItem).first()
+        assert retrieved.item_type == "action_item"
+        assert retrieved.affected_disciplines == ["electrical", "mep"]
+        assert retrieved.owner == "Miguel"
+        assert retrieved.statement == "Prepare load analysis by Feb 14"
 
     def test_decision_vector_embedding(self, db_session):
         """Verify pgvector embedding column (384-dim)."""
@@ -271,10 +348,9 @@ class TestDecisionsTable:
         db_session.add(project)
         db_session.commit()
 
-        # Create mock 384-dimensional vector
         embedding = [0.1] * 384
 
-        decision = Decision(
+        item = ProjectItem(
             project_id=project.id,
             decision_statement="Test decision",
             who="Test User",
@@ -285,12 +361,127 @@ class TestDecisionsTable:
             confidence=0.95,
             embedding=embedding,
         )
-        db_session.add(decision)
+        db_session.add(item)
         db_session.commit()
 
-        retrieved = db_session.query(Decision).first()
+        retrieved = db_session.query(ProjectItem).first()
         assert retrieved.embedding is not None
-        # Note: pgvector stores as list
+
+
+class TestSourcesTable:
+    """Test sources table schema (V2)."""
+
+    def test_sources_table_exists(self, db_session):
+        """Verify sources table exists."""
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        assert "sources" in tables
+
+    def test_source_required_columns(self, db_session):
+        """Verify all source columns exist."""
+        inspector = inspect(engine)
+        columns = {col["name"] for col in inspector.get_columns("sources")}
+        required = {
+            "id", "project_id", "source_type", "title", "occurred_at",
+            "ingestion_status", "ai_summary", "approved_by", "approved_at",
+            "raw_content", "meeting_type", "participants", "duration_minutes",
+            "webhook_id", "email_from", "email_to", "email_cc", "email_thread_id",
+            "file_url", "file_type", "file_size", "drive_folder_id",
+            "created_at", "updated_at",
+        }
+        assert required.issubset(columns), f"Missing columns: {required - columns}"
+
+    def test_source_creation(self, db_session):
+        """Verify source records can be created."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        source = Source(
+            project_id=project.id,
+            source_type="meeting",
+            title="Test Meeting",
+            occurred_at=datetime.utcnow(),
+            ingestion_status="processed",
+            meeting_type="Design Review",
+            participants=[{"name": "Carlos", "role": "Engineer"}],
+            duration_minutes=45,
+        )
+        db_session.add(source)
+        db_session.commit()
+
+        retrieved = db_session.query(Source).first()
+        assert retrieved.source_type == "meeting"
+        assert retrieved.ingestion_status == "processed"
+        assert retrieved.duration_minutes == 45
+
+    def test_source_project_item_relationship(self, db_session):
+        """Verify source → project_items relationship works."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        source = Source(
+            project_id=project.id,
+            source_type="meeting",
+            title="Test Meeting",
+            occurred_at=datetime.utcnow(),
+            meeting_type="Design Review",
+        )
+        db_session.add(source)
+        db_session.commit()
+
+        item = ProjectItem(
+            project_id=project.id,
+            source_id=source.id,
+            decision_statement="Test decision",
+            who="Test User",
+            timestamp="00:00:00",
+            discipline="architecture",
+            why="Test",
+            consensus={},
+        )
+        db_session.add(item)
+        db_session.commit()
+
+        assert item.source_id == source.id
+
+
+class TestProjectParticipantsTable:
+    """Test project_participants table schema (V2)."""
+
+    def test_participants_table_exists(self, db_session):
+        """Verify project_participants table exists."""
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        assert "project_participants" in tables
+
+    def test_participant_required_columns(self, db_session):
+        """Verify all participant columns exist."""
+        inspector = inspect(engine)
+        columns = {col["name"] for col in inspector.get_columns("project_participants")}
+        required = {"id", "project_id", "name", "email", "discipline", "role", "created_at", "updated_at"}
+        assert required.issubset(columns)
+
+    def test_participant_creation(self, db_session):
+        """Verify participant records can be created."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        participant = ProjectParticipant(
+            project_id=project.id,
+            name="Carlos",
+            email="carlos@mep.com",
+            discipline="structural",
+            role="Structural Engineer",
+        )
+        db_session.add(participant)
+        db_session.commit()
+
+        retrieved = db_session.query(ProjectParticipant).first()
+        assert retrieved.name == "Carlos"
+        assert retrieved.discipline == "structural"
 
 
 class TestDecisionRelationshipsTable:
@@ -308,7 +499,7 @@ class TestDecisionRelationshipsTable:
         db_session.add(project)
         db_session.commit()
 
-        decision1 = Decision(
+        item1 = ProjectItem(
             project_id=project.id,
             decision_statement="Decision 1",
             who="Test User",
@@ -317,7 +508,7 @@ class TestDecisionRelationshipsTable:
             why="Test reasoning",
             consensus={"architecture": "AGREE"},
         )
-        decision2 = Decision(
+        item2 = ProjectItem(
             project_id=project.id,
             decision_statement="Decision 2",
             who="Test User",
@@ -326,20 +517,20 @@ class TestDecisionRelationshipsTable:
             why="Test reasoning",
             consensus={"mep": "AGREE"},
         )
-        db_session.add_all([decision1, decision2])
+        db_session.add_all([item1, item2])
         db_session.commit()
 
         relationship = DecisionRelationship(
-            from_decision_id=decision1.id,
-            to_decision_id=decision2.id,
+            from_decision_id=item1.id,
+            to_decision_id=item2.id,
             relationship_type="triggered",
         )
         db_session.add(relationship)
         db_session.commit()
 
         retrieved = db_session.query(DecisionRelationship).first()
-        assert retrieved.from_decision_id == decision1.id
-        assert retrieved.to_decision_id == decision2.id
+        assert retrieved.from_decision_id == item1.id
+        assert retrieved.to_decision_id == item2.id
 
 
 class TestIndexes:
@@ -359,18 +550,41 @@ class TestIndexes:
         expected = {"idx_projects_created", "idx_projects_archived"}
         assert expected.issubset(indexes)
 
-    def test_decision_indexes_exist(self, db_session):
-        """Verify decision indexes exist."""
+    def test_project_item_indexes_exist(self, db_session):
+        """Verify project_items indexes exist (V2 renamed from decisions)."""
         inspector = inspect(engine)
-        indexes = {idx["name"] for idx in inspector.get_indexes("decisions")}
+        indexes = {idx["name"] for idx in inspector.get_indexes("project_items")}
         expected = {
-            "idx_decisions_project",
-            "idx_decisions_discipline",
-            "idx_decisions_confidence",
-            "idx_decisions_created",
-            "idx_decisions_composite",
+            "idx_project_items_project",
+            "idx_project_items_discipline",
+            "idx_project_items_confidence",
+            "idx_project_items_created",
+            "idx_project_items_composite",
+            # V2 new indexes
+            "idx_project_items_type",
+            "idx_project_items_source_type",
+            "idx_project_items_source",
         }
-        assert expected.issubset(indexes)
+        assert expected.issubset(indexes), f"Missing indexes: {expected - indexes}"
+
+    def test_source_indexes_exist(self, db_session):
+        """Verify sources indexes exist."""
+        inspector = inspect(engine)
+        indexes = {idx["name"] for idx in inspector.get_indexes("sources")}
+        expected = {
+            "idx_sources_project",
+            "idx_sources_status",
+            "idx_sources_type",
+            "idx_sources_occurred",
+        }
+        assert expected.issubset(indexes), f"Missing indexes: {expected - indexes}"
+
+    def test_participant_indexes_exist(self, db_session):
+        """Verify project_participants indexes exist."""
+        inspector = inspect(engine)
+        indexes = {idx["name"] for idx in inspector.get_indexes("project_participants")}
+        expected = {"idx_participants_project"}
+        assert expected.issubset(indexes), f"Missing indexes: {expected - indexes}"
 
 
 class TestSoftDelete:
@@ -394,7 +608,6 @@ class TestSoftDelete:
         db_session.add_all([user1, user2])
         db_session.commit()
 
-        # Query only non-deleted users
         active_users = db_session.query(User).filter(User.deleted_at.is_(None)).all()
         assert len(active_users) == 1
         assert active_users[0].email == "active@example.com"
@@ -423,21 +636,19 @@ class TestForeignKeyConstraints:
         db_session.add(member)
         db_session.commit()
 
-        # Delete project
         db_session.delete(project)
         db_session.commit()
 
-        # Verify member is deleted
         members = db_session.query(ProjectMember).all()
         assert len(members) == 0
 
-    def test_cascade_delete_decisions(self, db_session):
-        """Verify deleting project deletes decisions."""
+    def test_cascade_delete_project_items(self, db_session):
+        """Verify deleting project deletes project items."""
         project = Project(name="Test Project")
         db_session.add(project)
         db_session.commit()
 
-        decision = Decision(
+        item = ProjectItem(
             project_id=project.id,
             decision_statement="Test decision",
             who="Test User",
@@ -446,13 +657,53 @@ class TestForeignKeyConstraints:
             why="Test reasoning",
             consensus={"architecture": "AGREE"},
         )
-        db_session.add(decision)
+        db_session.add(item)
         db_session.commit()
 
-        # Delete project
         db_session.delete(project)
         db_session.commit()
 
-        # Verify decision is deleted
-        decisions = db_session.query(Decision).all()
-        assert len(decisions) == 0
+        items = db_session.query(ProjectItem).all()
+        assert len(items) == 0
+
+    def test_cascade_delete_sources(self, db_session):
+        """Verify deleting project deletes sources."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        source = Source(
+            project_id=project.id,
+            source_type="meeting",
+            title="Test Meeting",
+            occurred_at=datetime.utcnow(),
+            meeting_type="Design Review",
+        )
+        db_session.add(source)
+        db_session.commit()
+
+        db_session.delete(project)
+        db_session.commit()
+
+        sources = db_session.query(Source).all()
+        assert len(sources) == 0
+
+    def test_cascade_delete_participants(self, db_session):
+        """Verify deleting project deletes participants."""
+        project = Project(name="Test Project")
+        db_session.add(project)
+        db_session.commit()
+
+        participant = ProjectParticipant(
+            project_id=project.id,
+            name="Carlos",
+            discipline="structural",
+        )
+        db_session.add(participant)
+        db_session.commit()
+
+        db_session.delete(project)
+        db_session.commit()
+
+        participants = db_session.query(ProjectParticipant).all()
+        assert len(participants) == 0

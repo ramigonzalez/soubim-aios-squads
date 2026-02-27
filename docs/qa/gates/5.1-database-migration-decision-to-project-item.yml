@@ -1,0 +1,28 @@
+schema: 1
+story: '5.1'
+gate: CONCERNS
+status_reason: 'All 129 tests pass and ORM coverage is 92%, but 3 AC-required test scenarios (GIN @> query, down migration, vector search post-migration) are missing and require a live PostgreSQL environment to validate.'
+reviewer: 'Quinn'
+updated: '2026-02-21T00:00:00Z'
+top_issues:
+  - id: 'TEST-001'
+    severity: medium
+    finding: 'Three AC-specified test scenarios missing: GIN index @> query test, down migration schema restore test, and vector search post-migration test. All require PostgreSQL — now available.'
+    suggested_action: 'Add these 3 tests to test_migration_v2.py using TEST_DATABASE_URL pointing to the running PostgreSQL instance, then re-run gate.'
+
+  - id: 'TEST-002'
+    severity: medium
+    finding: 'Migration SQL scripts (001 and 002) have 0% code coverage. Tests validate ORM schema via Base.metadata.create_all(), not the actual upgrade/downgrade SQL execution. The SQL scripts are the authoritative migration artifact.'
+    suggested_action: 'Add integration tests that execute the UPGRADE_SQL and DOWNGRADE_SQL against a real PostgreSQL instance. Alternatively, validate via alembic history check in CI with PostgreSQL.'
+
+  - id: 'TEST-003'
+    severity: low
+    finding: 'Test conftest.py defaults to SQLite in-memory when DATABASE_URL is not set. PostgreSQL-specific features (GIN indexes, gen_random_uuid(), partial unique indexes) are not exercised at the SQL layer in default test runs.'
+    suggested_action: 'Set TEST_DATABASE_URL in CI pipeline to always run tests against PostgreSQL. Document in README or pyproject.toml how to run tests with PostgreSQL locally.'
+
+  - id: 'MNT-001'
+    severity: low
+    finding: 'datetime.utcnow() deprecated in Python 3.12+ used pervasively in seed.py, tests, and services (~20 occurrences). Not introduced by this story but flagged as pre-existing tech debt.'
+    suggested_action: 'Track as backlog item. Replace with datetime.now(datetime.UTC) in a future maintenance story.'
+
+waiver: { active: false }
