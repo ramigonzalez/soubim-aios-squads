@@ -1,27 +1,18 @@
-import { Decision } from '../../types/decision'
+import { ProjectItem } from '../../types/projectItem'
 import { cn } from '../../lib/utils'
 import { DisciplinePill } from '../atoms/DisciplinePill'
 
 interface DecisionRowProps {
-  decision: Decision
+  decision: ProjectItem
   onClick: (id: string) => void
   showDiscipline?: boolean // true when grouped by date (default)
   showAffectedDisciplines?: boolean // true when inside MeetingGroup
   inMeetingGroup?: boolean // true when rendered inside a MeetingGroup (uses different styling)
 }
 
-// Known disciplines for filtering consensus keys
-const KNOWN_DISCIPLINES = new Set([
-  'engineer', 'architect', 'client', 'contractor',
-  'structural', 'mep', 'electrical', 'plumbing',
-  'landscape', 'acoustical', 'fire_protection', 'tenant',
-  'sustainability', 'civil',
-])
-
-function getAffectedDisciplines(decision: Decision): string[] {
-  if (!decision.consensus) return []
-  return Object.keys(decision.consensus)
-    .filter((key) => KNOWN_DISCIPLINES.has(key) && key !== decision.discipline)
+function getAdditionalDisciplines(item: ProjectItem): string[] {
+  const primary = item.affected_disciplines[0]
+  return item.affected_disciplines.slice(1).filter((d) => d !== primary)
 }
 
 export function DecisionRow({
@@ -38,7 +29,8 @@ export function DecisionRow({
     }
   }
 
-  const affectedDisciplines = showAffectedDisciplines ? getAffectedDisciplines(decision) : []
+  const primaryDiscipline = decision.affected_disciplines[0] ?? 'general'
+  const additionalDisciplines = showAffectedDisciplines ? getAdditionalDisciplines(decision) : []
 
   return (
     <article
@@ -52,21 +44,21 @@ export function DecisionRow({
           ? 'bg-transparent hover:bg-white active:bg-white ml-1'
           : 'bg-white border-b border-gray-100 hover:bg-blue-50/50 active:bg-blue-50'
       )}
-      aria-label={`Decision: ${decision.decision_statement}`}
+      aria-label={`Decision: ${decision.statement}`}
     >
       {/* Row 1: Statement only (full width, truncated) */}
       <div className="flex items-center">
         <span className="text-sm font-medium text-gray-900 truncate">
-          {decision.decision_statement}
+          {decision.statement}
         </span>
       </div>
 
       {/* Row 2: Discipline pills (all colored) + Who (right-aligned) */}
       <div className="flex items-center mt-1 gap-1.5">
         {showDiscipline && (
-          <DisciplinePill discipline={decision.discipline} className="flex-shrink-0" />
+          <DisciplinePill discipline={primaryDiscipline} className="flex-shrink-0" />
         )}
-        {affectedDisciplines.map((disc) => (
+        {additionalDisciplines.map((disc) => (
           <DisciplinePill key={disc} discipline={disc} className="flex-shrink-0" />
         ))}
 

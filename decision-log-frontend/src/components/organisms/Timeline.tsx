@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
-import { Decision } from '../../types/decision'
+import { ProjectItem } from '../../types/projectItem'
 import { MeetingGroup, MeetingGroupData } from '../molecules/MeetingGroup'
 import { formatFullDate, getDisciplineNodeColor } from '../../lib/utils'
 import { Calendar, AlertCircle } from 'lucide-react'
 
 interface TimelineProps {
-  decisions: Decision[]
+  decisions: ProjectItem[]
   onSelectDecision: (id: string) => void
   groupBy: 'date' | 'discipline'
   isLoading?: boolean
@@ -25,9 +25,9 @@ interface DisciplineGroupData {
   totalDecisions: number
 }
 
-function buildMeetingGroups(decisions: Decision[]): MeetingGroupData[] {
+function buildMeetingGroups(decisions: ProjectItem[]): MeetingGroupData[] {
   const meetingMap = new Map<string, MeetingGroupData>()
-  const orphanDecisions: Decision[] = []
+  const orphanDecisions: ProjectItem[] = []
 
   for (const d of decisions) {
     if (!d.transcript_id) {
@@ -42,12 +42,15 @@ function buildMeetingGroups(decisions: Decision[]): MeetingGroupData[] {
         meetingType: d.meeting_type,
         meetingDate: d.meeting_date,
         transcriptId: d.transcript_id,
-        participants: d.meeting_participants || [],
+        participants: (d.meeting_participants || []).map(p => ({
+          name: p.name,
+          role: p.role || '',
+        })),
         decisions: [],
       }
-      meetingMap.set(d.transcript_id, meeting)
+      meetingMap.set(d.transcript_id, meeting!)
     }
-    meeting.decisions.push(d)
+    meeting!.decisions.push(d)
   }
 
   const meetings = Array.from(meetingMap.values())
@@ -71,9 +74,9 @@ function buildMeetingGroups(decisions: Decision[]): MeetingGroupData[] {
   return meetings
 }
 
-function groupByDateWithMeetings(decisions: Decision[]): DateGroupData[] {
+function groupByDateWithMeetings(decisions: ProjectItem[]): DateGroupData[] {
   // First group by date
-  const dateMap = new Map<string, Decision[]>()
+  const dateMap = new Map<string, ProjectItem[]>()
   for (const d of decisions) {
     const key = d.meeting_date || d.created_at
     const dateKey = new Date(key).toISOString().split('T')[0]
@@ -91,11 +94,11 @@ function groupByDateWithMeetings(decisions: Decision[]): DateGroupData[] {
   }))
 }
 
-function groupByDisciplineWithMeetings(decisions: Decision[]): DisciplineGroupData[] {
-  // First group by discipline
-  const discMap = new Map<string, Decision[]>()
+function groupByDisciplineWithMeetings(decisions: ProjectItem[]): DisciplineGroupData[] {
+  // First group by primary discipline
+  const discMap = new Map<string, ProjectItem[]>()
   for (const d of decisions) {
-    const key = d.discipline || 'general'
+    const key = d.affected_disciplines[0] ?? 'general'
     if (!discMap.has(key)) discMap.set(key, [])
     discMap.get(key)!.push(d)
   }

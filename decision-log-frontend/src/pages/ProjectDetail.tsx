@@ -1,26 +1,26 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { useDecisions } from '../hooks/useDecisions'
+import { useProjectItems } from '../hooks/useProjectItems'
 import { Timeline } from '../components/organisms/Timeline'
 import { ExecutiveDigest } from '../components/organisms/ExecutiveDigest'
 import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
 import { useFilterStore } from '../store/filterStore'
 import { AlertCircle } from 'lucide-react'
-import { Decision } from '../types/decision'
+import { ProjectItem } from '../types/projectItem'
 
 type View = 'timeline' | 'digest'
 
 /**
- * Project detail page displaying decisions timeline and executive digest.
+ * Project detail page displaying project items timeline and executive digest.
  *
  * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8, 3.13, 3.14, 3.15
- * v3: FilterBar includes group-by toggle inline, meeting type filter added
+ * Story 5.3 — Migrated from useDecisions to useProjectItems
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
   const [view, setView] = useState<View>('timeline')
-  const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null)
+  const [selectedItem, setSelectedItem] = useState<ProjectItem | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
 
   const {
@@ -43,17 +43,17 @@ export function ProjectDetail() {
     )
   }
 
-  const { data, isLoading, error, refetch } = useDecisions({ projectId })
-  const decisions = data?.decisions || []
+  const { data, isLoading, error, refetch } = useProjectItems({ projectId })
+  const items = data?.items || []
 
   // Apply all filters client-side
-  const filteredDecisions = useMemo(() => {
-    let filtered = decisions
+  const filteredItems = useMemo(() => {
+    let filtered = items
 
     // Discipline filter
     if (disciplines.length > 0) {
       filtered = filtered.filter(d =>
-        disciplines.includes(d.discipline?.toLowerCase())
+        d.affected_disciplines.some(disc => disciplines.includes(disc.toLowerCase()))
       )
     }
 
@@ -64,7 +64,7 @@ export function ProjectDetail() {
       )
     }
 
-    // Meeting type filter (Story 3.15)
+    // Meeting type filter (V1 backward compat field)
     if (meetingTypes.length > 0) {
       filtered = filtered.filter(d =>
         d.meeting_type && meetingTypes.includes(d.meeting_type.toLowerCase())
@@ -89,42 +89,42 @@ export function ProjectDetail() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(d =>
-        d.decision_statement?.toLowerCase().includes(q) ||
+        d.statement?.toLowerCase().includes(q) ||
         d.who?.toLowerCase().includes(q) ||
         d.meeting_title?.toLowerCase().includes(q)
       )
     }
 
     return filtered
-  }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
+  }, [items, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
 
-  // Create mock digest data from decisions for Executive Digest view
+  // Create mock digest data from items for Executive Digest view
   const mockDigest = {
-    total_decisions: filteredDecisions.length,
-    meetings_count: [...new Set(filteredDecisions.map(d => d.meeting?.id).filter(Boolean))].length,
+    total_decisions: filteredItems.length,
+    meetings_count: [...new Set(filteredItems.map(d => d.transcript_id).filter(Boolean))].length,
     consensus_percentage: 85,
-    high_impact_count: filteredDecisions.filter(d => {
+    high_impact_count: filteredItems.filter(d => {
       return d.impacts && Object.keys(d.impacts).length > 1
     }).length,
-    highlights: filteredDecisions.slice(0, 5).map(d => {
+    highlights: filteredItems.slice(0, 5).map(d => {
       let impact_level: 'high' | 'medium' | 'low' = 'medium'
-      if (d.confidence !== undefined) {
+      if (d.confidence !== undefined && d.confidence !== null) {
         if (d.confidence >= 0.9) impact_level = 'high'
         else if (d.confidence < 0.7) impact_level = 'low'
       }
       return {
-        category: d.discipline,
-        title: d.decision_statement.substring(0, 60) + '...',
+        category: d.affected_disciplines[0] ?? 'general',
+        title: d.statement.substring(0, 60) + '...',
         description: d.why || 'No description available',
         impact_level,
-        date: d.meeting_date || d.timestamp,
+        date: d.meeting_date || d.timestamp || d.created_at,
       }
     }),
   }
 
-  const handleSelectDecision = (id: string) => {
-    const decision = filteredDecisions.find(d => d.id === id)
-    setSelectedDecision(decision || null)
+  const handleSelectItem = (id: string) => {
+    const item = filteredItems.find(d => d.id === id)
+    setSelectedItem(item || null)
   }
 
   return (
@@ -135,7 +135,7 @@ export function ProjectDetail() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Decisions</h1>
             <p className="text-sm text-gray-600">
-              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
+              {filteredItems.length} decision{filteredItems.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
@@ -167,7 +167,7 @@ export function ProjectDetail() {
         {/* Filter Bar with inline Group-by Toggle (Stories 3.14, 3.15) */}
         {view === 'timeline' && (
           <FilterBar
-            decisions={decisions}
+            decisions={items}
             groupBy={groupBy}
             onGroupByChange={setGroupBy}
           />
@@ -177,8 +177,8 @@ export function ProjectDetail() {
         <main>
           {view === 'timeline' ? (
             <Timeline
-              decisions={filteredDecisions}
-              onSelectDecision={handleSelectDecision}
+              decisions={filteredItems}
+              onSelectDecision={handleSelectItem}
               groupBy={groupBy}
               isLoading={isLoading}
               error={error || undefined}
@@ -191,8 +191,8 @@ export function ProjectDetail() {
 
         {/* Drilldown Modal (Story 3.7) */}
         <DrilldownModal
-          decision={selectedDecision}
-          onClose={() => setSelectedDecision(null)}
+          decision={selectedItem}
+          onClose={() => setSelectedItem(null)}
         />
       </div>
     </div>

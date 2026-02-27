@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use ProjectItem from types/projectItem.ts instead.
+ * This type is preserved for backward compatibility only.
+ */
 export interface Decision {
   id: string
   decision_statement: string
@@ -37,6 +41,9 @@ export interface Decision {
   updated_at?: string
 }
 
+/**
+ * @deprecated Use ProjectItemsResponse from types/projectItem.ts instead.
+ */
 export interface DecisionsResponse {
   decisions: Decision[]
   total: number
@@ -48,6 +55,9 @@ export interface DecisionsResponse {
   }
 }
 
+/**
+ * @deprecated Use ProjectItemFilters from types/projectItem.ts instead.
+ */
 export interface DecisionFilters {
   discipline?: string
   meeting_type?: string

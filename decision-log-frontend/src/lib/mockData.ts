@@ -1,4 +1,5 @@
 import { Project } from '../types/project'
+/** @deprecated V1 Decision type kept for backward-compat mock functions */
 import { Decision } from '../types/decision'
 
 // Mock Projects Data

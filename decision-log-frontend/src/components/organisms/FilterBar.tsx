@@ -6,7 +6,7 @@ import { useFilterStore } from '../../store/filterStore'
 import { useDebounce } from '../../hooks/useDebounce'
 import { FilterPopover } from '../molecules/FilterPopover'
 import { getDisciplinePillColors, getMeetingTypeColors, formatDate } from '../../lib/utils'
-import { Decision } from '../../types/decision'
+import { ProjectItem } from '../../types/projectItem'
 
 const DISCIPLINES = ['architecture', 'mep', 'structural', 'electrical', 'plumbing', 'landscape']
 
@@ -21,7 +21,7 @@ const DISCIPLINE_DOT_COLORS: Record<string, string> = {
 }
 
 interface FilterBarProps {
-  decisions: Decision[]
+  decisions: ProjectItem[]
   groupBy: 'date' | 'discipline'
   onGroupByChange: (value: 'date' | 'discipline') => void
 }
@@ -69,9 +69,9 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     )
   }, [availableMakers, whoSearch])
 
-  // Extract unique meeting types from decisions
+  // Extract unique meeting types from items (V1 backward compat field)
   const availableMeetingTypes = useMemo(() => {
-    const types = decisions.map((d) => d.meeting_type).filter(Boolean) as string[]
+    const types = decisions.map((d) => d.meeting_type).filter((t): t is string => !!t)
     return [...new Set(types.map(t => t.toLowerCase()))].sort()
   }, [decisions])
 

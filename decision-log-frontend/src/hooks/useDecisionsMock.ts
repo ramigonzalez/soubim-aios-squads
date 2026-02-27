@@ -9,8 +9,9 @@ interface UseDecisionsOptions {
 }
 
 /**
- * Mock hook for decisions - returns mock data instead of real API calls
- * Use this for testing Epic 3 components without backend
+ * @deprecated Use useProjectItems from hooks/useProjectItems.ts instead.
+ * Mock hook for decisions - returns mock data instead of real API calls.
+ * Use this for testing Epic 3 components without backend.
  */
 export function useDecisionsMock({
   projectId,

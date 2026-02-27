@@ -2,15 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MeetingGroup, MeetingGroupData } from '../../components/molecules/MeetingGroup'
-import { Decision } from '../../types/decision'
+import { ProjectItem } from '../../types/projectItem'
 
-function makeDecision(overrides: Partial<Decision> = {}): Decision {
+function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
     id: `dec-${Math.random().toString(36).slice(2, 8)}`,
-    decision_statement: 'Test decision statement',
+    project_id: 'proj-001',
+    statement: 'Test decision statement',
     who: 'Carlos',
     timestamp: '00:05:32',
-    discipline: 'structural',
+    item_type: 'decision',
+    source_type: 'meeting',
+    affected_disciplines: ['structural'],
+    is_milestone: false,
+    is_done: false,
     transcript_id: 'tr-001',
     meeting_title: 'Structural Design Review',
     meeting_type: 'Design Review',
@@ -33,7 +38,7 @@ function makeMeeting(decisionCount: number, overrides: Partial<MeetingGroupData>
       { name: 'Gabriela', role: 'Project Director' },
     ],
     decisions: Array.from({ length: decisionCount }, (_, i) =>
-      makeDecision({ id: `dec-${i}`, decision_statement: `Decision ${i + 1}` }),
+      makeItem({ id: `dec-${i}`, statement: `Decision ${i + 1}` }),
     ),
     ...overrides,
   }

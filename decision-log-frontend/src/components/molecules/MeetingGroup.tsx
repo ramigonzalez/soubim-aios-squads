@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { Decision } from '../../types/decision'
+import { ProjectItem } from '../../types/projectItem'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
 import { ParticipantIndicator } from '../atoms/ParticipantIndicator'
@@ -12,7 +12,7 @@ export interface MeetingGroupData {
   meetingDate?: string
   transcriptId?: string
   participants: Array<{ name: string; role: string }>
-  decisions: Decision[]
+  decisions: ProjectItem[]
 }
 
 interface MeetingGroupProps {

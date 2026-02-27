@@ -1,12 +1,18 @@
 import { useState } from 'react'
-import { Decision } from '../../types/decision'
+import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineBadge } from '../molecules/DisciplineBadge'
-import { formatDateTime, formatTimestamp, getImpactTypeColor } from '../../lib/utils'
+import { formatDateTime, formatTimestamp } from '../../lib/utils'
 import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle } from 'lucide-react'
 
 interface DrilldownModalProps {
-  decision: Decision | null
+  decision: ProjectItem | null
   onClose: () => void
+}
+
+/** Normalize consensus value — handles both V2 ConsensusEntry objects and V1 string values */
+function getConsensusStatus(value: ConsensusEntry | string): string {
+  if (typeof value === 'string') return value
+  return value.status
 }
 
 function getStanceIcon(stance: string) {
@@ -31,7 +37,7 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
   const consensusEntries = decision.consensus && typeof decision.consensus === 'object'
     ? Object.entries(decision.consensus)
     : []
-  const agreeCount = consensusEntries.filter(([, stance]) => stance.toUpperCase() === 'AGREE').length
+  const agreeCount = consensusEntries.filter(([, value]) => getConsensusStatus(value).toUpperCase() === 'AGREE').length
   const totalCount = consensusEntries.length
 
   return (
@@ -41,7 +47,7 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start">
             <h2 className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0 pr-4">
-              {decision.decision_statement}
+              {decision.statement}
             </h2>
             <button
               onClick={onClose}
@@ -52,7 +58,7 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
           </div>
 
           <div className="mt-3 inline-block">
-            <DisciplineBadge discipline={decision.discipline} />
+            <DisciplineBadge discipline={decision.affected_disciplines[0] ?? 'general'} />
           </div>
 
           {/* Decision Context Card */}
@@ -139,42 +145,67 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
                   </div>
                   <div className="px-4 py-3">
                     <div className="space-y-2">
-                      {consensusEntries.map(([role, stance]) => (
-                        <div key={role} className="flex items-center gap-2">
-                          {getStanceIcon(stance)}
-                          <span className="text-sm font-medium text-gray-700 capitalize">{role}</span>
-                          <span className={`text-sm font-medium uppercase ${getStanceTextColor(stance)}`}>
-                            {stance}
-                          </span>
-                        </div>
-                      ))}
+                      {consensusEntries.map(([role, value]) => {
+                        const stance = getConsensusStatus(value)
+                        return (
+                          <div key={role} className="flex items-center gap-2">
+                            {getStanceIcon(stance)}
+                            <span className="text-sm font-medium text-gray-700 capitalize">{role}</span>
+                            <span className={`text-sm font-medium uppercase ${getStanceTextColor(stance)}`}>
+                              {stance}
+                            </span>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </section>
               )}
 
-              {/* Impacts Card */}
-              {decision.impacts && decision.impacts.length > 0 && (
+              {/* Impacts Card — V2 structured impacts */}
+              {decision.impacts && (
                 <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                   <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Impacts</h3>
                   </div>
                   <div className="px-4 py-3">
                     <div className="space-y-2">
-                      {decision.impacts.map((impact, idx) => {
-                        const colors = getImpactTypeColor(impact.type)
-                        return (
-                          <div key={idx} className={`flex items-start gap-2.5 rounded-md px-3 py-2 ${colors.bg}`}>
-                            <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${colors.dot}`} />
-                            <div className="min-w-0">
-                              <span className={`text-xs font-semibold uppercase tracking-wide ${colors.text}`}>
-                                {impact.type}
-                              </span>
-                              <p className="text-sm text-gray-700 mt-0.5">{impact.change}</p>
-                            </div>
+                      {decision.impacts.cost_impact && (
+                        <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-red-50">
+                          <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-red-400" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-red-700">Cost</span>
+                            <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.cost_impact}</p>
                           </div>
-                        )
-                      })}
+                        </div>
+                      )}
+                      {decision.impacts.timeline_impact && (
+                        <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-amber-50">
+                          <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-amber-400" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">Timeline</span>
+                            <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.timeline_impact}</p>
+                          </div>
+                        </div>
+                      )}
+                      {decision.impacts.scope_impact && (
+                        <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-blue-50">
+                          <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-blue-400" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">Scope</span>
+                            <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.scope_impact}</p>
+                          </div>
+                        </div>
+                      )}
+                      {decision.impacts.risk_level && (
+                        <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-gray-50">
+                          <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-gray-400" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Risk Level</span>
+                            <p className="text-sm text-gray-700 mt-0.5 capitalize">{decision.impacts.risk_level}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -187,7 +218,7 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
               <p className="text-gray-600 text-sm">Meeting transcript and discussion notes would appear here.</p>
               <div className="bg-amber-50 border-l-4 border-amber-200 p-4 mt-4">
                 <p className="text-sm text-gray-700">
-                  Key discussion point: {decision.decision_statement}
+                  Key discussion point: {decision.statement}
                 </p>
               </div>
             </div>

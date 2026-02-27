@@ -10,7 +10,8 @@ interface UseDecisionsOptions {
 }
 
 /**
- * Custom hook to fetch decisions for a project with filtering and pagination.
+ * @deprecated Use useProjectItems from hooks/useProjectItems.ts instead.
+ * This hook calls the V1 /decisions endpoint and is preserved for backward compatibility only.
  *
  * Uses global filter store for discipline, decision maker, and date filters.
  * Epic 3 - Story 3.5 (Timeline), Story 3.6 (Filters)
