@@ -32,10 +32,35 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # --- Gmail API Poller (Story 7.4) ---
+    # OAuth2 credentials -- use service account for server-to-server auth
+    gmail_client_id: Optional[str] = None
+    gmail_client_secret: Optional[str] = None
+    gmail_refresh_token: Optional[str] = None
+    # Alternative: service account JSON (base64-encoded)
+    gmail_service_account_json: Optional[str] = None
+
+    # Polling configuration
+    gmail_poll_interval_minutes: int = 30  # How often to poll Gmail
+    gmail_label_filter: str = ""  # Gmail label to filter (empty = all unread)
+    gmail_max_results_per_poll: int = 50  # Max emails fetched per cycle
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"
         case_sensitive = False
+
+    def is_gmail_configured(self) -> bool:
+        """Return True if Gmail API credentials are present."""
+        has_oauth2 = all(
+            [
+                self.gmail_client_id,
+                self.gmail_client_secret,
+                self.gmail_refresh_token,
+            ]
+        )
+        has_service_account = self.gmail_service_account_json is not None
+        return has_oauth2 or has_service_account
 
 
 # Try to load settings, falling back to .env if .env.development doesn't exist

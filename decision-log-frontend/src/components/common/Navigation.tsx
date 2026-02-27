@@ -1,6 +1,8 @@
 import { Fragment } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useQuery } from 'react-query'
 import { useAuthStore } from '../../store/authStore'
+import { ingestionService } from '../../services/ingestionService'
 import { LogOut, Home } from 'lucide-react'
 
 /**
@@ -60,6 +62,9 @@ export function Navigation() {
             ))}
           </div>
 
+          {/* Ingestion Link (admin only) */}
+          {user?.role === 'director' && <IngestionNavLink />}
+
           {/* User Info & Logout */}
           <div className="flex items-center space-x-4">
             {/* User Name */}
@@ -83,5 +88,27 @@ export function Navigation() {
         </div>
       </div>
     </nav>
+  )
+}
+
+function IngestionNavLink() {
+  const { data } = useQuery('ingestion-pending-count', ingestionService.getPendingCount, {
+    staleTime: 30_000,
+  })
+
+  const pendingCount = data?.pending ?? 0
+
+  return (
+    <Link
+      to="/ingestion"
+      className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+    >
+      Ingestion
+      {pendingCount > 0 && (
+        <span className="ml-1.5 bg-yellow-400 text-yellow-900 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+          {pendingCount}
+        </span>
+      )}
+    </Link>
   )
 }

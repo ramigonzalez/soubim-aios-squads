@@ -7,9 +7,10 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.config import settings
-from app.api.routes import auth, health, projects, decisions, digest, webhooks, project_items, stages, participants, ingestion
+from app.api.routes import admin, auth, health, projects, decisions, digest, webhooks
 from app.api.middleware.auth import auth_middleware
 from app.database.init_db import init_db
+from app.scheduler import app_scheduler
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,14 @@ async def lifespan(app: FastAPI):
             logger.warning("Continuing in debug mode despite DB init failure")
         else:
             raise
+
+    # Start background scheduler (Gmail poller, etc.) — Story 7.4
+    app_scheduler.start()
+
     yield
+
     # Shutdown
+    app_scheduler.shutdown()
 
 
 # Create FastAPI application
@@ -65,13 +72,10 @@ app.add_middleware(
 app.include_router(health.router, tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
-app.include_router(project_items.router, prefix="/api", tags=["project-items"])
-app.include_router(stages.router, prefix="/api", tags=["stages"])
-app.include_router(participants.router, prefix="/api", tags=["participants"])
 app.include_router(decisions.router, prefix="/api", tags=["decisions"])
 app.include_router(digest.router, prefix="/api", tags=["digest"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["webhooks"])
-app.include_router(ingestion.router, prefix="/api", tags=["ingestion"])
+app.include_router(admin.router, tags=["admin"])
 
 
 @app.get("/")

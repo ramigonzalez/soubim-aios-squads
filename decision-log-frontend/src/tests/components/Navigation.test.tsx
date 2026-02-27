@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from 'react-query'
 import { Navigation } from '../../components/common/Navigation'
 import { useAuthStore } from '../../store/authStore'
 
@@ -15,11 +16,23 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
+// Mock ingestion service to prevent actual API calls
+vi.mock('../../services/ingestionService', () => ({
+  ingestionService: {
+    getPendingCount: vi.fn().mockResolvedValue({ pending: 0 }),
+  },
+}))
+
 function renderNavigation() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   return render(
-    <BrowserRouter>
-      <Navigation />
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Navigation />
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 

@@ -1,26 +1,28 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { useProjectItems } from '../hooks/useProjectItems'
+import { useDecisions } from '../hooks/useDecisions'
 import { Timeline } from '../components/organisms/Timeline'
+import { MilestoneTimeline } from '../components/organisms/MilestoneTimeline'
 import { ExecutiveDigest } from '../components/organisms/ExecutiveDigest'
 import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
 import { useFilterStore } from '../store/filterStore'
 import { AlertCircle } from 'lucide-react'
-import { ProjectItem } from '../types/projectItem'
+import { Decision } from '../types/decision'
 
-type View = 'timeline' | 'digest'
+type View = 'milestones' | 'history' | 'digest'
 
 /**
- * Project detail page displaying project items timeline and executive digest.
+ * Project detail page displaying milestone timeline, decisions history, and executive digest.
  *
  * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8, 3.13, 3.14, 3.15
- * Story 5.3 — Migrated from useDecisions to useProjectItems
+ * Story 8.1 - Added milestone timeline view with 3-tab toggle
+ * v4: 3-tab view toggle — Milestones | History | Digest
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
-  const [view, setView] = useState<View>('timeline')
-  const [selectedItem, setSelectedItem] = useState<ProjectItem | null>(null)
+  const [view, setView] = useState<View>('milestones')
+  const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
 
   const {
@@ -43,17 +45,17 @@ export function ProjectDetail() {
     )
   }
 
-  const { data, isLoading, error, refetch } = useProjectItems({ projectId })
-  const items = data?.items || []
+  const { data, isLoading, error, refetch } = useDecisions({ projectId })
+  const decisions = data?.decisions || []
 
   // Apply all filters client-side
-  const filteredItems = useMemo(() => {
-    let filtered = items
+  const filteredDecisions = useMemo(() => {
+    let filtered = decisions
 
     // Discipline filter
     if (disciplines.length > 0) {
       filtered = filtered.filter(d =>
-        d.affected_disciplines.some(disc => disciplines.includes(disc.toLowerCase()))
+        disciplines.includes(d.discipline?.toLowerCase())
       )
     }
 
@@ -64,7 +66,7 @@ export function ProjectDetail() {
       )
     }
 
-    // Meeting type filter (V1 backward compat field)
+    // Meeting type filter (Story 3.15)
     if (meetingTypes.length > 0) {
       filtered = filtered.filter(d =>
         d.meeting_type && meetingTypes.includes(d.meeting_type.toLowerCase())
@@ -89,42 +91,52 @@ export function ProjectDetail() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(d =>
-        d.statement?.toLowerCase().includes(q) ||
+        d.decision_statement?.toLowerCase().includes(q) ||
         d.who?.toLowerCase().includes(q) ||
         d.meeting_title?.toLowerCase().includes(q)
       )
     }
 
     return filtered
-  }, [items, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
+  }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
 
-  // Create mock digest data from items for Executive Digest view
+  // Create mock digest data from decisions for Executive Digest view
   const mockDigest = {
-    total_decisions: filteredItems.length,
-    meetings_count: [...new Set(filteredItems.map(d => d.transcript_id).filter(Boolean))].length,
+    total_decisions: filteredDecisions.length,
+    meetings_count: [...new Set(filteredDecisions.map(d => d.meeting?.id).filter(Boolean))].length,
     consensus_percentage: 85,
-    high_impact_count: filteredItems.filter(d => {
+    high_impact_count: filteredDecisions.filter(d => {
       return d.impacts && Object.keys(d.impacts).length > 1
     }).length,
-    highlights: filteredItems.slice(0, 5).map(d => {
+    highlights: filteredDecisions.slice(0, 5).map(d => {
       let impact_level: 'high' | 'medium' | 'low' = 'medium'
-      if (d.confidence !== undefined && d.confidence !== null) {
+      if (d.confidence !== undefined) {
         if (d.confidence >= 0.9) impact_level = 'high'
         else if (d.confidence < 0.7) impact_level = 'low'
       }
       return {
-        category: d.affected_disciplines[0] ?? 'general',
-        title: d.statement.substring(0, 60) + '...',
+        category: d.discipline,
+        title: d.decision_statement.substring(0, 60) + '...',
         description: d.why || 'No description available',
         impact_level,
-        date: d.meeting_date || d.timestamp || d.created_at,
+        date: d.meeting_date || d.timestamp,
       }
     }),
   }
 
-  const handleSelectItem = (id: string) => {
-    const item = filteredItems.find(d => d.id === id)
-    setSelectedItem(item || null)
+  const handleSelectDecision = (id: string) => {
+    const decision = filteredDecisions.find(d => d.id === id)
+    setSelectedDecision(decision || null)
+  }
+
+  /**
+   * For the milestone view, the onSelectItem callback opens the DrilldownModal
+   * by finding the matching decision from the decisions list (milestones are also decisions).
+   * If not found (item is a non-decision milestone), the callback is still called for future support.
+   */
+  const handleSelectMilestone = (id: string) => {
+    const decision = decisions.find(d => d.id === id)
+    setSelectedDecision(decision || null)
   }
 
   return (
@@ -135,21 +147,31 @@ export function ProjectDetail() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Decisions</h1>
             <p className="text-sm text-gray-600">
-              {filteredItems.length} decision{filteredItems.length !== 1 ? 's' : ''} found
+              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
-          {/* View Toggle */}
+          {/* View Toggle — 3 tabs: Milestones | History | Digest */}
           <div className="flex bg-white rounded-lg border border-gray-300 p-1">
             <button
-              onClick={() => setView('timeline')}
+              onClick={() => setView('milestones')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                view === 'timeline'
+                view === 'milestones'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              Timeline
+              Milestones
+            </button>
+            <button
+              onClick={() => setView('history')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                view === 'history'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              History
             </button>
             <button
               onClick={() => setView('digest')}
@@ -164,10 +186,10 @@ export function ProjectDetail() {
           </div>
         </div>
 
-        {/* Filter Bar with inline Group-by Toggle (Stories 3.14, 3.15) */}
-        {view === 'timeline' && (
+        {/* Filter Bar with inline Group-by Toggle (Stories 3.14, 3.15) — shown for history view */}
+        {view === 'history' && (
           <FilterBar
-            decisions={items}
+            decisions={decisions}
             groupBy={groupBy}
             onGroupByChange={setGroupBy}
           />
@@ -175,10 +197,15 @@ export function ProjectDetail() {
 
         {/* Main Content — full-width, no sidebar */}
         <main>
-          {view === 'timeline' ? (
+          {view === 'milestones' ? (
+            <MilestoneTimeline
+              projectId={projectId}
+              onSelectItem={handleSelectMilestone}
+            />
+          ) : view === 'history' ? (
             <Timeline
-              decisions={filteredItems}
-              onSelectDecision={handleSelectItem}
+              decisions={filteredDecisions}
+              onSelectDecision={handleSelectDecision}
               groupBy={groupBy}
               isLoading={isLoading}
               error={error || undefined}
@@ -191,8 +218,8 @@ export function ProjectDetail() {
 
         {/* Drilldown Modal (Story 3.7) */}
         <DrilldownModal
-          decision={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          decision={selectedDecision}
+          onClose={() => setSelectedDecision(null)}
         />
       </div>
     </div>

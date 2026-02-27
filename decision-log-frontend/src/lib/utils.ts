@@ -307,3 +307,30 @@ export function getDisciplineInitial(discipline: Discipline): string {
   return DISCIPLINE_INITIALS[discipline] ?? '?'
 }
 
+/**
+ * Format file size in human-readable form.
+ * Story 7.2 — Ingestion Approval Page
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+/**
+ * Story 9.2 — Dense Rows Date Header format
+ */
+export function formatDenseDate(dateStr: string): string {
+  let date: Date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    date = new Date(year, month - 1, day)
+  } else {
+    date = new Date(dateStr)
+  }
+  const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+  const day = date.getDate()
+  const year = date.getFullYear()
+  return `${month} ${day}, ${year}`
+}
+

@@ -171,3 +171,25 @@ export interface ProjectItemUpdate {
   is_done?: boolean
   statement?: string
 }
+
+/**
+ * Story 8.1 — Milestone Timeline stage types
+ */
+export interface ProjectStage {
+  id: string
+  stage_name: string
+  stage_from: string
+  stage_to: string
+  description?: string
+}
+
+export interface StagesResponse {
+  stages: ProjectStage[]
+}
+
+export interface MilestonesResponse {
+  items: ProjectItem[]
+  total: number
+  limit: number
+  offset: number
+}

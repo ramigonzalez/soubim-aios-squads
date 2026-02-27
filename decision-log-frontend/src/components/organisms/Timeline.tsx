@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { ProjectItem } from '../../types/projectItem'
-import { MeetingGroup, MeetingGroupData } from '../molecules/MeetingGroup'
-import { formatFullDate, getDisciplineNodeColor } from '../../lib/utils'
+import { ProjectItem, SourceType } from '../../types/projectItem'
+import { SourceGroupAccordion } from '../molecules/SourceGroupAccordion'
+import { ProjectItemRow } from '../molecules/ProjectItemRow'
+import { formatDenseDate, getDisciplineNodeColor } from '../../lib/utils'
 import { Calendar, AlertCircle } from 'lucide-react'
 
 interface TimelineProps {
@@ -13,140 +14,178 @@ interface TimelineProps {
   onRetry?: () => void
 }
 
-interface DateGroupData {
-  date: string
-  meetings: MeetingGroupData[]
-  totalDecisions: number
-}
-
-interface DisciplineGroupData {
-  discipline: string
-  meetings: MeetingGroupData[]
-  totalDecisions: number
-}
-
-function buildMeetingGroups(decisions: ProjectItem[]): MeetingGroupData[] {
-  const meetingMap = new Map<string, MeetingGroupData>()
-  const orphanDecisions: ProjectItem[] = []
-
-  for (const d of decisions) {
-    if (!d.transcript_id) {
-      orphanDecisions.push(d)
-      continue
+/**
+ * Dense Timeline Group: items grouped by date, then by source within date.
+ */
+interface DenseTimelineGroup {
+  date: string           // "2026-02-08"
+  dateLabel: string      // "FEB 8, 2026"
+  totalItems: number
+  sources: {
+    source: {
+      id: string
+      title: string
+      type: SourceType
+      meetingType?: string
+      participants?: Array<{ name: string; role?: string }>
     }
-
-    let meeting = meetingMap.get(d.transcript_id)
-    if (!meeting) {
-      meeting = {
-        meetingTitle: d.meeting_title || 'Untitled Meeting',
-        meetingType: d.meeting_type,
-        meetingDate: d.meeting_date,
-        transcriptId: d.transcript_id,
-        participants: (d.meeting_participants || []).map(p => ({
-          name: p.name,
-          role: p.role || '',
-        })),
-        decisions: [],
-      }
-      meetingMap.set(d.transcript_id, meeting!)
-    }
-    meeting!.decisions.push(d)
-  }
-
-  const meetings = Array.from(meetingMap.values())
-
-  // Sort meetings by date (newest first within the day)
-  meetings.sort((a, b) => {
-    const dateA = a.meetingDate || a.decisions[0]?.created_at || ''
-    const dateB = b.meetingDate || b.decisions[0]?.created_at || ''
-    return new Date(dateB).getTime() - new Date(dateA).getTime()
-  })
-
-  // Add orphan decisions as "Other Decisions" group if any
-  if (orphanDecisions.length > 0) {
-    meetings.push({
-      meetingTitle: 'Other Decisions',
-      participants: [],
-      decisions: orphanDecisions,
-    })
-  }
-
-  return meetings
+    items: ProjectItem[]
+  }[]
+  orphanItems: ProjectItem[]  // manual_input or items without source
 }
 
-function groupByDateWithMeetings(decisions: ProjectItem[]): DateGroupData[] {
-  // First group by date
+/**
+ * Build Dense Rows groups from items: group by date, then by source within each date.
+ */
+function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
+  // Group by date
   const dateMap = new Map<string, ProjectItem[]>()
-  for (const d of decisions) {
-    const key = d.meeting_date || d.created_at
-    const dateKey = new Date(key).toISOString().split('T')[0]
+  for (const item of items) {
+    const dateKey = getDateKey(item)
     if (!dateMap.has(dateKey)) dateMap.set(dateKey, [])
-    dateMap.get(dateKey)!.push(d)
+    dateMap.get(dateKey)!.push(item)
   }
 
   // Sort dates descending
   const sortedDates = Array.from(dateMap.entries()).sort(([a], [b]) => b.localeCompare(a))
 
-  return sortedDates.map(([date, dateDecs]) => ({
-    date,
-    meetings: buildMeetingGroups(dateDecs),
-    totalDecisions: dateDecs.length,
-  }))
+  return sortedDates.map(([date, dateItems]) => {
+    const sourceMap = new Map<string, { source: DenseTimelineGroup['sources'][0]['source']; items: ProjectItem[] }>()
+    const orphanItems: ProjectItem[] = []
+
+    for (const item of dateItems) {
+      // Items without transcript_id or with manual_input source type are orphans
+      if (!item.transcript_id || item.source_type === 'manual_input') {
+        orphanItems.push(item)
+        continue
+      }
+
+      const sourceId = item.transcript_id
+      if (!sourceMap.has(sourceId)) {
+        sourceMap.set(sourceId, {
+          source: {
+            id: sourceId,
+            title: item.meeting_title || item.source?.title || 'Untitled Source',
+            type: item.source_type || 'meeting',
+            meetingType: item.meeting_type,
+            participants: item.meeting_participants,
+          },
+          items: [],
+        })
+      }
+      sourceMap.get(sourceId)!.items.push(item)
+    }
+
+    // Sort sources by date of first item (newest first)
+    const sources = Array.from(sourceMap.values()).sort((a, b) => {
+      const dateA = a.items[0]?.meeting_date || a.items[0]?.created_at || ''
+      const dateB = b.items[0]?.meeting_date || b.items[0]?.created_at || ''
+      return new Date(dateB).getTime() - new Date(dateA).getTime()
+    })
+
+    return {
+      date,
+      dateLabel: formatDenseDate(date),
+      totalItems: dateItems.length,
+      sources,
+      orphanItems,
+    }
+  })
 }
 
-function groupByDisciplineWithMeetings(decisions: ProjectItem[]): DisciplineGroupData[] {
-  // First group by primary discipline
+/**
+ * Build Dense Rows groups by discipline.
+ */
+function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[] {
   const discMap = new Map<string, ProjectItem[]>()
-  for (const d of decisions) {
-    const key = d.affected_disciplines[0] ?? 'general'
+  for (const item of items) {
+    const key = item.affected_disciplines[0] ?? 'general'
     if (!discMap.has(key)) discMap.set(key, [])
-    discMap.get(key)!.push(d)
+    discMap.get(key)!.push(item)
   }
 
-  // Sort disciplines alphabetically
   const sortedDiscs = Array.from(discMap.entries()).sort(([a], [b]) => a.localeCompare(b))
 
-  return sortedDiscs.map(([discipline, discDecs]) => ({
-    discipline,
-    meetings: buildMeetingGroups(discDecs),
-    totalDecisions: discDecs.length,
-  }))
+  return sortedDiscs.map(([discipline, discItems]) => {
+    const sourceMap = new Map<string, { source: DenseTimelineGroup['sources'][0]['source']; items: ProjectItem[] }>()
+    const orphanItems: ProjectItem[] = []
+
+    for (const item of discItems) {
+      if (!item.transcript_id || item.source_type === 'manual_input') {
+        orphanItems.push(item)
+        continue
+      }
+
+      const sourceId = item.transcript_id
+      if (!sourceMap.has(sourceId)) {
+        sourceMap.set(sourceId, {
+          source: {
+            id: sourceId,
+            title: item.meeting_title || item.source?.title || 'Untitled Source',
+            type: item.source_type || 'meeting',
+            meetingType: item.meeting_type,
+            participants: item.meeting_participants,
+          },
+          items: [],
+        })
+      }
+      sourceMap.get(sourceId)!.items.push(item)
+    }
+
+    const sources = Array.from(sourceMap.values())
+
+    return {
+      date: discipline,
+      dateLabel: discipline.charAt(0).toUpperCase() + discipline.slice(1),
+      totalItems: discItems.length,
+      sources,
+      orphanItems,
+    }
+  })
 }
+
+/**
+ * Extract date key (YYYY-MM-DD) from a ProjectItem.
+ * Uses local date to avoid timezone shift issues.
+ */
+function getDateKey(item: ProjectItem): string {
+  const raw = item.meeting_date || item.created_at
+  const d = new Date(raw)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// --- Internal skeleton/empty/error components ---
 
 function TimelineSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" data-testid="timeline-skeleton">
       {[1, 2].map((group) => (
         <div key={group}>
           {/* Date header skeleton */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-3 h-3 rounded-full bg-gray-200 animate-pulse" />
-            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+          <div className="flex items-center gap-2 py-2 px-4">
+            <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-3 w-8 bg-gray-200 rounded animate-pulse" />
           </div>
-          <div className="ml-[5px] border-l-2 border-gray-200 pl-6 space-y-3">
-            {/* Meeting card skeletons */}
-            {[1, 2].map((meeting) => (
-              <div key={meeting} className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse">
-                {/* Meeting header */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-4 w-40 bg-gray-200 rounded" />
-                  <div className="h-5 w-20 bg-gray-200 rounded-full" />
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="h-5 w-12 bg-gray-200 rounded" />
-                  <div className="h-5 w-12 bg-gray-200 rounded" />
-                  <div className="ml-auto h-4 w-16 bg-gray-200 rounded" />
-                </div>
-                {/* Decision row skeletons */}
-                {[1, 2].map((row) => (
-                  <div key={row} className="py-2 border-t border-gray-100">
-                    <div className="h-4 w-3/4 bg-gray-200 rounded mb-1" />
-                    <div className="h-3 w-1/3 bg-gray-200 rounded" />
-                  </div>
-                ))}
+          {/* Source group skeletons */}
+          {[1, 2].map((src) => (
+            <div key={src} className="border-l-2 border-gray-200 pl-2 ml-4">
+              <div className="flex items-center gap-2 py-3 px-4 animate-pulse">
+                <div className="h-4 w-4 bg-gray-200 rounded" />
+                <div className="h-4 w-48 bg-gray-200 rounded" />
+                <div className="ml-auto h-3 w-16 bg-gray-200 rounded" />
               </div>
-            ))}
-          </div>
+              {[1, 2].map((row) => (
+                <div key={row} className="flex items-center gap-2 py-2 px-4 pl-6 animate-pulse">
+                  <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                  <div className="ml-auto h-3 w-12 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -157,9 +196,9 @@ function EmptyTimeline() {
   return (
     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
       <Calendar className="w-12 h-12 text-gray-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-1">No decisions yet</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-1">No project items yet</h3>
       <p className="text-sm text-gray-500">
-        Decisions will appear here once meetings are processed
+        Items will appear here once sources are processed
       </p>
     </div>
   )
@@ -170,7 +209,7 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry?: () => void }) 
     <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-start gap-3">
       <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
       <div>
-        <h3 className="text-sm font-semibold text-red-900 mb-1">Failed to load decisions</h3>
+        <h3 className="text-sm font-semibold text-red-900 mb-1">Failed to load items</h3>
         <p className="text-sm text-red-700">{error.message}</p>
         {onRetry && (
           <button
@@ -185,6 +224,12 @@ function ErrorState({ error, onRetry }: { error: Error; onRetry?: () => void }) 
   )
 }
 
+/**
+ * Dense Rows Timeline — V2 Project History layout.
+ * Story 9.2: Three layers — UPPERCASE date headers, collapsible source groups, compact item rows.
+ *
+ * Props interface preserved for backward compatibility with ProjectDetail.
+ */
 export function Timeline({
   decisions,
   onSelectDecision,
@@ -193,13 +238,8 @@ export function Timeline({
   error,
   onRetry,
 }: TimelineProps) {
-  const dateGroups = useMemo(
-    () => (groupBy === 'date' ? groupByDateWithMeetings(decisions) : []),
-    [decisions, groupBy],
-  )
-
-  const disciplineGroups = useMemo(
-    () => (groupBy === 'discipline' ? groupByDisciplineWithMeetings(decisions) : []),
+  const denseGroups = useMemo(
+    () => (groupBy === 'date' ? buildDenseGroups(decisions) : buildDenseGroupsByDiscipline(decisions)),
     [decisions, groupBy],
   )
 
@@ -208,54 +248,51 @@ export function Timeline({
   if (decisions.length === 0) return <EmptyTimeline />
 
   const isDateMode = groupBy === 'date'
-  const groups = isDateMode
-    ? dateGroups.map((g) => ({ key: g.date, label: formatFullDate(g.date), meetings: g.meetings, meetingCount: g.meetings.length }))
-    : disciplineGroups.map((g) => ({
-        key: g.discipline,
-        label: g.discipline.charAt(0).toUpperCase() + g.discipline.slice(1),
-        meetings: g.meetings,
-        meetingCount: g.meetings.length,
-      }))
 
   return (
-    <div className="space-y-6">
-      {groups.map((group, groupIndex) => {
-        const isLast = groupIndex === groups.length - 1
-
+    <div className="space-y-1">
+      {denseGroups.map((group) => {
         const nodeColor = isDateMode
           ? 'bg-blue-600'
-          : getDisciplineNodeColor(group.key)
+          : getDisciplineNodeColor(group.date)
 
         return (
-          <div key={group.key} className="relative">
-            {/* Group Header with Node */}
-            <div className="flex items-center gap-3 mb-2">
-              <div
-                className={`w-3 h-3 ${nodeColor} rounded-full ring-2 ring-white flex-shrink-0 z-10`}
-              />
-              <h2
-                className="text-sm font-semibold text-gray-700 flex-1"
-                aria-label={`${group.label}, ${group.meetingCount} meeting${group.meetingCount !== 1 ? 's' : ''}`}
-              >
-                {group.label}
-              </h2>
-              <span className="text-xs text-gray-400">
-                {group.meetingCount} meeting{group.meetingCount !== 1 ? 's' : ''}
+          <div key={group.date}>
+            {/* Layer 1: Date Header (UPPERCASE, sticky) */}
+            <div
+              className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 flex items-center gap-2 py-2 px-4"
+              role="heading"
+              aria-level={2}
+            >
+              {!isDateMode && (
+                <div className={`w-2.5 h-2.5 ${nodeColor} rounded-full flex-shrink-0`} />
+              )}
+              <span className="text-xs font-bold tracking-wide uppercase text-gray-500">
+                {group.dateLabel}
+              </span>
+              <span className="text-xs text-gray-400 ml-2">
+                {group.totalItems} item{group.totalItems !== 1 ? 's' : ''}
               </span>
             </div>
 
-            {/* Meeting Groups with vertical line */}
-            <div
-              className={`ml-[5px] ${isLast ? '' : 'border-l-2 border-gray-200'} pl-6 space-y-3 pb-2`}
-            >
-              {group.meetings.map((meeting) => (
-                <MeetingGroup
-                  key={meeting.transcriptId || 'orphan'}
-                  meeting={meeting}
-                  onSelectDecision={onSelectDecision}
-                />
-              ))}
-            </div>
+            {/* Layer 2: Source Groups */}
+            {group.sources.map(({ source, items }) => (
+              <SourceGroupAccordion
+                key={source.id}
+                source={source}
+                items={items}
+                onItemClick={onSelectDecision}
+              />
+            ))}
+
+            {/* Orphan Items (no source wrapper) */}
+            {group.orphanItems.map((item) => (
+              <ProjectItemRow
+                key={item.id}
+                item={item}
+                onClick={onSelectDecision}
+              />
+            ))}
           </div>
         )
       })}
