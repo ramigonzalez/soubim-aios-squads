@@ -1,5 +1,8 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { CheckCircle2, MessageCircle, Target, Lightbulb, Info, Video, Mail, FileText, PenLine, HelpCircle, FileQuestion } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import type { ItemType, SourceType, Discipline } from '../types/projectItem'
 
 /**
  * Combine Tailwind CSS classes with proper precedence
@@ -213,5 +216,94 @@ export function getMeetingTypeColors(type: string): { bg: string; text: string; 
     'internal': { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400' },
   }
   return colorMap[type.toLowerCase()] || { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
+}
+
+// --- Item Type utilities (Story 9.1) ---
+
+const ITEM_TYPE_CONFIG: Record<ItemType, { bg: string; text: string; icon: LucideIcon; label: string }> = {
+  decision:    { bg: 'bg-green-100',  text: 'text-green-700',  icon: CheckCircle2,  label: 'Decision' },
+  topic:       { bg: 'bg-amber-100',  text: 'text-amber-700',  icon: MessageCircle, label: 'Topic' },
+  action_item: { bg: 'bg-blue-100',   text: 'text-blue-700',   icon: Target,        label: 'Action Item' },
+  idea:        { bg: 'bg-purple-100', text: 'text-purple-700', icon: Lightbulb,     label: 'Idea' },
+  information: { bg: 'bg-slate-100',  text: 'text-slate-700',  icon: Info,          label: 'Information' },
+}
+
+export function getItemTypeColors(type: ItemType): { bg: string; text: string } {
+  return ITEM_TYPE_CONFIG[type] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }
+}
+
+export function getItemTypeIcon(type: ItemType): LucideIcon {
+  return ITEM_TYPE_CONFIG[type]?.icon ?? HelpCircle
+}
+
+export function getItemTypeLabel(type: ItemType): string {
+  return ITEM_TYPE_CONFIG[type]?.label ?? type
+}
+
+// --- Source Type utilities (Story 9.1) ---
+
+const SOURCE_TYPE_CONFIG: Record<SourceType, { bg: string; text: string; icon: LucideIcon; label: string }> = {
+  meeting:      { bg: 'bg-indigo-100', text: 'text-indigo-700', icon: Video,    label: 'Meeting' },
+  email:        { bg: 'bg-sky-100',    text: 'text-sky-700',    icon: Mail,     label: 'Email' },
+  document:     { bg: 'bg-orange-100', text: 'text-orange-700', icon: FileText, label: 'Document' },
+  manual_input: { bg: 'bg-gray-100',   text: 'text-gray-700',   icon: PenLine,  label: 'Manual Input' },
+}
+
+export function getSourceTypeColors(type: SourceType): { bg: string; text: string } {
+  return SOURCE_TYPE_CONFIG[type] ?? { bg: 'bg-gray-100', text: 'text-gray-700' }
+}
+
+export function getSourceTypeIcon(type: SourceType): LucideIcon {
+  return SOURCE_TYPE_CONFIG[type]?.icon ?? FileQuestion
+}
+
+export function getSourceTypeLabel(type: SourceType): string {
+  return SOURCE_TYPE_CONFIG[type]?.label ?? type
+}
+
+// --- Discipline Circle utilities (Story 9.1) ---
+
+const DISCIPLINE_CIRCLE_COLORS: Record<Discipline, string> = {
+  architecture: '#3B82F6',
+  structural: '#8B5CF6',
+  mep: '#F97316',
+  electrical: '#F59E0B',
+  plumbing: '#06B6D4',
+  landscape: '#10B981',
+  fire_protection: '#EF4444',
+  acoustical: '#7C3AED',
+  sustainability: '#059669',
+  civil: '#14B8A6',
+  client: '#F43F5E',
+  contractor: '#D97706',
+  tenant: '#EC4899',
+  engineer: '#6366F1',
+  general: '#6B7280',
+}
+
+const DISCIPLINE_INITIALS: Record<Discipline, string> = {
+  architecture: 'A',
+  structural: 'S',
+  mep: 'M',
+  electrical: 'E',
+  plumbing: 'P',
+  landscape: 'L',
+  fire_protection: 'F',
+  acoustical: 'Ac',
+  sustainability: 'Su',
+  civil: 'C',
+  client: 'Cl',
+  contractor: 'Co',
+  tenant: 'T',
+  engineer: 'En',
+  general: 'G',
+}
+
+export function getDisciplineCircleColor(discipline: Discipline): string {
+  return DISCIPLINE_CIRCLE_COLORS[discipline] ?? '#6B7280'
+}
+
+export function getDisciplineInitial(discipline: Discipline): string {
+  return DISCIPLINE_INITIALS[discipline] ?? '?'
 }
 

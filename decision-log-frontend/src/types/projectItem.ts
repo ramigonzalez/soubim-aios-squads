@@ -152,13 +152,19 @@ export interface ProjectItemCreate {
   item_type: ItemType
   who: string
   affected_disciplines: Discipline[]
+  source_type?: SourceType
+  context_notes?: string
+  date?: string
   why?: string
   causation?: string
   owner?: string
+  due_date?: string
   is_done?: boolean
   impacts?: ImpactsSchema
   consensus?: Record<string, ConsensusEntry>
 }
+
+export const ALL_DISCIPLINES: Discipline[] = Object.keys(DISCIPLINE_LABELS) as Discipline[]
 
 export interface ProjectItemUpdate {
   is_milestone?: boolean

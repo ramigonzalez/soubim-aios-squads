@@ -6,6 +6,7 @@ import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
 import ProjectCreate from './pages/ProjectCreate'
 import ProjectEdit from './pages/ProjectEdit'
+import ManualItemCreate from './pages/ManualItemCreate'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
 
@@ -42,6 +43,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <ProjectCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/items/new"
+          element={
+            <ProtectedRoute>
+              <ManualItemCreate />
             </ProtectedRoute>
           }
         />
