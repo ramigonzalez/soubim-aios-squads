@@ -1,27 +1,32 @@
-import { Project } from '../../types/project'
 import { Users, FileText, Calendar } from 'lucide-react'
+import { StagePill } from '../molecules/StagePill'
+
+interface ProjectCardProject {
+  id: string
+  name: string
+  description?: string | null
+  project_type?: string | null
+  current_stage?: { name: string; stage_from?: string; stage_to?: string } | null
+  member_count?: number
+  participant_count?: number
+  item_count?: number
+  decision_count?: number
+  created_at: string
+}
 
 interface ProjectCardProps {
-  project: Project
+  project: ProjectCardProject
   onClick: (projectId: string) => void
 }
 
-/**
- * Project card component displaying project metadata.
- *
- * Shows:
- * - Project name
- * - Description
- * - Member count
- * - Decision count
- * - Creation date
- */
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const createdDate = new Date(project.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   })
+
+  const itemCount = project.item_count ?? project.decision_count ?? 0
 
   return (
     <div
@@ -35,15 +40,32 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         }
       }}
     >
-      {/* Project Name */}
-      <h2 className="text-xl font-semibold mb-2 text-gray-900 truncate">{project.name}</h2>
+      {/* Header: Name + Type */}
+      <div className="mb-2">
+        <h2 className="text-xl font-semibold text-gray-900 truncate">{project.name}</h2>
+        {project.project_type && (
+          <span className="text-xs text-gray-500 uppercase tracking-wide">
+            {project.project_type.replace(/_/g, ' ')}
+          </span>
+        )}
+      </div>
+
+      {/* Current Stage */}
+      <div className="mb-3">
+        {project.current_stage ? (
+          <StagePill stageName={project.current_stage.name} isCurrent />
+        ) : (
+          <span className="text-xs text-gray-400">No stages</span>
+        )}
+      </div>
 
       {/* Description */}
-      <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{project.description || 'No description'}</p>
+      <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
+        {project.description || 'No description'}
+      </p>
 
       {/* Stats */}
       <div className="space-y-2 mb-4">
-        {/* Members */}
         <div className="flex items-center text-sm text-gray-700">
           <Users className="w-4 h-4 mr-2 text-blue-500" />
           <span>
@@ -51,15 +73,13 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           </span>
         </div>
 
-        {/* Decisions */}
         <div className="flex items-center text-sm text-gray-700">
           <FileText className="w-4 h-4 mr-2 text-green-500" />
           <span>
-            {project.decision_count || 0} decision{project.decision_count !== 1 ? 's' : ''}
+            {itemCount} item{itemCount !== 1 ? 's' : ''}
           </span>
         </div>
 
-        {/* Created Date */}
         <div className="flex items-center text-sm text-gray-500">
           <Calendar className="w-4 h-4 mr-2 text-gray-400" />
           <span>Created {createdDate}</span>

@@ -95,7 +95,7 @@ describe('Projects Page', () => {
     })
 
     renderProjects()
-    expect(screen.getByText(/No projects yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/Create your first project/i)).toBeInTheDocument()
   })
 
   it('displays project count', () => {

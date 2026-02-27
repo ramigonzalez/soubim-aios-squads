@@ -2,18 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjects } from '../hooks/useProjects'
 import { ProjectCard } from '../components/common/ProjectCard'
-import { ChevronLeft, ChevronRight, AlertCircle, Loader } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertCircle, Loader, Plus, FolderPlus } from 'lucide-react'
 
 const PAGE_SIZE = 12
 
-/**
- * Projects list page with pagination and React Query caching.
- *
- * Displays:
- * - Grid of project cards
- * - Pagination controls
- * - Loading and error states
- */
 export function Projects() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(0)
@@ -50,11 +42,20 @@ export function Projects() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Projects</h1>
-          <p className="text-gray-600">
-            {data?.total || 0} project{data?.total !== 1 ? 's' : ''} available
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Projects</h1>
+            <p className="text-gray-600">
+              {data?.total || 0} project{data?.total !== 1 ? 's' : ''} available
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/projects/new')}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition"
+          >
+            <Plus className="h-4 w-4" />
+            Create Project
+          </button>
         </div>
 
         {/* Loading State */}
@@ -82,9 +83,18 @@ export function Projects() {
           </div>
         ) : !data?.projects || data.projects.length === 0 ? (
           /* Empty State */
-          <div className="bg-gray-100 rounded-lg p-12 text-center">
-            <p className="text-gray-600 text-lg">No projects yet</p>
-            <p className="text-gray-500 text-sm mt-1">Projects will appear here as they are created</p>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+            <FolderPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Create your first project</h3>
+            <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+              Set up a project with a stage schedule to start capturing project items from meetings, emails, and documents.
+            </p>
+            <button
+              onClick={() => navigate('/projects/new')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 text-sm font-medium transition"
+            >
+              Create Project
+            </button>
           </div>
         ) : (
           /* Projects Grid */

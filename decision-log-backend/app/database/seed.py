@@ -20,6 +20,7 @@ from app.database.models import (
     ProjectItem,
     ProjectMember,
     ProjectParticipant,
+    ProjectStage,
     Source,
     Transcript,
     User,
@@ -358,9 +359,65 @@ def seed_database():
             duration_minutes=35,
             created_at=datetime(2026, 2, 5, 15, 0, 0),
         )
-        db.add_all([s1, s2, s3, s4, s5, s6])
+        # Email source for Project 1
+        s7 = Source(
+            id=uuid4(), project_id=project1.id, source_type="email",
+            title="Re: Foundation waterproofing spec", occurred_at=datetime(2026, 2, 8, 10, 0, 0),
+            ingestion_status="processed", raw_content="Hi team, attached is the updated waterproofing specification...",
+            email_from="alice@waterproof.com", email_to=["carlos@mep.com", "gabriela@soubim.com"],
+            created_at=datetime(2026, 2, 8, 10, 0, 0),
+        )
+        # Document source for Project 1
+        s8 = Source(
+            id=uuid4(), project_id=project1.id, source_type="document",
+            title="Soil Analysis Report - Site Alpha", occurred_at=datetime(2026, 2, 4, 0, 0, 0),
+            ingestion_status="processed", raw_content="[soil analysis report content]",
+            file_type="pdf", file_url="/uploads/soil_analysis_alpha.pdf",
+            created_at=datetime(2026, 2, 4, 0, 0, 0),
+        )
+        # Manual input source for Project 2
+        s9 = Source(
+            id=uuid4(), project_id=project2.id, source_type="manual_input",
+            title="Manual entry — Budget revision note", occurred_at=datetime(2026, 2, 9, 12, 0, 0),
+            ingestion_status="processed", raw_content="Budget revised for Q2",
+            created_at=datetime(2026, 2, 9, 12, 0, 0),
+        )
+
+        db.add_all([s1, s2, s3, s4, s5, s6, s7, s8, s9])
         db.flush()
-        print("  ✓ Created 6 source records from transcripts")
+        print("  ✓ Created 9 source records (6 meeting, 1 email, 1 document, 1 manual_input)")
+
+        # ── Stage Schedules (V2 — Story 5.5 / 6.1) ───────────────────
+        stage1 = ProjectStage(
+            id=uuid4(), project_id=project1.id,
+            stage_name="Estudo Preliminar",
+            stage_from=datetime(2026, 1, 15), stage_to=datetime(2026, 2, 15),
+            sort_order=0,
+        )
+        stage2 = ProjectStage(
+            id=uuid4(), project_id=project1.id,
+            stage_name="Anteprojeto",
+            stage_from=datetime(2026, 2, 16), stage_to=datetime(2026, 3, 31),
+            sort_order=1,
+        )
+        stage3 = ProjectStage(
+            id=uuid4(), project_id=project1.id,
+            stage_name="Projeto Legal",
+            stage_from=datetime(2026, 4, 1), stage_to=datetime(2026, 5, 15),
+            sort_order=2,
+        )
+        stage4 = ProjectStage(
+            id=uuid4(), project_id=project1.id,
+            stage_name="Projeto Executivo",
+            stage_from=datetime(2026, 5, 16), stage_to=datetime(2026, 8, 31),
+            sort_order=3,
+        )
+        db.add_all([stage1, stage2, stage3, stage4])
+
+        # Set current stage for Project 1
+        project1.actual_stage_id = stage1.id
+        db.flush()
+        print("  ✓ Created 4 stage schedule records for Project 1")
 
         # ── Project Items (V2) — formerly Decisions ─────────────────────
         # All existing decisions get: item_type='decision', source_type='meeting',
@@ -616,9 +673,89 @@ def seed_database():
             created_at=datetime(2026, 2, 7, 15, 5, 0), updated_at=datetime(2026, 2, 7, 15, 5, 0),
         )
 
-        db.add_all([topic1, idea1, action1, info1])
+        # Additional action items — some is_done=True (per AC)
+        action1b = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            transcript_id=t2.id, source_id=s2.id,
+            item_type="action_item", source_type="meeting",
+            decision_statement="Submit MEP clash detection report by Feb 10",
+            statement="Submit MEP clash detection report by Feb 10",
+            who="Roberto (Plumbing Engineer)", timestamp="00:50:00",
+            discipline="plumbing", affected_disciplines=["plumbing", "mep"],
+            why="Clash detection needed before construction sequencing",
+            consensus={}, confidence=0.92,
+            owner="Roberto (Plumbing Engineer)", is_done=True,
+            created_at=datetime(2026, 2, 6, 14, 50, 0), updated_at=datetime(2026, 2, 10, 9, 0, 0),
+        )
+
+        action1c = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            transcript_id=t1.id, source_id=s1.id,
+            item_type="action_item", source_type="meeting",
+            decision_statement="Request updated soil bearing capacity test from geotech lab",
+            statement="Request updated soil bearing capacity test from geotech lab",
+            who="Carlos (Structural Engineer)", timestamp="00:18:30",
+            discipline="structural", affected_disciplines=["structural", "civil"],
+            why="Current report is 6 months old, need fresh data",
+            consensus={}, confidence=0.88,
+            owner="Carlos (Structural Engineer)", is_done=True,
+            created_at=datetime(2026, 2, 6, 9, 18, 30), updated_at=datetime(2026, 2, 8, 11, 0, 0),
+        )
+
+        # Items from non-meeting sources
+        email_info = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            source_id=s7.id,
+            item_type="information", source_type="email",
+            statement="Updated waterproofing spec received from supplier",
+            who="External (alice@waterproof.com)",
+            discipline="structural", affected_disciplines=["structural", "architecture"],
+            why="Supplier sent updated spec for foundation waterproofing",
+            consensus={}, confidence=0.95, is_milestone=True,
+            created_at=datetime(2026, 2, 8, 10, 5, 0), updated_at=datetime(2026, 2, 8, 10, 5, 0),
+        )
+
+        doc_info = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            source_id=s8.id,
+            item_type="information", source_type="document",
+            statement="Soil analysis confirms stable bearing capacity at 8ft depth",
+            who="Geotech Lab",
+            discipline="civil", affected_disciplines=["civil", "structural"],
+            why="Reference document from geotechnical investigation",
+            consensus={}, confidence=0.99,
+            created_at=datetime(2026, 2, 4, 0, 0, 0), updated_at=datetime(2026, 2, 4, 0, 0, 0),
+        )
+
+        # Another idea
+        idea2 = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            transcript_id=t4.id, source_id=s4.id,
+            item_type="idea", source_type="meeting",
+            statement="Explore living wall system for lobby atrium",
+            who="Marina (Landscape Architect)", timestamp="00:25:00",
+            discipline="landscape", affected_disciplines=["landscape", "architecture", "mep"],
+            why="Could create signature design element and improve indoor air quality",
+            consensus={}, confidence=0.55,
+            created_at=datetime(2026, 2, 7, 15, 25, 0), updated_at=datetime(2026, 2, 7, 15, 25, 0),
+        )
+
+        # Another topic
+        topic1b = ProjectItem(
+            id=uuid.uuid4(), project_id=project1.id,
+            transcript_id=t3.id, source_id=s3.id,
+            item_type="topic", source_type="meeting",
+            statement="Emergency backup power requirements for residential floors",
+            who="Miguel (Electrical Engineer)", timestamp="00:25:00",
+            discipline="electrical", affected_disciplines=["electrical", "mep"],
+            why="Discussion about generator sizing and UPS systems",
+            consensus={}, confidence=0.72,
+            created_at=datetime(2026, 2, 7, 10, 25, 0), updated_at=datetime(2026, 2, 7, 10, 25, 0),
+        )
+
+        db.add_all([topic1, idea1, action1, info1, action1b, action1c, email_info, doc_info, idea2, topic1b])
         db.flush()
-        print("  ✓ Created 4 V2 mixed item types (topic, idea, action_item, information)")
+        print("  ✓ Created 10 V2 mixed item types (topics, ideas, action_items, information)")
 
         # ── Project Items for Project 2 ─────────────────────────────────
 
@@ -684,9 +821,22 @@ def seed_database():
             created_at=datetime(2026, 2, 5, 15, 30, 0), updated_at=datetime(2026, 2, 5, 15, 30, 0),
         )
 
-        db.add_all([topic2, action2])
+        # Manual input item for Project 2
+        manual_info = ProjectItem(
+            id=uuid.uuid4(), project_id=project2.id,
+            source_id=s9.id,
+            item_type="information", source_type="manual_input",
+            statement="Q2 budget revised to include facade maintenance system",
+            who="Gabriela (Architect)",
+            discipline="architecture", affected_disciplines=["architecture"],
+            why="Manually entered budget revision note",
+            consensus={}, confidence=1.0,
+            created_at=datetime(2026, 2, 9, 12, 0, 0), updated_at=datetime(2026, 2, 9, 12, 0, 0),
+        )
+
+        db.add_all([topic2, action2, manual_info])
         db.flush()
-        print("  ✓ Created 4 project items (Project 2) incl. V2 types")
+        print("  ✓ Created 5 project items (Project 2) incl. V2 types")
 
         db.commit()
         print("  ✓ Committed all data")

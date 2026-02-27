@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
 import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
+import ProjectCreate from './pages/ProjectCreate'
+import ProjectEdit from './pages/ProjectEdit'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
 
@@ -36,10 +38,26 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/projects/new"
+          element={
+            <ProtectedRoute>
+              <ProjectCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/projects/:id"
           element={
             <ProtectedRoute>
               <ProjectDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/edit"
+          element={
+            <ProtectedRoute>
+              <ProjectEdit />
             </ProtectedRoute>
           }
         />
