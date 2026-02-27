@@ -106,7 +106,7 @@ class Project(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text)
     project_type = Column(String(100))  # V2: residential, commercial, mixed-use, etc.
-    actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
+    actual_stage_id = Column(GUID(), ForeignKey("project_stages.id", ondelete="SET NULL", use_alter=True))
     created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
 
@@ -114,6 +114,7 @@ class Project(Base):
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan")
     sources = relationship("Source", back_populates="project", cascade="all, delete-orphan")
     participants = relationship("ProjectParticipant", back_populates="project", cascade="all, delete-orphan")
+    stages = relationship("ProjectStage", back_populates="project", cascade="all, delete-orphan", foreign_keys="ProjectStage.project_id")
 
     __table_args__ = (
         Index("idx_projects_created", "created_at"),
@@ -237,6 +238,42 @@ class ProjectParticipant(Base):
     __table_args__ = (
         Index("idx_participants_project", "project_id"),
     )
+
+
+class ProjectStage(Base):
+    """Project stage model — stages in a project's schedule."""
+
+    __tablename__ = "project_stages"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    stage_name = Column(String(255), nullable=False)
+    stage_from = Column(DateTime, nullable=False)
+    stage_to = Column(DateTime, nullable=False)
+    sort_order = Column(Integer, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    # Relationships
+    project = relationship("Project", back_populates="stages", foreign_keys=[project_id])
+
+    __table_args__ = (
+        CheckConstraint("stage_from < stage_to", name="ck_stage_dates"),
+        Index("idx_stages_project", "project_id"),
+        Index("idx_stages_sort", "project_id", "sort_order"),
+    )
+
+
+class StageTemplate(Base):
+    """Predefined stage schedule template for project types."""
+
+    __tablename__ = "stage_templates"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_type = Column(String(100), nullable=False)
+    template_name = Column(String(255), nullable=False)
+    stages = Column(JSONType, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=func.now())
 
 
 class ProjectItem(Base):

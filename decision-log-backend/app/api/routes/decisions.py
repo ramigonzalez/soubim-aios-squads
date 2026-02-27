@@ -1,12 +1,17 @@
-"""Decision endpoints (V1 backward-compatible, queries project_items table)."""
+"""Decision endpoints (V1 backward-compatible, queries project_items WHERE item_type='decision').
+
+DEPRECATED: Use /api/projects/{id}/items endpoints instead.
+This endpoint is preserved for V1 frontend consumers and will be removed in V3.
+"""
 
 from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.database.models import ProjectItem, Transcript
+from app.database.models import ProjectItem, Source, Transcript
 from app.database.session import get_db
 
 # Backward compatibility alias for route internals
@@ -32,22 +37,25 @@ async def list_decisions(
     db: Session = Depends(get_db),
 ):
     """
-    Query decisions with advanced filtering.
+    V1 backward-compatible decisions endpoint.
+    Internally queries project_items WHERE item_type='decision'.
+    Response uses V1 field names (decision_statement, discipline singular).
     """
-    # Build query with LEFT JOIN to get transcript meeting_title, meeting_type, participants
+    # Query only decisions (V1 item type)
     query = (
         db.query(
             Decision,
             Transcript.meeting_title,
             Transcript.meeting_date,
-            Transcript.meeting_type,
-            Transcript.participants,
+            Transcript.meeting_type.label("t_meeting_type"),
+            Transcript.participants.label("t_participants"),
         )
         .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
         .filter(Decision.project_id == str(project_id))
+        .filter(Decision.item_type == "decision")
     )
 
-    # Apply filters
+    # Apply V1 filters
     if discipline:
         query = query.filter(Decision.discipline == discipline)
 
@@ -57,11 +65,20 @@ async def list_decisions(
     if confidence_min is not None:
         query = query.filter(Decision.confidence >= confidence_min)
 
+    if date_from:
+        query = query.filter(Decision.created_at >= date_from)
+    if date_to:
+        query = query.filter(Decision.created_at <= date_to)
+
+    if has_anomalies is not None:
+        if has_anomalies:
+            query = query.filter(Decision.anomaly_flags.isnot(None))
+
     if search:
         search_term = f"%{search}%"
         query = query.filter(
-            (Decision.decision_statement.ilike(search_term)) |
-            (Decision.why.ilike(search_term))
+            (Decision.decision_statement.ilike(search_term))
+            | (Decision.why.ilike(search_term))
         )
 
     # Get total count before pagination
@@ -83,56 +100,67 @@ async def list_decisions(
     # Apply pagination
     query = query.limit(limit).offset(offset)
 
-    # Get decisions (each row is a tuple: Decision, transcript_title, transcript_meeting_date)
     rows = query.all()
 
-    # Format response
-    decisions_list = [
-        {
-            "id": str(d.id),
-            "project_id": str(d.project_id),
-            "transcript_id": str(d.transcript_id) if d.transcript_id else None,
-            "decision_statement": d.decision_statement,
-            "who": d.who,
-            "timestamp": d.timestamp,
-            "discipline": d.discipline,
-            "why": d.why,
-            "causation": d.causation,
-            "impacts": d.impacts,
-            "consensus": d.consensus,
-            "confidence": d.confidence,
-            "meeting_title": transcript_title,
-            "meeting_type": t_meeting_type,
-            "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (d.created_at.isoformat() if d.created_at else None),
-            "meeting_participants": t_participants,
-            "created_at": d.created_at.isoformat() if d.created_at else None,
-        }
-        for d, transcript_title, transcript_meeting_date, t_meeting_type, t_participants in rows
-    ]
+    # Transform to V1 response shape
+    decisions_list = []
+    for d, transcript_title, transcript_meeting_date, t_meeting_type, t_participants in rows:
+        decisions_list.append(
+            {
+                "id": str(d.id),
+                "project_id": str(d.project_id),
+                "transcript_id": str(d.transcript_id) if d.transcript_id else None,
+                "decision_statement": d.decision_statement,
+                "who": d.who,
+                "timestamp": d.timestamp,
+                "discipline": d.affected_disciplines[0] if d.affected_disciplines else d.discipline,
+                "why": d.why,
+                "causation": d.causation,
+                "impacts": d.impacts,
+                "consensus": d.consensus,
+                "confidence": d.confidence,
+                "meeting_title": transcript_title,
+                "meeting_type": t_meeting_type,
+                "meeting_date": (
+                    transcript_meeting_date.isoformat()
+                    if transcript_meeting_date
+                    else (d.created_at.isoformat() if d.created_at else None)
+                ),
+                "meeting_participants": t_participants,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+            }
+        )
 
-    # Get disciplines for facets
-    all_decisions = db.query(Decision).filter(Decision.project_id == str(project_id)).all()
+    # Get discipline facets
+    all_decisions = (
+        db.query(Decision)
+        .filter(Decision.project_id == str(project_id), Decision.item_type == "decision")
+        .all()
+    )
     disciplines_facet = {}
     for d in all_decisions:
-        disciplines_facet[d.discipline] = disciplines_facet.get(d.discipline, 0) + 1
+        disc = d.affected_disciplines[0] if d.affected_disciplines else d.discipline
+        disciplines_facet[disc] = disciplines_facet.get(disc, 0) + 1
 
-    return {
-        "decisions": decisions_list,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "facets": {
-            "disciplines": disciplines_facet,
-            "meeting_types": {},
-        },
-    }
+    response = JSONResponse(
+        content={
+            "decisions": decisions_list,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "facets": {
+                "disciplines": disciplines_facet,
+                "meeting_types": {},
+            },
+        }
+    )
+    response.headers["Deprecation"] = "true"
+    return response
 
 
 @router.get("/decisions/{decision_id}")
 async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
-    """
-    Get complete details for a single decision.
-    """
+    """Get complete details for a single decision."""
     row = (
         db.query(
             Decision,
@@ -172,7 +200,11 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
         "anomaly_flags": decision.anomaly_flags,
         "meeting_title": transcript_title,
         "meeting_type": t_meeting_type,
-        "meeting_date": transcript_meeting_date.isoformat() if transcript_meeting_date else (decision.created_at.isoformat() if decision.created_at else None),
+        "meeting_date": (
+            transcript_meeting_date.isoformat()
+            if transcript_meeting_date
+            else (decision.created_at.isoformat() if decision.created_at else None)
+        ),
         "meeting_participants": t_participants,
         "created_at": decision.created_at.isoformat() if decision.created_at else None,
         "updated_at": decision.updated_at.isoformat() if decision.updated_at else None,
@@ -180,7 +212,11 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.patch("/decisions/{decision_id}")
-async def update_decision(decision_id: UUID, approved: Optional[bool] = None, notes: Optional[str] = None):
+async def update_decision(
+    decision_id: UUID,
+    approved: Optional[bool] = None,
+    notes: Optional[str] = None,
+):
     """
     Update decision (approval, notes).
 
