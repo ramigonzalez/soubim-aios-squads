@@ -16,22 +16,31 @@ PostgreSQL integration tests (require TEST_DATABASE_URL or DATABASE_URL=postgres
 - GIN index @> (contains) query on affected_disciplines
 - Down migration restores V1 schema via transactional DDL rollback
 - Vector search (cosine distance) on migrated project_items
+
+TEST-002: Migration SQL execution tests (require PostgreSQL):
+- Execute actual UPGRADE_SQL from 001 against V1 schema
+- Execute actual UPGRADE_SQL from 002 against migrated schema
+- Verify data transformations (discipline mapping, consensus V2, affected_disciplines)
+- Full upgrade + downgrade round-trip cycle
 """
 
 import importlib.util
-import os
+import json
 import pathlib
+from datetime import datetime
 
 import pytest
 from sqlalchemy import inspect, text
-from datetime import datetime
-from uuid import uuid4
 
 from app.database.models import (
-    Base, Project, ProjectItem, Decision,
-    Source, ProjectParticipant, DecisionRelationship,
+    Decision,
+    Project,
+    ProjectItem,
+    ProjectParticipant,
+    Source,
     Transcript,
 )
+from tests.conftest import _exec_migration_sql
 
 
 def _load_migration_sql(filename: str) -> object:
@@ -847,3 +856,435 @@ class TestVectorSearchPostMigration:
         result_ids = {str(row[0]) for row in rows}
         assert str(item_with_embedding.id) in result_ids
         assert str(item_without_embedding.id) not in result_ids
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TEST-002: Migration SQL Execution Tests (QA Gate Story 5.1)
+# Execute the actual UPGRADE_SQL/DOWNGRADE_SQL scripts against PostgreSQL.
+# Previous tests validate ORM models via Base.metadata.create_all();
+# these tests validate the raw SQL — the authoritative migration artifact.
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _get_schema_tables(conn, schema: str) -> set:
+    """Get all table names in a specific schema."""
+    rows = conn.execute(
+        text("SELECT tablename FROM pg_tables WHERE schemaname = :schema"),
+        {"schema": schema},
+    ).fetchall()
+    return {row[0] for row in rows}
+
+
+def _get_schema_columns(conn, table: str, schema: str) -> set:
+    """Get all column names for a table in a specific schema."""
+    rows = conn.execute(
+        text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = :table AND table_schema = :schema"
+        ),
+        {"table": table, "schema": schema},
+    ).fetchall()
+    return {row[0] for row in rows}
+
+
+def _get_schema_indexes(conn, table: str, schema: str) -> set:
+    """Get all index names for a table in a specific schema."""
+    rows = conn.execute(
+        text(
+            "SELECT indexname FROM pg_indexes "
+            "WHERE tablename = :table AND schemaname = :schema"
+        ),
+        {"table": table, "schema": schema},
+    ).fetchall()
+    return {row[0] for row in rows}
+
+
+def _get_schema_constraints(conn, table: str, schema: str) -> set:
+    """Get all constraint names for a table in a specific schema."""
+    rows = conn.execute(
+        text(
+            "SELECT con.conname FROM pg_constraint con "
+            "JOIN pg_class rel ON rel.oid = con.conrelid "
+            "JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace "
+            "WHERE rel.relname = :table AND nsp.nspname = :schema"
+        ),
+        {"table": table, "schema": schema},
+    ).fetchall()
+    return {row[0] for row in rows}
+
+
+@pytest.mark.postgresql
+class TestMigrationSQL001Upgrade:
+    """TEST-002: Execute actual UPGRADE_SQL from migration 001 against V1 schema.
+
+    Validates:
+    - Table rename (decisions → project_items)
+    - V2 columns added with correct defaults
+    - CHECK constraints (ck_item_type, ck_source_type)
+    - New indexes created
+    - Data transformations: discipline 'interior' → 'architecture'
+    - Data transformations: affected_disciplines populated from discipline
+    - Data transformations: consensus V1 flat → V2 structured
+    - Data transformations: statement = decision_statement
+    """
+
+    SCHEMA = "test_v1_migration"
+
+    def test_upgrade_001_renames_table_and_adds_columns(self, v1_pg_schema):
+        """Migration 001 renames decisions → project_items and adds V2 columns."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+
+        # Verify V1 state before migration
+        tables = _get_schema_tables(conn, self.SCHEMA)
+        assert "decisions" in tables, "V1 decisions table must exist before migration"
+        assert "project_items" not in tables
+
+        # Execute actual upgrade SQL
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        # Verify table rename
+        tables = _get_schema_tables(conn, self.SCHEMA)
+        assert "project_items" in tables, "project_items must exist after migration"
+        assert "decisions" not in tables, "decisions must be renamed"
+
+        # Verify V2 columns added
+        columns = _get_schema_columns(conn, "project_items", self.SCHEMA)
+        v2_columns = {
+            "item_type", "source_type", "is_milestone", "is_done",
+            "affected_disciplines", "owner", "source_id", "source_excerpt", "statement",
+        }
+        assert v2_columns.issubset(columns), f"Missing V2 columns: {v2_columns - columns}"
+
+        # Verify V1 columns preserved
+        v1_columns = {"decision_statement", "who", "timestamp", "discipline", "why", "consensus"}
+        assert v1_columns.issubset(columns), f"Missing V1 columns: {v1_columns - columns}"
+
+    def test_upgrade_001_defaults_populated(self, v1_pg_schema):
+        """V2 columns have correct default values after migration."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        rows = conn.execute(text(
+            "SELECT item_type, source_type, is_milestone, is_done "
+            "FROM project_items"
+        )).fetchall()
+
+        assert len(rows) == 3, "All 3 V1 rows must be preserved"
+        for row in rows:
+            assert row[0] == "decision", "item_type must default to 'decision'"
+            assert row[1] == "meeting", "source_type must default to 'meeting'"
+            assert row[2] is False, "is_milestone must default to false"
+            assert row[3] is False, "is_done must default to false"
+
+    def test_upgrade_001_check_constraints(self, v1_pg_schema):
+        """CHECK constraints reject invalid item_type and source_type values."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        constraints = _get_schema_constraints(conn, "project_items", self.SCHEMA)
+        assert "ck_item_type" in constraints, "ck_item_type constraint must exist"
+        assert "ck_source_type" in constraints, "ck_source_type constraint must exist"
+
+    def test_upgrade_001_indexes_created(self, v1_pg_schema):
+        """New V2 indexes created on project_items."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        indexes = _get_schema_indexes(conn, "project_items", self.SCHEMA)
+        expected = {
+            "idx_project_items_type",
+            "idx_project_items_source_type",
+            "idx_project_items_milestone",
+            "idx_project_items_source",
+            "idx_project_items_disciplines",
+            "idx_project_items_project_type_date",
+        }
+        assert expected.issubset(indexes), f"Missing V2 indexes: {expected - indexes}"
+
+        # Verify renamed V1 indexes
+        renamed = {
+            "idx_project_items_project",
+            "idx_project_items_discipline",
+            "idx_project_items_confidence",
+            "idx_project_items_created",
+            "idx_project_items_composite",
+        }
+        assert renamed.issubset(indexes), f"Missing renamed indexes: {renamed - indexes}"
+
+    def test_upgrade_001_discipline_mapping(self, v1_pg_schema):
+        """'interior' discipline mapped to 'architecture' per architect review B1."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        # No rows should have 'interior' discipline after migration
+        interior_count = conn.execute(text(
+            "SELECT COUNT(*) FROM project_items WHERE discipline = 'interior'"
+        )).scalar()
+        assert interior_count == 0, "'interior' must be mapped to 'architecture'"
+
+        # The row that was 'interior' should now be 'architecture'
+        arch_row = conn.execute(text(
+            "SELECT discipline, decision_statement FROM project_items "
+            "WHERE id = '44444444-4444-4444-4444-444444444444'"
+        )).fetchone()
+        assert arch_row[0] == "architecture", "interior row must become architecture"
+
+    def test_upgrade_001_affected_disciplines_populated(self, v1_pg_schema):
+        """affected_disciplines populated from single discipline field."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        rows = conn.execute(text(
+            "SELECT discipline, affected_disciplines FROM project_items ORDER BY id"
+        )).fetchall()
+
+        for discipline, affected in rows:
+            # Parse JSONB — psycopg may return as dict/list or string
+            if isinstance(affected, str):
+                affected = json.loads(affected)
+            assert isinstance(affected, list), "affected_disciplines must be a JSONB array"
+            assert discipline in affected, (
+                f"affected_disciplines {affected} must contain discipline '{discipline}'"
+            )
+
+    def test_upgrade_001_consensus_v2_format(self, v1_pg_schema):
+        """Consensus transformed from V1 flat map to V2 structured format."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        rows = conn.execute(text(
+            "SELECT consensus FROM project_items "
+            "WHERE consensus IS NOT NULL AND consensus::text NOT IN ('null', '')"
+        )).fetchall()
+
+        assert len(rows) == 3, "All 3 seeded rows have consensus data"
+        for (consensus_raw,) in rows:
+            consensus = consensus_raw if isinstance(consensus_raw, dict) else json.loads(consensus_raw)
+            for _disc, value in consensus.items():
+                assert isinstance(value, dict), f"V2 consensus must be nested object, got: {value}"
+                assert "status" in value, f"V2 consensus must have 'status' key: {value}"
+                assert "notes" in value, f"V2 consensus must have 'notes' key: {value}"
+
+    def test_upgrade_001_statement_alias(self, v1_pg_schema):
+        """statement column populated from decision_statement."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+
+        mismatches = conn.execute(text(
+            "SELECT COUNT(*) FROM project_items WHERE statement != decision_statement"
+        )).scalar()
+        assert mismatches == 0, "statement must equal decision_statement after migration"
+
+
+@pytest.mark.postgresql
+class TestMigrationSQL002Upgrade:
+    """TEST-002: Execute actual UPGRADE_SQL from migration 002 against migrated schema.
+
+    Validates:
+    - sources table created with all required columns
+    - project_participants table created
+    - Transcript data migrated to source records
+    - project_items linked to sources via webhook_id mapping
+    - Source indexes and constraints created
+    """
+
+    SCHEMA = "test_v1_migration"
+
+    @pytest.fixture
+    def migrated_schema(self, v1_pg_schema):
+        """V1 schema with migration 001 already applied (prerequisite for 002)."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+        return conn
+
+    def test_upgrade_002_creates_tables(self, migrated_schema):
+        """Migration 002 creates sources and project_participants tables."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        tables = _get_schema_tables(conn, self.SCHEMA)
+        assert "sources" in tables, "sources table must exist after migration 002"
+        assert "project_participants" in tables, "project_participants must exist"
+
+    def test_upgrade_002_sources_columns(self, migrated_schema):
+        """sources table has all required columns."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        columns = _get_schema_columns(conn, "sources", self.SCHEMA)
+        required = {
+            "id", "project_id", "source_type", "title", "occurred_at",
+            "ingestion_status", "ai_summary", "approved_by", "approved_at",
+            "raw_content", "meeting_type", "participants", "duration_minutes",
+            "webhook_id", "email_from", "email_to", "email_cc",
+            "email_thread_id", "file_url", "file_type", "file_size",
+            "drive_folder_id", "created_at", "updated_at",
+        }
+        assert required.issubset(columns), f"Missing source columns: {required - columns}"
+
+    def test_upgrade_002_sources_indexes(self, migrated_schema):
+        """sources table has required indexes including partial unique indexes."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        indexes = _get_schema_indexes(conn, "sources", self.SCHEMA)
+        expected = {
+            "idx_sources_project", "idx_sources_status",
+            "idx_sources_type", "idx_sources_occurred",
+            "idx_sources_webhook", "idx_sources_email_thread",
+        }
+        assert expected.issubset(indexes), f"Missing source indexes: {expected - indexes}"
+
+    def test_upgrade_002_participants_indexes(self, migrated_schema):
+        """project_participants has partial unique indexes per architect review A5."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        indexes = _get_schema_indexes(conn, "project_participants", self.SCHEMA)
+        expected = {
+            "idx_participants_project",
+            "idx_participants_email",
+            "idx_participants_name",
+        }
+        assert expected.issubset(indexes), f"Missing participant indexes: {expected - indexes}"
+
+    def test_upgrade_002_transcript_to_source_migration(self, migrated_schema):
+        """Transcript records migrated to source records with correct data."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        # Count match: each transcript becomes a source
+        transcript_count = conn.execute(text("SELECT COUNT(*) FROM transcripts")).scalar()
+        source_count = conn.execute(text("SELECT COUNT(*) FROM sources")).scalar()
+        assert source_count == transcript_count, "Each transcript must create one source"
+
+        # Verify source data from transcript
+        source = conn.execute(text(
+            "SELECT source_type, meeting_type, title, raw_content, webhook_id "
+            "FROM sources LIMIT 1"
+        )).fetchone()
+        assert source[0] == "meeting", "Transcript-derived source must be type 'meeting'"
+        assert source[1] == "Design Review", "meeting_type must be preserved"
+        assert source[2] is not None, "title must be populated"
+        assert "transcript" in source[3].lower(), "raw_content must contain transcript text"
+        assert source[4] == "wh_migration_test_001", "webhook_id must be preserved"
+
+    def test_upgrade_002_items_linked_to_sources(self, migrated_schema):
+        """project_items linked to sources via transcript → source webhook_id mapping."""
+        conn = migrated_schema
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        # All items with transcript_id should now have source_id
+        linked = conn.execute(text(
+            "SELECT COUNT(*) FROM project_items "
+            "WHERE transcript_id IS NOT NULL AND source_id IS NOT NULL"
+        )).scalar()
+        total_with_transcript = conn.execute(text(
+            "SELECT COUNT(*) FROM project_items WHERE transcript_id IS NOT NULL"
+        )).scalar()
+        assert linked == total_with_transcript, (
+            f"All items with transcript_id must be linked to sources: "
+            f"{linked}/{total_with_transcript}"
+        )
+
+        # Verify FK is valid — source_id references actual source
+        orphans = conn.execute(text(
+            "SELECT COUNT(*) FROM project_items pi "
+            "WHERE pi.source_id IS NOT NULL "
+            "AND NOT EXISTS (SELECT 1 FROM sources s WHERE s.id = pi.source_id)"
+        )).scalar()
+        assert orphans == 0, "No orphaned source_id references"
+
+
+@pytest.mark.postgresql
+class TestMigrationSQLFullCycle:
+    """TEST-002: Full upgrade + downgrade round-trip validates reversibility.
+
+    Starts from V1 schema, runs both upgrades, then both downgrades,
+    and verifies V1 state is fully restored with all data preserved.
+    """
+
+    SCHEMA = "test_v1_migration"
+
+    def test_full_upgrade_downgrade_preserves_data(self, v1_pg_schema):
+        """Full cycle: V1 → upgrade 001 → upgrade 002 → downgrade 002 → downgrade 001 → V1."""
+        conn = v1_pg_schema
+        migration_001 = _load_migration_sql("001_decisions_to_project_items.py")
+        migration_002 = _load_migration_sql("002_add_sources_participants.py")
+
+        # Record V1 state
+        v1_row_count = conn.execute(text("SELECT COUNT(*) FROM decisions")).scalar()
+        v1_statements = conn.execute(text(
+            "SELECT decision_statement FROM decisions ORDER BY id"
+        )).fetchall()
+
+        # Run upgrades
+        _exec_migration_sql(conn, migration_001.UPGRADE_SQL)
+        conn.commit()
+        _exec_migration_sql(conn, migration_002.UPGRADE_SQL)
+        conn.commit()
+
+        # Verify V2 state
+        tables = _get_schema_tables(conn, self.SCHEMA)
+        assert "project_items" in tables
+        assert "sources" in tables
+
+        # Run downgrades (reverse order)
+        _exec_migration_sql(conn, migration_002.DOWNGRADE_SQL)
+        conn.commit()
+        _exec_migration_sql(conn, migration_001.DOWNGRADE_SQL)
+        conn.commit()
+
+        # Verify V1 state restored
+        tables = _get_schema_tables(conn, self.SCHEMA)
+        assert "decisions" in tables, "decisions table must be restored"
+        assert "project_items" not in tables, "project_items must not exist"
+        assert "sources" not in tables, "sources must be dropped"
+        assert "project_participants" not in tables, "project_participants must be dropped"
+
+        # Verify V2 columns removed
+        columns = _get_schema_columns(conn, "decisions", self.SCHEMA)
+        assert "item_type" not in columns, "V2 column item_type must be removed"
+        assert "source_type" not in columns, "V2 column source_type must be removed"
+        assert "affected_disciplines" not in columns
+        assert "is_milestone" not in columns
+        assert "is_done" not in columns
+
+        # Verify data preserved
+        restored_count = conn.execute(text("SELECT COUNT(*) FROM decisions")).scalar()
+        assert restored_count == v1_row_count, "Row count must match after round-trip"
+
+        restored_statements = conn.execute(text(
+            "SELECT decision_statement FROM decisions ORDER BY id"
+        )).fetchall()
+        assert restored_statements == v1_statements, "Decision statements must be preserved"

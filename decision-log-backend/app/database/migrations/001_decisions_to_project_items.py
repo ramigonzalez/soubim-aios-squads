@@ -37,7 +37,7 @@ ALTER INDEX idx_decisions_discipline RENAME TO idx_project_items_discipline;
 ALTER INDEX idx_decisions_confidence RENAME TO idx_project_items_confidence;
 ALTER INDEX idx_decisions_created RENAME TO idx_project_items_created;
 ALTER INDEX idx_decisions_composite RENAME TO idx_project_items_composite;
-ALTER INDEX ck_confidence_range RENAME TO ck_project_items_confidence_range;
+ALTER TABLE project_items RENAME CONSTRAINT ck_confidence_range TO ck_project_items_confidence_range;
 
 -- ── Phase 3: Add new columns with defaults ─────────────────────────
 ALTER TABLE project_items ADD COLUMN item_type VARCHAR(50) DEFAULT 'decision';
@@ -91,19 +91,20 @@ WHERE discipline IS NOT NULL;
 UPDATE project_items SET statement = decision_statement;
 
 -- 7d: Transform consensus JSON from V1 flat map to V2 structured format
--- V1: {"architecture":"AGREE","mep":"AGREE"}
--- V2: {"architecture":{"status":"AGREE","notes":null},"mep":{"status":"AGREE","notes":null}}
+-- V1 format: {"architecture":"AGREE","mep":"AGREE"}
+-- V2 format: {"architecture":{"status":"AGREE","notes":null},...}
+-- Note: consensus column is json (not jsonb), so explicit casts are required
 UPDATE project_items
 SET consensus = (
     SELECT jsonb_object_agg(
         key,
         jsonb_build_object('status', value::text, 'notes', null)
     )
-    FROM jsonb_each_text(consensus)
-)
+    FROM jsonb_each_text(consensus::jsonb)
+)::json
 WHERE consensus IS NOT NULL
-  AND consensus != 'null'::jsonb
-  AND jsonb_typeof(consensus) = 'object';
+  AND consensus::text NOT IN ('null', '')
+  AND jsonb_typeof(consensus::jsonb) = 'object';
 
 COMMIT;
 """
