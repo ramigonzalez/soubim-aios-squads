@@ -9,6 +9,7 @@ import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
 import { DocumentUploadButton } from '../components/molecules/DocumentUploadButton'
 import { useFilterStore } from '../store/filterStore'
+import { useFilterUrlSync } from '../hooks/useFilterUrlSync'
 import { useAuthStore } from '../store/authStore'
 import { AlertCircle } from 'lucide-react'
 import { ProjectItem } from '../types/projectItem'
@@ -42,7 +43,12 @@ export function ProjectDetail() {
     dateFrom,
     dateTo,
     searchQuery,
+    sourceTypes,
+    itemTypes,
   } = useFilterStore()
+
+  // Sync filter state with URL params (Story 9.4)
+  useFilterUrlSync()
 
   if (!projectId) {
     return (
@@ -90,6 +96,16 @@ export function ProjectDetail() {
       })
     }
 
+    // Source type filter (Story 9.4)
+    if (sourceTypes.length > 0) {
+      filtered = filtered.filter(d => sourceTypes.includes(d.source_type))
+    }
+
+    // Item type filter (Story 9.4)
+    if (itemTypes.length > 0) {
+      filtered = filtered.filter(d => itemTypes.includes(d.item_type))
+    }
+
     // Decision maker filter
     if (decisionMakers.length > 0) {
       filtered = filtered.filter(d =>
@@ -129,7 +145,7 @@ export function ProjectDetail() {
     }
 
     return filtered
-  }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
+  }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery, sourceTypes, itemTypes])
 
   // Create mock digest data from items for Executive Digest view
   const mockDigest = {

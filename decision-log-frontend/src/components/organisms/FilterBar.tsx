@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, X, Building2, Calendar, Users, Tag } from 'lucide-react'
+import { Search, X, Building2, Calendar, Users, Tag, Video, Mail, FileText as FileTextIcon, PenLine, CheckCircle2, MessageCircle, Target, Lightbulb, Info } from 'lucide-react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useFilterStore } from '../../store/filterStore'
@@ -7,6 +7,7 @@ import { useDebounce } from '../../hooks/useDebounce'
 import { FilterPopover } from '../molecules/FilterPopover'
 import { getDisciplinePillColors, getMeetingTypeColors, formatDate } from '../../lib/utils'
 import { ProjectItem } from '../../types/projectItem'
+import type { LucideIcon } from 'lucide-react'
 
 const DISCIPLINES = ['architecture', 'mep', 'structural', 'electrical', 'plumbing', 'landscape']
 
@@ -19,6 +20,23 @@ const DISCIPLINE_DOT_COLORS: Record<string, string> = {
   plumbing: 'bg-cyan-400',
   landscape: 'bg-green-400',
 }
+
+// Source type filter chips (Story 9.4)
+const SOURCE_CHIPS: Array<{ value: string; label: string; icon: LucideIcon; activeClass: string }> = [
+  { value: 'meeting', label: 'Meeting', icon: Video, activeClass: 'bg-indigo-100 text-indigo-700' },
+  { value: 'email', label: 'Email', icon: Mail, activeClass: 'bg-sky-100 text-sky-700' },
+  { value: 'document', label: 'Document', icon: FileTextIcon, activeClass: 'bg-orange-100 text-orange-700' },
+  { value: 'manual_input', label: 'Manual', icon: PenLine, activeClass: 'bg-gray-200 text-gray-700' },
+]
+
+// Item type filter chips (Story 9.4)
+const TYPE_CHIPS: Array<{ value: string; label: string; icon: LucideIcon; activeClass: string }> = [
+  { value: 'decision', label: 'Decision', icon: CheckCircle2, activeClass: 'bg-green-100 text-green-700' },
+  { value: 'topic', label: 'Topic', icon: MessageCircle, activeClass: 'bg-amber-100 text-amber-700' },
+  { value: 'action_item', label: 'Action', icon: Target, activeClass: 'bg-blue-100 text-blue-700' },
+  { value: 'idea', label: 'Idea', icon: Lightbulb, activeClass: 'bg-purple-100 text-purple-700' },
+  { value: 'information', label: 'Info', icon: Info, activeClass: 'bg-slate-100 text-slate-700' },
+]
 
 interface FilterBarProps {
   decisions: ProjectItem[]
@@ -34,12 +52,18 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     dateFrom,
     dateTo,
     searchQuery,
+    sourceTypes,
+    itemTypes,
     toggleDiscipline,
     toggleDecisionMaker,
     toggleMeetingType,
+    toggleSourceType,
+    toggleItemType,
     clearDisciplines,
     clearDecisionMakers,
     clearMeetingTypes,
+    clearSourceTypes,
+    clearItemTypes,
     setDateRange,
     setSearchQuery,
     reset,
@@ -75,10 +99,29 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     return [...new Set(types.map(t => t.toLowerCase()))].sort()
   }, [decisions])
 
+  // Source type counts for badge display (Story 9.4)
+  const sourceCounts = useMemo(() => ({
+    meeting: decisions.filter(i => i.source_type === 'meeting').length,
+    email: decisions.filter(i => i.source_type === 'email').length,
+    document: decisions.filter(i => i.source_type === 'document').length,
+    manual_input: decisions.filter(i => i.source_type === 'manual_input').length,
+  }), [decisions])
+
+  // Item type counts for badge display (Story 9.4)
+  const typeCounts = useMemo(() => ({
+    decision: decisions.filter(i => i.item_type === 'decision').length,
+    topic: decisions.filter(i => i.item_type === 'topic').length,
+    action_item: decisions.filter(i => i.item_type === 'action_item').length,
+    idea: decisions.filter(i => i.item_type === 'idea').length,
+    information: decisions.filter(i => i.item_type === 'information').length,
+  }), [decisions])
+
   const activeFilterCount =
     disciplines.length +
     decisionMakers.length +
     meetingTypes.length +
+    sourceTypes.length +
+    itemTypes.length +
     (dateFrom || dateTo ? 1 : 0) +
     (searchQuery ? 1 : 0)
 
@@ -218,8 +261,48 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     </span>
   )] : []
 
-  // Collect non-empty chip groups in order: Disciplines | Date | Who | Types | Search
-  const chipGroups = [disciplineChips, dateChips, whoChips, typeChips, searchChips].filter(g => g.length > 0)
+  // Source type active chips (Story 9.4)
+  const sourceChips = sourceTypes.map((st) => {
+    const chip = SOURCE_CHIPS.find(c => c.value === st)
+    return (
+      <span
+        key={`source-${st}`}
+        className={`inline-flex items-center gap-1 ${chip?.activeClass || 'bg-gray-100 text-gray-600'} text-xs px-2 py-1 rounded-full`}
+      >
+        {chip?.label || st}
+        <button
+          onClick={() => toggleSourceType(st)}
+          aria-label={`Remove ${chip?.label || st} source filter`}
+          className="hover:opacity-70"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </span>
+    )
+  })
+
+  // Item type active chips (Story 9.4)
+  const itemTypeChips = itemTypes.map((it) => {
+    const chip = TYPE_CHIPS.find(c => c.value === it)
+    return (
+      <span
+        key={`itemtype-${it}`}
+        className={`inline-flex items-center gap-1 ${chip?.activeClass || 'bg-gray-100 text-gray-600'} text-xs px-2 py-1 rounded-full`}
+      >
+        {chip?.label || it}
+        <button
+          onClick={() => toggleItemType(it)}
+          aria-label={`Remove ${chip?.label || it} type filter`}
+          className="hover:opacity-70"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </span>
+    )
+  })
+
+  // Collect non-empty chip groups in order: Disciplines | Source | ItemType | Date | Who | MeetingTypes | Search
+  const chipGroups = [disciplineChips, sourceChips, itemTypeChips, dateChips, whoChips, typeChips, searchChips].filter(g => g.length > 0)
 
   return (
     <nav
@@ -428,6 +511,58 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
             )}
           </div>
         </FilterPopover>
+
+        {/* Source Type Chips (Story 9.4) */}
+        <span className="w-px h-4 bg-gray-200 mx-1 self-center" />
+        <div className="inline-flex items-center gap-1" role="group" aria-label="Source type filters">
+          {SOURCE_CHIPS.map((chip) => {
+            const Icon = chip.icon
+            const isActive = sourceTypes.includes(chip.value)
+            const count = sourceCounts[chip.value as keyof typeof sourceCounts] || 0
+            return (
+              <button
+                key={chip.value}
+                type="button"
+                onClick={() => toggleSourceType(chip.value)}
+                className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer transition-colors ${
+                  isActive ? chip.activeClass : 'bg-gray-100 text-gray-600'
+                }`}
+                aria-pressed={isActive}
+                aria-label={`Filter by ${chip.label} source`}
+              >
+                <Icon className="w-3 h-3" />
+                {chip.label}
+                <span className="text-[10px] font-medium text-gray-400 ml-0.5">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Item Type Chips (Story 9.4) */}
+        <span className="w-px h-4 bg-gray-200 mx-1 self-center" />
+        <div className="inline-flex items-center gap-1" role="group" aria-label="Item type filters">
+          {TYPE_CHIPS.map((chip) => {
+            const Icon = chip.icon
+            const isActive = itemTypes.includes(chip.value)
+            const count = typeCounts[chip.value as keyof typeof typeCounts] || 0
+            return (
+              <button
+                key={chip.value}
+                type="button"
+                onClick={() => toggleItemType(chip.value)}
+                className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer transition-colors ${
+                  isActive ? chip.activeClass : 'bg-gray-100 text-gray-600'
+                }`}
+                aria-pressed={isActive}
+                aria-label={`Filter by ${chip.label} type`}
+              >
+                <Icon className="w-3 h-3" />
+                {chip.label}
+                <span className="text-[10px] font-medium text-gray-400 ml-0.5">{count}</span>
+              </button>
+            )
+          })}
+        </div>
 
         {/* Clear All Button */}
         {activeFilterCount > 0 && (

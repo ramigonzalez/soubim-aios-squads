@@ -39,8 +39,11 @@ async def lifespan(app: FastAPI):
         else:
             raise
 
-    # Start background scheduler (Gmail poller, etc.) — Story 7.4
-    app_scheduler.start()
+    # Start background scheduler (Gmail poller, Drive monitor) — Stories 7.4, 10.3
+    try:
+        app_scheduler.start()
+    except Exception as e:
+        logger.error(f"Scheduler startup failed: {e}")
 
     yield
 

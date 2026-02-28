@@ -1,141 +1,85 @@
-/**
- * ProjectForm — Full project create/edit form with stages and participants.
- * Story 6.2: Frontend — Project Create/Edit Form
- */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import StageScheduleBuilder, { StageRow } from './StageScheduleBuilder'
-import ParticipantRoster, { ParticipantRow } from './ParticipantRoster'
-import { useCreateProject, useUpdateProject, useSetStages } from '../../hooks/useProjectMutation'
+import { Project } from '../../types/project'
 
-interface ProjectFormProps {
-  mode: 'create' | 'edit'
-  initialData?: {
-    title: string
-    description: string
-    project_type: string
-    stages: StageRow[]
-    participants: ParticipantRow[]
-  }
-  projectId?: string
+interface ProjectFormData {
+  name: string
+  description: string
+  project_type: string
+  drive_folder_id?: string
 }
 
-const PROJECT_TYPES = [
-  { value: '', label: 'Select type...' },
-  { value: 'architecture_full', label: 'Architecture Full' },
-  { value: 'architecture_legal', label: 'Architecture Legal' },
-  { value: 'custom', label: 'Custom' },
-]
+interface ProjectFormProps {
+  initialData?: Partial<Project>
+  onSubmit: (data: ProjectFormData) => void
+  onCancel?: () => void
+  isLoading?: boolean
+}
 
-export default function ProjectForm({ mode, initialData, projectId }: ProjectFormProps) {
-  const navigate = useNavigate()
-  const createProject = useCreateProject()
-  const updateProject = useUpdateProject(projectId || '')
-  const setStagesMutation = useSetStages(projectId || '')
-
-  const [title, setTitle] = useState(initialData?.title || '')
+/**
+ * Project create/edit form component.
+ *
+ * Story 10.3: Includes optional Google Drive Folder ID field
+ * for configuring automatic document monitoring.
+ */
+export function ProjectForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading = false,
+}: ProjectFormProps) {
+  const [name, setName] = useState(initialData?.name || '')
   const [description, setDescription] = useState(initialData?.description || '')
   const [projectType, setProjectType] = useState(initialData?.project_type || '')
-  const [stages, setStages] = useState<StageRow[]>(initialData?.stages || [])
-  const [participants, setParticipants] = useState<ParticipantRow[]>(
-    initialData?.participants || []
-  )
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [driveFolderId, setDriveFolderId] = useState(initialData?.drive_folder_id || '')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-
-    if (!title.trim()) {
-      setError('Title is required')
-      return
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      if (mode === 'create') {
-        const result = await createProject.mutateAsync({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          project_type: projectType || undefined,
-          stages: stages.length > 0
-            ? stages.filter((s) => s.stage_name && s.stage_from && s.stage_to)
-            : undefined,
-          participants: participants.length > 0
-            ? participants
-                .filter((p) => p.name)
-                .map((p) => ({
-                  name: p.name,
-                  email: p.email || undefined,
-                  discipline: p.discipline,
-                  role: p.role || undefined,
-                }))
-            : undefined,
-        })
-        navigate(`/projects/${result.id}`)
-      } else if (mode === 'edit' && projectId) {
-        await updateProject.mutateAsync({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          project_type: projectType || undefined,
-        })
-        const validStages = stages.filter((s) => s.stage_name && s.stage_from && s.stage_to)
-        if (validStages.length > 0) {
-          await setStagesMutation.mutateAsync(validStages)
-        }
-        navigate(`/projects/${projectId}`)
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || err.message || 'Failed to save project')
-    } finally {
-      setIsSubmitting(false)
-    }
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      project_type: projectType.trim() || undefined as unknown as string,
+      drive_folder_id: driveFolderId.trim() || undefined,
+    })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-8">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Project Details */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Project Details</h2>
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">Project Details</h3>
 
+        {/* Name */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Title <span className="text-red-500">*</span>
+          <label htmlFor="projectName" className="block text-sm font-medium text-gray-700">
+            Project Name
           </label>
           <input
-            id="title"
+            id="projectName"
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={255}
             required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="e.g., Residential Tower Alpha"
+            placeholder="Enter project name"
           />
         </div>
 
+        {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700">
             Description
           </label>
           <textarea
-            id="description"
+            id="projectDescription"
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="Brief description of the project..."
+            placeholder="Describe the project"
           />
         </div>
 
+        {/* Project Type */}
         <div>
           <label htmlFor="projectType" className="block text-sm font-medium text-gray-700">
             Project Type
@@ -146,40 +90,51 @@ export default function ProjectForm({ mode, initialData, projectId }: ProjectFor
             onChange={(e) => setProjectType(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            {PROJECT_TYPES.map((pt) => (
-              <option key={pt.value} value={pt.value}>
-                {pt.label}
-              </option>
-            ))}
+            <option value="">Select type...</option>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="mixed-use">Mixed Use</option>
+            <option value="institutional">Institutional</option>
+            <option value="infrastructure">Infrastructure</option>
           </select>
         </div>
-      </section>
 
-      {/* Stage Schedule */}
-      <section className="border-t pt-6">
-        <StageScheduleBuilder stages={stages} onChange={setStages} />
-      </section>
-
-      {/* Participant Roster */}
-      <section className="border-t pt-6">
-        <ParticipantRoster participants={participants} onChange={setParticipants} />
-      </section>
+        {/* Google Drive Folder ID (Story 10.3) */}
+        <div>
+          <label htmlFor="driveFolderId" className="block text-sm font-medium text-gray-700">
+            Google Drive Folder ID
+          </label>
+          <input
+            id="driveFolderId"
+            type="text"
+            value={driveFolderId}
+            onChange={(e) => setDriveFolderId(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
+            placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Paste the folder ID from Google Drive to enable automatic document monitoring
+          </p>
+        </div>
+      </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 border-t pt-6">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Cancel
-        </button>
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        )}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading || !name.trim()}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Project' : 'Save Changes'}
+          {isLoading ? 'Saving...' : initialData?.id ? 'Update Project' : 'Create Project'}
         </button>
       </div>
     </form>

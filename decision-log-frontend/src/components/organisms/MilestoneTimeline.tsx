@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import { useMilestones } from '../../hooks/useMilestones'
 import { useStages } from '../../hooks/useStages'
+import { useMilestoneFilters } from '../../hooks/useMilestoneFilters'
 import { StageNode } from '../molecules/StageNode'
 import { MilestoneNode } from '../molecules/MilestoneNode'
+import { MilestoneFilterBar } from '../molecules/MilestoneFilterBar'
 import { ProjectItem, ProjectStage } from '../../types/projectItem'
-import { cn, formatDate } from '../../lib/utils'
+import { cn, formatDate, filterMilestones } from '../../lib/utils'
 import { AlertCircle, Star, Loader } from 'lucide-react'
 
 interface MilestoneTimelineProps {
@@ -194,13 +196,21 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
   const stages = stagesData?.stages || []
   const milestones = milestonesData?.items || []
 
+  const { sourceFilters, itemTypeFilters, toggleSource, toggleItemType, clearAll, activeCount } =
+    useMilestoneFilters()
+
+  const filteredMilestones = useMemo(
+    () => filterMilestones(milestones, sourceFilters, itemTypeFilters),
+    [milestones, sourceFilters, itemTypeFilters]
+  )
+
   const isLoading = stagesLoading || milestonesLoading
   const error = stagesError || milestonesError
 
   const currentStage = useMemo(() => getCurrentStage(stages), [stages])
   const groupedMilestones = useMemo(
-    () => groupMilestonesByStage(milestones, stages),
-    [milestones, stages]
+    () => groupMilestonesByStage(filteredMilestones, stages),
+    [filteredMilestones, stages]
   )
   const todayPosition = useMemo(() => calculateTodayPosition(stages), [stages])
 
@@ -236,7 +246,7 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
     )
   }
 
-  // Empty milestones state
+  // Empty milestones state (no milestones at all)
   if (milestones.length === 0) {
     return (
       <nav aria-label="Milestone Timeline">
@@ -249,6 +259,35 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
 
   return (
     <nav aria-label="Milestone Timeline">
+      {/* Filter bar */}
+      <MilestoneFilterBar
+        sourceFilters={sourceFilters}
+        itemTypeFilters={itemTypeFilters}
+        onToggleSource={toggleSource}
+        onToggleItemType={toggleItemType}
+        onClearAll={clearAll}
+      />
+
+      {/* Empty filter result state */}
+      {filteredMilestones.length === 0 && milestones.length > 0 ? (
+        <div className="flex flex-col items-center justify-center py-16" data-testid="filter-empty-state">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center max-w-md">
+            <Star className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 text-sm">
+              No milestones match your filters.
+            </p>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-xs text-blue-600 hover:underline mt-2"
+              data-testid="filter-empty-clear"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+      ) : (
+
       <div className="relative">
         {/* Vertical line */}
         <div
@@ -339,6 +378,8 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
           </section>
         )}
       </div>
+
+      )}
     </nav>
   )
 }

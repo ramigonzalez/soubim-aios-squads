@@ -1,9 +1,7 @@
 """Background job scheduler using APScheduler.
 
-Manages scheduled background jobs for the application. Currently supports
-Gmail email polling with configurable intervals.
-
-Story 7.4: Backend Gmail API Poller
+Manages scheduled background jobs for the application.
+Supports Gmail email polling (Story 7.4) and Google Drive folder monitoring (Story 10.3).
 """
 
 import logging
@@ -35,12 +33,31 @@ def _run_gmail_poll():
         logger.error(f"Scheduler: Gmail poll failed with unhandled exception: {e}")
 
 
+def _run_drive_poll():
+    """Wrapper for Drive folder poll cycle (Story 10.3)."""
+    from app.database.session import SessionLocal
+    from app.services.drive_monitor import DriveMonitor
+
+    logger.info("Scheduler: Running Drive folder poll cycle")
+    try:
+        db = SessionLocal()
+        monitor = DriveMonitor(db)
+        monitor.poll_all_projects()
+        logger.info("Scheduler: Drive poll complete")
+    except Exception as e:
+        logger.error(f"Scheduler: Drive poll failed: {e}")
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
 class AppScheduler:
     """Manages background job scheduling for the application."""
 
     def __init__(self):
         self._scheduler = BackgroundScheduler()
         self._gmail_job = None
+        self._drive_job = None
 
     def start(self):
         """
@@ -48,50 +65,77 @@ class AppScheduler:
 
         Called on FastAPI startup event.
         """
-        if not settings.is_gmail_configured():
+        jobs_registered = 0
+
+        # Gmail poller (Story 7.4)
+        if settings.is_gmail_configured():
+            interval_minutes = max(
+                settings.gmail_poll_interval_minutes,
+                MIN_POLL_INTERVAL_MINUTES,
+            )
+
+            if interval_minutes != settings.gmail_poll_interval_minutes:
+                logger.warning(
+                    f"Scheduler: GMAIL_POLL_INTERVAL_MINUTES="
+                    f"{settings.gmail_poll_interval_minutes} "
+                    f"is below minimum ({MIN_POLL_INTERVAL_MINUTES}). "
+                    f"Using {MIN_POLL_INTERVAL_MINUTES} minutes."
+                )
+
+            logger.info(
+                f"Scheduler: Registering Gmail poller -- "
+                f"interval={interval_minutes}m, "
+                f"label_filter='{settings.gmail_label_filter}', "
+                f"max_results={settings.gmail_max_results_per_poll}"
+            )
+
+            self._gmail_job = self._scheduler.add_job(
+                _run_gmail_poll,
+                trigger=IntervalTrigger(minutes=interval_minutes),
+                id="gmail_poller",
+                name="Gmail Email Poller",
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=60,
+            )
+            jobs_registered += 1
+        else:
             logger.info(
                 "Scheduler: Gmail credentials not configured -- "
-                "Gmail poller disabled. Set GMAIL_CLIENT_ID, "
-                "GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN to enable."
+                "Gmail poller disabled."
             )
+
+        # Google Drive folder monitor (Story 10.3)
+        if settings.is_drive_configured():
+            drive_interval = max(
+                settings.drive_poll_interval_minutes,
+                MIN_POLL_INTERVAL_MINUTES,
+            )
+            self._drive_job = self._scheduler.add_job(
+                _run_drive_poll,
+                trigger=IntervalTrigger(minutes=drive_interval),
+                id="drive_monitor",
+                name="Google Drive Folder Monitor",
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=60,
+            )
+            jobs_registered += 1
+            logger.info(
+                f"Scheduler: Drive monitor registered -- interval={drive_interval}m"
+            )
+        else:
+            logger.info(
+                "Scheduler: Google Drive not configured -- "
+                "Drive monitor disabled."
+            )
+
+        if jobs_registered == 0:
+            logger.info("Scheduler: No polling jobs configured — scheduler idle")
             return
 
-        # Enforce minimum interval
-        interval_minutes = max(
-            settings.gmail_poll_interval_minutes,
-            MIN_POLL_INTERVAL_MINUTES,
-        )
-
-        if interval_minutes != settings.gmail_poll_interval_minutes:
-            logger.warning(
-                f"Scheduler: GMAIL_POLL_INTERVAL_MINUTES="
-                f"{settings.gmail_poll_interval_minutes} "
-                f"is below minimum ({MIN_POLL_INTERVAL_MINUTES}). "
-                f"Using {MIN_POLL_INTERVAL_MINUTES} minutes."
-            )
-
-        logger.info(
-            f"Scheduler: Registering Gmail poller -- "
-            f"interval={interval_minutes}m, "
-            f"label_filter='{settings.gmail_label_filter}', "
-            f"max_results={settings.gmail_max_results_per_poll}"
-        )
-
-        self._gmail_job = self._scheduler.add_job(
-            _run_gmail_poll,
-            trigger=IntervalTrigger(minutes=interval_minutes),
-            id="gmail_poller",
-            name="Gmail Email Poller",
-            max_instances=1,  # Prevent overlapping runs
-            coalesce=True,  # Skip missed runs instead of catching up
-            misfire_grace_time=60,  # Allow 60s late start before considering misfired
-        )
-
         self._scheduler.start()
-        logger.info(
-            f"Scheduler: Started. Gmail poller next run: "
-            f"{self._gmail_job.next_run_time}"
-        )
+        logger.info(f"Scheduler: Started with {jobs_registered} job(s)")
 
     def shutdown(self):
         """

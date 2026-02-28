@@ -1,65 +1,29 @@
-"""Project endpoints (extended for Story 6.1)."""
+"""Project endpoints."""
 
-import uuid
-from datetime import datetime
-
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
+from uuid import UUID
 
-from app.api.models.project import ProjectCreate, ProjectUpdate
-from app.database.models import (
-    Project,
-    ProjectItem,
-    ProjectMember,
-    ProjectParticipant,
-    ProjectStage,
-    User,
-)
 from app.database.session import get_db
+from app.database.models import Project
 from app.services.project_service import (
-    PermissionDeniedError,
+    get_projects,
+    get_project,
     ProjectNotFoundError,
+    PermissionDeniedError,
 )
+
+
+class ProjectUpdate(BaseModel):
+    """Pydantic model for PATCH /api/projects/{id}."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    project_type: Optional[str] = None
+    drive_folder_id: Optional[str] = None  # Story 10.3
 
 router = APIRouter()
-
-
-def _get_user(request: Request):
-    user = getattr(request.state, "user", None)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    return user
-
-
-def _check_project_access(db: Session, project_id: str, user) -> Project:
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    if user.role != "director":
-        is_member = (
-            db.query(ProjectMember)
-            .filter(ProjectMember.project_id == project_id, ProjectMember.user_id == str(user.id))
-            .first()
-        )
-        if not is_member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return project
-
-
-def _get_current_stage(db: Session, project: Project) -> Optional[dict]:
-    """Get current stage info for a project."""
-    if not project.actual_stage_id:
-        return None
-    stage = db.query(ProjectStage).filter(ProjectStage.id == project.actual_stage_id).first()
-    if not stage:
-        return None
-    return {
-        "name": stage.stage_name,
-        "stage_from": stage.stage_from.isoformat() if stage.stage_from else None,
-        "stage_to": stage.stage_to.isoformat() if stage.stage_to else None,
-    }
 
 
 @router.get("/")
@@ -70,262 +34,134 @@ async def list_projects(
     offset: int = Query(0, ge=0),
     archived: bool = Query(False),
 ):
-    """List all projects accessible to current user (V2 extended response)."""
-    user = _get_user(request)
+    """
+    List all projects accessible to current user.
 
-    query = db.query(Project)
+    Query Parameters:
+    - limit: Number of results per page (default 50, max 100)
+    - offset: Pagination offset (default 0)
+    - archived: Include archived projects (default false)
 
-    if not archived:
-        query = query.filter(Project.archived_at.is_(None))
-
-    if user.role != "director":
-        query = query.join(ProjectMember, ProjectMember.project_id == Project.id).filter(
-            ProjectMember.user_id == str(user.id)
+    Returns:
+        List of projects with pagination metadata
+    """
+    # Get current user from middleware
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
         )
 
-    total = query.count()
-    projects = query.order_by(Project.created_at.desc()).limit(limit).offset(offset).all()
+    # Get projects
+    projects, total = get_projects(
+        db,
+        str(user.id),
+        limit=limit,
+        offset=offset,
+        archived=archived,
+    )
 
-    result = []
-    for project in projects:
-        item_count = (
-            db.query(func.count(ProjectItem.id))
-            .filter(ProjectItem.project_id == project.id)
-            .scalar()
-            or 0
-        )
-        member_count = (
-            db.query(func.count(ProjectMember.user_id))
-            .filter(ProjectMember.project_id == project.id)
-            .scalar()
-            or 0
-        )
-        participant_count = (
-            db.query(func.count(ProjectParticipant.id))
-            .filter(ProjectParticipant.project_id == project.id)
-            .scalar()
-            or 0
-        )
-        latest_decision = (
-            db.query(func.max(ProjectItem.created_at))
-            .filter(ProjectItem.project_id == project.id)
-            .scalar()
-        )
-
-        current_stage = _get_current_stage(db, project)
-
-        result.append(
-            {
-                "id": str(project.id),
-                "name": project.name,
-                "description": project.description,
-                "project_type": project.project_type,
-                "current_stage": current_stage,
-                "participant_count": participant_count,
-                "item_count": item_count,
-                "member_count": member_count,
-                "decision_count": item_count,  # backward compat
-                "latest_decision": latest_decision.isoformat() if latest_decision else None,
-                "created_at": project.created_at.isoformat(),
-                "archived_at": project.archived_at.isoformat() if project.archived_at else None,
-            }
-        )
-
-    return {"projects": result, "total": total, "limit": limit, "offset": offset}
+    return {
+        "projects": projects,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get("/{project_id}")
 async def get_project_detail(
-    project_id: str,
+    project_id: UUID,
     request: Request,
     db: Session = Depends(get_db),
 ):
-    """Get detailed project information (V2 extended with stages + participants)."""
-    user = _get_user(request)
-    project = _check_project_access(db, project_id, user)
+    """
+    Get detailed information about a specific project.
 
-    # Get members
-    members = (
-        db.query(ProjectMember, User)
-        .join(User, ProjectMember.user_id == User.id)
-        .filter(ProjectMember.project_id == project_id)
-        .all()
-    )
-    member_list = [
-        {
-            "user_id": str(pm.user_id),
-            "name": u.name,
-            "email": u.email,
-            "role": pm.role,
-        }
-        for pm, u in members
-    ]
+    Includes:
+    - Project metadata
+    - Team members
+    - Statistics (decisions by discipline, meeting type, etc.)
 
-    # Get stages
-    stages = (
-        db.query(ProjectStage)
-        .filter(ProjectStage.project_id == project_id)
-        .order_by(ProjectStage.sort_order)
-        .all()
-    )
-    stages_list = [
-        {
-            "id": str(s.id),
-            "stage_name": s.stage_name,
-            "stage_from": s.stage_from.isoformat() if s.stage_from else None,
-            "stage_to": s.stage_to.isoformat() if s.stage_to else None,
-            "sort_order": s.sort_order,
-            "is_current": str(project.actual_stage_id) == str(s.id) if project.actual_stage_id else False,
-        }
-        for s in stages
-    ]
+    Returns:
+        Project details with stats
 
-    # Get participants
-    participant_count = (
-        db.query(func.count(ProjectParticipant.id))
-        .filter(ProjectParticipant.project_id == project_id)
-        .scalar()
-        or 0
-    )
+    Raises:
+        401: If not authenticated
+        403: If user doesn't have access to project
+        404: If project not found
+    """
+    # Get current user from middleware
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
 
-    # Get items stats
-    items = db.query(ProjectItem).filter(ProjectItem.project_id == project_id).all()
-    total_items = len(items)
+    try:
+        # Get project details
+        project = get_project(db, str(project_id), str(user.id))
+        return project
 
-    from datetime import timedelta
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
-    items_last_week = len([i for i in items if i.created_at and i.created_at >= one_week_ago])
-
-    items_by_discipline = {}
-    for item in items:
-        disc = item.discipline
-        items_by_discipline[disc] = items_by_discipline.get(disc, 0) + 1
-
-    current_stage = _get_current_stage(db, project)
-
-    return {
-        "id": str(project.id),
-        "name": project.name,
-        "description": project.description,
-        "project_type": project.project_type,
-        "current_stage": current_stage,
-        "stages": stages_list,
-        "participant_count": participant_count,
-        "created_at": project.created_at.isoformat(),
-        "archived_at": project.archived_at.isoformat() if project.archived_at else None,
-        "members": member_list,
-        "stats": {
-            "total_decisions": total_items,
-            "decisions_last_week": items_last_week,
-            "decisions_by_discipline": items_by_discipline,
-            "decisions_by_meeting_type": {},
-        },
-    }
-
-
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_project(
-    body: ProjectCreate,
-    request: Request,
-    db: Session = Depends(get_db),
-):
-    """Create a project with optional stages and participants."""
-    user = _get_user(request)
-
-    project = Project(
-        id=uuid.uuid4(),
-        name=body.title,
-        description=body.description,
-        project_type=body.project_type,
-    )
-    db.add(project)
-    db.flush()  # Get the project ID
-
-    # Add stages if provided
-    stage_count = 0
-    if body.stages:
-        from app.api.routes.stages import validate_stage_schedule
-        validate_stage_schedule(body.stages)
-
-        for i, stage_data in enumerate(body.stages):
-            stage = ProjectStage(
-                id=uuid.uuid4(),
-                project_id=project.id,
-                stage_name=stage_data.stage_name,
-                stage_from=datetime.combine(stage_data.stage_from, datetime.min.time()),
-                stage_to=datetime.combine(stage_data.stage_to, datetime.min.time()),
-                sort_order=i,
-            )
-            db.add(stage)
-            stage_count += 1
-
-    # Add participants if provided
-    participant_count = 0
-    if body.participants:
-        for p_data in body.participants:
-            participant = ProjectParticipant(
-                id=uuid.uuid4(),
-                project_id=project.id,
-                name=p_data.name,
-                email=p_data.email,
-                discipline=p_data.discipline.value,
-                role=p_data.role,
-            )
-            db.add(participant)
-            participant_count += 1
-
-    # Add creator as project member
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=user.id,
-        role="owner",
-    )
-    db.add(member)
-
-    db.commit()
-    db.refresh(project)
-
-    return {
-        "id": str(project.id),
-        "name": project.name,
-        "description": project.description,
-        "project_type": project.project_type,
-        "stage_count": stage_count,
-        "participant_count": participant_count,
-        "created_at": project.created_at.isoformat(),
-    }
+    except ProjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project not found",
+        )
+    except PermissionDeniedError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this project",
+        )
 
 
 @router.patch("/{project_id}")
 async def update_project(
-    project_id: str,
-    body: ProjectUpdate,
+    project_id: UUID,
+    payload: ProjectUpdate,
     request: Request,
     db: Session = Depends(get_db),
 ):
-    """Update project (title, description, project_type, actual_stage_id)."""
-    user = _get_user(request)
-    project = _check_project_access(db, project_id, user)
+    """
+    Update project fields (partial update).
 
-    if body.title is not None:
-        project.name = body.title
-    if body.description is not None:
-        project.description = body.description
-    if body.project_type is not None:
-        project.project_type = body.project_type
-    if body.actual_stage_id is not None:
-        # Validate stage belongs to this project
-        stage = (
-            db.query(ProjectStage)
-            .filter(ProjectStage.id == body.actual_stage_id, ProjectStage.project_id == project_id)
-            .first()
+    Story 10.3: Accepts `drive_folder_id` to configure Drive monitoring.
+
+    Returns:
+        Updated project data
+
+    Raises:
+        401: If not authenticated
+        403: If user is not a director
+        404: If project not found
+    """
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
         )
-        if not stage:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Stage not found for this project",
-            )
-        project.actual_stage_id = body.actual_stage_id
+
+    # Only directors can update project settings
+    if user.role != "director":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only directors can update project settings",
+        )
+
+    project = db.query(Project).filter(Project.id == str(project_id)).first()
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    # Apply partial updates
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(project, field, value)
 
     db.commit()
     db.refresh(project)
@@ -335,19 +171,6 @@ async def update_project(
         "name": project.name,
         "description": project.description,
         "project_type": project.project_type,
+        "drive_folder_id": project.drive_folder_id,
         "created_at": project.created_at.isoformat(),
     }
-
-
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def archive_project(
-    project_id: str,
-    request: Request,
-    db: Session = Depends(get_db),
-):
-    """Archive a project (soft delete)."""
-    user = _get_user(request)
-    project = _check_project_access(db, project_id, user)
-
-    project.archived_at = datetime.utcnow()
-    db.commit()

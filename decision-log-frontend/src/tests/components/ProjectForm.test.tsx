@@ -1,175 +1,129 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from 'react-query'
-import ProjectForm from '../../components/organisms/ProjectForm'
+import { ProjectForm } from '../../components/organisms/ProjectForm'
 
-// Mock hooks
-vi.mock('../../hooks/useProjectMutation', () => ({
-  useCreateProject: () => ({
-    mutateAsync: vi.fn().mockResolvedValue({ id: 'new-proj-1' }),
-  }),
-  useUpdateProject: () => ({
-    mutateAsync: vi.fn().mockResolvedValue({}),
-  }),
-  useSetStages: () => ({
-    mutateAsync: vi.fn().mockResolvedValue({}),
-  }),
-}))
+describe('ProjectForm Component', () => {
+  const mockOnSubmit = vi.fn()
+  const mockOnCancel = vi.fn()
 
-vi.mock('../../hooks/useStageTemplates', () => ({
-  useStageTemplates: () => ({
-    data: { templates: [] },
-  }),
-}))
-
-const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return { ...actual, useNavigate: () => mockNavigate }
-})
-
-function renderProjectForm(props: Partial<React.ComponentProps<typeof ProjectForm>> = {}) {
-  const queryClient = new QueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ProjectForm mode="create" {...props} />
-      </BrowserRouter>
-    </QueryClientProvider>
-  )
-}
-
-describe('ProjectForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders all three sections', () => {
-    renderProjectForm()
-    expect(screen.getByText('Project Details')).toBeInTheDocument()
-    expect(screen.getByText('Stage Schedule')).toBeInTheDocument()
-    expect(screen.getByText('Participants')).toBeInTheDocument()
+  it('renders all form fields', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+
+    expect(screen.getByLabelText('Project Name')).toBeInTheDocument()
+    expect(screen.getByLabelText('Description')).toBeInTheDocument()
+    expect(screen.getByLabelText('Project Type')).toBeInTheDocument()
+    expect(screen.getByLabelText('Google Drive Folder ID')).toBeInTheDocument()
   })
 
-  it('renders title input with required indicator', () => {
-    renderProjectForm()
-    expect(screen.getByLabelText(/Title/)).toBeInTheDocument()
-    expect(screen.getByText('*')).toBeInTheDocument()
+  it('renders Google Drive Folder ID help text', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    expect(
+      screen.getByText(/Paste the folder ID from Google Drive/)
+    ).toBeInTheDocument()
   })
 
-  it('renders description textarea', () => {
-    renderProjectForm()
-    expect(screen.getByLabelText(/Description/)).toBeInTheDocument()
+  it('renders Google Drive Folder ID placeholder', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    const input = screen.getByLabelText('Google Drive Folder ID')
+    expect(input).toHaveAttribute('placeholder', 'e.g., 1a2b3c4d5e6f7g8h9i0j')
   })
 
-  it('renders project type select with options', () => {
-    renderProjectForm()
-    const select = screen.getByLabelText(/Project Type/)
-    expect(select).toBeInTheDocument()
-    expect(screen.getByText('Architecture Full')).toBeInTheDocument()
-    expect(screen.getByText('Architecture Legal')).toBeInTheDocument()
-    expect(screen.getByText('Custom')).toBeInTheDocument()
-  })
-
-  it('shows empty state for stages', () => {
-    renderProjectForm()
-    expect(screen.getByText(/No stages defined/)).toBeInTheDocument()
-  })
-
-  it('shows empty state for participants', () => {
-    renderProjectForm()
-    expect(screen.getByText(/No participants added/)).toBeInTheDocument()
-  })
-
-  it('shows Create Project button in create mode', () => {
-    renderProjectForm({ mode: 'create' })
+  it('shows "Create Project" button when no initialData', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
     expect(screen.getByText('Create Project')).toBeInTheDocument()
   })
 
-  it('shows Save Changes button in edit mode', () => {
-    renderProjectForm({ mode: 'edit', projectId: 'proj-1' })
-    expect(screen.getByText('Save Changes')).toBeInTheDocument()
+  it('shows "Update Project" button when initialData has id', () => {
+    render(
+      <ProjectForm
+        initialData={{ id: 'proj-1', name: 'Test' }}
+        onSubmit={mockOnSubmit}
+      />
+    )
+    expect(screen.getByText('Update Project')).toBeInTheDocument()
   })
 
-  it('shows Cancel button', () => {
-    renderProjectForm()
+  it('shows "Saving..." button when isLoading', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} isLoading />)
+    expect(screen.getByText('Saving...')).toBeInTheDocument()
+  })
+
+  it('pre-fills fields from initialData', () => {
+    render(
+      <ProjectForm
+        initialData={{
+          name: 'Test Project',
+          description: 'A description',
+          project_type: 'residential',
+          drive_folder_id: 'folder-abc',
+        }}
+        onSubmit={mockOnSubmit}
+      />
+    )
+
+    expect(screen.getByLabelText('Project Name')).toHaveValue('Test Project')
+    expect(screen.getByLabelText('Description')).toHaveValue('A description')
+    expect(screen.getByLabelText('Project Type')).toHaveValue('residential')
+    expect(screen.getByLabelText('Google Drive Folder ID')).toHaveValue('folder-abc')
+  })
+
+  it('submits form data including drive_folder_id', async () => {
+    const user = userEvent.setup()
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+
+    await user.type(screen.getByLabelText('Project Name'), 'New Project')
+    await user.type(screen.getByLabelText('Description'), 'Some description')
+    await user.type(screen.getByLabelText('Google Drive Folder ID'), 'folder-xyz')
+    await user.click(screen.getByText('Create Project'))
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'New Project',
+        description: 'Some description',
+        drive_folder_id: 'folder-xyz',
+      })
+    )
+  })
+
+  it('submits undefined drive_folder_id when empty', async () => {
+    const user = userEvent.setup()
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+
+    await user.type(screen.getByLabelText('Project Name'), 'Project')
+    await user.click(screen.getByText('Create Project'))
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        drive_folder_id: undefined,
+      })
+    )
+  })
+
+  it('disables submit button when name is empty', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    const button = screen.getByText('Create Project')
+    expect(button).toBeDisabled()
+  })
+
+  it('renders cancel button when onCancel provided', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
     expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
 
-  it('does not navigate when title is empty on submit', async () => {
-    const user = userEvent.setup()
-    renderProjectForm()
-
-    const submitBtn = screen.getByText('Create Project')
-    await user.click(submitBtn)
-
-    // Native required validation prevents submit — no navigation
-    expect(mockNavigate).not.toHaveBeenCalled()
+  it('does not render cancel button when onCancel not provided', () => {
+    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    expect(screen.queryByText('Cancel')).not.toBeInTheDocument()
   })
 
-  it('can add and remove stages', async () => {
+  it('calls onCancel when cancel is clicked', async () => {
     const user = userEvent.setup()
-    renderProjectForm()
-
-    const addStageBtn = screen.getByText('Add Stage')
-    await user.click(addStageBtn)
-
-    // Should show stage row input
-    expect(screen.getByPlaceholderText('Stage name')).toBeInTheDocument()
-    expect(screen.queryByText(/No stages defined/)).not.toBeInTheDocument()
-  })
-
-  it('can add and remove participants', async () => {
-    const user = userEvent.setup()
-    renderProjectForm()
-
-    const addBtn = screen.getByText('Add Participant')
-    await user.click(addBtn)
-
-    // Should show participant row inputs
-    expect(screen.getByPlaceholderText('Name *')).toBeInTheDocument()
-    expect(screen.queryByText(/No participants added/)).not.toBeInTheDocument()
-  })
-
-  it('pre-populates form in edit mode with initialData', () => {
-    renderProjectForm({
-      mode: 'edit',
-      projectId: 'proj-1',
-      initialData: {
-        title: 'Test Project',
-        description: 'A test description',
-        project_type: 'architecture_full',
-        stages: [{ stage_name: 'Phase 1', stage_from: '2026-01-01', stage_to: '2026-02-01' }],
-        participants: [{ name: 'Alice', email: 'alice@test.com', discipline: 'architecture', role: 'Architect' }],
-      },
-    })
-
-    expect(screen.getByDisplayValue('Test Project')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('A test description')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('Phase 1')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('Alice')).toBeInTheDocument()
-  })
-
-  it('has discipline select with all 15 options', async () => {
-    const user = userEvent.setup()
-    renderProjectForm()
-
-    const addBtn = screen.getByText('Add Participant')
-    await user.click(addBtn)
-
-    // Check for some discipline options
-    const selects = screen.getAllByRole('combobox')
-    const disciplineSelect = selects.find(s => {
-      const options = s.querySelectorAll('option')
-      return Array.from(options).some(o => o.textContent === 'Architecture')
-    })
-    expect(disciplineSelect).toBeTruthy()
-
-    if (disciplineSelect) {
-      const options = disciplineSelect.querySelectorAll('option')
-      expect(options.length).toBe(15) // 15 disciplines
-    }
+    render(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
+    await user.click(screen.getByText('Cancel'))
+    expect(mockOnCancel).toHaveBeenCalledTimes(1)
   })
 })

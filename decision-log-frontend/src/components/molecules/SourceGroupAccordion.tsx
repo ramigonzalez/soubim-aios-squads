@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, FileText } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { SourceIcon } from '../atoms/SourceIcon'
 import { ProjectItemRow } from './ProjectItemRow'
+import { MeetingSummary } from './MeetingSummary'
 import type { ProjectItem, SourceType } from '../../types/projectItem'
 
 interface SourceGroupSource {
@@ -11,6 +12,7 @@ interface SourceGroupSource {
   type: SourceType
   meetingType?: string
   participants?: Array<{ name: string; role?: string }>
+  ai_summary?: string
 }
 
 export interface SourceGroupAccordionProps {
@@ -51,6 +53,7 @@ export function SourceGroupAccordion({
   isAdmin,
 }: SourceGroupAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(items.length <= 5)
+  const [showSummary, setShowSummary] = useState(false)
 
   const borderColor = getSourceBorderColor(source.type)
   const itemCount = items.length
@@ -67,7 +70,7 @@ export function SourceGroupAccordion({
       {/* Source Group Header */}
       <div
         className={cn(
-          'flex items-center gap-2 py-3 px-4 cursor-pointer select-none',
+          'group flex items-center gap-2 py-3 px-4 cursor-pointer select-none',
           'hover:bg-gray-50 transition-colors duration-150',
         )}
         role="button"
@@ -90,6 +93,19 @@ export function SourceGroupAccordion({
         <span className="text-xs text-gray-400 whitespace-nowrap">
           {itemLabel}
         </span>
+        {source.ai_summary && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowSummary(!showSummary)
+            }}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-blue-50"
+            aria-label={showSummary ? 'Hide meeting summary' : 'Show meeting summary'}
+          >
+            <FileText className="w-4 h-4 text-blue-500 hover:text-blue-700" />
+          </button>
+        )}
         <ChevronDown
           className={cn(
             'w-4 h-4 text-gray-400 transition-transform duration-200',
@@ -98,6 +114,11 @@ export function SourceGroupAccordion({
           aria-hidden="true"
         />
       </div>
+
+      {/* Meeting Summary (Story 9.4) */}
+      {source.ai_summary && (
+        <MeetingSummary summary={source.ai_summary} isExpanded={showSummary} />
+      )}
 
       {/* Items Area (collapsible) */}
       {isExpanded && (

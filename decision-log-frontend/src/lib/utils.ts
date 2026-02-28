@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { CheckCircle2, MessageCircle, Target, Lightbulb, Info, Video, Mail, FileText, PenLine, HelpCircle, FileQuestion } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import type { ItemType, SourceType, Discipline } from '../types/projectItem'
+import type { ItemType, SourceType, Discipline, ProjectItem } from '../types/projectItem'
 
 /**
  * Combine Tailwind CSS classes with proper precedence
@@ -358,5 +358,22 @@ export function formatDenseDate(dateStr: string): string {
   const day = date.getDate()
   const year = date.getFullYear()
   return `${month} ${day}, ${year}`
+}
+
+/**
+ * Story 8.3 — Filter milestones by source type and item type.
+ * AND across dimensions, OR within dimension.
+ * Empty filter array = no restriction on that dimension.
+ */
+export function filterMilestones(
+  milestones: ProjectItem[],
+  sourceFilters: SourceType[],
+  itemTypeFilters: ItemType[],
+): ProjectItem[] {
+  return milestones.filter(m => {
+    if (sourceFilters.length > 0 && !sourceFilters.includes(m.source_type)) return false
+    if (itemTypeFilters.length > 0 && !itemTypeFilters.includes(m.item_type)) return false
+    return true
+  })
 }
 

@@ -106,15 +106,18 @@ class Project(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text)
     project_type = Column(String(100))  # V2: residential, commercial, mixed-use, etc.
-    actual_stage_id = Column(GUID(), ForeignKey("project_stages.id", ondelete="SET NULL", use_alter=True))
+    actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
     created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
+
+    # Google Drive monitoring (Story 10.3)
+    drive_folder_id = Column(String(255))
+    last_drive_poll = Column(DateTime)
 
     # Relationships
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan")
     sources = relationship("Source", back_populates="project", cascade="all, delete-orphan")
     participants = relationship("ProjectParticipant", back_populates="project", cascade="all, delete-orphan")
-    stages = relationship("ProjectStage", back_populates="project", cascade="all, delete-orphan", foreign_keys="ProjectStage.project_id")
 
     __table_args__ = (
         Index("idx_projects_created", "created_at"),
@@ -194,6 +197,7 @@ class Source(Base):
     file_type = Column(String(50))
     file_size = Column(Integer)
     drive_folder_id = Column(String(255))
+    drive_file_id = Column(String(255), unique=True)  # Story 10.3: deduplication
 
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
@@ -215,6 +219,7 @@ class Source(Base):
         Index("idx_sources_status", "ingestion_status"),
         Index("idx_sources_type", "source_type"),
         Index("idx_sources_occurred", "occurred_at"),
+        Index("idx_sources_drive_file", "drive_file_id"),
     )
 
 
@@ -238,42 +243,6 @@ class ProjectParticipant(Base):
     __table_args__ = (
         Index("idx_participants_project", "project_id"),
     )
-
-
-class ProjectStage(Base):
-    """Project stage model — stages in a project's schedule."""
-
-    __tablename__ = "project_stages"
-
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    stage_name = Column(String(255), nullable=False)
-    stage_from = Column(DateTime, nullable=False)
-    stage_to = Column(DateTime, nullable=False)
-    sort_order = Column(Integer, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
-
-    # Relationships
-    project = relationship("Project", back_populates="stages", foreign_keys=[project_id])
-
-    __table_args__ = (
-        CheckConstraint("stage_from < stage_to", name="ck_stage_dates"),
-        Index("idx_stages_project", "project_id"),
-        Index("idx_stages_sort", "project_id", "sort_order"),
-    )
-
-
-class StageTemplate(Base):
-    """Predefined stage schedule template for project types."""
-
-    __tablename__ = "stage_templates"
-
-    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
-    project_type = Column(String(100), nullable=False)
-    template_name = Column(String(255), nullable=False)
-    stages = Column(JSONType, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
 
 
 class ProjectItem(Base):

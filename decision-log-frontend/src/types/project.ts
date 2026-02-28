@@ -16,6 +16,8 @@ export interface Project {
   id: string
   name: string
   description?: string
+  project_type?: string
+  drive_folder_id?: string  // Story 10.3: Google Drive folder monitoring
   created_at: string
   archived_at?: string | null
   member_count?: number
