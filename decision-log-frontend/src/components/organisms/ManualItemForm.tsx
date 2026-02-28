@@ -151,9 +151,10 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
     try {
       const item = await createMutation.mutateAsync(buildPayload())
       navigate(`/projects/${projectId}/history?highlight=${item.id}`)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } }; message?: string }
       setApiError(
-        err?.response?.data?.detail || err.message || 'Failed to save item. Please try again.'
+        e?.response?.data?.detail || e?.message || 'Failed to save item. Please try again.'
       )
     }
   }

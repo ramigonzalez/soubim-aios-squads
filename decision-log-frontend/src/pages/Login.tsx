@@ -23,8 +23,9 @@ export function Login() {
 
       setAuth(user, access_token)
       navigate('/projects')
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Login failed. Please try again.')
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { detail?: string } } }
+      setError(e?.response?.data?.detail || 'Login failed. Please try again.')
     } finally {
       setIsLoading(false)
     }

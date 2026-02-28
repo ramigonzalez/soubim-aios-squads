@@ -71,48 +71,11 @@ export function ProjectDetail() {
   // Sync filter state with URL params (Story 9.4)
   useFilterUrlSync()
 
-  /** Update view and persist to URL hash (Story 9.5) */
-  const handleViewChange = (newView: View) => {
-    setView(newView)
-    window.history.replaceState(null, '', `#${newView}`)
-  }
-
-  /** Human-readable label for the active tab (Story 9.5) */
-  const viewLabel = view === 'milestones'
-    ? 'Milestone Timeline'
-    : view === 'history'
-      ? 'Project History'
-      : 'Executive Digest'
-
-  if (!projectId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-900 text-lg">Invalid project ID</p>
-        </div>
-      </div>
-    )
-  }
-
-  const { data, isLoading, error, refetch } = useProjectItems({ projectId })
+  // Hooks must be called unconditionally (rules-of-hooks)
+  const { data, isLoading, error, refetch } = useProjectItems({ projectId: projectId || '' })
   const decisions = data?.items || []
 
-  // Milestone toggle handler (Story 8.2)
-  const handleToggleMilestone = (itemId: string) => {
-    const item = decisions.find(d => d.id === itemId)
-    const currentState = item?.is_milestone ?? false
-    toggleMilestoneMutation.mutate(
-      { itemId, isMilestone: !currentState },
-      {
-        onError: (err) => {
-          console.error('Failed to update milestone. Changes reverted.', err)
-        },
-      },
-    )
-  }
-
-  // Apply all filters client-side
+  // Apply all filters client-side (must be before early return — rules-of-hooks)
   const filteredDecisions = useMemo(() => {
     let filtered = decisions
 
@@ -178,6 +141,44 @@ export function ProjectDetail() {
 
     return filtered
   }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery, sourceTypes, itemTypes])
+
+  /** Update view and persist to URL hash (Story 9.5) */
+  const handleViewChange = (newView: View) => {
+    setView(newView)
+    window.history.replaceState(null, '', `#${newView}`)
+  }
+
+  /** Human-readable label for the active tab (Story 9.5) */
+  const viewLabel = view === 'milestones'
+    ? 'Milestone Timeline'
+    : view === 'history'
+      ? 'Project History'
+      : 'Executive Digest'
+
+  if (!projectId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-900 text-lg">Invalid project ID</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Milestone toggle handler (Story 8.2)
+  const handleToggleMilestone = (itemId: string) => {
+    const item = decisions.find(d => d.id === itemId)
+    const currentState = item?.is_milestone ?? false
+    toggleMilestoneMutation.mutate(
+      { itemId, isMilestone: !currentState },
+      {
+        onError: (err) => {
+          console.error('Failed to update milestone. Changes reverted.', err)
+        },
+      },
+    )
+  }
 
   // Create mock digest data from items for Executive Digest view
   const mockDigest = {

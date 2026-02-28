@@ -11,7 +11,7 @@ import { AlertCircle, Star, Loader } from 'lucide-react'
 
 interface MilestoneTimelineProps {
   projectId: string
-  milestones?: any[]
+  milestones?: ProjectItem[]
   onSelectItem?: (id: string) => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean

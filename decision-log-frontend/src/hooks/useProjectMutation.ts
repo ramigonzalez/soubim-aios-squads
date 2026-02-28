@@ -32,7 +32,7 @@ interface ProjectUpdateData {
 export function useCreateProject() {
   const queryClient = useQueryClient()
 
-  return useMutation<any, Error, ProjectCreateData>(
+  return useMutation<unknown, Error, ProjectCreateData>(
     async (data) => {
       const response = await api.post('/projects/', data)
       return response.data
@@ -48,7 +48,7 @@ export function useCreateProject() {
 export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<any, Error, ProjectUpdateData>(
+  return useMutation<unknown, Error, ProjectUpdateData>(
     async (data) => {
       const response = await api.patch(`/projects/${projectId}`, data)
       return response.data
@@ -80,7 +80,7 @@ export function useArchiveProject() {
 export function useSetStages(projectId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<any, Error, Array<{ stage_name: string; stage_from: string; stage_to: string }>>(
+  return useMutation<unknown, Error, Array<{ stage_name: string; stage_from: string; stage_to: string }>>(
     async (stages) => {
       const response = await api.post(`/projects/${projectId}/stages`, stages)
       return response.data
@@ -96,7 +96,7 @@ export function useSetStages(projectId: string) {
 export function useAddParticipant(projectId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<any, Error, { name: string; email?: string; discipline: string; role?: string }>(
+  return useMutation<unknown, Error, { name: string; email?: string; discipline: string; role?: string }>(
     async (data) => {
       const response = await api.post(`/projects/${projectId}/participants`, data)
       return response.data
