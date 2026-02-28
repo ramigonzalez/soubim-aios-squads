@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useProjectItems } from '../hooks/useProjectItems'
 import { useToggleMilestone } from '../hooks/useProjectItemMutation'
@@ -8,28 +8,49 @@ import { ExecutiveDigest } from '../components/organisms/ExecutiveDigest'
 import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
 import { DocumentUploadButton } from '../components/molecules/DocumentUploadButton'
+import { ShareDialog } from '../components/molecules/ShareDialog'
 import { useFilterStore } from '../store/filterStore'
 import { useFilterUrlSync } from '../hooks/useFilterUrlSync'
 import { useAuthStore } from '../store/authStore'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown } from 'lucide-react'
+import { cn } from '../lib/utils'
 import { ProjectItem } from '../types/projectItem'
+import { exportAsPDF, exportAsJPEG } from '../lib/exportTimeline'
 
 type View = 'milestones' | 'history' | 'digest'
 
 /**
- * Project detail page displaying milestone timeline, decisions history, and executive digest.
+ * Determines the initial view from the URL hash.
+ * Falls back to 'milestones' if no valid hash is present.
+ * Story 9.5: URL hash persistence
+ */
+function getInitialView(): View {
+  const hash = window.location.hash.slice(1)
+  if (hash === 'milestones' || hash === 'history' || hash === 'digest') return hash as View
+  return 'milestones'
+}
+
+/**
+ * Project detail page displaying Milestone Timeline, Project History, and Executive Digest.
  *
  * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8, 3.13, 3.14, 3.15
  * Story 8.1 - Added milestone timeline view with 3-tab toggle
  * Story 8.2 - Added milestone flag toggle (star)
+ * Story 8.4 - Added sharing & export functionality
+ * Story 9.5 - Rename & Navigation Update (tab toggle, breadcrumb, hash persistence)
  * Story 10.2 - Added document upload button
- * v5: 3-tab view toggle — Milestones | History | Digest + Document Upload
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
-  const [view, setView] = useState<View>('milestones')
+  const [view, setView] = useState<View>(getInitialView)
   const [selectedDecision, setSelectedDecision] = useState<ProjectItem | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
+
+  // Story 8.4: Share & Export state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const milestoneTimelineRef = useRef<HTMLDivElement>(null)
 
   // Auth & milestone toggle (Story 8.2)
   const { user } = useAuthStore()
@@ -49,6 +70,19 @@ export function ProjectDetail() {
 
   // Sync filter state with URL params (Story 9.4)
   useFilterUrlSync()
+
+  /** Update view and persist to URL hash (Story 9.5) */
+  const handleViewChange = (newView: View) => {
+    setView(newView)
+    window.history.replaceState(null, '', `#${newView}`)
+  }
+
+  /** Human-readable label for the active tab (Story 9.5) */
+  const viewLabel = view === 'milestones'
+    ? 'Milestone Timeline'
+    : view === 'history'
+      ? 'Project History'
+      : 'Executive Digest'
 
   if (!projectId) {
     return (
@@ -85,13 +119,11 @@ export function ProjectDetail() {
     // Discipline filter — V2 multi-discipline OR logic (Story 9.3)
     if (disciplines.length > 0) {
       filtered = filtered.filter(d => {
-        // V2: match if ANY affected_discipline matches ANY selected filter
         if (d.affected_disciplines?.length > 0) {
           return d.affected_disciplines.some(disc =>
             disciplines.includes(disc.toLowerCase())
           )
         }
-        // V1 fallback: single discipline field
         return d.discipline ? disciplines.includes(d.discipline.toLowerCase()) : false
       })
     }
@@ -177,65 +209,155 @@ export function ProjectDetail() {
     setSelectedDecision(decision || null)
   }
 
-  /**
-   * For the milestone view, the onSelectItem callback opens the DrilldownModal
-   * by finding the matching decision from the decisions list (milestones are also decisions).
-   * If not found (item is a non-decision milestone), the callback is still called for future support.
-   */
   const handleSelectMilestone = (id: string) => {
     const decision = decisions.find(d => d.id === id)
     setSelectedDecision(decision || null)
   }
 
+  // Story 8.4: Export handlers
+  const handleExportPDF = async () => {
+    if (!milestoneTimelineRef.current) return
+    setIsExporting(true)
+    setExportMenuOpen(false)
+    try {
+      await exportAsPDF(milestoneTimelineRef.current, 'Project Milestones')
+    } catch (err) {
+      console.error('Error exporting PDF:', err)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportJPEG = async () => {
+    if (!milestoneTimelineRef.current) return
+    setIsExporting(true)
+    setExportMenuOpen(false)
+    try {
+      await exportAsJPEG(milestoneTimelineRef.current, 'Project Milestones')
+    } catch (err) {
+      console.error('Error exporting JPEG:', err)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with View Switcher */}
+        {/* Breadcrumb (Story 9.5) */}
+        <nav className="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+          <a href="/projects" className="hover:text-blue-600">Projects</a>
+          <span className="mx-2" aria-hidden="true">&rsaquo;</span>
+          <span>Project</span>
+          <span className="mx-2" aria-hidden="true">&rsaquo;</span>
+          <span className="text-gray-900 font-medium">{viewLabel}</span>
+        </nav>
+
+        {/* Header with Document Upload (Story 9.5 heading + Story 10.2 upload) */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Project Decisions</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
             <p className="text-sm text-gray-600">
               {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
             </p>
           </div>
 
-          {/* Document Upload & View Toggle (Stories 8.1, 10.2) */}
           <div className="flex items-center gap-3">
             <DocumentUploadButton projectId={projectId} onUploadComplete={() => refetch()} />
-            <div className="flex bg-white rounded-lg border border-gray-300 p-1">
-              <button
-                onClick={() => setView('milestones')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                  view === 'milestones'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Milestones
-              </button>
-              <button
-                onClick={() => setView('history')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                  view === 'history'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                History
-              </button>
-              <button
-                onClick={() => setView('digest')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                  view === 'digest'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Executive Digest
-              </button>
-            </div>
           </div>
         </div>
+
+        {/* Tab Toggle — segmented control (Story 9.5) */}
+        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100 mb-4" role="tablist">
+          <button
+            role="tab"
+            aria-selected={view === 'milestones'}
+            onClick={() => handleViewChange('milestones')}
+            className={cn(
+              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
+              view === 'milestones'
+                ? 'bg-white shadow-sm text-gray-900 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            <Star className="w-4 h-4 mr-1.5" />
+            Milestone Timeline
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === 'history'}
+            onClick={() => handleViewChange('history')}
+            className={cn(
+              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
+              view === 'history'
+                ? 'bg-white shadow-sm text-gray-900 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            <Clock className="w-4 h-4 mr-1.5" />
+            Project History
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === 'digest'}
+            onClick={() => handleViewChange('digest')}
+            className={cn(
+              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
+              view === 'digest'
+                ? 'bg-white shadow-sm text-gray-900 font-medium'
+                : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            <FileText className="w-4 h-4 mr-1.5" />
+            Executive Digest
+          </button>
+        </div>
+
+        {/* Share & Export toolbar — milestones view, admin only (Story 8.4) */}
+        {view === 'milestones' && isAdmin && (
+          <div className="mb-4 flex items-center gap-2 justify-end">
+            <button
+              onClick={() => setShareDialogOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              aria-label="Share milestone timeline"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setExportMenuOpen(!exportMenuOpen)}
+                disabled={isExporting}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
+                aria-label="Export milestone timeline"
+              >
+                <Download className="w-4 h-4" />
+                {isExporting ? 'Exporting...' : 'Export'}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {exportMenuOpen && (
+                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-md border border-gray-200 py-1 z-10">
+                  <button
+                    onClick={handleExportPDF}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    <FileText className="w-4 h-4 text-red-500" />
+                    Export as PDF
+                  </button>
+                  <button
+                    onClick={handleExportJPEG}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    <Image className="w-4 h-4 text-green-500" />
+                    Export as JPEG
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Filter Bar with inline Group-by Toggle (Stories 3.14, 3.15) — shown for history view */}
         {view === 'history' && (
@@ -250,6 +372,7 @@ export function ProjectDetail() {
         <main>
           {view === 'milestones' ? (
             <MilestoneTimeline
+              ref={milestoneTimelineRef}
               projectId={projectId}
               onSelectItem={handleSelectMilestone}
               onToggleMilestone={handleToggleMilestone}
@@ -277,6 +400,13 @@ export function ProjectDetail() {
           onClose={() => setSelectedDecision(null)}
           onToggleMilestone={handleToggleMilestone}
           isAdmin={isAdmin}
+        />
+
+        {/* Share Dialog (Story 8.4) */}
+        <ShareDialog
+          projectId={projectId}
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
         />
       </div>
     </div>

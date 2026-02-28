@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, forwardRef } from 'react'
 import { useMilestones } from '../../hooks/useMilestones'
 import { useStages } from '../../hooks/useStages'
 import { useMilestoneFilters } from '../../hooks/useMilestoneFilters'
@@ -11,9 +11,11 @@ import { AlertCircle, Star, Loader } from 'lucide-react'
 
 interface MilestoneTimelineProps {
   projectId: string
-  onSelectItem: (id: string) => void
+  milestones?: any[]
+  onSelectItem?: (id: string) => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean
+  readOnly?: boolean
 }
 
 /**
@@ -178,7 +180,8 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
  *
  * Story 8.1: Milestone Timeline Component
  */
-export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, isAdmin }: MilestoneTimelineProps) {
+export const MilestoneTimeline = forwardRef<HTMLDivElement, MilestoneTimelineProps>(
+function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, isAdmin, readOnly = false }, ref) {
   const {
     data: stagesData,
     isLoading: stagesLoading,
@@ -258,15 +261,15 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
   const otherMilestones = groupedMilestones.get('other') || []
 
   return (
-    <nav aria-label="Milestone Timeline">
-      {/* Filter bar */}
-      <MilestoneFilterBar
+    <nav ref={ref} aria-label="Milestone Timeline">
+      {/* Filter bar — hidden in readOnly mode */}
+      {!readOnly && <MilestoneFilterBar
         sourceFilters={sourceFilters}
         itemTypeFilters={itemTypeFilters}
         onToggleSource={toggleSource}
         onToggleItemType={toggleItemType}
         onClearAll={clearAll}
-      />
+      />}
 
       {/* Empty filter result state */}
       {filteredMilestones.length === 0 && milestones.length > 0 ? (
@@ -383,3 +386,4 @@ export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, 
     </nav>
   )
 }
+)

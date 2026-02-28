@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
 import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
+import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
@@ -28,6 +29,7 @@ function AppRoutes() {
       {isAuthenticated && <Navigation />}
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/shared/milestones/:token" element={<SharedMilestoneTimeline />} />
         <Route
           path="/projects"
           element={

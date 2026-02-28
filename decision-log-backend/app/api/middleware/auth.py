@@ -21,6 +21,7 @@ async def auth_middleware(request: Request, call_next):
     # Public endpoints that don't require authentication
     public_paths = [
         "/api/health",
+        "/api/shared/",
         "/docs",
         "/openapi.json",
         "/redoc",

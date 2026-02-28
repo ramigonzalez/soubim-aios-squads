@@ -316,6 +316,27 @@ class ProjectItem(Base):
     )
 
 
+class SharedLink(Base):
+    """Shared link model for public read-only access to project resources (Story 8.4)."""
+
+    __tablename__ = "shared_links"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    share_token = Column(String(64), unique=True, nullable=False)
+    resource_type = Column(String(50), nullable=False, default='milestone_timeline')
+    created_by = Column(GUID(), ForeignKey("users.id"))
+    created_at = Column(DateTime, default=func.now())
+    expires_at = Column(DateTime, nullable=False)
+    revoked_at = Column(DateTime)
+    view_count = Column(Integer, default=0)
+
+    __table_args__ = (
+        Index("idx_shared_links_token", "share_token"),
+        Index("idx_shared_links_project", "project_id"),
+    )
+
+
 # Backward compatibility alias — existing code can still import Decision
 Decision = ProjectItem
 

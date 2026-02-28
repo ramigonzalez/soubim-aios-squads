@@ -66,7 +66,7 @@ describe('Timeline — Dense Rows Layout', () => {
         onRetry={mockRetry}
       />
     )
-    expect(screen.getByText('Failed to load items')).toBeInTheDocument()
+    expect(screen.getByText('Failed to load project history')).toBeInTheDocument()
     expect(screen.getByText('Network failure')).toBeInTheDocument()
 
     const retryBtn = screen.getByText('Retry')
