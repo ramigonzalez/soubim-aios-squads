@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import { ItemTypeBadge } from '../atoms/ItemTypeBadge'
 import { DisciplineCircles } from '../atoms/DisciplineCircles'
-import { Star } from 'lucide-react'
+import { MilestoneStarToggle } from './MilestoneStarToggle'
 import type { ProjectItem } from '../../types/projectItem'
 
 interface ProjectItemRowProps {
@@ -46,19 +46,12 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
         {shortDate}
       </span>
       {isAdmin && (
-        <button
-          className={cn(
-            'opacity-0 group-hover:opacity-100 transition-opacity',
-            item.is_milestone ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400',
-          )}
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleMilestone?.(item.id)
-          }}
-          aria-label={item.is_milestone ? 'Remove milestone' : 'Mark as milestone'}
-        >
-          <Star className="w-4 h-4" fill={item.is_milestone ? 'currentColor' : 'none'} />
-        </button>
+        <MilestoneStarToggle
+          isMilestone={item.is_milestone}
+          onToggle={() => onToggleMilestone?.(item.id)}
+          size="sm"
+          showOnHoverOnly={!item.is_milestone}
+        />
       )}
     </div>
   )

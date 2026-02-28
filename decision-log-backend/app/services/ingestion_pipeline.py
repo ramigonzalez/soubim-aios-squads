@@ -2,6 +2,7 @@
 
 Story 7.1: Base pipeline for meeting transcripts.
 Story 10.1: Added email source handling via EmailExtractor.
+Story 10.2: Added document source handling via DocumentExtractor.
 """
 
 import asyncio
@@ -18,6 +19,7 @@ def process_approved_source(source_id: str) -> None:
 
     Dispatches to the appropriate extractor based on source_type:
     - 'email' -> EmailExtractor
+    - 'document' -> DocumentExtractor
     - 'meeting' -> extraction_v2 transcript extractor (legacy)
 
     Args:
@@ -43,6 +45,23 @@ def process_approved_source(source_id: str) -> None:
 
             extractor = EmailExtractor(db)
             extracted_items = extractor.extract(source, list(participants))
+
+        # Story 10.2: Document source handling
+        elif source.source_type == "document":
+            from app.services.document_extractor import DocumentExtractor
+
+            participant_dicts = [
+                {
+                    "name": p.name,
+                    "email": p.email,
+                    "discipline": p.discipline or "general",
+                    "role": p.role or "",
+                }
+                for p in participants
+            ]
+            extractor = DocumentExtractor(db)
+            extracted_items = extractor.extract(source, participant_dicts)
+
         else:
             # Existing meeting extraction (Story 7.1)
             from app.services.extraction_v2 import extract_items_from_transcript
@@ -79,7 +98,7 @@ def process_approved_source(source_id: str) -> None:
                         "affected_disciplines", []
                     ),
                     owner=item_data.get("owner"),
-                    why=item_data.get("context", "Extracted from email"),
+                    why=item_data.get("context", "Extracted from source"),
                     consensus={},
                     confidence=item_data.get("confidence"),
                 )

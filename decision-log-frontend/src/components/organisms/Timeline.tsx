@@ -12,6 +12,8 @@ interface TimelineProps {
   isLoading?: boolean
   error?: Error | null
   onRetry?: () => void
+  onToggleMilestone?: (id: string) => void
+  isAdmin?: boolean
 }
 
 /**
@@ -237,6 +239,8 @@ export function Timeline({
   isLoading,
   error,
   onRetry,
+  onToggleMilestone,
+  isAdmin,
 }: TimelineProps) {
   const denseGroups = useMemo(
     () => (groupBy === 'date' ? buildDenseGroups(decisions) : buildDenseGroupsByDiscipline(decisions)),
@@ -282,6 +286,8 @@ export function Timeline({
                 source={source}
                 items={items}
                 onItemClick={onSelectDecision}
+                onToggleMilestone={onToggleMilestone}
+                isAdmin={isAdmin}
               />
             ))}
 
@@ -291,6 +297,8 @@ export function Timeline({
                 key={item.id}
                 item={item}
                 onClick={onSelectDecision}
+                onToggleMilestone={onToggleMilestone}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

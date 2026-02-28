@@ -685,10 +685,10 @@ describe('MilestoneTimeline', () => {
       <MilestoneTimeline projectId="proj-1" onSelectItem={mockOnSelectItem} />
     )
 
-    // First 3 disciplines shown, 4th as overflow
-    expect(screen.getByText('Struct')).toBeInTheDocument()
-    expect(screen.getByText('Arch')).toBeInTheDocument()
-    expect(screen.getByText('MEP')).toBeInTheDocument()
+    // First 3 disciplines shown as circle initials (atom), 4th as overflow
+    expect(screen.getByText('S')).toBeInTheDocument()  // structural
+    expect(screen.getByText('A')).toBeInTheDocument()  // architecture
+    expect(screen.getByText('M')).toBeInTheDocument()  // mep
     expect(screen.getByText('+1')).toBeInTheDocument()
   })
 

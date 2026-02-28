@@ -1,14 +1,17 @@
 import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { useDecisions } from '../hooks/useDecisions'
+import { useProjectItems } from '../hooks/useProjectItems'
+import { useToggleMilestone } from '../hooks/useProjectItemMutation'
 import { Timeline } from '../components/organisms/Timeline'
 import { MilestoneTimeline } from '../components/organisms/MilestoneTimeline'
 import { ExecutiveDigest } from '../components/organisms/ExecutiveDigest'
 import { FilterBar } from '../components/organisms/FilterBar'
 import { DrilldownModal } from '../components/organisms/DrilldownModal'
+import { DocumentUploadButton } from '../components/molecules/DocumentUploadButton'
 import { useFilterStore } from '../store/filterStore'
+import { useAuthStore } from '../store/authStore'
 import { AlertCircle } from 'lucide-react'
-import { Decision } from '../types/decision'
+import { ProjectItem } from '../types/projectItem'
 
 type View = 'milestones' | 'history' | 'digest'
 
@@ -17,13 +20,20 @@ type View = 'milestones' | 'history' | 'digest'
  *
  * Epic 3 - Stories 3.5, 3.6, 3.7, 3.8, 3.13, 3.14, 3.15
  * Story 8.1 - Added milestone timeline view with 3-tab toggle
- * v4: 3-tab view toggle — Milestones | History | Digest
+ * Story 8.2 - Added milestone flag toggle (star)
+ * Story 10.2 - Added document upload button
+ * v5: 3-tab view toggle — Milestones | History | Digest + Document Upload
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
   const [view, setView] = useState<View>('milestones')
-  const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null)
+  const [selectedDecision, setSelectedDecision] = useState<ProjectItem | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
+
+  // Auth & milestone toggle (Story 8.2)
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'director'
+  const toggleMilestoneMutation = useToggleMilestone(projectId || '')
 
   const {
     disciplines,
@@ -45,18 +55,39 @@ export function ProjectDetail() {
     )
   }
 
-  const { data, isLoading, error, refetch } = useDecisions({ projectId })
-  const decisions = data?.decisions || []
+  const { data, isLoading, error, refetch } = useProjectItems({ projectId })
+  const decisions = data?.items || []
+
+  // Milestone toggle handler (Story 8.2)
+  const handleToggleMilestone = (itemId: string) => {
+    const item = decisions.find(d => d.id === itemId)
+    const currentState = item?.is_milestone ?? false
+    toggleMilestoneMutation.mutate(
+      { itemId, isMilestone: !currentState },
+      {
+        onError: (err) => {
+          console.error('Failed to update milestone. Changes reverted.', err)
+        },
+      },
+    )
+  }
 
   // Apply all filters client-side
   const filteredDecisions = useMemo(() => {
     let filtered = decisions
 
-    // Discipline filter
+    // Discipline filter — V2 multi-discipline OR logic (Story 9.3)
     if (disciplines.length > 0) {
-      filtered = filtered.filter(d =>
-        disciplines.includes(d.discipline?.toLowerCase())
-      )
+      filtered = filtered.filter(d => {
+        // V2: match if ANY affected_discipline matches ANY selected filter
+        if (d.affected_disciplines?.length > 0) {
+          return d.affected_disciplines.some(disc =>
+            disciplines.includes(disc.toLowerCase())
+          )
+        }
+        // V1 fallback: single discipline field
+        return d.discipline ? disciplines.includes(d.discipline.toLowerCase()) : false
+      })
     }
 
     // Decision maker filter
@@ -91,7 +122,7 @@ export function ProjectDetail() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(d =>
-        d.decision_statement?.toLowerCase().includes(q) ||
+        (d.statement || d.decision_statement)?.toLowerCase().includes(q) ||
         d.who?.toLowerCase().includes(q) ||
         d.meeting_title?.toLowerCase().includes(q)
       )
@@ -100,26 +131,27 @@ export function ProjectDetail() {
     return filtered
   }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery])
 
-  // Create mock digest data from decisions for Executive Digest view
+  // Create mock digest data from items for Executive Digest view
   const mockDigest = {
     total_decisions: filteredDecisions.length,
-    meetings_count: [...new Set(filteredDecisions.map(d => d.meeting?.id).filter(Boolean))].length,
+    meetings_count: [...new Set(filteredDecisions.map(d => d.source?.id).filter(Boolean))].length,
     consensus_percentage: 85,
     high_impact_count: filteredDecisions.filter(d => {
       return d.impacts && Object.keys(d.impacts).length > 1
     }).length,
     highlights: filteredDecisions.slice(0, 5).map(d => {
       let impact_level: 'high' | 'medium' | 'low' = 'medium'
-      if (d.confidence !== undefined) {
+      if (d.confidence !== undefined && d.confidence !== null) {
         if (d.confidence >= 0.9) impact_level = 'high'
         else if (d.confidence < 0.7) impact_level = 'low'
       }
+      const displayStatement = d.statement || d.decision_statement || ''
       return {
-        category: d.discipline,
-        title: d.decision_statement.substring(0, 60) + '...',
+        category: d.affected_disciplines?.[0] || d.discipline || 'general',
+        title: displayStatement.substring(0, 60) + '...',
         description: d.why || 'No description available',
         impact_level,
-        date: d.meeting_date || d.timestamp,
+        date: d.meeting_date || d.timestamp || d.created_at,
       }
     }),
   }
@@ -151,38 +183,41 @@ export function ProjectDetail() {
             </p>
           </div>
 
-          {/* View Toggle — 3 tabs: Milestones | History | Digest */}
-          <div className="flex bg-white rounded-lg border border-gray-300 p-1">
-            <button
-              onClick={() => setView('milestones')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                view === 'milestones'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Milestones
-            </button>
-            <button
-              onClick={() => setView('history')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                view === 'history'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              History
-            </button>
-            <button
-              onClick={() => setView('digest')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                view === 'digest'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Executive Digest
-            </button>
+          {/* Document Upload & View Toggle (Stories 8.1, 10.2) */}
+          <div className="flex items-center gap-3">
+            <DocumentUploadButton projectId={projectId} onUploadComplete={() => refetch()} />
+            <div className="flex bg-white rounded-lg border border-gray-300 p-1">
+              <button
+                onClick={() => setView('milestones')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                  view === 'milestones'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Milestones
+              </button>
+              <button
+                onClick={() => setView('history')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                  view === 'history'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                History
+              </button>
+              <button
+                onClick={() => setView('digest')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                  view === 'digest'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Executive Digest
+              </button>
+            </div>
           </div>
         </div>
 
@@ -201,6 +236,8 @@ export function ProjectDetail() {
             <MilestoneTimeline
               projectId={projectId}
               onSelectItem={handleSelectMilestone}
+              onToggleMilestone={handleToggleMilestone}
+              isAdmin={isAdmin}
             />
           ) : view === 'history' ? (
             <Timeline
@@ -210,16 +247,20 @@ export function ProjectDetail() {
               isLoading={isLoading}
               error={error || undefined}
               onRetry={() => refetch()}
+              onToggleMilestone={handleToggleMilestone}
+              isAdmin={isAdmin}
             />
           ) : (
             <ExecutiveDigest digest={mockDigest} />
           )}
         </main>
 
-        {/* Drilldown Modal (Story 3.7) */}
+        {/* Drilldown Modal (Stories 3.7, 8.2) */}
         <DrilldownModal
           decision={selectedDecision}
           onClose={() => setSelectedDecision(null)}
+          onToggleMilestone={handleToggleMilestone}
+          isAdmin={isAdmin}
         />
       </div>
     </div>

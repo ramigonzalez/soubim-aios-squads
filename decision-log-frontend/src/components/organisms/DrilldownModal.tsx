@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
-import { DisciplineBadge } from '../molecules/DisciplineBadge'
-import { formatDateTime, formatTimestamp } from '../../lib/utils'
+import { DisciplineCircle } from '../atoms/DisciplineCircle'
+import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
+import { formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
 import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle } from 'lucide-react'
 
 interface DrilldownModalProps {
   decision: ProjectItem | null
   onClose: () => void
+  onToggleMilestone?: (id: string) => void
+  isAdmin?: boolean
 }
 
 /** Normalize consensus value — handles both V2 ConsensusEntry objects and V1 string values */
@@ -29,7 +32,7 @@ function getStanceTextColor(stance: string) {
   return 'text-amber-700'
 }
 
-export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
+export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }: DrilldownModalProps) {
   const [activeTab, setActiveTab] = useState('overview')
 
   if (!decision) return null
@@ -40,15 +43,30 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
   const agreeCount = consensusEntries.filter(([, value]) => getConsensusStatus(value).toUpperCase() === 'AGREE').length
   const totalCount = consensusEntries.length
 
+  // Story 9.3: Full discipline list — use affected_disciplines array
+  const allDisciplines = decision.affected_disciplines?.length > 0
+    ? decision.affected_disciplines
+    : ['general']
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start">
-            <h2 className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0 pr-4">
-              {decision.statement}
-            </h2>
+            <div className="flex items-start gap-2 flex-1 min-w-0 pr-4">
+              <h2 className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0">
+                {decision.statement}
+              </h2>
+              {/* Story 8.2: Milestone star toggle */}
+              {isAdmin && onToggleMilestone && (
+                <MilestoneStarToggle
+                  isMilestone={decision.is_milestone}
+                  onToggle={() => onToggleMilestone(decision.id)}
+                  size="md"
+                />
+              )}
+            </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
@@ -57,8 +75,20 @@ export function DrilldownModal({ decision, onClose }: DrilldownModalProps) {
             </button>
           </div>
 
-          <div className="mt-3 inline-block">
-            <DisciplineBadge discipline={decision.affected_disciplines[0] ?? 'general'} />
+          {/* Story 9.3: Full discipline list with circles and labels */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {allDisciplines.map((disc, i) => (
+              <span key={disc} className="inline-flex items-center gap-1.5">
+                <DisciplineCircle
+                  discipline={disc}
+                  isPrimary={i === 0}
+                  size="md"
+                />
+                <span className="text-sm text-gray-700">
+                  {getDisciplineLabel(disc)}
+                </span>
+              </span>
+            ))}
           </div>
 
           {/* Decision Context Card */}

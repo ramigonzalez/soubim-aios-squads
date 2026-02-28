@@ -1,7 +1,9 @@
 import React from 'react'
-import { cn, formatDate, getDisciplinePillColors, abbreviateDiscipline } from '../../lib/utils'
+import { cn, formatDate } from '../../lib/utils'
 import { ProjectItem, ItemType, SourceType } from '../../types/projectItem'
 import { Video, Mail, FileText, PenLine } from 'lucide-react'
+import { MilestoneStarToggle } from './MilestoneStarToggle'
+import { DisciplineCircles } from '../atoms/DisciplineCircles'
 
 // --- Inline atom: ItemTypeBadge ---
 const itemTypeConfig: Record<ItemType, { label: string; bg: string; text: string }> = {
@@ -40,44 +42,13 @@ function SourceIconInline({ type }: { type: SourceType }) {
   return <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-label={`Source: ${type}`} />
 }
 
-// --- Inline atom: DisciplineCircles ---
-function DisciplineCircles({ disciplines, max = 3 }: { disciplines: string[]; max?: number }) {
-  if (!disciplines || disciplines.length === 0) return null
-  const shown = disciplines.slice(0, max)
-  const overflow = disciplines.length - max
-
-  return (
-    <div className="flex items-center gap-1 shrink-0">
-      {shown.map((d) => {
-        const colors = getDisciplinePillColors(d)
-        return (
-          <span
-            key={d}
-            className={cn(
-              'inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap',
-              colors.bg,
-              colors.text
-            )}
-            title={d}
-          >
-            {abbreviateDiscipline(d)}
-          </span>
-        )
-      })}
-      {overflow > 0 && (
-        <span className="text-[10px] text-gray-500 whitespace-nowrap">
-          +{overflow}
-        </span>
-      )}
-    </div>
-  )
-}
-
 // --- MilestoneNode molecule ---
 
 interface MilestoneNodeProps {
   item: ProjectItem
   onClick?: (id: string) => void
+  onToggleMilestone?: (id: string) => void
+  isAdmin?: boolean
 }
 
 /**
@@ -90,6 +61,8 @@ interface MilestoneNodeProps {
 export const MilestoneNode = React.memo(function MilestoneNode({
   item,
   onClick,
+  onToggleMilestone,
+  isAdmin,
 }: MilestoneNodeProps) {
   const displayDate = item.meeting_date || item.created_at
 
@@ -135,7 +108,15 @@ export const MilestoneNode = React.memo(function MilestoneNode({
         {formatDate(displayDate)}
       </span>
 
-      <DisciplineCircles disciplines={item.affected_disciplines} max={3} />
+      <DisciplineCircles disciplines={item.affected_disciplines} max={3} size="sm" />
+
+      {isAdmin && onToggleMilestone && (
+        <MilestoneStarToggle
+          isMilestone={item.is_milestone}
+          onToggle={() => onToggleMilestone(item.id)}
+          size="sm"
+        />
+      )}
     </div>
   )
 })

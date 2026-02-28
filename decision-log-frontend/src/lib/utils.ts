@@ -304,7 +304,33 @@ export function getDisciplineCircleColor(discipline: Discipline): string {
 }
 
 export function getDisciplineInitial(discipline: Discipline): string {
-  return DISCIPLINE_INITIALS[discipline] ?? '?'
+  return DISCIPLINE_INITIALS[discipline] ?? discipline.charAt(0).toUpperCase()
+}
+
+/**
+ * Get discipline display label (human-readable).
+ * Story 9.3 — Multi-Discipline Circles
+ */
+export function getDisciplineLabel(discipline: string): string {
+  const labelMap: Record<string, string> = {
+    architecture: 'Architecture',
+    architect: 'Architecture',
+    mep: 'MEP',
+    landscape: 'Landscape',
+    structural: 'Structural',
+    electrical: 'Electrical',
+    plumbing: 'Plumbing',
+    engineer: 'Engineer',
+    client: 'Client',
+    contractor: 'Contractor',
+    civil: 'Civil',
+    sustainability: 'Sustainability',
+    fire_protection: 'Fire Protection',
+    acoustical: 'Acoustical',
+    tenant: 'Tenant',
+    general: 'General',
+  }
+  return labelMap[discipline.toLowerCase()] || discipline.charAt(0).toUpperCase() + discipline.slice(1)
 }
 
 /**

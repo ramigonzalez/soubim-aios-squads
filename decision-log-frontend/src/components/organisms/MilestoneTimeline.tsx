@@ -10,6 +10,8 @@ import { AlertCircle, Star, Loader } from 'lucide-react'
 interface MilestoneTimelineProps {
   projectId: string
   onSelectItem: (id: string) => void
+  onToggleMilestone?: (id: string) => void
+  isAdmin?: boolean
 }
 
 /**
@@ -174,7 +176,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
  *
  * Story 8.1: Milestone Timeline Component
  */
-export function MilestoneTimeline({ projectId, onSelectItem }: MilestoneTimelineProps) {
+export function MilestoneTimeline({ projectId, onSelectItem, onToggleMilestone, isAdmin }: MilestoneTimelineProps) {
   const {
     data: stagesData,
     isLoading: stagesLoading,
@@ -294,6 +296,8 @@ export function MilestoneTimeline({ projectId, onSelectItem }: MilestoneTimeline
                       <MilestoneNode
                         item={milestone}
                         onClick={onSelectItem}
+                        onToggleMilestone={onToggleMilestone}
+                        isAdmin={isAdmin}
                       />
                     </div>
                   ))}
@@ -326,6 +330,8 @@ export function MilestoneTimeline({ projectId, onSelectItem }: MilestoneTimeline
                   <MilestoneNode
                     item={milestone}
                     onClick={onSelectItem}
+                    onToggleMilestone={onToggleMilestone}
+                    isAdmin={isAdmin}
                   />
                 </div>
               ))}
