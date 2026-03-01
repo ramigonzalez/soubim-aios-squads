@@ -3,6 +3,9 @@
 # Environment & Secrets (AIOS)
 .env
 .env.local
+
+# SQLite development database
+decisionlog_dev.db
 .env.*.local
 *.key
 *.pem

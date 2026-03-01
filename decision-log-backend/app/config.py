@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # --- Gmail API (Story 7.4) ---
+    gmail_credentials_json: Optional[str] = None
+    gmail_poll_interval_minutes: int = 15
+    gmail_label_filter: str = "INBOX"
+    gmail_max_results_per_poll: int = 20
+
+    def is_gmail_configured(self) -> bool:
+        """Return True if Gmail API credentials are provided."""
+        return self.gmail_credentials_json is not None
+
     # --- Google Drive API (Story 10.3) ---
     google_drive_enabled: bool = False
     google_drive_service_account_key: Optional[str] = None

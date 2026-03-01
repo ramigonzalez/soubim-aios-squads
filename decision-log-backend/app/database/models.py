@@ -140,6 +140,38 @@ class ProjectMember(Base):
     )
 
 
+class ProjectStage(Base):
+    """Project stage schedule model (Story 6.1)."""
+
+    __tablename__ = "project_stages"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    stage_name = Column(String(255), nullable=False)
+    stage_from = Column(DateTime, nullable=False)
+    stage_to = Column(DateTime, nullable=False)
+    sort_order = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        Index("idx_project_stages_project", "project_id"),
+    )
+
+
+class StageTemplate(Base):
+    """Predefined stage templates by project type (Story 6.1)."""
+
+    __tablename__ = "stage_templates"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_type = Column(String(100), nullable=False)
+    template_name = Column(String(255), nullable=False)
+    stages = Column(JSONType, nullable=False)
+
+    __table_args__ = (
+        Index("idx_stage_templates_type", "project_type"),
+    )
+
+
 class Transcript(Base):
     """Transcript model for meeting recordings (V1 legacy — kept as read-only archive)."""
 
