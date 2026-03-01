@@ -296,11 +296,11 @@ class ProjectItem(Base):
     owner = Column(String(255))  # Nullable — primarily for action_items
     source_excerpt = Column(Text)
 
-    # Core item data (V1 fields preserved)
-    statement = Column(Text)  # V2 alias for decision_statement
-    decision_statement = Column(Text, nullable=False)  # V1 preserved for backward compat
+    # Core item data
+    statement = Column(Text, nullable=False)  # V2 primary field
+    decision_statement = Column(Text)  # V1 backward compat (auto-synced from statement)
     who = Column(String(255), nullable=False)
-    timestamp = Column(String(20), nullable=False)
+    timestamp = Column(String(20))  # Meeting timestamp — nullable for non-meeting sources
     discipline = Column(String(100), nullable=False)  # V1 preserved for backward compat
 
     # Context & reasoning

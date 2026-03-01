@@ -261,7 +261,7 @@ async def view_shared_timeline(
         "milestones": [
             {
                 "id": str(m.id),
-                "statement": m.decision_statement,
+                "statement": m.statement or m.decision_statement,
                 "discipline": m.discipline,
                 "who": m.who,
                 "timestamp": m.timestamp,
