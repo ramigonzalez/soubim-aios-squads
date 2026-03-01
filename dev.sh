@@ -53,9 +53,36 @@ echo "${BLUE}   Frontend: http://localhost:5173${NC}"
 echo "${BLUE}═══════════════════════════════════════════════════════${NC}"
 echo ""
 
+# Start PostgreSQL via Docker (if Docker is available)
+cd "$SCRIPT_DIR/decision-log-backend"
+DB_MODE="sqlite"
+if command -v docker &> /dev/null; then
+    echo "${GREEN}Starting PostgreSQL (Docker)...${NC}"
+    if docker compose up -d db 2>/dev/null; then
+        # Wait for PostgreSQL to be ready (max 30s)
+        echo -n "   Waiting for PostgreSQL..."
+        for i in $(seq 1 30); do
+            if docker compose exec -T db pg_isready -U postgres &>/dev/null; then
+                echo " ready!"
+                DB_MODE="postgres"
+                break
+            fi
+            echo -n "."
+            sleep 1
+        done
+        if [ "$DB_MODE" != "postgres" ]; then
+            echo " timeout — will fall back to SQLite"
+        fi
+    else
+        echo "   ⚠️  Docker compose failed — will fall back to SQLite"
+    fi
+else
+    echo "   ℹ️  Docker not found — will use SQLite fallback"
+fi
+echo ""
+
 # Start Backend
 echo "${GREEN}Starting Backend (FastAPI)...${NC}"
-cd "$SCRIPT_DIR/decision-log-backend"
 
 # Check if venv exists
 if [ ! -d "venv" ]; then
@@ -79,12 +106,15 @@ if [ ! -f ".env.development" ]; then
 fi
 
 # Start the backend server
-# Use .env.development for development configuration
 export ENV_FILE=".env.development"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 echo "✅ Backend started (PID: $BACKEND_PID)"
-echo "   Note: Backend uses SQLite for development (no PostgreSQL needed)"
+if [ "$DB_MODE" = "postgres" ]; then
+    echo "   Database: PostgreSQL (Docker) on localhost:5432"
+else
+    echo "   Database: SQLite fallback (install Docker for PostgreSQL)"
+fi
 echo ""
 
 # Start Frontend
