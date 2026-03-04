@@ -302,6 +302,7 @@ class ProjectItem(Base):
     is_done = Column(Boolean, nullable=False, default=False)
     affected_disciplines = Column(JSONType, nullable=False, default=list)
     owner = Column(String(255))  # Nullable — primarily for action_items
+    due_date = Column(DateTime, nullable=True)  # Story 9.6: action item due date
     source_excerpt = Column(Text)
 
     # Core item data

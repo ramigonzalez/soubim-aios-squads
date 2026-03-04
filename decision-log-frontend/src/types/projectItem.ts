@@ -93,6 +93,7 @@ export interface ProjectItem {
   is_milestone: boolean
   is_done: boolean
   owner?: string | null
+  due_date?: string | null
   why?: string | null
   causation?: string | null
   impacts?: ImpactsSchema | null

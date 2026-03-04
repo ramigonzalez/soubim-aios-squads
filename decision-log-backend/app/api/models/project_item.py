@@ -61,6 +61,7 @@ class ProjectItemCreate(BaseModel):
     why: Optional[str] = None
     causation: Optional[str] = None
     owner: Optional[str] = None
+    due_date: Optional[datetime] = None
     is_done: bool = False
     impacts: Optional[ImpactsSchema] = None
     consensus: Optional[Dict[str, ConsensusEntry]] = None
@@ -91,6 +92,7 @@ class ProjectItemResponse(BaseModel):
     is_milestone: bool
     is_done: bool
     owner: Optional[str] = None
+    due_date: Optional[str] = None
     why: Optional[str] = None
     causation: Optional[str] = None
     impacts: Optional[dict] = None

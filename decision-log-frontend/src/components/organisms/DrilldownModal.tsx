@@ -3,7 +3,8 @@ import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineCircle } from '../atoms/DisciplineCircle'
 import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
 import { formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
-import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle } from 'lucide-react'
+import { useToggleDone } from '../../hooks/useProjectItemMutation'
+import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle, CheckSquare, Square, AlertTriangle } from 'lucide-react'
 
 interface DrilldownModalProps {
   decision: ProjectItem | null
@@ -34,8 +35,12 @@ function getStanceTextColor(stance: string) {
 
 export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }: DrilldownModalProps) {
   const [activeTab, setActiveTab] = useState('overview')
+  const toggleDone = useToggleDone(decision?.project_id || '')
 
   if (!decision) return null
+
+  const isActionItem = decision.item_type === 'action_item'
+  const isOverdue = isActionItem && decision.due_date && !decision.is_done && new Date(decision.due_date) < new Date()
 
   const consensusEntries = decision.consensus && typeof decision.consensus === 'object'
     ? Object.entries(decision.consensus)
@@ -49,13 +54,23 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
     : ['general']
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+    >
+      <div
+        role="dialog"
+        aria-labelledby="drilldown-modal-title"
+        aria-modal="true"
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-6 pb-4">
           <div className="flex justify-between items-start">
             <div className="flex items-start gap-2 flex-1 min-w-0 pr-4">
-              <h2 className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0">
+              <h2 id="drilldown-modal-title" className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0">
                 {decision.statement}
               </h2>
               {/* Story 8.2: Milestone star toggle */}
@@ -90,6 +105,45 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               </span>
             ))}
           </div>
+
+          {/* Action Item Details (Story 9.6) */}
+          {isActionItem && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Action Item</span>
+                <button
+                  onClick={() => toggleDone.mutate({ itemId: decision.id, isDone: !decision.is_done })}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  {decision.is_done
+                    ? <CheckSquare className="w-4 h-4 text-green-600" />
+                    : <Square className="w-4 h-4" />
+                  }
+                  {decision.is_done ? 'Done' : 'Mark as done'}
+                </button>
+              </div>
+              {decision.owner && (
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <User className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span className="font-medium">Owner:</span> {decision.owner}
+                </div>
+              )}
+              {decision.due_date && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span className="font-medium text-gray-700">Due:</span>
+                  <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                    {new Date(decision.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {isOverdue && (
+                      <span className="inline-flex items-center gap-0.5 ml-1.5 text-xs text-red-600">
+                        <AlertTriangle className="w-3 h-3" /> Overdue
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Decision Context Card */}
           <div className="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 space-y-1.5">
