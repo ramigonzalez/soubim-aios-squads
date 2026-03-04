@@ -163,10 +163,10 @@ export default function IngestionApproval() {
       {/* Table */}
       {!error && (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200 bg-white">
+          <table className="w-full divide-y divide-gray-200 bg-white table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="w-10 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -175,34 +175,34 @@ export default function IngestionApproval() {
                     aria-label="Select all"
                   />
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 120 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   ID
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 160 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   Project
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 160 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   Date
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 200 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   Detail
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 140 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   Type/From
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 100 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   Info
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 80 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 70 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Include
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 220 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
                   AI Summary
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={{ width: 70 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Link
                 </th>
               </tr>

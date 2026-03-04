@@ -28,19 +28,19 @@ export default function EmailSourceRow({
           aria-label={`Select ${source.email_id}`}
         />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate font-mono" title={source.email_id}>
         {source.email_id}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.project_name}>
         {source.project_name}
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
         {formatDate(source.email_date.split('T')[0])}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.subject}>
         {source.subject}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.from_address}>
         {source.from_address}
       </td>
       <td className="px-4 py-3 text-sm whitespace-nowrap">

@@ -15,6 +15,7 @@ export interface BaseSource {
 export interface MeetingSource extends BaseSource {
   source_type: 'meeting'
   call_id: string
+  title: string
   meeting_date: string
   meeting_type: string
   source_label: string

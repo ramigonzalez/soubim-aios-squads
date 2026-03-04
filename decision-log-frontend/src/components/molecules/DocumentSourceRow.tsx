@@ -28,16 +28,16 @@ export default function DocumentSourceRow({
           aria-label={`Select ${source.document_id}`}
         />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate font-mono" title={source.document_id}>
         {source.document_id}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.project_name}>
         {source.project_name}
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
         {formatDate(source.upload_date.split('T')[0])}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.file_name}>
         {source.file_name}
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap uppercase">

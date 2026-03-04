@@ -99,31 +99,59 @@ async def list_sources(
 
     rows = query.all()
 
-    # Format response
+    # Count total pending (unfiltered) for badge
+    pending_count = db.query(Source).filter(Source.ingestion_status == "pending").count()
+
+    # Format response to match frontend TypeScript contract
     sources_list = []
     for source, project_name in rows:
-        sources_list.append({
+        base = {
             "id": str(source.id),
             "project_id": str(source.project_id),
-            "project_name": project_name,
+            "project_name": project_name or "",
             "source_type": source.source_type,
-            "title": source.title,
-            "occurred_at": source.occurred_at.isoformat() if source.occurred_at else None,
-            "ingestion_status": source.ingestion_status,
+            "status": source.ingestion_status,
             "ai_summary": source.ai_summary,
-            "meeting_type": source.meeting_type,
-            "email_from": source.email_from,
-            "file_name": None,  # Derived from file_url if needed
-            "file_type": source.file_type,
-            "file_size": source.file_size,
+            "included": source.included if source.included is not None else True,
             "created_at": source.created_at.isoformat() if source.created_at else None,
-        })
+        }
+
+        if source.source_type == "meeting":
+            base.update({
+                "call_id": source.webhook_id or "",
+                "title": source.title or "",
+                "meeting_date": source.occurred_at.isoformat() if source.occurred_at else None,
+                "meeting_type": source.meeting_type or "",
+                "source_label": source.source_label or "Fireflies",
+                "transcript_url": source.file_url,
+            })
+        elif source.source_type == "email":
+            email_to = source.email_to or []
+            email_cc = source.email_cc or []
+            base.update({
+                "email_id": source.email_thread_id or "",
+                "email_date": source.occurred_at.isoformat() if source.occurred_at else None,
+                "subject": source.title or "",
+                "from_address": source.email_from or "",
+                "recipient_count": len(email_to) + len(email_cc),
+                "thread_url": source.file_url,
+            })
+        elif source.source_type == "document":
+            base.update({
+                "document_id": source.drive_file_id or "",
+                "upload_date": source.occurred_at.isoformat() if source.occurred_at else None,
+                "file_name": source.title or "",
+                "file_type": source.file_type or "",
+                "file_size_bytes": source.file_size or 0,
+                "file_url": source.file_url,
+            })
+
+        sources_list.append(base)
 
     return {
         "sources": sources_list,
         "total": total,
-        "limit": limit,
-        "offset": offset,
+        "pending_count": pending_count,
     }
 
 
@@ -150,20 +178,28 @@ async def update_source_status(
             detail="Source not found",
         )
 
-    source.ingestion_status = update.ingestion_status
+    # Handle included toggle (no admin required for toggle itself,
+    # but _require_admin already ran above)
+    if update.included is not None:
+        source.included = update.included
 
-    if update.ingestion_status == "approved":
-        source.approved_by = user.id
-        source.approved_at = datetime.utcnow()
-        db.commit()
-        # Trigger ETL pipeline in background
-        background_tasks.add_task(process_approved_source, str(source.id))
+    if update.ingestion_status:
+        source.ingestion_status = update.ingestion_status
+        if update.ingestion_status == "approved":
+            source.approved_by = user.id
+            source.approved_at = datetime.utcnow()
+            db.commit()
+            # Trigger ETL pipeline in background
+            background_tasks.add_task(process_approved_source, str(source.id))
+        else:
+            db.commit()
     else:
         db.commit()
 
     return {
         "id": str(source.id),
         "ingestion_status": source.ingestion_status,
+        "included": source.included,
     }
 
 

@@ -28,14 +28,17 @@ export default function MeetingSourceRow({
           aria-label={`Select ${source.call_id}`}
         />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap font-mono">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate font-mono" title={source.call_id}>
         {source.call_id}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+      <td className="px-4 py-3 text-sm text-gray-900 truncate" title={source.project_name}>
         {source.project_name}
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
         {formatDateTime(source.meeting_date)}
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-900">
+        {source.title}
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
         {source.meeting_type}

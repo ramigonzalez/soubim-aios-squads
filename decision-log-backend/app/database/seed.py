@@ -290,6 +290,7 @@ def seed_database():
             title="Structural Design Review", occurred_at=datetime(2026, 2, 6, 9, 0, 0),
             ingestion_status="processed", raw_content="[structural design review transcript]",
             meeting_type="Design Review", webhook_id="wh_struct_review_001",
+            included=True, source_label="Fireflies",
             participants=[
                 {"name": "Carlos", "role": "Structural Engineer"},
                 {"name": "Gabriela", "role": "Project Director"},
@@ -306,6 +307,7 @@ def seed_database():
             title="MEP Coordination", occurred_at=datetime(2026, 2, 6, 14, 0, 0),
             ingestion_status="processed", raw_content="[mep coordination transcript]",
             meeting_type="Coordination", webhook_id="wh_mep_coord_001",
+            included=True, source_label="Fireflies",
             participants=[
                 {"name": "Carlos", "role": "MEP Engineer"},
                 {"name": "Gabriela", "role": "Project Director"},
@@ -320,6 +322,7 @@ def seed_database():
             title="Client Alignment - Electrical", occurred_at=datetime(2026, 2, 7, 10, 0, 0),
             ingestion_status="processed", raw_content="[client alignment transcript]",
             meeting_type="Client Meeting", webhook_id="wh_client_align_001",
+            included=True, source_label="Fireflies",
             participants=[
                 {"name": "Gabriela", "role": "Project Director"},
                 {"name": "Carlos", "role": "MEP Engineer"},
@@ -333,6 +336,7 @@ def seed_database():
             title="Landscape Design Review", occurred_at=datetime(2026, 2, 7, 15, 0, 0),
             ingestion_status="processed", raw_content="[landscape design review transcript]",
             meeting_type="Design Review", webhook_id="wh_landscape_review_001",
+            included=True, source_label="Fireflies",
             participants=[
                 {"name": "Gabriela", "role": "Project Director"},
                 {"name": "Marina", "role": "Landscape Architect"},
@@ -346,6 +350,7 @@ def seed_database():
             title="Facade Design Review", occurred_at=datetime(2026, 2, 5, 11, 0, 0),
             ingestion_status="processed", raw_content="[facade design review transcript]",
             meeting_type="Design Review", webhook_id="wh_facade_review_001",
+            included=True, source_label="Fireflies",
             participants=[{"name": "Gabriela", "role": "Architect"}],
             duration_minutes=50,
             created_at=datetime(2026, 2, 5, 11, 0, 0),
@@ -355,6 +360,7 @@ def seed_database():
             title="Sustainability Planning", occurred_at=datetime(2026, 2, 5, 15, 0, 0),
             ingestion_status="processed", raw_content="[sustainability planning transcript]",
             meeting_type="Coordination", webhook_id="wh_sustainability_001",
+            included=True, source_label="Fireflies",
             participants=[{"name": "Carlos", "role": "Sustainability Engineer"}],
             duration_minutes=35,
             created_at=datetime(2026, 2, 5, 15, 0, 0),
@@ -365,6 +371,7 @@ def seed_database():
             title="Re: Foundation waterproofing spec", occurred_at=datetime(2026, 2, 8, 10, 0, 0),
             ingestion_status="processed", raw_content="Hi team, attached is the updated waterproofing specification...",
             email_from="alice@waterproof.com", email_to=["carlos@mep.com", "gabriela@soubim.com"],
+            included=True, source_label="Gmail",
             created_at=datetime(2026, 2, 8, 10, 0, 0),
         )
         # Document source for Project 1
@@ -373,6 +380,7 @@ def seed_database():
             title="Soil Analysis Report - Site Alpha", occurred_at=datetime(2026, 2, 4, 0, 0, 0),
             ingestion_status="processed", raw_content="[soil analysis report content]",
             file_type="pdf", file_url="/uploads/soil_analysis_alpha.pdf",
+            included=True, source_label="Google Drive",
             created_at=datetime(2026, 2, 4, 0, 0, 0),
         )
         # Manual input source for Project 2
@@ -380,12 +388,107 @@ def seed_database():
             id=uuid4(), project_id=project2.id, source_type="manual_input",
             title="Manual entry — Budget revision note", occurred_at=datetime(2026, 2, 9, 12, 0, 0),
             ingestion_status="processed", raw_content="Budget revised for Q2",
+            included=True, source_label="Manual",
             created_at=datetime(2026, 2, 9, 12, 0, 0),
         )
 
         db.add_all([s1, s2, s3, s4, s5, s6, s7, s8, s9])
         db.flush()
         print("  ✓ Created 9 source records (6 meeting, 1 email, 1 document, 1 manual_input)")
+
+        # ── Pending Source records (for Ingestion Approval page) ─────────
+
+        # Pending Meetings (3)
+        sp1 = Source(
+            id=uuid4(), project_id=project1.id, source_type="meeting",
+            title="HVAC Riser Shaft Coordination", occurred_at=datetime(2026, 2, 28, 10, 0, 0),
+            ingestion_status="pending", included=True, source_label="Fireflies",
+            ai_summary="Riser shaft sizing conflict between MEP and structural — shaft widened by 200mm to accommodate chilled water pipes without compromising column grid.",
+            meeting_type="Coordination", webhook_id="wh_hvac_riser_002",
+            participants=[
+                {"name": "André", "role": "MEP Engineer"},
+                {"name": "Carlos", "role": "Structural Engineer"},
+                {"name": "Gabriela", "role": "Project Director"},
+            ],
+            duration_minutes=55,
+            created_at=datetime(2026, 2, 28, 10, 0, 0),
+        )
+        sp2 = Source(
+            id=uuid4(), project_id=project1.id, source_type="meeting",
+            title="Client Progress Review — Phase 1", occurred_at=datetime(2026, 3, 1, 14, 0, 0),
+            ingestion_status="pending", included=True, source_label="Fireflies",
+            ai_summary="Client requested timeline acceleration for podium retail fit-out. Team agreed to fast-track MEP rough-in by 2 weeks.",
+            meeting_type="Client Meeting", webhook_id="wh_client_progress_002",
+            participants=[
+                {"name": "Gabriela", "role": "Project Director"},
+                {"name": "Carlos", "role": "Structural Engineer"},
+            ],
+            duration_minutes=40,
+            created_at=datetime(2026, 3, 1, 14, 0, 0),
+        )
+        sp3 = Source(
+            id=uuid4(), project_id=project2.id, source_type="meeting",
+            title="Facade Mock-up Review", occurred_at=datetime(2026, 2, 27, 11, 0, 0),
+            ingestion_status="pending", included=True, source_label="Fireflies",
+            ai_summary="Facade panel color samples reviewed. Champagne anodized finish selected over brushed silver based on mock-up comparison.",
+            meeting_type="Design Review", webhook_id="wh_facade_mockup_002",
+            participants=[
+                {"name": "Gabriela", "role": "Architect"},
+                {"name": "Carlos", "role": "Sustainability Engineer"},
+            ],
+            duration_minutes=35,
+            created_at=datetime(2026, 2, 27, 11, 0, 0),
+        )
+
+        # Pending Emails (2)
+        sp4 = Source(
+            id=uuid4(), project_id=project1.id, source_type="email",
+            title="RE: Fire rating spec for level 5 transfer beams", occurred_at=datetime(2026, 2, 28, 16, 30, 0),
+            ingestion_status="pending", included=True, source_label="Gmail",
+            ai_summary="Fire consultant recommends upgrading transfer beam fire rating from 2hr to 3hr FRL based on updated BCA assessment for mixed-use podium.",
+            email_from="james@fireconsult.com.au",
+            email_to=["carlos@mep.com", "gabriela@soubim.com"],
+            email_cc=["andre@mep.com"],
+            email_thread_id="thread_fire_rating_001",
+            created_at=datetime(2026, 2, 28, 16, 30, 0),
+        )
+        sp5 = Source(
+            id=uuid4(), project_id=project1.id, source_type="email",
+            title="Updated landscape irrigation layout", occurred_at=datetime(2026, 3, 1, 9, 15, 0),
+            ingestion_status="pending", included=True, source_label="Gmail",
+            ai_summary="Revised irrigation zones reduce water usage by 15%. Drip irrigation added to podium green roof planter beds.",
+            email_from="marina@landscape.com",
+            email_to=["gabriela@soubim.com"],
+            email_cc=["roberto@plumbing.com"],
+            email_thread_id="thread_irrigation_001",
+            created_at=datetime(2026, 3, 1, 9, 15, 0),
+        )
+
+        # Pending Documents (2)
+        sp6 = Source(
+            id=uuid4(), project_id=project1.id, source_type="document",
+            title="Structural-Peer-Review-Report-v2.pdf", occurred_at=datetime(2026, 2, 27, 0, 0, 0),
+            ingestion_status="pending", included=True, source_label="Google Drive",
+            ai_summary="Peer reviewer flagged transfer beam deflection at level 5 exceeding L/300 limit. Recommends increasing beam depth from 900mm to 1050mm.",
+            file_type="pdf", file_size=4404019,  # ~4.2 MB
+            file_url="/uploads/structural_peer_review_v2.pdf",
+            drive_file_id="gdrive_peer_review_v2",
+            created_at=datetime(2026, 2, 27, 0, 0, 0),
+        )
+        sp7 = Source(
+            id=uuid4(), project_id=project2.id, source_type="document",
+            title="Commercial-Plaza-Beta-Facade-Spec-R3.dwg", occurred_at=datetime(2026, 2, 26, 0, 0, 0),
+            ingestion_status="pending", included=True, source_label="Google Drive",
+            ai_summary=None,  # No AI summary yet
+            file_type="dwg", file_size=19398656,  # ~18.5 MB
+            file_url="/uploads/facade_spec_r3.dwg",
+            drive_file_id="gdrive_facade_spec_r3",
+            created_at=datetime(2026, 2, 26, 0, 0, 0),
+        )
+
+        db.add_all([sp1, sp2, sp3, sp4, sp5, sp6, sp7])
+        db.flush()
+        print("  ✓ Created 7 pending source records (3 meeting, 2 email, 2 document)")
 
         # ── Stage Schedules (V2 — Story 5.5 / 6.1) ───────────────────
         stage1 = ProjectStage(

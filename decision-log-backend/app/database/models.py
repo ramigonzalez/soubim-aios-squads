@@ -231,6 +231,10 @@ class Source(Base):
     drive_folder_id = Column(String(255))
     drive_file_id = Column(String(255), unique=True)  # Story 10.3: deduplication
 
+    # Ingestion UI fields
+    included = Column(Boolean, nullable=False, default=True)
+    source_label = Column(String(100))  # "Fireflies", "Gmail", "Google Drive"
+
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
 
