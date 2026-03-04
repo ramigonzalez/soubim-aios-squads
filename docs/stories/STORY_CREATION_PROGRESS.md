@@ -37,7 +37,7 @@
 - ✅ 3.9: API Endpoints - Timeline & Digest
 - ✅ 3.10: Styling & Responsive Design
 
-### EPIC 4: Access Control & Administration (9 stories) - ✅ COMPLETE
+### EPIC 4: Access Control & Administration (10 stories) - ✅ COMPLETE
 - ✅ 4.1: User Management Database Schema
 - ✅ 4.2: JWT Authentication Endpoint
 - ✅ 4.3: JWT Middleware & Token Validation
@@ -47,6 +47,7 @@
 - ✅ 4.7: Logout & Session Management
 - ✅ 4.8: CORS & Security Headers
 - ✅ 4.9: Rate Limiting
+- ✅ 4.10: Fix — Auth Middleware JSONResponse (1 SP, hotfix)
 
 ---
 
@@ -230,17 +231,18 @@ All story files are located in `docs/stories/`:
 ## V2 Stories — Creation Progress
 
 **Date Started:** 2026-02-17
-**Total V2 Stories:** 24 (across 6 epics)
+**Total V2 Stories:** 30 (across 7 epics)
 **Architect Review:** CONDITIONAL APPROVAL (5 blockers resolved, 10 advisories incorporated)
 
 ### Wave 1: Foundation (E5 + E6) — 8 stories ✅ COMPLETE
 
-#### EPIC 5: Data Model Evolution (5 stories) — ✅ COMPLETE
+#### EPIC 5: Data Model Evolution (6 stories) — ✅ COMPLETE
 - ✅ 5.1: Database Migration — Decision to Project Item (13 SP, critical path)
 - ✅ 5.2: Backend API — Project Items CRUD (8 SP, co-dependent with 5.3)
 - ✅ 5.3: Frontend Types & Hooks Migration (5 SP, co-dependent with 5.2)
 - ✅ 5.4: AI Extraction Prompt Evolution (8 SP)
 - ✅ 5.5: Seed Data & Test Suite Update (3 SP)
+- ✅ 5.6: Fix — Backend Startup Stability & V2 Schema Fixes (3 SP, hotfix)
 
 #### EPIC 6: Project Management Foundation (3 stories) — ✅ COMPLETE
 - ✅ 6.1: Backend — Project CRUD, Stage Schedule & Participants (8 SP)
@@ -249,16 +251,20 @@ All story files are located in `docs/stories/`:
 
 ### Wave 2: Core V2 (E7 + E8) — 7 stories ✅ COMPLETE
 
-#### EPIC 7: Multi-Source Ingestion Pipeline (4 stories) — ✅ COMPLETE
+#### EPIC 7: Multi-Source Ingestion Pipeline (5 stories) — ✅ COMPLETE
 - ✅ 7.1: Backend — Source Entity & Ingestion Queue (8 SP)
 - ✅ 7.2: Frontend — Ingestion Approval Page (8 SP)
 - ✅ 7.3: Manual Input — Create Project Item Form (5 SP)
 - ✅ 7.4: Backend — Gmail API Poller (8 SP)
+- ✅ 7.5: Ingestion API Contract Alignment & Table Layout (5 SP, hotfix)
 
-#### EPIC 8: Milestone Timeline (3 stories) — ✅ COMPLETE
+#### EPIC 8: Milestone Timeline (6 stories) — ✅ COMPLETE
 - ✅ 8.1: Frontend — Milestone Timeline Component (13 SP, Dot Timeline)
 - ✅ 8.2: Frontend — Milestone Flag Toggle (5 SP)
 - ✅ 8.3: Frontend — Milestone Timeline Filters (5 SP)
+- ✅ 8.5: Fix — Milestone Timeline Alignment (2 SP, hotfix)
+- ✅ 8.6: Fix — Today Marker Width & Export Text Wrapping (3 SP, hotfix)
+- ✅ 8.7: Shared Timeline Stages Support & UI Polish (3 SP)
 
 ### Wave 3: Enhancement (E8 cont. + E9 + E10) — 9 stories ✅ COMPLETE
 
@@ -279,12 +285,16 @@ All story files are located in `docs/stories/`:
 
 ### V2 Story Files Created
 
+**EPIC 4 (hotfix):**
+- 4.10-auth-middleware-jsonresponse-fix.md
+
 **EPIC 5:**
 - 5.1-database-migration-decision-to-project-item.md
 - 5.2-backend-api-project-items-crud.md
 - 5.3-frontend-types-hooks-migration.md
 - 5.4-ai-extraction-prompt-evolution.md
 - 5.5-seed-data-test-suite-update.md
+- 5.6-backend-startup-stability-v2-schema-fixes.md
 
 **EPIC 6:**
 - 6.1-backend-project-crud-stages-participants.md
@@ -296,12 +306,16 @@ All story files are located in `docs/stories/`:
 - 7.2-frontend-ingestion-approval-page.md
 - 7.3-manual-input-create-project-item-form.md
 - 7.4-backend-gmail-api-poller.md
+- 7.5-ingestion-api-contract-alignment-table-layout.md
 
 **EPIC 8:**
 - 8.1-frontend-milestone-timeline-component.md
 - 8.2-frontend-milestone-flag-toggle.md
 - 8.3-frontend-milestone-timeline-filters.md
 - 8.4-milestone-timeline-sharing-export.md
+- 8.5-milestone-timeline-alignment-fix.md
+- 8.6-today-marker-width-export-text-wrapping.md
+- 8.7-shared-timeline-stages-ui-polish.md
 
 **EPIC 9:**
 - 9.1-component-evolution-item-type-badges-source-icons.md
@@ -321,18 +335,19 @@ All story files are located in `docs/stories/`:
 
 | Epic | Stories | Total SP | Phase |
 |------|---------|----------|-------|
-| E5: Data Model Evolution | 5 | 37 | 1 (Weeks 1-2) |
+| E4: Access Control (hotfix) | 1 | 1 | Hotfix |
+| E5: Data Model Evolution | 6 | 40 | 1 (Weeks 1-2) |
 | E6: Project Management | 3 | 19 | 1 (Week 3) |
-| E7: Ingestion Pipeline | 4 | 29 | 2 (Weeks 4-5) + 4 (Weeks 9-10) |
-| E8: Milestone Timeline | 4 | 28 | 2 (Weeks 5-6) |
+| E7: Ingestion Pipeline | 5 | 34 | 2 (Weeks 4-5) + 4 (Weeks 9-10) |
+| E8: Milestone Timeline | 7 | 36 | 2 (Weeks 5-6) |
 | E9: Project History | 5 | 29 | 3 (Weeks 7-8) |
 | E10: Email & Document | 3 | 24 | 4 (Weeks 11-12) |
-| **Total** | **24** | **166** | **12 weeks** |
+| **Total** | **30** | **184** | **12 weeks** |
 
 ---
 
-**Last Updated:** 2026-02-20
-**Status:** ALL V2 STORIES COMPLETE — 24/24 (100%)
+**Last Updated:** 2026-03-03
+**Status:** ALL V2 STORIES COMPLETE — 30/30 (100%)
 **All 3 waves finished. Ready for development kickoff.**
 
 — River, removendo obstáculos 🌊
