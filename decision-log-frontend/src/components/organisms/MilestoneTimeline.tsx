@@ -1,4 +1,4 @@
-import { useMemo, forwardRef } from 'react'
+import { useMemo, useEffect, useState, useCallback, forwardRef } from 'react'
 import { useMilestones } from '../../hooks/useMilestones'
 import { useStages } from '../../hooks/useStages'
 import { useMilestoneFilters } from '../../hooks/useMilestoneFilters'
@@ -6,12 +6,13 @@ import { StageNode } from '../molecules/StageNode'
 import { MilestoneNode } from '../molecules/MilestoneNode'
 import { MilestoneFilterBar } from '../molecules/MilestoneFilterBar'
 import { ProjectItem, ProjectStage } from '../../types/projectItem'
-import { cn, formatDate, filterMilestones } from '../../lib/utils'
-import { AlertCircle, Star, Loader } from 'lucide-react'
+import { filterMilestones } from '../../lib/utils'
+import { AlertCircle, Star } from 'lucide-react'
 
 interface MilestoneTimelineProps {
-  projectId: string
+  projectId?: string
   milestones?: ProjectItem[]
+  preloadedStages?: ProjectStage[]
   onSelectItem?: (id: string) => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean
@@ -65,28 +66,14 @@ function getCurrentStage(stages: ProjectStage[]): ProjectStage | null {
   )
 }
 
-/**
- * Calculates the proportional position (0-100%) of today within the full timeline.
- */
-function calculateTodayPosition(stages: ProjectStage[]): number | null {
-  if (stages.length === 0) return null
-  const today = new Date()
-  const firstStart = new Date(stages[0].stage_from)
-  const lastEnd = new Date(stages[stages.length - 1].stage_to)
-  const totalRange = lastEnd.getTime() - firstStart.getTime()
-  if (totalRange <= 0) return null
-  const todayOffset = today.getTime() - firstStart.getTime()
-  const pct = (todayOffset / totalRange) * 100
-  return Math.max(0, Math.min(100, pct))
-}
-
-// --- TodayMarker internal component ---
-function TodayMarker({ position }: { position: number }) {
+// --- TodayMarker internal component (pixel-positioned) ---
+function TodayMarker({ topPx }: { topPx: number }) {
   return (
     <div
-      className="absolute left-0 right-0 flex items-center z-20 pointer-events-none"
-      style={{ top: `${position}%` }}
+      className="absolute right-0 flex items-center z-20 pointer-events-none"
+      style={{ top: `${topPx}px`, left: 'calc(9rem + 10px)' }}
       data-testid="today-marker"
+      data-export-exclude
       aria-label="Today"
     >
       <div className="w-full border-t-2 border-dashed border-blue-400" />
@@ -95,6 +82,86 @@ function TodayMarker({ position }: { position: number }) {
       </span>
     </div>
   )
+}
+
+/**
+ * Hook to compute the Today marker's pixel position based on actual DOM layout.
+ * Measures stage section positions and interpolates today's position within
+ * the correct stage's DOM range.
+ */
+function useTodayPixelPosition(
+  containerEl: HTMLDivElement | null,
+  stages: ProjectStage[]
+): number | null {
+  const [topPx, setTopPx] = useState<number | null>(null)
+
+  const compute = useCallback(() => {
+    if (!containerEl || stages.length === 0) {
+      setTopPx(null)
+      return
+    }
+
+    const today = new Date()
+    today.setHours(12, 0, 0, 0)
+
+    const containerRect = containerEl.getBoundingClientRect()
+
+    // Collect DOM position for each stage section
+    const sectionEls = stages.map(s =>
+      containerEl.querySelector(`[data-stage-id="${s.id}"]`) as HTMLElement | null
+    )
+
+    for (let i = 0; i < stages.length; i++) {
+      const from = new Date(stages[i].stage_from)
+      const to = new Date(stages[i].stage_to)
+      from.setHours(0, 0, 0, 0)
+      to.setHours(23, 59, 59, 999)
+
+      if (today >= from && today <= to) {
+        // Today is within stage i — interpolate between this stage top and next stage top
+        const sectionEl = sectionEls[i]
+        if (!sectionEl) break
+
+        const sectionTop = sectionEl.getBoundingClientRect().top - containerRect.top
+        const nextSectionEl = sectionEls[i + 1]
+        const sectionBottom = nextSectionEl
+          ? nextSectionEl.getBoundingClientRect().top - containerRect.top
+          : containerEl.scrollHeight
+
+        const proportion = (today.getTime() - from.getTime()) / (to.getTime() - from.getTime())
+        setTopPx(sectionTop + proportion * (sectionBottom - sectionTop))
+        return
+      }
+
+      // Check if today falls in the gap between stages
+      if (i < stages.length - 1) {
+        const nextFrom = new Date(stages[i + 1].stage_from)
+        nextFrom.setHours(0, 0, 0, 0)
+        if (today > to && today < nextFrom) {
+          const sectionEl = sectionEls[i]
+          const nextSectionEl = sectionEls[i + 1]
+          if (sectionEl && nextSectionEl) {
+            const bottom = sectionEl.getBoundingClientRect().bottom - containerRect.top
+            const nextTop = nextSectionEl.getBoundingClientRect().top - containerRect.top
+            setTopPx((bottom + nextTop) / 2)
+          }
+          return
+        }
+      }
+    }
+
+    // Today is outside the timeline range
+    setTopPx(null)
+  }, [containerEl, stages])
+
+  useEffect(() => {
+    compute()
+    // Recompute on window resize
+    window.addEventListener('resize', compute)
+    return () => window.removeEventListener('resize', compute)
+  }, [compute])
+
+  return topPx
 }
 
 // --- Loading skeleton ---
@@ -181,25 +248,39 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
  * Story 8.1: Milestone Timeline Component
  */
 export const MilestoneTimeline = forwardRef<HTMLDivElement, MilestoneTimelineProps>(
-function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, isAdmin, readOnly = false }, ref) {
+function MilestoneTimelineInner({ projectId, milestones: propMilestones, preloadedStages, onSelectItem, onToggleMilestone, isAdmin, readOnly = false }, ref) {
+  const isPreloaded = !!preloadedStages
+  // Callback ref pattern: setting state on mount triggers re-render so the
+  // useTodayPixelPosition hook receives the real DOM element.
+  const [timelineContainer, setTimelineContainer] = useState<HTMLDivElement | null>(null)
+  const timelineContainerRef = useCallback((node: HTMLDivElement | null) => {
+    setTimelineContainer(node)
+  }, [])
+
   const {
     data: stagesData,
     isLoading: stagesLoading,
     error: stagesError,
     refetch: refetchStages,
-  } = useStages({ projectId })
+  } = useStages({ projectId: isPreloaded ? undefined : projectId })
 
   const {
     data: milestonesData,
     isLoading: milestonesLoading,
     error: milestonesError,
     refetch: refetchMilestones,
-  } = useMilestones({ projectId })
+  } = useMilestones({ projectId: isPreloaded ? undefined : projectId })
 
-  const stages = stagesData?.stages || []
-  const milestones = milestonesData?.items || []
+  const stages = useMemo(
+    () => preloadedStages || stagesData?.stages || [],
+    [preloadedStages, stagesData?.stages]
+  )
+  const milestones = useMemo(
+    () => propMilestones || milestonesData?.items || [],
+    [propMilestones, milestonesData?.items]
+  )
 
-  const { sourceFilters, itemTypeFilters, toggleSource, toggleItemType, clearAll, activeCount } =
+  const { sourceFilters, itemTypeFilters, toggleSource, toggleItemType, clearAll } =
     useMilestoneFilters()
 
   const filteredMilestones = useMemo(
@@ -215,7 +296,9 @@ function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, is
     () => groupMilestonesByStage(filteredMilestones, stages),
     [filteredMilestones, stages]
   )
-  const todayPosition = useMemo(() => calculateTodayPosition(stages), [stages])
+
+  // DOM-measured Today marker position (pixel-based, not percentage)
+  const todayTopPx = useTodayPixelPosition(timelineContainer, stages)
 
   const handleRetry = () => {
     refetchStages()
@@ -262,14 +345,16 @@ function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, is
 
   return (
     <nav ref={ref} aria-label="Milestone Timeline">
-      {/* Filter bar — hidden in readOnly mode */}
-      {!readOnly && <MilestoneFilterBar
-        sourceFilters={sourceFilters}
-        itemTypeFilters={itemTypeFilters}
-        onToggleSource={toggleSource}
-        onToggleItemType={toggleItemType}
-        onClearAll={clearAll}
-      />}
+      {/* Filter bar — hidden in readOnly mode, excluded from export */}
+      {!readOnly && <div data-export-exclude>
+        <MilestoneFilterBar
+          sourceFilters={sourceFilters}
+          itemTypeFilters={itemTypeFilters}
+          onToggleSource={toggleSource}
+          onToggleItemType={toggleItemType}
+          onClearAll={clearAll}
+        />
+      </div>}
 
       {/* Empty filter result state */}
       {filteredMilestones.length === 0 && milestones.length > 0 ? (
@@ -291,7 +376,7 @@ function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, is
         </div>
       ) : (
 
-      <div className="relative">
+      <div className="relative" ref={timelineContainerRef}>
         {/* Vertical line */}
         <div
           className="absolute bg-gray-300"
@@ -305,8 +390,8 @@ function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, is
           aria-hidden="true"
         />
 
-        {/* Today marker */}
-        {todayPosition !== null && <TodayMarker position={todayPosition} />}
+        {/* Today marker — DOM-measured pixel position, excluded from export */}
+        {todayTopPx !== null && <TodayMarker topPx={todayTopPx} />}
 
         {/* Stages and milestones */}
         {stages.map((stage) => {
@@ -316,6 +401,7 @@ function MilestoneTimelineInner({ projectId, onSelectItem, onToggleMilestone, is
           return (
             <section
               key={stage.id}
+              data-stage-id={stage.id}
               className="relative mb-8"
               aria-label={`Stage: ${stage.stage_name}`}
             >
