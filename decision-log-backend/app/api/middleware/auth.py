@@ -1,6 +1,7 @@
 """JWT authentication middleware."""
 
 from fastapi import Request, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.utils.security import decode_access_token
@@ -43,9 +44,9 @@ async def auth_middleware(request: Request, call_next):
     if not token:
         # Protected endpoint without token
         if request.url.path.startswith("/api/"):
-            raise HTTPException(
+            return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Missing authentication token",
+                content={"detail": "Missing authentication token"},
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return await call_next(request)
@@ -53,9 +54,9 @@ async def auth_middleware(request: Request, call_next):
     # Validate token
     payload = decode_access_token(token)
     if not payload:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            content={"detail": "Invalid or expired token"},
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -65,9 +66,9 @@ async def auth_middleware(request: Request, call_next):
         user = get_user_by_id(db, payload.get("user_id"))
         request.state.user = user
     except UserNotFoundError:
-        raise HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
+            content={"detail": "User not found"},
         )
     finally:
         db.close()
