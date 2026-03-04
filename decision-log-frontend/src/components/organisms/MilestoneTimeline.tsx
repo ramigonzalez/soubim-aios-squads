@@ -70,8 +70,8 @@ function getCurrentStage(stages: ProjectStage[]): ProjectStage | null {
 function TodayMarker({ topPx }: { topPx: number }) {
   return (
     <div
-      className="absolute right-0 flex items-center z-20 pointer-events-none"
-      style={{ top: `${topPx}px`, left: 'calc(9rem + 10px)' }}
+      className="absolute right-0 left-[calc(10rem_+_10px)] lg:left-[calc(12rem_+_10px)] flex items-center z-20 pointer-events-none"
+      style={{ top: `${topPx}px` }}
       data-testid="today-marker"
       data-export-exclude
       aria-label="Today"
@@ -156,9 +156,19 @@ function useTodayPixelPosition(
 
   useEffect(() => {
     compute()
-    // Recompute on window resize
     window.addEventListener('resize', compute)
-    return () => window.removeEventListener('resize', compute)
+
+    // Recompute when container content changes (e.g. milestones load async)
+    let ro: ResizeObserver | undefined
+    if (containerEl) {
+      ro = new ResizeObserver(compute)
+      ro.observe(containerEl)
+    }
+
+    return () => {
+      window.removeEventListener('resize', compute)
+      ro?.disconnect()
+    }
   }, [compute])
 
   return topPx
@@ -180,7 +190,7 @@ function TimelineSkeleton() {
             <div className="flex-1" />
           </div>
           {/* Milestone skeletons */}
-          <div className="ml-[calc(9rem+2.5rem)] lg:ml-[calc(11rem+2.5rem)] space-y-3">
+          <div className="ml-[12rem] lg:ml-[14rem] space-y-3">
             {[1, 2].map((j) => (
               <div key={j} className="flex items-center gap-2">
                 <div className="h-4 w-14 bg-gray-200 rounded-full" />
@@ -377,15 +387,10 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
       ) : (
 
       <div className="relative" ref={timelineContainerRef}>
-        {/* Vertical line */}
+        {/* Vertical line — centered on stage dots (label + gap + half-dot) */}
         <div
-          className="absolute bg-gray-300"
-          style={{
-            left: 'calc(9rem + 10px)',
-            width: '2px',
-            top: 0,
-            bottom: 0,
-          }}
+          className="absolute bg-gray-300 left-[calc(10rem_+_10px)] lg:left-[calc(12rem_+_10px)]"
+          style={{ width: '2px', top: 0, bottom: 0 }}
           data-testid="vertical-line"
           aria-hidden="true"
         />
@@ -415,7 +420,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
               {/* Milestones within this stage */}
               {stageMilestones.length > 0 && (
                 <div
-                  className="ml-[calc(9rem+2.75rem)] lg:ml-[calc(11rem+2.75rem)] mt-3 space-y-1"
+                  className="ml-[12rem] lg:ml-[14rem] mt-3 space-y-1"
                   role="list"
                   aria-label={`Milestones in ${stage.stage_name}`}
                 >
@@ -449,7 +454,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
             </div>
 
             <div
-              className="ml-[calc(9rem+2.75rem)] lg:ml-[calc(11rem+2.75rem)] mt-3 space-y-1"
+              className="ml-[12rem] lg:ml-[14rem] mt-3 space-y-1"
               role="list"
               aria-label="Milestones outside stage ranges"
             >

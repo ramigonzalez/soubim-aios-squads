@@ -89,10 +89,10 @@ export const MilestoneNode = React.memo(function MilestoneNode({
       onKeyDown={handleKeyDown}
       aria-label={`${itemTypeConfig[item.item_type]?.label || item.item_type}: ${item.statement || item.decision_statement}. ${formatDate(displayDate)}. Disciplines: ${item.affected_disciplines.join(', ') || 'none'}`}
     >
-      {/* Small dot + connector line */}
-      <div className="absolute -left-[2.75rem] flex items-center">
-        <div className="w-4 border-t border-gray-300" />
+      {/* Small dot on vertical line + connector to content */}
+      <div className="absolute -left-[1.75rem] flex items-center">
         <div className="w-3 h-3 rounded-full bg-gray-500 border-2 border-white shrink-0" />
+        <div className="w-4 border-t border-gray-300" />
       </div>
 
       {/* Content row */}
