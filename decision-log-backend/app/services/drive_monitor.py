@@ -112,3 +112,12 @@ class DriveMonitor:
         self.db.add(source)
         self.db.commit()
         logger.info(f"Created source {source.id} from Drive file {file_info['id']}")
+
+        # Story 7.7: Upload to curation storage (Drive sources already have drive_file_id,
+        # so curation upload is skipped if already in Drive — just set status)
+        try:
+            source.curation_status = 'uploaded'
+            source.last_synced_at = datetime.now(timezone.utc)
+            self.db.commit()
+        except Exception as e:
+            logger.warning(f"Curation status update failed for source {source.id}: {e}")

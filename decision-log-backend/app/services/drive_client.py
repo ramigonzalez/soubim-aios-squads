@@ -1,6 +1,7 @@
-"""Google Drive API client for folder monitoring.
+"""Google Drive API client for folder monitoring and curation uploads.
 
 Story 10.3: Google Drive Folder Monitoring
+Story 7.7: Source Curation Workflow — upload and sync capabilities
 """
 
 import io
@@ -9,7 +10,11 @@ import os
 
 logger = logging.getLogger(__name__)
 
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+# Story 7.7: expanded scopes — drive.file allows creating/editing files the app created
+SCOPES = [
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.file',
+]
 
 # Supported MIME types for document processing
 SUPPORTED_MIME_TYPES = {
@@ -87,6 +92,51 @@ class DriveClient:
         while not done:
             _, done = downloader.next_chunk()
         return buffer.getvalue()
+
+    def upload_file(self, folder_id: str, filename: str, content: str, mime_type: str = 'text/plain') -> dict:
+        """Upload a file to a Drive folder.
+
+        Story 7.7: Used by curation workflow to upload source content for human review.
+
+        Args:
+            folder_id: Google Drive folder ID to upload into.
+            filename: Name for the uploaded file.
+            content: Text content to upload.
+            mime_type: MIME type of the content (default: text/plain).
+
+        Returns:
+            File metadata dict with id, name, webViewLink.
+        """
+        from googleapiclient.http import MediaInMemoryUpload
+
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id],
+        }
+        media = MediaInMemoryUpload(content.encode('utf-8'), mimetype=mime_type)
+        file = self.service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, name, webViewLink, modifiedTime',
+        ).execute()
+        logger.info(f"Uploaded file '{filename}' to folder {folder_id}: {file.get('id')}")
+        return file
+
+    def get_file_metadata(self, file_id: str) -> dict:
+        """Get file metadata including modifiedTime.
+
+        Story 7.7: Used to check if a file has been modified since last sync.
+
+        Args:
+            file_id: Google Drive file ID.
+
+        Returns:
+            File metadata dict with id, name, modifiedTime, size.
+        """
+        return self.service.files().get(
+            fileId=file_id,
+            fields='id, name, modifiedTime, size',
+        ).execute()
 
     def verify_folder_access(self, folder_id: str) -> bool:
         """Check if the service account can access the folder.

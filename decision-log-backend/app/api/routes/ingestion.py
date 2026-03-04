@@ -112,7 +112,7 @@ async def list_sources(
             "source_type": source.source_type,
             "status": source.ingestion_status,
             "ai_summary": source.ai_summary,
-            "included": source.included if source.included is not None else True,
+            "included": source.included if source.included is not None else False,
             "created_at": source.created_at.isoformat() if source.created_at else None,
         }
 

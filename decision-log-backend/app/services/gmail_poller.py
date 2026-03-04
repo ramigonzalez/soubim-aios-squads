@@ -249,6 +249,14 @@ class GmailPollerService:
         db.add(source)
         db.commit()
 
+        # Story 7.7: Upload to curation storage
+        try:
+            from app.services.source_curation import SourceCurationService
+            curation = SourceCurationService(db)
+            curation.upload_to_storage(str(source.id))
+        except Exception as e:
+            logger.warning(f"Curation upload failed for source {source.id}: {e}")
+
         logger.info(
             f"GmailPoller: Stored Source for '{subject}' "
             f"(project={project_id}, thread={thread_id})"

@@ -51,6 +51,24 @@ def _run_drive_poll():
             db.close()
 
 
+def _run_curation_sync():
+    """Wrapper for curation sync poll cycle (Story 7.7)."""
+    from app.database.session import SessionLocal
+    from app.services.source_curation import SourceCurationService
+
+    logger.info("Scheduler: Running curation sync cycle")
+    try:
+        db = SessionLocal()
+        service = SourceCurationService(db)
+        stats = service.poll_non_processed()
+        logger.info(f"Scheduler: Curation sync complete -- {stats}")
+    except Exception as e:
+        logger.error(f"Scheduler: Curation sync failed: {e}")
+    finally:
+        if 'db' in locals():
+            db.close()
+
+
 class AppScheduler:
     """Manages background job scheduling for the application."""
 
@@ -58,6 +76,7 @@ class AppScheduler:
         self._scheduler = BackgroundScheduler()
         self._gmail_job = None
         self._drive_job = None
+        self._curation_job = None
 
     def start(self):
         """
@@ -129,6 +148,28 @@ class AppScheduler:
                 "Scheduler: Google Drive not configured -- "
                 "Drive monitor disabled."
             )
+
+        # Source curation sync (Story 7.7)
+        if settings.curation_sync_enabled:
+            curation_interval = max(
+                settings.curation_sync_interval_hours * 60,
+                MIN_POLL_INTERVAL_MINUTES,
+            )
+            self._curation_job = self._scheduler.add_job(
+                _run_curation_sync,
+                trigger=IntervalTrigger(minutes=curation_interval),
+                id="curation_sync",
+                name="Source Curation Sync",
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=120,
+            )
+            jobs_registered += 1
+            logger.info(
+                f"Scheduler: Curation sync registered -- interval={curation_interval}m"
+            )
+        else:
+            logger.info("Scheduler: Curation sync disabled")
 
         if jobs_registered == 0:
             logger.info("Scheduler: No polling jobs configured — scheduler idle")

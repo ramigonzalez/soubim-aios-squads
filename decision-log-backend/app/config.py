@@ -51,6 +51,10 @@ class Settings(BaseSettings):
         """Return True if Google Drive monitoring is enabled and configured."""
         return self.google_drive_enabled and self.google_drive_service_account_key is not None
 
+    # --- Source Curation (Story 7.7) ---
+    curation_sync_enabled: bool = False
+    curation_sync_interval_hours: int = 24
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"

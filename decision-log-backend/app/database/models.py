@@ -232,8 +232,12 @@ class Source(Base):
     drive_file_id = Column(String(255), unique=True)  # Story 10.3: deduplication
 
     # Ingestion UI fields
-    included = Column(Boolean, nullable=False, default=True)
+    included = Column(Boolean, nullable=False, default=False)
     source_label = Column(String(100))  # "Fireflies", "Gmail", "Google Drive"
+
+    # Curation workflow fields (Story 7.7)
+    curation_status = Column(String(50), default="raw")  # raw → uploaded → curated → synced
+    last_synced_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

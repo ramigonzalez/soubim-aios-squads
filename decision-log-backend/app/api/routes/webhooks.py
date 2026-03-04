@@ -71,4 +71,23 @@ async def receive_transcript(
     # Schedule AI summary generation as background task
     background_tasks.add_task(generate_ai_summary, str(source.id))
 
+    # Story 7.7: Schedule auto-upload to curation storage
+    background_tasks.add_task(_upload_to_curation_storage, str(source.id))
+
     return {"status": "pending", "source_id": str(source.id)}
+
+
+def _upload_to_curation_storage(source_id: str):
+    """Background task: upload source content to external storage for curation."""
+    try:
+        from app.database.session import SessionLocal
+        from app.services.source_curation import SourceCurationService
+        db = SessionLocal()
+        try:
+            service = SourceCurationService(db)
+            service.upload_to_storage(source_id)
+        finally:
+            db.close()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Curation upload failed for source {source_id}: {e}")
