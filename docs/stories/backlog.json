@@ -1,0 +1,15 @@
+[
+  {
+    "id": "1740873600000",
+    "type": "T",
+    "title": "Add Alembic migrations and repository pattern to backend",
+    "description": "Backend has no migration tool — schema changes are applied ad-hoc (SQLite recreated from scratch, PostgreSQL needs manual ALTERs). Routes also access SQLAlchemy ORM directly with no repository abstraction, so response mapping lives inline in route handlers. Priority 1: Add Alembic so schema changes are versioned and portable across SQLite/PostgreSQL. Priority 2 (optional): Introduce a repository layer to centralize ORM-to-DTO mapping.",
+    "priority": "High",
+    "relatedStory": null,
+    "createdBy": "@dev",
+    "createdAt": "2026-03-02T12:00:00.000Z",
+    "tags": ["architecture", "database", "refactoring"],
+    "estimatedEffort": "1 day",
+    "status": "Open"
+  }
+]
