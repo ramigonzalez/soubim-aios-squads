@@ -9,6 +9,7 @@ interface ProjectCreateData {
   title: string
   description?: string
   project_type?: string
+  drive_folder_id?: string
   stages?: Array<{
     stage_name: string
     stage_from: string
@@ -26,6 +27,7 @@ interface ProjectUpdateData {
   title?: string
   description?: string
   project_type?: string
+  drive_folder_id?: string
   actual_stage_id?: string
 }
 
@@ -70,8 +72,9 @@ export function useArchiveProject() {
       await api.delete(`/projects/${projectId}`)
     },
     {
-      onSuccess: () => {
+      onSuccess: (_data, projectId) => {
         queryClient.invalidateQueries(['projects'])
+        queryClient.invalidateQueries(['project', projectId])
       },
     }
   )

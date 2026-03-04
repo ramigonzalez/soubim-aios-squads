@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useProjectItems } from '../hooks/useProjectItems'
 import { useToggleMilestone } from '../hooks/useProjectItemMutation'
 import { Timeline } from '../components/organisms/Timeline'
@@ -12,7 +12,8 @@ import { ShareDialog } from '../components/molecules/ShareDialog'
 import { useFilterStore } from '../store/filterStore'
 import { useFilterUrlSync } from '../hooks/useFilterUrlSync'
 import { useAuthStore } from '../store/authStore'
-import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown } from 'lucide-react'
+import { useArchiveProject } from '../hooks/useProjectMutation'
+import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown, Pencil, Archive } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { ProjectItem } from '../types/projectItem'
 import { exportAsPDF, exportAsJPEG } from '../lib/exportTimeline'
@@ -42,9 +43,11 @@ function getInitialView(): View {
  */
 export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [view, setView] = useState<View>(getInitialView)
   const [selectedDecision, setSelectedDecision] = useState<ProjectItem | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
 
   // Story 8.4: Share & Export state
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
@@ -56,6 +59,7 @@ export function ProjectDetail() {
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'director'
   const toggleMilestoneMutation = useToggleMilestone(projectId || '')
+  const archiveProjectMutation = useArchiveProject()
 
   const {
     disciplines,
@@ -247,20 +251,84 @@ export function ProjectDetail() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb (Story 9.5) */}
         <nav className="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
-          <a href="/projects" className="hover:text-blue-600">Projects</a>
+          <Link to="/projects" className="hover:text-blue-600">Projects</Link>
           <span className="mx-2" aria-hidden="true">&rsaquo;</span>
           <span>Project</span>
           <span className="mx-2" aria-hidden="true">&rsaquo;</span>
           <span className="text-gray-900 font-medium">{viewLabel}</span>
         </nav>
 
-        {/* Header (Story 9.5 heading) */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
-          <p className="text-sm text-gray-600">
-            {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
-          </p>
+        {/* Header (Story 9.5 heading) + Edit/Archive (Story 6.4) */}
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
+            <p className="text-sm text-gray-600">
+              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(`/projects/${projectId}/edit`)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                onClick={() => setShowArchiveConfirm(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition"
+              >
+                <Archive className="w-4 h-4" />
+                Archive
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Archive Confirmation Dialog (Story 6.4) */}
+        {showArchiveConfirm && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setShowArchiveConfirm(false)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setShowArchiveConfirm(false) }}
+          >
+            <div
+              role="dialog"
+              aria-labelledby="archive-dialog-title"
+              aria-modal="true"
+              className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 id="archive-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">Archive Project?</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                This will archive the project. It can be restored later.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowArchiveConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                {archiveProjectMutation.isError && (
+                  <p className="text-sm text-red-600 mb-2">Failed to archive project. Please try again.</p>
+                )}
+                <button
+                  onClick={() => {
+                    archiveProjectMutation.mutate(projectId!, {
+                      onSuccess: () => navigate('/projects'),
+                    })
+                  }}
+                  disabled={archiveProjectMutation.isLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+                >
+                  {archiveProjectMutation.isLoading ? 'Archiving...' : 'Archive'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab Toggle — segmented control (Story 9.5) */}
         <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100 mb-4" role="tablist">

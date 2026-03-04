@@ -1,36 +1,18 @@
 /**
  * ProjectEdit page — edit an existing project.
- * Story 6.2: Frontend — Project Create/Edit Form
+ * Story 6.4: Project CRUD Completion
  */
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Loader } from 'lucide-react'
-import ProjectForm from '../components/organisms/ProjectForm'
+import { ProjectForm } from '../components/organisms/ProjectForm'
 import { useProject } from '../hooks/useProject'
-import { StageRow } from '../components/organisms/StageScheduleBuilder'
-import { ParticipantRow } from '../components/organisms/ParticipantRoster'
-import api from '../services/api'
-import { useQuery } from 'react-query'
-
-interface ParticipantResponse {
-  id: string
-  name: string
-  email?: string
-  discipline: string
-  role?: string
-}
+import { useUpdateProject } from '../hooks/useProjectMutation'
 
 export default function ProjectEdit() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { data: project, isLoading, error } = useProject(id)
-
-  const { data: participantsData } = useQuery<ParticipantResponse[]>(
-    ['participants', id],
-    async () => {
-      const res = await api.get(`/projects/${id}/participants`)
-      return res.data?.participants ?? res.data ?? []
-    },
-    { enabled: !!id }
-  )
+  const updateProject = useUpdateProject(id || '')
 
   if (isLoading) {
     return (
@@ -48,34 +30,43 @@ export default function ProjectEdit() {
     )
   }
 
-  const stages: StageRow[] = (project.stages || []).map((s) => ({
-    stage_name: s.stage_name,
-    stage_from: s.stage_from?.split('T')[0] || '',
-    stage_to: s.stage_to?.split('T')[0] || '',
-  }))
-
-  const participants: ParticipantRow[] = (participantsData || []).map((p) => ({
-    name: p.name,
-    email: p.email || '',
-    discipline: p.discipline,
-    role: p.role || '',
-  }))
-
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Edit Project</h1>
-        <ProjectForm
-          mode="edit"
-          projectId={id}
-          initialData={{
-            title: project.name,
-            description: project.description || '',
-            project_type: project.project_type || '',
-            stages,
-            participants,
-          }}
-        />
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900 mb-8">Edit Project</h1>
+          {updateProject.isError && (
+            <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+              Failed to update project. Please try again.
+            </div>
+          )}
+          <ProjectForm
+            initialData={{
+              id: project.id,
+              name: project.name,
+              description: project.description || '',
+              project_type: project.project_type || '',
+              drive_folder_id: project.drive_folder_id || '',
+            }}
+            onSubmit={(data) => {
+              updateProject.mutate(
+                {
+                  title: data.name,
+                  description: data.description,
+                  project_type: data.project_type,
+                  drive_folder_id: data.drive_folder_id,
+                },
+                {
+                  onSuccess: () => {
+                    navigate(`/projects/${id}`)
+                  },
+                }
+              )
+            }}
+            onCancel={() => navigate(`/projects/${id}`)}
+            isLoading={updateProject.isLoading}
+          />
+        </div>
       </div>
     </div>
   )

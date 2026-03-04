@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
@@ -8,6 +8,9 @@ import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
+
+const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
+const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
 
 const queryClient = new QueryClient()
 
@@ -35,6 +38,26 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Projects />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/new"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">Loading...</div>}>
+                <ProjectCreate />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/edit"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">Loading...</div>}>
+                <ProjectEdit />
+              </Suspense>
             </ProtectedRoute>
           }
         />

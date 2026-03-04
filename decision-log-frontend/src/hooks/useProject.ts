@@ -22,6 +22,7 @@ export interface ProjectDetail {
   current_stage?: { name: string; stage_from?: string; stage_to?: string } | null
   stages: ProjectStageDetail[]
   participant_count: number
+  drive_folder_id?: string | null
   created_at: string
   archived_at?: string | null
   members: Array<{ user_id: string; name: string; email: string; role: string }>
