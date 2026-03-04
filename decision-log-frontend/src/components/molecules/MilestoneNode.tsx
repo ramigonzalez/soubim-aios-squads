@@ -111,11 +111,13 @@ export const MilestoneNode = React.memo(function MilestoneNode({
       <DisciplineCircles disciplines={item.affected_disciplines} max={3} size="sm" />
 
       {isAdmin && onToggleMilestone && (
-        <MilestoneStarToggle
-          isMilestone={item.is_milestone}
-          onToggle={() => onToggleMilestone(item.id)}
-          size="sm"
-        />
+        <span data-export-exclude>
+          <MilestoneStarToggle
+            isMilestone={item.is_milestone}
+            onToggle={() => onToggleMilestone(item.id)}
+            size="sm"
+          />
+        </span>
       )}
     </div>
   )

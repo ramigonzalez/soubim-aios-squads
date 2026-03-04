@@ -6,15 +6,48 @@
  * Shows project name + "Shared view" badge and renders MilestoneTimeline in readOnly mode.
  */
 
+import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { AlertCircle, Loader2, Share2 } from 'lucide-react'
 import { useSharedTimeline } from '../hooks/useSharedLinks'
 import { MilestoneTimeline } from '../components/organisms/MilestoneTimeline'
+import type { ProjectItem, ProjectStage } from '../types/projectItem'
 
 export function SharedMilestoneTimeline() {
   const { token } = useParams<{ token: string }>()
 
   const { data, isLoading, error } = useSharedTimeline(token || '')
+
+  // Map shared data to component types (hooks must be called before early returns)
+  const stages: ProjectStage[] = useMemo(() =>
+    (data?.stages || []).map(s => ({
+      id: s.id,
+      stage_name: s.stage_name,
+      stage_from: s.stage_from,
+      stage_to: s.stage_to,
+    })),
+    [data?.stages]
+  )
+
+  const milestones: ProjectItem[] = useMemo(() =>
+    (data?.milestones || []).map(m => ({
+      id: m.id,
+      statement: m.statement,
+      decision_statement: m.statement,
+      discipline: m.discipline,
+      affected_disciplines: m.affected_disciplines || [],
+      who: m.who,
+      timestamp: m.timestamp,
+      created_at: m.created_at,
+      meeting_date: '',
+      is_done: m.is_done,
+      is_milestone: true,
+      item_type: 'decision' as const,
+      source_type: 'meeting' as const,
+      project_id: data?.project.id || '',
+    })),
+    [data?.milestones, data?.project.id]
+  )
 
   if (!token) {
     return (
@@ -71,13 +104,14 @@ export function SharedMilestoneTimeline() {
             <p className="text-sm text-gray-600">{data.project.description}</p>
           )}
           <p className="text-xs text-gray-400 mt-1">
-            {data.milestones.length} milestone{data.milestones.length !== 1 ? 's' : ''}
+            {milestones.length} milestone{milestones.length !== 1 ? 's' : ''}
           </p>
         </div>
 
-        {/* Timeline (read-only) */}
+        {/* Timeline (read-only, pre-loaded stages) */}
         <MilestoneTimeline
-          milestones={data.milestones}
+          milestones={milestones}
+          preloadedStages={stages}
           readOnly={true}
           isAdmin={false}
         />

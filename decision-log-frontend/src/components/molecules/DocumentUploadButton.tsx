@@ -71,8 +71,8 @@ export function DocumentUploadButton({ projectId, onUploadComplete }: DocumentUp
       <button
         onClick={() => fileRef.current?.click()}
         disabled={status === 'uploading'}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium
-                   border border-gray-200 rounded-md hover:bg-gray-50
+        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium
+                   text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50
                    disabled:opacity-50 disabled:cursor-not-allowed
                    transition-colors"
         aria-label="Upload document"

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.database.models import SharedLink, Project, ProjectItem
+from app.database.models import SharedLink, Project, ProjectItem, ProjectStage
 
 
 router = APIRouter()
@@ -241,6 +241,14 @@ async def view_shared_timeline(
             detail="Project not found",
         )
 
+    # Load stages for the project
+    stages = (
+        db.query(ProjectStage)
+        .filter(ProjectStage.project_id == link.project_id)
+        .order_by(ProjectStage.sort_order)
+        .all()
+    )
+
     # Load milestones (project items marked as milestones)
     milestones = (
         db.query(ProjectItem)
@@ -258,6 +266,17 @@ async def view_shared_timeline(
             "name": project.name,
             "description": project.description,
         },
+        "stages": [
+            {
+                "id": str(s.id),
+                "stage_name": s.stage_name,
+                "stage_from": s.stage_from.isoformat() if s.stage_from else None,
+                "stage_to": s.stage_to.isoformat() if s.stage_to else None,
+                "sort_order": s.sort_order,
+                "is_current": str(project.actual_stage_id) == str(s.id) if project.actual_stage_id else False,
+            }
+            for s in stages
+        ],
         "milestones": [
             {
                 "id": str(m.id),

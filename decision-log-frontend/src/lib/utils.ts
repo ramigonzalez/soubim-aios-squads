@@ -16,15 +16,18 @@ export function cn(...inputs: ClassValue[]) {
  * Format date for display
  * Parses YYYY-MM-DD strings as local dates to avoid timezone shifts
  */
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return '—'
   let d: Date
   if (typeof date === 'string') {
-    // Parse YYYY-MM-DD as local date to avoid timezone shift
-    const [year, month, day] = date.split('-').map(Number)
+    // Strip time portion from ISO datetime (e.g. "2026-01-15T00:00:00" → "2026-01-15")
+    const datePart = date.includes('T') ? date.split('T')[0] : date
+    const [year, month, day] = datePart.split('-').map(Number)
     d = new Date(year, month - 1, day)
   } else {
     d = date
   }
+  if (isNaN(d.getTime())) return '—'
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

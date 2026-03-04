@@ -43,8 +43,18 @@ interface SharedTimelineMilestone {
   affected_disciplines: string[]
 }
 
+export interface SharedTimelineStage {
+  id: string
+  stage_name: string
+  stage_from: string
+  stage_to: string
+  sort_order: number
+  is_current: boolean
+}
+
 export interface SharedTimelineData {
   project: SharedTimelineProject
+  stages: SharedTimelineStage[]
   milestones: SharedTimelineMilestone[]
 }
 

@@ -379,7 +379,7 @@ describe('MilestoneTimeline', () => {
 
   // --- Today marker ---
 
-  it('renders today marker when today falls within timeline range', () => {
+  it('renders today marker when today falls within timeline range', async () => {
     const today = new Date()
     const monthAgo = new Date(today)
     monthAgo.setMonth(monthAgo.getMonth() - 1)
@@ -417,12 +417,38 @@ describe('MilestoneTimeline', () => {
       refetch: vi.fn(),
     })
 
+    // Mock getBoundingClientRect so useTodayPixelPosition can compute a position.
+    // jsdom returns zeros by default, which makes the hook return null.
+    const origGetBCR = HTMLElement.prototype.getBoundingClientRect
+    const origScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')
+    HTMLElement.prototype.getBoundingClientRect = function () {
+      if (this.getAttribute('data-stage-id') === 's1') {
+        return { top: 100, bottom: 300, left: 0, right: 500, width: 500, height: 200, x: 0, y: 100, toJSON: () => ({}) } as DOMRect
+      }
+      if (this.className?.includes?.('relative')) {
+        return { top: 50, bottom: 350, left: 0, right: 500, width: 500, height: 300, x: 0, y: 50, toJSON: () => ({}) } as DOMRect
+      }
+      return origGetBCR.call(this)
+    }
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() { return 300 },
+    })
+
     renderWithProviders(
       <MilestoneTimeline projectId="proj-1" onSelectItem={mockOnSelectItem} />
     )
 
-    expect(screen.getByTestId('today-marker')).toBeInTheDocument()
+    // Wait for the callback ref to trigger re-render and useEffect to compute position
+    const marker = await screen.findByTestId('today-marker')
+    expect(marker).toBeInTheDocument()
     expect(screen.getByText('Today')).toBeInTheDocument()
+
+    // Restore mocks
+    HTMLElement.prototype.getBoundingClientRect = origGetBCR
+    if (origScrollHeight) {
+      Object.defineProperty(HTMLElement.prototype, 'scrollHeight', origScrollHeight)
+    }
   })
 
   // --- Click milestone calls onSelectItem ---

@@ -254,18 +254,12 @@ export function ProjectDetail() {
           <span className="text-gray-900 font-medium">{viewLabel}</span>
         </nav>
 
-        {/* Header with Document Upload (Story 9.5 heading + Story 10.2 upload) */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
-            <p className="text-sm text-gray-600">
-              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <DocumentUploadButton projectId={projectId} onUploadComplete={() => refetch()} />
-          </div>
+        {/* Header (Story 9.5 heading) */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
+          <p className="text-sm text-gray-600">
+            {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
+          </p>
         </div>
 
         {/* Tab Toggle — segmented control (Story 9.5) */}
@@ -314,9 +308,10 @@ export function ProjectDetail() {
           </button>
         </div>
 
-        {/* Share & Export toolbar — milestones view, admin only (Story 8.4) */}
+        {/* Actions toolbar — milestones view, admin only (Story 8.4, 10.2) */}
         {view === 'milestones' && isAdmin && (
           <div className="mb-4 flex items-center gap-2 justify-end">
+            <DocumentUploadButton projectId={projectId} onUploadComplete={() => refetch()} />
             <button
               onClick={() => setShareDialogOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
