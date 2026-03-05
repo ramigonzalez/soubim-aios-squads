@@ -15,7 +15,6 @@ import { useAuthStore } from '../store/authStore'
 import { useArchiveProject } from '../hooks/useProjectMutation'
 import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown, Pencil, Archive } from 'lucide-react'
 import { cn } from '../lib/utils'
-import { ProjectItem } from '../types/projectItem'
 import { exportAsPDF, exportAsJPEG } from '../lib/exportTimeline'
 
 type View = 'milestones' | 'history' | 'digest'
@@ -45,7 +44,7 @@ export function ProjectDetail() {
   const { id: projectId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [view, setView] = useState<View>(getInitialView)
-  const [selectedDecision, setSelectedDecision] = useState<ProjectItem | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
 
@@ -146,6 +145,12 @@ export function ProjectDetail() {
     return filtered
   }, [decisions, disciplines, decisionMakers, meetingTypes, dateFrom, dateTo, searchQuery, sourceTypes, itemTypes])
 
+  // Story 9.7: Derive selectedDecision from decisions array to stay in sync with React Query updates
+  const selectedDecision = useMemo(() => {
+    if (!selectedId) return null
+    return decisions.find(d => d.id === selectedId) || null
+  }, [selectedId, decisions])
+
   /** Update view and persist to URL hash (Story 9.5) */
   const handleViewChange = (newView: View) => {
     setView(newView)
@@ -210,13 +215,11 @@ export function ProjectDetail() {
   }
 
   const handleSelectDecision = (id: string) => {
-    const decision = filteredDecisions.find(d => d.id === id)
-    setSelectedDecision(decision || null)
+    setSelectedId(id)
   }
 
   const handleSelectMilestone = (id: string) => {
-    const decision = decisions.find(d => d.id === id)
-    setSelectedDecision(decision || null)
+    setSelectedId(id)
   }
 
   // Story 8.4: Export handlers
@@ -461,7 +464,7 @@ export function ProjectDetail() {
         {/* Drilldown Modal (Stories 3.7, 8.2) */}
         <DrilldownModal
           decision={selectedDecision}
-          onClose={() => setSelectedDecision(null)}
+          onClose={() => setSelectedId(null)}
           onToggleMilestone={handleToggleMilestone}
           isAdmin={isAdmin}
         />
