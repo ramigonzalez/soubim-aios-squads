@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { Project } from '../../types/project'
+import StageScheduleBuilder, { StageRow } from './StageScheduleBuilder'
+import ParticipantRoster, { ParticipantRow } from './ParticipantRoster'
 
-interface ProjectFormData {
+export interface ProjectFormData {
   name: string
   description: string
   project_type: string
   drive_folder_id?: string
+  stages: StageRow[]
+  participants: ParticipantRow[]
 }
 
 interface ProjectFormProps {
-  initialData?: Partial<Project>
+  initialData?: Partial<Project> & { stages?: StageRow[]; participants?: ParticipantRow[] }
   onSubmit: (data: ProjectFormData) => void
   onCancel?: () => void
   isLoading?: boolean
@@ -19,7 +23,7 @@ interface ProjectFormProps {
  * Project create/edit form component.
  *
  * Story 10.3: Includes optional Google Drive Folder ID field
- * for configuring automatic document monitoring.
+ * Story 6.5: Integrated StageScheduleBuilder and ParticipantRoster sections
  */
 export function ProjectForm({
   initialData,
@@ -31,6 +35,8 @@ export function ProjectForm({
   const [description, setDescription] = useState(initialData?.description || '')
   const [projectType, setProjectType] = useState(initialData?.project_type || '')
   const [driveFolderId, setDriveFolderId] = useState(initialData?.drive_folder_id || '')
+  const [stages, setStages] = useState<StageRow[]>(initialData?.stages || [])
+  const [participants, setParticipants] = useState<ParticipantRow[]>(initialData?.participants || [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,6 +45,8 @@ export function ProjectForm({
       description: description.trim(),
       project_type: projectType.trim() || undefined as unknown as string,
       drive_folder_id: driveFolderId.trim() || undefined,
+      stages,
+      participants,
     })
   }
 
@@ -116,6 +124,16 @@ export function ProjectForm({
             Paste the folder ID from Google Drive to enable automatic document monitoring
           </p>
         </div>
+      </div>
+
+      {/* Stage Schedule (Story 6.5) */}
+      <div className="border-t border-gray-200 pt-6">
+        <StageScheduleBuilder stages={stages} onChange={setStages} />
+      </div>
+
+      {/* Participants (Story 6.5) */}
+      <div className="border-t border-gray-200 pt-6">
+        <ParticipantRoster participants={participants} onChange={setParticipants} />
       </div>
 
       {/* Actions */}

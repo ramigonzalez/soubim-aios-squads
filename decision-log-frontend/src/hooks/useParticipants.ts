@@ -17,10 +17,10 @@ export function useParticipants(projectId: string) {
   return useQuery<Participant[]>(
     ['participants', projectId],
     async () => {
-      const response = await api.get<Participant[]>(
+      const response = await api.get<{ participants: Participant[] }>(
         `/projects/${projectId}/participants`
       )
-      return response.data
+      return response.data.participants
     },
     {
       staleTime: 10 * 60 * 1000, // 10 min — roster changes rarely

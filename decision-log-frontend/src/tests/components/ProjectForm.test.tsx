@@ -1,7 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from 'react-query'
 import { ProjectForm } from '../../components/organisms/ProjectForm'
+
+const createQueryClient = () => new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+})
+
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = createQueryClient()
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  )
+}
 
 describe('ProjectForm Component', () => {
   const mockOnSubmit = vi.fn()
@@ -12,7 +26,7 @@ describe('ProjectForm Component', () => {
   })
 
   it('renders all form fields', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
 
     expect(screen.getByLabelText('Project Name')).toBeInTheDocument()
     expect(screen.getByLabelText('Description')).toBeInTheDocument()
@@ -21,25 +35,25 @@ describe('ProjectForm Component', () => {
   })
 
   it('renders Google Drive Folder ID help text', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
     expect(
       screen.getByText(/Paste the folder ID from Google Drive/)
     ).toBeInTheDocument()
   })
 
   it('renders Google Drive Folder ID placeholder', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
     const input = screen.getByLabelText('Google Drive Folder ID')
     expect(input).toHaveAttribute('placeholder', 'e.g., 1a2b3c4d5e6f7g8h9i0j')
   })
 
   it('shows "Create Project" button when no initialData', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
     expect(screen.getByText('Create Project')).toBeInTheDocument()
   })
 
   it('shows "Update Project" button when initialData has id', () => {
-    render(
+    renderWithProviders(
       <ProjectForm
         initialData={{ id: 'proj-1', name: 'Test' }}
         onSubmit={mockOnSubmit}
@@ -49,12 +63,12 @@ describe('ProjectForm Component', () => {
   })
 
   it('shows "Saving..." button when isLoading', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} isLoading />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} isLoading />)
     expect(screen.getByText('Saving...')).toBeInTheDocument()
   })
 
   it('pre-fills fields from initialData', () => {
-    render(
+    renderWithProviders(
       <ProjectForm
         initialData={{
           name: 'Test Project',
@@ -74,7 +88,7 @@ describe('ProjectForm Component', () => {
 
   it('submits form data including drive_folder_id', async () => {
     const user = userEvent.setup()
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
 
     await user.type(screen.getByLabelText('Project Name'), 'New Project')
     await user.type(screen.getByLabelText('Description'), 'Some description')
@@ -92,7 +106,7 @@ describe('ProjectForm Component', () => {
 
   it('submits undefined drive_folder_id when empty', async () => {
     const user = userEvent.setup()
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
 
     await user.type(screen.getByLabelText('Project Name'), 'Project')
     await user.click(screen.getByText('Create Project'))
@@ -105,25 +119,46 @@ describe('ProjectForm Component', () => {
   })
 
   it('disables submit button when name is empty', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
     const button = screen.getByText('Create Project')
     expect(button).toBeDisabled()
   })
 
   it('renders cancel button when onCancel provided', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
     expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
 
   it('does not render cancel button when onCancel not provided', () => {
-    render(<ProjectForm onSubmit={mockOnSubmit} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
     expect(screen.queryByText('Cancel')).not.toBeInTheDocument()
   })
 
   it('calls onCancel when cancel is clicked', async () => {
     const user = userEvent.setup()
-    render(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />)
     await user.click(screen.getByText('Cancel'))
     expect(mockOnCancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders stage schedule and participant sections', () => {
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
+    expect(screen.getByText('Stage Schedule')).toBeInTheDocument()
+    expect(screen.getByText('Participants')).toBeInTheDocument()
+  })
+
+  it('includes stages and participants in submit payload', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
+
+    await user.type(screen.getByLabelText('Project Name'), 'Test')
+    await user.click(screen.getByText('Create Project'))
+
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stages: [],
+        participants: [],
+      })
+    )
   })
 })
