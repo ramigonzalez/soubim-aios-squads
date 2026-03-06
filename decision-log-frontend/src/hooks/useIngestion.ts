@@ -8,6 +8,12 @@ export function useIngestion() {
   })
 }
 
+export function useIngestionHistory() {
+  return useQuery('ingestion-history', ingestionService.getHistory, {
+    staleTime: 30_000,
+  })
+}
+
 export function usePendingCount() {
   return useQuery('ingestion-pending-count', ingestionService.getPendingCount, {
     staleTime: 30_000,

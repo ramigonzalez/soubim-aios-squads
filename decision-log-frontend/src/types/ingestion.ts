@@ -1,5 +1,5 @@
 export type SourceType = 'meeting' | 'email' | 'document'
-export type IngestionStatus = 'pending' | 'approved' | 'rejected' | 'processed'
+export type IngestionStatus = 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
 
 export interface BaseSource {
   id: string
@@ -10,6 +10,12 @@ export interface BaseSource {
   ai_summary: string | null
   included: boolean
   created_at: string
+  approved_by_name: string | null
+  approved_at: string | null
+  rejected_by_name: string | null
+  rejected_at: string | null
+  extraction_error: string | null
+  extracted_item_count: number
 }
 
 export interface MeetingSource extends BaseSource {
@@ -50,6 +56,11 @@ export interface IngestionResponse {
   pending_count: number
 }
 
+export interface IngestionHistoryResponse {
+  sources: Source[]
+  total: number
+}
+
 export interface BatchActionPayload {
   source_ids: string[]
   action: 'approve' | 'reject'
@@ -58,6 +69,11 @@ export interface BatchActionPayload {
 export interface BatchActionResponse {
   updated: number
   failed: string[]
+}
+
+export interface DeleteSourceResponse {
+  deleted_source_id: string
+  deleted_items_count: number
 }
 
 export interface IngestionFilters {

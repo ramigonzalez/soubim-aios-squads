@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Check, X, RefreshCw, CheckCircle, MinusCircle } from 'lucide-react'
 import IngestionStatusBadge from './IngestionStatusBadge'
 import AISummaryExpander from './AISummaryExpander'
 import { formatDate } from '../../lib/utils'
@@ -8,15 +8,24 @@ interface EmailSourceRowProps {
   source: EmailSource
   selected: boolean
   onToggleSelect: (id: string) => void
-  onToggleInclude: (id: string, included: boolean) => void
+  onApprove?: (id: string) => void
+  onReject?: (id: string) => void
+  onRetry?: (id: string) => void
+  isActionLoading?: boolean
 }
 
 export default function EmailSourceRow({
   source,
   selected,
   onToggleSelect,
-  onToggleInclude,
+  onApprove,
+  onReject,
+  onRetry,
+  isActionLoading,
 }: EmailSourceRowProps) {
+  const isPending = source.status === 'pending'
+  const isFailed = source.status === 'failed'
+
   return (
     <tr className="hover:bg-gray-50 transition-colors duration-100">
       <td className="px-4 py-3">
@@ -52,21 +61,11 @@ export default function EmailSourceRow({
         <IngestionStatusBadge status={source.status} />
       </td>
       <td className="px-4 py-3">
-        <button
-          role="switch"
-          aria-checked={source.included}
-          aria-label={`Include ${source.id}`}
-          onClick={() => onToggleInclude(source.id, !source.included)}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            source.included ? 'bg-blue-600' : 'bg-gray-200'
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-              source.included ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        {source.included ? (
+          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Included" />
+        ) : (
+          <MinusCircle className="w-4 h-4 text-gray-300" aria-label="Not included" />
+        )}
       </td>
       <td className="px-4 py-3">
         <AISummaryExpander summary={source.ai_summary} />
@@ -83,6 +82,41 @@ export default function EmailSourceRow({
           </a>
         ) : (
           <span className="text-gray-400">--</span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        {isPending && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onApprove?.(source.id)}
+              disabled={isActionLoading}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors disabled:opacity-50"
+              aria-label={`Approve ${source.subject}`}
+              title="Approve"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onReject?.(source.id)}
+              disabled={isActionLoading}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors disabled:opacity-50"
+              aria-label={`Reject ${source.subject}`}
+              title="Reject"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {isFailed && (
+          <button
+            onClick={() => onRetry?.(source.id)}
+            disabled={isActionLoading}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 transition-colors disabled:opacity-50"
+            aria-label={`Retry ${source.subject}`}
+            title="Retry"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         )}
       </td>
     </tr>

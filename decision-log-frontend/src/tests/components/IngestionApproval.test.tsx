@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, within, waitFor } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -8,35 +8,57 @@ import Ingestion from '../../pages/Ingestion'
 import { useIngestionStore } from '../../store/ingestionStore'
 import { useAuthStore } from '../../store/authStore'
 import { formatFileSize } from '../../lib/utils'
-import type { MeetingSource, EmailSource, DocumentSource, IngestionResponse } from '../../types/ingestion'
+import type { MeetingSource, EmailSource, DocumentSource, IngestionResponse, IngestionHistoryResponse } from '../../types/ingestion'
 
 // Mock the hooks
 vi.mock('../../hooks/useIngestion', () => ({
   useIngestion: vi.fn(),
+  useIngestionHistory: vi.fn(),
   useFilteredSources: vi.fn(),
 }))
 
 vi.mock('../../hooks/useIngestionMutation', () => ({
-  useToggleInclude: vi.fn(),
   useBatchAction: vi.fn(),
+  useApproveSource: vi.fn(),
+  useRejectSource: vi.fn(),
+  useRetrySource: vi.fn(),
+  useDeleteSource: vi.fn(),
 }))
 
 vi.mock('../../services/ingestionService', () => ({
   ingestionService: {
     getSources: vi.fn(),
-    updateSource: vi.fn(),
+    getHistory: vi.fn(),
+    approveSource: vi.fn(),
+    rejectSource: vi.fn(),
+    retrySource: vi.fn(),
+    deleteSource: vi.fn(),
     batchAction: vi.fn(),
     getPendingCount: vi.fn(),
   },
 }))
 
-import { useIngestion, useFilteredSources } from '../../hooks/useIngestion'
-import { useToggleInclude, useBatchAction } from '../../hooks/useIngestionMutation'
+import { useIngestion, useIngestionHistory, useFilteredSources } from '../../hooks/useIngestion'
+import { useBatchAction, useApproveSource, useRejectSource, useRetrySource, useDeleteSource } from '../../hooks/useIngestionMutation'
 
 const mockUseIngestion = useIngestion as any
+const mockUseIngestionHistory = useIngestionHistory as any
 const mockUseFilteredSources = useFilteredSources as any
-const mockUseToggleInclude = useToggleInclude as any
 const mockUseBatchAction = useBatchAction as any
+const mockUseApproveSource = useApproveSource as any
+const mockUseRejectSource = useRejectSource as any
+const mockUseRetrySource = useRetrySource as any
+const mockUseDeleteSource = useDeleteSource as any
+
+// --- Shared base fields ---
+const baseFields = {
+  approved_by_name: null as string | null,
+  approved_at: null as string | null,
+  rejected_by_name: null as string | null,
+  rejected_at: null as string | null,
+  extraction_error: null as string | null,
+  extracted_item_count: 0,
+}
 
 // --- Test data ---
 
@@ -50,10 +72,12 @@ const meetingSource: MeetingSource = {
   included: false,
   created_at: '2026-02-18T09:00:00Z',
   call_id: 'call_xyz789',
+  title: 'Facade Material Review',
   meeting_date: '2026-02-18T09:00:00Z',
   meeting_type: 'Design Review',
   source_label: 'Fireflies',
   transcript_url: 'https://app.fireflies.ai/view/xyz789',
+  ...baseFields,
 }
 
 const emailSource: EmailSource = {
@@ -71,6 +95,7 @@ const emailSource: EmailSource = {
   from_address: 'engineer@firm.com',
   recipient_count: 4,
   thread_url: 'https://mail.example.com/thread/abc',
+  ...baseFields,
 }
 
 const documentSource: DocumentSource = {
@@ -88,6 +113,25 @@ const documentSource: DocumentSource = {
   file_type: 'PDF',
   file_size_bytes: 2516582,
   file_url: 'https://storage.example.com/docs/facade-spec-v3.pdf',
+  ...baseFields,
+}
+
+const failedMeetingSource: MeetingSource = {
+  ...meetingSource,
+  id: 'src_004',
+  status: 'failed',
+  included: true,
+  extraction_error: 'Claude API timeout',
+}
+
+const processedMeetingSource: MeetingSource = {
+  ...meetingSource,
+  id: 'src_005',
+  status: 'processed',
+  included: true,
+  approved_by_name: 'Gabriela Souza',
+  approved_at: '2026-02-18T10:00:00Z',
+  extracted_item_count: 5,
 }
 
 const allSources = [meetingSource, emailSource, documentSource]
@@ -96,6 +140,11 @@ const mockResponse: IngestionResponse = {
   sources: allSources,
   total: 3,
   pending_count: 1,
+}
+
+const mockHistoryResponse: IngestionHistoryResponse = {
+  sources: [processedMeetingSource, { ...documentSource, rejected_by_name: 'Gabriela Souza', rejected_at: '2026-02-17T15:00:00Z' }, failedMeetingSource],
+  total: 3,
 }
 
 // --- Helpers ---
@@ -114,14 +163,27 @@ function setupMocks(overrides: Partial<{
   isLoading: boolean
   error: Error | null
   filteredSources: any[]
+  historyData: IngestionHistoryResponse | undefined
+  historyLoading: boolean
+  historyError: Error | null
 }> = {}) {
-  const mutateFn = vi.fn()
   const batchMutateFn = vi.fn()
+  const approveMutateFn = vi.fn()
+  const rejectMutateFn = vi.fn()
+  const retryMutateFn = vi.fn()
+  const deleteMutateFn = vi.fn()
 
   mockUseIngestion.mockReturnValue({
     data: overrides.data !== undefined ? overrides.data : mockResponse,
     isLoading: overrides.isLoading ?? false,
     error: overrides.error ?? null,
+    refetch: vi.fn(),
+  })
+
+  mockUseIngestionHistory.mockReturnValue({
+    data: overrides.historyData !== undefined ? overrides.historyData : mockHistoryResponse,
+    isLoading: overrides.historyLoading ?? false,
+    error: overrides.historyError ?? null,
     refetch: vi.fn(),
   })
 
@@ -131,17 +193,32 @@ function setupMocks(overrides: Partial<{
       : overrides.data?.sources ?? allSources
   )
 
-  mockUseToggleInclude.mockReturnValue({
-    mutate: mutateFn,
-    isLoading: false,
-  })
-
   mockUseBatchAction.mockReturnValue({
     mutate: batchMutateFn,
     isLoading: false,
   })
 
-  return { mutateFn, batchMutateFn }
+  mockUseApproveSource.mockReturnValue({
+    mutate: approveMutateFn,
+    isLoading: false,
+  })
+
+  mockUseRejectSource.mockReturnValue({
+    mutate: rejectMutateFn,
+    isLoading: false,
+  })
+
+  mockUseRetrySource.mockReturnValue({
+    mutate: retryMutateFn,
+    isLoading: false,
+  })
+
+  mockUseDeleteSource.mockReturnValue({
+    mutate: deleteMutateFn,
+    isLoading: false,
+  })
+
+  return { batchMutateFn, approveMutateFn, rejectMutateFn, retryMutateFn, deleteMutateFn }
 }
 
 function renderIngestionApproval() {
@@ -179,8 +256,10 @@ describe('IngestionApproval', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useIngestionStore.setState({
+      activeTab: 'pending',
       selectedIds: new Set(),
       filters: { project_id: null, source_type: null, date_from: null, date_to: null },
+      deleteConfirmId: null,
     })
   })
 
@@ -250,19 +329,17 @@ describe('IngestionApproval', () => {
     })
   })
 
-  describe('Include toggle', () => {
-    it('calls mutate when include toggle is clicked', async () => {
-      const user = userEvent.setup()
-      const { mutateFn } = setupMocks()
+  describe('Read-only included indicator', () => {
+    it('shows read-only included/not-included icons (no toggle)', () => {
+      setupMocks()
       renderIngestionApproval()
 
-      // Toggle the meeting source (currently not included)
-      const toggles = screen.getAllByRole('switch')
-      await user.click(toggles[0])
-
-      expect(mutateFn).toHaveBeenCalledWith(
-        { id: 'src_001', included: true }
-      )
+      // Meeting (included=false) should show "Not included"
+      expect(screen.getAllByLabelText('Not included').length).toBeGreaterThan(0)
+      // Email (included=true) should show "Included"
+      expect(screen.getAllByLabelText('Included').length).toBeGreaterThan(0)
+      // No toggle switches should exist
+      expect(screen.queryAllByRole('switch').length).toBe(0)
     })
   })
 
@@ -344,6 +421,176 @@ describe('IngestionApproval', () => {
     })
   })
 
+  describe('Per-row approve/reject', () => {
+    it('shows approve and reject buttons for pending sources', () => {
+      setupMocks()
+      renderIngestionApproval()
+
+      // Meeting source is pending - should have approve/reject
+      expect(screen.getByLabelText('Approve Facade Material Review')).toBeInTheDocument()
+      expect(screen.getByLabelText('Reject Facade Material Review')).toBeInTheDocument()
+    })
+
+    it('does not show approve/reject buttons for non-pending sources', () => {
+      setupMocks()
+      renderIngestionApproval()
+
+      // Email source is 'approved' - should NOT have action buttons
+      expect(screen.queryByLabelText('Approve RE: Structural Load Calculations')).not.toBeInTheDocument()
+      // Document source is 'rejected' - should NOT have action buttons
+      expect(screen.queryByLabelText('Approve facade-spec-v3.pdf')).not.toBeInTheDocument()
+    })
+
+    it('calls approve mutation when approve button is clicked', async () => {
+      const user = userEvent.setup()
+      const { approveMutateFn } = setupMocks()
+      renderIngestionApproval()
+
+      await user.click(screen.getByLabelText('Approve Facade Material Review'))
+      expect(approveMutateFn).toHaveBeenCalledWith('src_001')
+    })
+
+    it('calls reject mutation when reject button is clicked', async () => {
+      const user = userEvent.setup()
+      const { rejectMutateFn } = setupMocks()
+      renderIngestionApproval()
+
+      await user.click(screen.getByLabelText('Reject Facade Material Review'))
+      expect(rejectMutateFn).toHaveBeenCalledWith('src_001')
+    })
+  })
+
+  describe('Tabs', () => {
+    it('renders Pending and History tabs', () => {
+      setupMocks()
+      renderIngestionApproval()
+
+      expect(screen.getByText('Pending')).toBeInTheDocument()
+      expect(screen.getByText('History')).toBeInTheDocument()
+    })
+
+    it('shows pending count badge on Pending tab', () => {
+      setupMocks()
+      renderIngestionApproval()
+
+      // The pending tab badge should show count "1" from mockResponse
+      const pendingTab = screen.getByText('Pending').closest('button')!
+      expect(within(pendingTab).getByText('1')).toBeInTheDocument()
+    })
+
+    it('switches to history tab on click', async () => {
+      const user = userEvent.setup()
+      setupMocks()
+      renderIngestionApproval()
+
+      await user.click(screen.getByText('History'))
+
+      const state = useIngestionStore.getState()
+      expect(state.activeTab).toBe('history')
+    })
+
+    it('clears selection when switching tabs', async () => {
+      const user = userEvent.setup()
+      setupMocks()
+      useIngestionStore.setState({ selectedIds: new Set(['src_001']) })
+      renderIngestionApproval()
+
+      await user.click(screen.getByText('History'))
+
+      const state = useIngestionStore.getState()
+      expect(state.selectedIds.size).toBe(0)
+    })
+  })
+
+  describe('History tab', () => {
+    it('renders history table with correct headers', async () => {
+      const user = userEvent.setup()
+      setupMocks()
+      // Set to history tab
+      useIngestionStore.setState({ activeTab: 'history' })
+      // Need useFilteredSources to return history data
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      expect(screen.getByText('Source')).toBeInTheDocument()
+      expect(screen.getByText('Reviewed By')).toBeInTheDocument()
+      expect(screen.getByText('Reviewed At')).toBeInTheDocument()
+      expect(screen.getByText('Items')).toBeInTheDocument()
+    })
+
+    it('shows extracted item count for processed sources', () => {
+      setupMocks()
+      useIngestionStore.setState({ activeTab: 'history' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      expect(screen.getByText('5 items')).toBeInTheDocument()
+    })
+
+    it('shows reviewer name for history items', () => {
+      setupMocks()
+      useIngestionStore.setState({ activeTab: 'history' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      expect(screen.getAllByText('Gabriela Souza').length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Delete confirmation', () => {
+    it('shows delete confirmation dialog when delete button clicked', async () => {
+      const user = userEvent.setup()
+      setupMocks()
+      useIngestionStore.setState({ activeTab: 'history' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      // Find delete buttons — they should be in the history view
+      const deleteButtons = screen.getAllByTitle('Delete source and extracted items')
+      await user.click(deleteButtons[0])
+
+      expect(screen.getByText('Delete Source')).toBeInTheDocument()
+      expect(screen.getByText(/This action cannot be undone/)).toBeInTheDocument()
+    })
+
+    it('cancel closes delete dialog', async () => {
+      const user = userEvent.setup()
+      setupMocks()
+      useIngestionStore.setState({ activeTab: 'history', deleteConfirmId: 'src_005' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      await user.click(screen.getByText('Cancel'))
+
+      const state = useIngestionStore.getState()
+      expect(state.deleteConfirmId).toBeNull()
+    })
+
+    it('calls delete mutation when confirmed', async () => {
+      const user = userEvent.setup()
+      const { deleteMutateFn } = setupMocks()
+      useIngestionStore.setState({ activeTab: 'history', deleteConfirmId: 'src_005' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      await user.click(screen.getByText('Delete'))
+
+      expect(deleteMutateFn).toHaveBeenCalledWith('src_005', expect.anything())
+    })
+  })
+
+  describe('Retry for failed sources', () => {
+    it('shows retry button for failed sources in history', () => {
+      setupMocks()
+      useIngestionStore.setState({ activeTab: 'history' })
+      mockUseFilteredSources.mockReturnValue(mockHistoryResponse.sources)
+      renderIngestionApproval()
+
+      const retryButtons = screen.getAllByTitle('Retry')
+      expect(retryButtons.length).toBeGreaterThan(0)
+    })
+  })
+
   describe('Filters', () => {
     it('source type filter is rendered with All, Meeting, Email, Document buttons', () => {
       setupMocks()
@@ -372,7 +619,6 @@ describe('IngestionApproval', () => {
 
       const select = screen.getByLabelText('Filter by project') as HTMLSelectElement
       expect(select).toBeInTheDocument()
-      // Check that the options exist in the dropdown (use within to scope)
       const options = within(select).getAllByRole('option')
       const optionTexts = options.map((o) => o.textContent)
       expect(optionTexts).toContain('Soubim Tower')
@@ -382,7 +628,6 @@ describe('IngestionApproval', () => {
     it('Clear All Filters resets all filters', async () => {
       const user = userEvent.setup()
       setupMocks()
-      // Set a filter first
       useIngestionStore.setState({
         filters: { project_id: 'proj_001', source_type: 'meeting', date_from: null, date_to: null },
       })
@@ -413,7 +658,6 @@ describe('IngestionApproval', () => {
       setupMocks()
       renderIngestionApproval()
 
-      // The meeting source has a long summary (>80 chars)
       const showMore = screen.getByText('Show more')
       expect(showMore).toBeInTheDocument()
 
@@ -481,9 +725,18 @@ describe('IngestionApproval', () => {
         error: new Error('fail'),
         refetch: refetchFn,
       })
+      mockUseIngestionHistory.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: vi.fn(),
+      })
       mockUseFilteredSources.mockReturnValue([])
-      mockUseToggleInclude.mockReturnValue({ mutate: vi.fn(), isLoading: false })
       mockUseBatchAction.mockReturnValue({ mutate: vi.fn(), isLoading: false })
+      mockUseApproveSource.mockReturnValue({ mutate: vi.fn(), isLoading: false })
+      mockUseRejectSource.mockReturnValue({ mutate: vi.fn(), isLoading: false })
+      mockUseRetrySource.mockReturnValue({ mutate: vi.fn(), isLoading: false })
+      mockUseDeleteSource.mockReturnValue({ mutate: vi.fn(), isLoading: false })
 
       renderIngestionApproval()
       await user.click(screen.getByText('Retry'))
@@ -557,13 +810,13 @@ describe('IngestionApproval', () => {
       expect(container.querySelectorAll('th[scope="col"]').length).toBeGreaterThan(0)
     })
 
-    it('include toggles have aria-label', () => {
+    it('included indicators have aria-label', () => {
       setupMocks()
       renderIngestionApproval()
 
-      expect(screen.getByLabelText('Include src_001')).toBeInTheDocument()
-      expect(screen.getByLabelText('Include src_002')).toBeInTheDocument()
-      expect(screen.getByLabelText('Include src_003')).toBeInTheDocument()
+      // Read-only indicators use Included/Not included aria-labels
+      expect(screen.getAllByLabelText('Included').length).toBeGreaterThan(0)
+      expect(screen.getAllByLabelText('Not included').length).toBeGreaterThan(0)
     })
 
     it('bulk action bar has aria-live attribute', () => {
