@@ -32,6 +32,10 @@ def process_approved_source(source_id: str) -> None:
             return
         if source.ingestion_status != "approved":
             return
+        # Story 7.9: Defense-in-depth — included must be True before processing
+        if not source.included:
+            logger.warning(f"Source {source_id} is approved but included=False, skipping")
+            return
 
         participants = (
             db.query(ProjectParticipant)
@@ -109,5 +113,15 @@ def process_approved_source(source_id: str) -> None:
     except Exception as e:
         logger.error(f"Error processing source {source_id}: {e}")
         db.rollback()
+        # Story 7.9: Set failed status so UI can show error + retry
+        try:
+            source = db.query(Source).filter(Source.id == source_id).first()
+            if source:
+                source.ingestion_status = "failed"
+                source.extraction_error = str(e)[:2000]
+                db.commit()
+        except Exception as status_err:
+            logger.error(f"Failed to set failed status for source {source_id}: {status_err}")
+            db.rollback()
     finally:
         db.close()

@@ -210,6 +210,9 @@ class Source(Base):
     ai_summary = Column(Text)
     approved_by = Column(GUID(), ForeignKey("users.id"))
     approved_at = Column(DateTime)
+    rejected_by = Column(GUID(), ForeignKey("users.id"))
+    rejected_at = Column(DateTime)
+    extraction_error = Column(Text)
     raw_content = Column(Text)
 
     # Meeting-specific
@@ -252,7 +255,7 @@ class Source(Base):
             name="ck_source_type_valid",
         ),
         CheckConstraint(
-            "ingestion_status IN ('pending', 'approved', 'rejected', 'processed')",
+            "ingestion_status IN ('pending', 'approved', 'rejected', 'processed', 'failed')",
             name="ck_ingestion_status_valid",
         ),
         Index("idx_sources_project", "project_id"),

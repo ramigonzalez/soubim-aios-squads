@@ -8,22 +8,19 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class IngestionUpdate(BaseModel):
-    """Request model for updating source ingestion status or included toggle."""
+    """Request model for updating source ingestion status.
 
-    ingestion_status: Optional[str] = Field(
-        None,
+    Story 7.9: `included` is now auto-set by approve/reject — no longer independently toggleable.
+    """
+
+    ingestion_status: str = Field(
+        ...,
         description="New ingestion status (approved or rejected)",
-    )
-    included: Optional[bool] = Field(
-        None,
-        description="Whether source is included for processing",
     )
 
     @field_validator("ingestion_status")
     @classmethod
-    def validate_status(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
+    def validate_status(cls, v: str) -> str:
         allowed = {"approved", "rejected"}
         if v not in allowed:
             raise ValueError(f"ingestion_status must be one of {allowed}")
