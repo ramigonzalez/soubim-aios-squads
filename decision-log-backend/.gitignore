@@ -49,7 +49,6 @@ htmlcov/
 .tox/
 
 # Alembic
-alembic/versions/*
 !alembic/versions/.gitkeep
 
 # Logs
