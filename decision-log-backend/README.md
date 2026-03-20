@@ -1,6 +1,6 @@
 # DecisionLog Backend
 
-FastAPI backend for DecisionLog - AI-Powered Architectural Decision System.
+FastAPI backend for DecisionLog - AI-Powered Architectural Decision System
 
 ## Setup
 
