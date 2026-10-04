@@ -32,6 +32,7 @@ def main() -> int:
     with open(args.items_json, encoding="utf-8") as f:
         data = json.load(f)
     items = data["items"] if isinstance(data, dict) else data
+    meeting_summary = data.get("meeting_summary") if isinstance(data, dict) else None
 
     db = SessionLocal()
     try:
@@ -47,9 +48,12 @@ def main() -> int:
                 return 1
             approver_id = user.id
 
-        created, skipped = import_items(db, source, items, approver_id=approver_id, replace=args.replace)
+        created, skipped = import_items(
+            db, source, items, approver_id=approver_id, replace=args.replace, meeting_summary=meeting_summary
+        )
         by_type = collections.Counter(i.item_type for i in created)
         print(f"{len(created)} items ({dict(by_type)}), {skipped} skipped by validation -> source '{source.title}'")
+        print(f"meeting summary: {'stored' if meeting_summary else 'none in file'}")
         if args.dry_run:
             db.rollback()
             print("dry run: rolled back")

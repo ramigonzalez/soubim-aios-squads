@@ -66,12 +66,14 @@ def _item_to_response(item: ProjectItem) -> dict:
             title=item.source.title,
             type=item.source.source_type,
             occurred_at=item.source.occurred_at.isoformat() if item.source.occurred_at else None,
+            summary=item.source.ai_summary,
         ).model_dump()
 
     return {
         "id": str(item.id),
         "project_id": str(item.project_id),
         "statement": item.statement or item.decision_statement,
+        "title": item.title,
         "who": item.who,
         "timestamp": item.timestamp,
         "item_type": item.item_type,

@@ -75,7 +75,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
           <div className="flex justify-between items-start">
             <div className="flex items-start gap-2 flex-1 min-w-0 pr-4">
               <h2 id="drilldown-modal-title" className="text-2xl font-bold text-gray-900 leading-tight flex-1 min-w-0">
-                {decision.statement}
+                {decision.title || decision.statement}
               </h2>
               {/* Story 8.2: Milestone star toggle */}
               {isAdmin && onToggleMilestone && (
@@ -201,6 +201,18 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
         <div className="p-6">
           {activeTab === 'overview' && (
             <div className="space-y-4">
+              {/* Description Card — full statement when the header shows the short title (Story 7.12) */}
+              {decision.title && (
+                <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</h3>
+                  </div>
+                  <div className="px-4 py-3">
+                    <p className="text-sm text-gray-700 leading-relaxed">{decision.statement}</p>
+                  </div>
+                </section>
+              )}
+
               {/* Rationale Card */}
               <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                 <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
@@ -304,12 +316,30 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
 
           {activeTab === 'transcript' && (
             <div className="space-y-2">
-              <p className="text-gray-600 text-sm">Meeting transcript and discussion notes would appear here.</p>
-              <div className="bg-amber-50 border-l-4 border-amber-200 p-4 mt-4">
-                <p className="text-sm text-gray-700">
-                  Key discussion point: {decision.statement}
-                </p>
-              </div>
+              {decision.source_excerpt ? (
+                <>
+                  <p className="text-gray-600 text-sm">Transcript lines this item was extracted from:</p>
+                  <div className="rounded-lg border-l-4 border-amber-300 bg-amber-50 divide-y divide-amber-100">
+                    {parseExcerpt(decision.source_excerpt).map((line, i) => (
+                      <div key={i} className="px-4 py-2.5 text-sm">
+                        {line.speaker ? (
+                          <>
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-mono tabular-nums text-xs text-gray-500">{line.time}</span>
+                              <span className="font-semibold text-gray-800">{line.speaker}</span>
+                            </div>
+                            <p className="text-gray-700 mt-0.5">{line.text}</p>
+                          </>
+                        ) : (
+                          <p className="text-gray-700">{line.text}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-600 text-sm">No transcript excerpt for this item.</p>
+              )}
             </div>
           )}
 
@@ -325,4 +355,25 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
       </div>
     </div>
   )
+}
+
+interface ExcerptLine {
+  time?: string
+  speaker?: string
+  text: string
+}
+
+/**
+ * Split a source excerpt ("M:SS - Speaker: text", one turn per line) into turns.
+ * Lines that don't match the pattern are kept as plain text.
+ */
+function parseExcerpt(excerpt: string): ExcerptLine[] {
+  return excerpt
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => {
+      const m = l.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*([^:]+?):\s*(.*)$/)
+      return m ? { time: m[1], speaker: m[2], text: m[3] } : { text: l }
+    })
 }

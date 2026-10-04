@@ -30,7 +30,9 @@ def meeting_source(db_session: Session) -> Source:
 
 DECISION = {
     "item_type": "decision",
+    "title": "Cortes gerais só na implantação",
     "statement": "Separate general sections from detail sheets",
+    "source_excerpt": "10:55 - Debora: Os cortes gerais podiam ficar só na implantação.\n11:02 - Gabriela: Pode ser.",
     "who": "Gabriela Cavalheiro",
     "timestamp": "00:08:45",
     "affected_disciplines": ["architecture", "client"],
@@ -142,3 +144,27 @@ class TestImportItems:
         meeting_source.source_type = "email"
         with pytest.raises(ValueError, match="not importable"):
             import_items(db_session, meeting_source, [DECISION])
+
+    def test_keeps_title_and_source_excerpt(self, db_session: Session, meeting_source: Source):
+        import_items(db_session, meeting_source, [DECISION, ACTION])
+        db_session.commit()
+
+        decision = db_session.query(ProjectItem).filter(ProjectItem.item_type == "decision").one()
+        assert decision.title == "Cortes gerais só na implantação"
+        assert decision.source_excerpt.startswith("10:55 - Debora:")
+        action = db_session.query(ProjectItem).filter(ProjectItem.item_type == "action_item").one()
+        assert action.title is None
+        assert action.source_excerpt is None
+
+    def test_overlong_title_is_truncated(self, db_session: Session, meeting_source: Source):
+        created, _ = import_items(db_session, meeting_source, [{**TOPIC, "title": "x" * 300}])
+        assert len(created[0].title) == 255
+
+    def test_meeting_summary_stored_on_source(self, db_session: Session, meeting_source: Source):
+        import_items(db_session, meeting_source, [TOPIC], meeting_summary="  Reunião quinzenal de projeto.  ")
+        assert meeting_source.ai_summary == "Reunião quinzenal de projeto."
+
+    def test_missing_summary_keeps_existing_one(self, db_session: Session, meeting_source: Source):
+        meeting_source.ai_summary = "Resumo anterior"
+        import_items(db_session, meeting_source, [TOPIC], meeting_summary=None)
+        assert meeting_source.ai_summary == "Resumo anterior"

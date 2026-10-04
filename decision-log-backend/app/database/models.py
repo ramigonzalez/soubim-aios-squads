@@ -310,6 +310,7 @@ class ProjectItem(Base):
 
     # Core item data
     statement = Column(Text, nullable=False)  # V2 primary field
+    title = Column(String(255))  # Story 7.12: short headline; statement holds the full description
     decision_statement = Column(Text)  # V1 backward compat (auto-synced from statement)
     who = Column(String(255), nullable=False)
     timestamp = Column(String(20))  # Meeting timestamp — nullable for non-meeting sources

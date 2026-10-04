@@ -79,12 +79,14 @@ export interface SourceInfo {
   title: string
   type: SourceType
   occurred_at: string
+  summary?: string | null  // Story 7.12: meeting summary
 }
 
 export interface ProjectItem {
   id: string
   project_id: string
   statement: string
+  title?: string | null  // Story 7.12: short headline; statement is the full description
   who: string
   timestamp?: string
   item_type: ItemType

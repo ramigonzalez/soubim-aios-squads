@@ -49,6 +49,8 @@ def build_project_item(source: Source, item: Dict[str, Any]) -> ProjectItem:
         item_type=item_type,
         statement=item["statement"],
         decision_statement=item["statement"],
+        title=item.get("title"),
+        source_excerpt=item.get("source_excerpt"),
         who=item["who"][:255],
         timestamp=(item.get("timestamp") or None) and str(item["timestamp"])[:20],
         affected_disciplines=disciplines,
@@ -70,8 +72,11 @@ def import_items(
     items: List[Dict[str, Any]],
     approver_id: Optional[Any] = None,
     replace: bool = False,
+    meeting_summary: Optional[str] = None,
 ) -> Tuple[List[ProjectItem], int]:
     """Validate ``items`` and store them as ProjectItems for ``source``; mark it processed.
+
+    ``meeting_summary`` (the prompt's top-level summary) is stored as the Source's ai_summary.
 
     Returns (created items, number of items skipped by validation). Does not commit.
     Raises ValueError if the source type is not importable, or if the source already
@@ -98,6 +103,8 @@ def import_items(
         db.add(item)
         created.append(item)
 
+    if meeting_summary and meeting_summary.strip():
+        source.ai_summary = meeting_summary.strip()
     source.included = True
     source.ingestion_status = "processed"
     source.extraction_error = None

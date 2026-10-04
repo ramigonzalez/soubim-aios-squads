@@ -30,11 +30,13 @@ Use ONLY these discipline identifiers:
 
 ## Extraction Rules
 
-1. **statement**: Clear, concise summary of the item (not the full quote)
-2. **who**: The person who made the statement or is responsible
-3. **timestamp**: Time in the transcript (format: HH:MM:SS) if available
-4. **affected_disciplines**: Array of disciplines involved or impacted
-5. **confidence**: Your confidence in the classification (0.0-1.0)
+1. **title**: Short headline that names the item at a glance — at most 10 words, no final period (e.g. "Paginação de pisos por ambiente")
+2. **statement**: Full description of the item in 1-3 sentences: what was decided / asked / said, with the specifics (places, materials, sheets, quantities). Do not repeat the title verbatim; do not paste the quote
+3. **who**: The person who made the statement or is responsible
+4. **timestamp**: Time in the transcript (format: HH:MM:SS) if available
+5. **affected_disciplines**: Array of disciplines involved or impacted
+6. **confidence**: Your confidence in the classification (0.0-1.0)
+7. **source_excerpt**: The transcript lines this item comes from, copied verbatim (do not translate or fix wording) — 1 to 4 consecutive turns, each as `M:SS - Speaker: text`, one turn per line. Trim long turns with "…" but keep the sentences that support the item
 
 ### Type-Specific Fields
 
@@ -60,9 +62,14 @@ Use ONLY these discipline identifiers:
 
 ## Output Language
 
-- Write every free-text value (`statement`, `why`, `causation`, consensus `notes`, `impacts` texts, `discussion_points`, `related_topic`, `reference_source`) in the same language as the transcript — for a Brazilian Portuguese meeting, write in Brazilian Portuguese.
+- Write every free-text value (`meeting_summary`, `title`, `statement`, `why`, `causation`, consensus `notes`, `impacts` texts, `discussion_points`, `related_topic`, `reference_source`) in the same language as the transcript — for a Brazilian Portuguese meeting, write in Brazilian Portuguese.
 - Keep `who` and `owner` as the participant names, as they appear in the roster.
+- `source_excerpt` is a verbatim copy of the transcript: never translate or rewrite it.
 - Keep identifiers exactly as specified, in English: JSON keys, `item_type` values, discipline values, and consensus `status` (AGREE / DISAGREE / ABSTAIN).
+
+## Meeting Summary
+
+Besides the items, return `meeting_summary`: 3-5 sentences summarizing the meeting for someone who missed it — the main subjects, the decisions taken and the pending actions, based on the items you extracted. Plain text, no bullet points.
 
 ## Discipline Inference Rules
 
@@ -78,18 +85,21 @@ Use ONLY these discipline identifiers:
 
 ## Output Format
 
-Return a JSON array of extracted items:
+Return a JSON object with the meeting summary and the extracted items:
 
 ```json
 {
+  "meeting_summary": "Structural review of Tower B. The team switched the frame from concrete to steel after the seismic analysis, and Carlos will send revised calculations by Friday.",
   "items": [
     {
       "item_type": "decision",
-      "statement": "Changed structural material from concrete to steel",
+      "title": "Steel frame instead of concrete",
+      "statement": "Changed structural material from concrete to steel for the Tower B frame, keeping the current column grid",
       "who": "Carlos",
       "timestamp": "00:23:15",
       "affected_disciplines": ["structural", "architecture"],
       "confidence": 0.92,
+      "source_excerpt": "23:15 - Carlos: The seismic analysis came back, concrete is over the weight limit.\n23:31 - Lucia: So we go with steel? Fine for architecture if the grid stays.",
       "why": "Client requested lighter structure for seismic performance",
       "causation": "Seismic analysis showed concrete structure exceeded weight limits",
       "consensus": {
@@ -104,6 +114,7 @@ Return a JSON array of extracted items:
     },
     {
       "item_type": "action_item",
+      "title": "Revised structural calculations",
       "statement": "Submit revised structural calculations by Friday",
       "who": "Carlos",
       "timestamp": "00:28:00",

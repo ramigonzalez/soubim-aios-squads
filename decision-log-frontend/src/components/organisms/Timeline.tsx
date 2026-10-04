@@ -30,6 +30,7 @@ interface DenseTimelineGroup {
       type: SourceType
       meetingType?: string
       participants?: Array<{ name: string; role?: string }>
+      ai_summary?: string
     }
     items: ProjectItem[]
   }[]
@@ -71,6 +72,7 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
             type: item.source_type || 'meeting',
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
+            ai_summary: item.source?.summary || undefined,
           },
           items: [],
         })
@@ -129,6 +131,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
             type: item.source_type || 'meeting',
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
+            ai_summary: item.source?.summary || undefined,
           },
           items: [],
         })

@@ -310,4 +310,20 @@ describe('Timeline — Dense Rows Layout', () => {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
   })
+
+  it('shows the meeting summary toggle when the source has a summary', async () => {
+    const item = makeSourceItem({
+      id: 'a',
+      source: { id: 'src-1', title: 'D/SEASON Quinzenal', type: 'meeting', occurred_at: '2026-09-04T00:00:00', summary: 'Reunião sobre pranchas e paginação.' },
+    })
+    render(
+      <Timeline
+        decisions={[item]}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    await userEvent.setup().click(screen.getByLabelText('Show meeting summary'))
+    expect(screen.getByText('Reunião sobre pranchas e paginação.')).toBeInTheDocument()
+  })
 })
