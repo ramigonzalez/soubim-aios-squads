@@ -323,7 +323,14 @@ describe('Timeline — Dense Rows Layout', () => {
         groupBy="date"
       />
     )
-    await userEvent.setup().click(screen.getByLabelText('Show meeting summary'))
+    // Summary starts collapsed behind an always-visible "Resumo" button
+    expect(screen.queryByText('Reunião sobre pranchas e paginação.')).not.toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: 'Show meeting summary' })
+    expect(toggle).toHaveTextContent('Resumo')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.setup().click(toggle)
     expect(screen.getByText('Reunião sobre pranchas e paginação.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Hide meeting summary' })).toHaveAttribute('aria-expanded', 'true')
   })
 })
