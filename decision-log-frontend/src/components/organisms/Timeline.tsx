@@ -56,13 +56,13 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
     const orphanItems: ProjectItem[] = []
 
     for (const item of dateItems) {
-      // Items without transcript_id or with manual_input source type are orphans
-      if (!item.transcript_id || item.source_type === 'manual_input') {
+      // Items without a meeting (legacy transcript or V2 source) or with manual_input source type are orphans
+      const sourceId = getSourceKey(item)
+      if (!sourceId || item.source_type === 'manual_input') {
         orphanItems.push(item)
         continue
       }
 
-      const sourceId = item.transcript_id
       if (!sourceMap.has(sourceId)) {
         sourceMap.set(sourceId, {
           source: {
@@ -78,12 +78,14 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
       sourceMap.get(sourceId)!.items.push(item)
     }
 
-    // Sort sources by date of first item (newest first)
+    // Sort sources by date of first item (newest first); items inside a meeting in meeting order
     const sources = Array.from(sourceMap.values()).sort((a, b) => {
-      const dateA = a.items[0]?.meeting_date || a.items[0]?.created_at || ''
-      const dateB = b.items[0]?.meeting_date || b.items[0]?.created_at || ''
+      const dateA = a.items[0] ? getItemDate(a.items[0]) : ''
+      const dateB = b.items[0] ? getItemDate(b.items[0]) : ''
       return new Date(dateB).getTime() - new Date(dateA).getTime()
     })
+    sources.forEach(s => s.items.sort(byMeetingTimestamp))
+    orphanItems.sort(byMeetingTimestamp)
 
     return {
       date,
@@ -113,12 +115,12 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
     const orphanItems: ProjectItem[] = []
 
     for (const item of discItems) {
-      if (!item.transcript_id || item.source_type === 'manual_input') {
+      const sourceId = getSourceKey(item)
+      if (!sourceId || item.source_type === 'manual_input') {
         orphanItems.push(item)
         continue
       }
 
-      const sourceId = item.transcript_id
       if (!sourceMap.has(sourceId)) {
         sourceMap.set(sourceId, {
           source: {
@@ -135,6 +137,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
     }
 
     const sources = Array.from(sourceMap.values())
+    sources.forEach(s => s.items.sort(byMeetingTimestamp))
 
     return {
       date: discipline,
@@ -147,11 +150,40 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
 }
 
 /**
+ * Meeting the item belongs to: legacy transcript or V2 source.
+ */
+function getSourceKey(item: ProjectItem): string | undefined {
+  return item.transcript_id || item.source?.id
+}
+
+/**
+ * When the item happened: meeting date (legacy), source date (V2), else creation date.
+ */
+function getItemDate(item: ProjectItem): string {
+  return item.meeting_date || item.source?.occurred_at || item.created_at
+}
+
+/**
+ * Meeting timestamp ("HH:MM:SS", "H:MM:SS" or "MM:SS") in seconds; items without one sort last.
+ */
+function timestampSeconds(ts?: string | null): number {
+  const parts = (ts || '').split(':').map(Number)
+  if (parts.length < 2 || parts.some(Number.isNaN)) return Number.POSITIVE_INFINITY
+  return parts.reduce((acc, p) => acc * 60 + p, 0)
+}
+
+function byMeetingTimestamp(a: ProjectItem, b: ProjectItem): number {
+  const ta = timestampSeconds(a.timestamp)
+  const tb = timestampSeconds(b.timestamp)
+  return ta === tb ? 0 : ta < tb ? -1 : 1
+}
+
+/**
  * Extract date key (YYYY-MM-DD) from a ProjectItem.
  * Uses local date to avoid timezone shift issues.
  */
 function getDateKey(item: ProjectItem): string {
-  const raw = item.meeting_date || item.created_at
+  const raw = getItemDate(item)
   const d = new Date(raw)
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')

@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event'
 import { ProjectItemRow } from '../../components/molecules/ProjectItemRow'
 import type { ProjectItem } from '../../types/projectItem'
 
+// The row's done-checkbox uses a React Query mutation; rendering doesn't need a real client.
+vi.mock('../../hooks/useProjectItemMutation', () => ({
+  useToggleDone: () => ({ mutate: vi.fn(), isLoading: false }),
+}))
+
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
     id: 'item-001',
@@ -38,6 +43,16 @@ describe('ProjectItemRow', () => {
     expect(screen.getByText('Feb 8')).toBeInTheDocument()
     // ItemTypeBadge renders with title attribute
     expect(screen.getByTitle('Decision')).toBeInTheDocument()
+  })
+
+  it('shows the meeting date of a V2 source item, not its import date', () => {
+    const item = makeItem({
+      created_at: '2026-10-04T03:00:00Z',
+      source: { id: 'src-1', title: 'Quinzenal', type: 'meeting', occurred_at: '2026-09-04T12:00:00' },
+    })
+    render(<ProjectItemRow item={item} onClick={mockOnClick} />)
+    expect(screen.getByText('Sep 4')).toBeInTheDocument()
+    expect(screen.queryByText('Oct 4')).not.toBeInTheDocument()
   })
 
   it('renders discipline circles', () => {

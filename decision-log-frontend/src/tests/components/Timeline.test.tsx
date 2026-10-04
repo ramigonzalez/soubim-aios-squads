@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { Timeline } from '../../components/organisms/Timeline'
 import type { ProjectItem } from '../../types/projectItem'
 
+// ProjectItemRow uses React Query mutations; Timeline rendering doesn't need a real client.
+vi.mock('../../hooks/useProjectItemMutation', () => ({
+  useToggleDone: () => ({ mutate: vi.fn(), isLoading: false }),
+  useToggleMilestone: () => ({ mutate: vi.fn(), isLoading: false }),
+}))
+
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
     id: `item-${Math.random().toString(36).slice(2, 8)}`,
@@ -257,5 +263,51 @@ describe('Timeline — Dense Rows Layout', () => {
     )
     const stickyHeaders = container.querySelectorAll('.sticky')
     expect(stickyHeaders.length).toBeGreaterThan(0)
+  })
+
+  // --- V2 sources (items linked by source, no legacy transcript) ---
+
+  function makeSourceItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
+    return makeItem({
+      transcript_id: undefined,
+      meeting_title: undefined,
+      meeting_date: undefined,
+      created_at: '2026-10-04T03:00:00Z',
+      source: { id: 'src-1', title: 'D/SEASON Quinzenal', type: 'meeting', occurred_at: '2026-09-04T00:00:00' },
+      ...overrides,
+    })
+  }
+
+  it('groups V2 items under their source and dates them by the meeting, not the import', () => {
+    render(
+      <Timeline
+        decisions={[makeSourceItem({ id: 'a', statement: 'Item from source' })]}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    expect(screen.getByText('D/SEASON Quinzenal')).toBeInTheDocument()
+    expect(screen.getByText('SEP 4, 2026')).toBeInTheDocument()
+    expect(screen.queryByText('OCT 4, 2026')).not.toBeInTheDocument()
+  })
+
+  it('orders items inside a meeting by meeting timestamp', () => {
+    const items = [
+      makeSourceItem({ id: 'a', timestamp: '01:27:03', statement: 'Third' }),
+      makeSourceItem({ id: 'b', timestamp: '00:10:55', statement: 'First' }),
+      makeSourceItem({ id: 'c', timestamp: '41:39', statement: 'Second' }),
+      makeSourceItem({ id: 'd', timestamp: undefined, statement: 'No timestamp' }),
+    ]
+    render(
+      <Timeline
+        decisions={items}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    const order = ['First', 'Second', 'Third', 'No timestamp'].map(t => screen.getByText(t))
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
   })
 })
