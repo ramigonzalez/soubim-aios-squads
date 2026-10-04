@@ -61,3 +61,6 @@ logs/
 
 # Backups
 backups/
+
+# Uploaded documents and meeting recordings (client content, large files) — Story 7.13
+uploads/

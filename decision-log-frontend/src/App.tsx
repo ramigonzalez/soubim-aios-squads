@@ -6,6 +6,7 @@ import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
 import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
+import { MeetingViewer } from './pages/MeetingViewer'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
 
@@ -74,6 +75,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Ingestion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meetings/:sourceId"
+          element={
+            <ProtectedRoute>
+              <MeetingViewer />
             </ProtectedRoute>
           }
         />

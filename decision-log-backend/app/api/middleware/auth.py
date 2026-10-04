@@ -23,6 +23,7 @@ async def auth_middleware(request: Request, call_next):
     public_paths = [
         "/api/health",
         "/api/shared/",
+        "/api/recordings/",  # Story 7.13: signed, expiring recording links (checked in the route)
         "/docs",
         "/openapi.json",
         "/redoc",

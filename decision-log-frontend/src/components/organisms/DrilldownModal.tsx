@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineCircle } from '../atoms/DisciplineCircle'
 import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
 import { formatDate, formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
-import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle, CheckSquare, Square, AlertTriangle } from 'lucide-react'
+import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle, CheckSquare, Square, AlertTriangle, PlayCircle } from 'lucide-react'
+import { meetingLink } from '../../lib/transcript'
 
 interface DrilldownModalProps {
   decision: ProjectItem | null
@@ -173,8 +175,22 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
             {decision.timestamp && (
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
-                <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
-                <span>in recording</span>
+                {decision.source?.id ? (
+                  // Story 7.13: open the meeting viewer at this moment
+                  <Link
+                    to={meetingLink(decision.source.id, decision.timestamp)}
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
+                    <span>in recording</span>
+                    <PlayCircle className="w-4 h-4" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <>
+                    <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
+                    <span>in recording</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -339,6 +355,15 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                 </>
               ) : (
                 <p className="text-gray-600 text-sm">No transcript excerpt for this item.</p>
+              )}
+              {decision.source?.id && (
+                <Link
+                  to={meetingLink(decision.source.id, decision.timestamp)}
+                  className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline pt-1"
+                >
+                  <PlayCircle className="w-4 h-4" aria-hidden="true" />
+                  Open in meeting
+                </Link>
               )}
             </div>
           )}
