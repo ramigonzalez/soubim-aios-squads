@@ -26,6 +26,7 @@ from app.database.models import (
     User,
 )
 from app.database.session import SessionLocal
+from app.services.organizations import ensure_default_organization
 from app.utils.security import hash_password
 
 
@@ -48,6 +49,9 @@ def seed_database():
         # Check if data already seeded
         existing_user = db.query(User).filter(User.email == "test@example.com").first()
         if existing_user:
+            # Story 12.1: databases seeded before organizations existed still get them
+            ensure_default_organization(db)
+            db.commit()
             print("✓ Database already seeded. Skipping...")
             return
 
@@ -940,6 +944,10 @@ def seed_database():
         db.add_all([topic2, action2, manual_info])
         db.flush()
         print("  ✓ Created 5 project items (Project 2) incl. V2 types")
+
+        # Story 12.1: every user and project belongs to an organization
+        org = ensure_default_organization(db)
+        print(f"  ✓ Organization '{org.name}' with all users and projects")
 
         db.commit()
         print("  ✓ Committed all data")
