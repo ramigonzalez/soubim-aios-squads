@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown, FileText } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronDown, FileText, PlayCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import { meetingLink } from '../../lib/transcript'
 import { SourceIcon } from '../atoms/SourceIcon'
 import { ProjectItemRow } from './ProjectItemRow'
 import { MeetingSummary } from './MeetingSummary'
@@ -13,6 +15,7 @@ interface SourceGroupSource {
   meetingType?: string
   participants?: Array<{ name: string; role?: string }>
   ai_summary?: string
+  meetingId?: string  // Story 7.13: V2 source id for the meeting viewer link
 }
 
 export interface SourceGroupAccordionProps {
@@ -116,6 +119,17 @@ export function SourceGroupAccordion({
               aria-hidden="true"
             />
           </button>
+        )}
+        {source.meetingId && (
+          <Link
+            to={meetingLink(source.meetingId)}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            aria-label={`Open meeting ${source.title}`}
+          >
+            <PlayCircle className="w-3.5 h-3.5" aria-hidden="true" />
+            Meeting
+          </Link>
         )}
         <ChevronDown
           className={cn(

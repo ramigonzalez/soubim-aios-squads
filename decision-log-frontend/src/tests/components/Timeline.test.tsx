@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { Timeline } from '../../components/organisms/Timeline'
 import type { ProjectItem } from '../../types/projectItem'
@@ -9,6 +10,9 @@ vi.mock('../../hooks/useProjectItemMutation', () => ({
   useToggleDone: () => ({ mutate: vi.fn(), isLoading: false }),
   useToggleMilestone: () => ({ mutate: vi.fn(), isLoading: false }),
 }))
+
+// Meeting viewer links (Story 7.13) need a router around the component
+const render = (ui: React.ReactElement) => rtlRender(ui, { wrapper: MemoryRouter })
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -332,5 +336,27 @@ describe('Timeline — Dense Rows Layout', () => {
     await userEvent.setup().click(toggle)
     expect(screen.getByText('Reunião sobre pranchas e paginação.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Hide meeting summary' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('links V2 meeting headers to the meeting viewer', () => {
+    render(
+      <Timeline
+        decisions={[makeSourceItem({ id: 'a' })]}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    expect(screen.getByRole('link', { name: 'Open meeting D/SEASON Quinzenal' })).toHaveAttribute('href', '/meetings/src-1')
+  })
+
+  it('has no meeting link for legacy transcript groups', () => {
+    render(
+      <Timeline
+        decisions={[makeItem({ id: 'a' })]}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    expect(screen.queryByRole('link', { name: /Open meeting/ })).not.toBeInTheDocument()
   })
 })

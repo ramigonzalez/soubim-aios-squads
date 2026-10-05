@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { DrilldownModal } from '../../components/organisms/DrilldownModal'
 import type { ProjectItem } from '../../types/projectItem'
@@ -8,6 +9,9 @@ import type { ProjectItem } from '../../types/projectItem'
 vi.mock('../../hooks/useProjectItemMutation', () => ({
   useToggleDone: () => ({ mutate: vi.fn(), isLoading: false }),
 }))
+
+// Meeting viewer links (Story 7.13) need a router around the component
+const render = (ui: React.ReactElement) => rtlRender(ui, { wrapper: MemoryRouter })
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -80,5 +84,26 @@ describe('DrilldownModal — title, description and transcript excerpt (Story 7.
     render(<DrilldownModal decision={makeItem()} onClose={vi.fn()} />)
     await userEvent.setup().click(screen.getByText('Transcript'))
     expect(screen.getByText('No transcript excerpt for this item.')).toBeInTheDocument()
+  })
+})
+
+describe('DrilldownModal — meeting viewer links (Story 7.13)', () => {
+  const source = { id: 'src-1', title: 'D/SEASON Quinzenal', type: 'meeting' as const, occurred_at: '2026-09-04T00:00:00' }
+
+  it('links the recording timestamp to the meeting viewer at that second', () => {
+    render(<DrilldownModal decision={makeItem({ source })} onClose={vi.fn()} />)
+    expect(screen.getByRole('link', { name: /00:33:40\s*in recording/ })).toHaveAttribute('href', '/meetings/src-1?t=2020')
+  })
+
+  it('offers "Open in meeting" in the Transcript tab', async () => {
+    render(<DrilldownModal decision={makeItem({ source })} onClose={vi.fn()} />)
+    await userEvent.setup().click(screen.getByText('Transcript'))
+    expect(screen.getByRole('link', { name: 'Open in meeting' })).toHaveAttribute('href', '/meetings/src-1?t=2020')
+  })
+
+  it('shows the timestamp as plain text for items without a V2 source', () => {
+    render(<DrilldownModal decision={makeItem()} onClose={vi.fn()} />)
+    expect(screen.getByText('00:33:40')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /in recording/ })).not.toBeInTheDocument()
   })
 })

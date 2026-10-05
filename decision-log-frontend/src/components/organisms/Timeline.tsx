@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ProjectItem, SourceType } from '../../types/projectItem'
 import { SourceGroupAccordion } from '../molecules/SourceGroupAccordion'
+import { timestampToSeconds } from '../../lib/transcript'
 import { ProjectItemRow } from '../molecules/ProjectItemRow'
 import { formatDenseDate, getDisciplineNodeColor } from '../../lib/utils'
 import { Calendar, AlertCircle } from 'lucide-react'
@@ -31,6 +32,7 @@ interface DenseTimelineGroup {
       meetingType?: string
       participants?: Array<{ name: string; role?: string }>
       ai_summary?: string
+      meetingId?: string  // V2 source id — enables the meeting viewer link
     }
     items: ProjectItem[]
   }[]
@@ -73,6 +75,7 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
             ai_summary: item.source?.summary || undefined,
+            meetingId: item.source?.id,
           },
           items: [],
         })
@@ -132,6 +135,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
             ai_summary: item.source?.summary || undefined,
+            meetingId: item.source?.id,
           },
           items: [],
         })
@@ -167,12 +171,10 @@ function getItemDate(item: ProjectItem): string {
 }
 
 /**
- * Meeting timestamp ("HH:MM:SS", "H:MM:SS" or "MM:SS") in seconds; items without one sort last.
+ * Meeting timestamp in seconds; items without one sort last.
  */
 function timestampSeconds(ts?: string | null): number {
-  const parts = (ts || '').split(':').map(Number)
-  if (parts.length < 2 || parts.some(Number.isNaN)) return Number.POSITIVE_INFINITY
-  return parts.reduce((acc, p) => acc * 60 + p, 0)
+  return timestampToSeconds(ts) ?? Number.POSITIVE_INFINITY
 }
 
 function byMeetingTimestamp(a: ProjectItem, b: ProjectItem): number {

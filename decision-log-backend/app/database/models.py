@@ -220,6 +220,7 @@ class Source(Base):
     participants = Column(JSONType)
     duration_minutes = Column(Integer)
     webhook_id = Column(String(255))
+    recording_url = Column(String(1000))  # Story 7.13: external recording link (e.g. Fathom share URL)
 
     # Email-specific
     email_from = Column(String(500))
