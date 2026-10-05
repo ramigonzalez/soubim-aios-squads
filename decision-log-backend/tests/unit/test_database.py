@@ -16,11 +16,17 @@ from app.database.models import (
     Source, ProjectParticipant, Base,
 )
 from app.utils.security import hash_password, verify_password
+from tests.conftest import assert_test_database
 
 
 @pytest.fixture
 def db_session():
-    """Create a test database session."""
+    """Create a test database session.
+
+    Uses the app engine, which conftest points at the run's throwaway database
+    (Story 7.18); the guard refuses to touch any other database.
+    """
+    assert_test_database(engine)
     # Create tables
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -156,6 +162,7 @@ class TestProjectMembersTable:
         tables = inspector.get_table_names()
         assert "project_members" in tables
 
+    @pytest.mark.postgresql  # SQLite does not enforce foreign keys (Story 7.18)
     def test_project_member_foreign_keys(self, db_session):
         """Verify foreign key constraints work."""
         member = ProjectMember(
@@ -616,6 +623,7 @@ class TestSoftDelete:
 class TestForeignKeyConstraints:
     """Test foreign key relationships."""
 
+    @pytest.mark.postgresql  # SQLite does not enforce foreign keys (Story 7.18)
     def test_cascade_delete_project_members(self, db_session):
         """Verify deleting project deletes members."""
         user = User(
