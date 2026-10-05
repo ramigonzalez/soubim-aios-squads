@@ -167,3 +167,25 @@ class TestMigrationBackfill:
         assert roles == {director.id: "admin", architect.id: "member"}
         owners = pg_session.execute(text("SELECT DISTINCT owner_organization_id FROM projects")).scalars().all()
         assert owners == [orgs[0].id]
+
+
+class TestSeedOnExistingDatabase:
+    """CodeRabbit (PR #10): a database seeded before 12.1 must still get organizations."""
+
+    def test_already_seeded_database_gets_the_default_organization(self, db_session: Session, monkeypatch):
+        from sqlalchemy.orm import sessionmaker
+
+        from app.database import seed
+
+        _user(db_session, "test@example.com", "director")  # marks the DB as already seeded
+        db_session.add(Project(name="Old project"))
+        db_session.commit()
+        monkeypatch.setenv("DEMO_MODE", "true")
+        monkeypatch.setattr(seed, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
+
+        seed.seed_database()
+
+        db_session.expire_all()
+        org = db_session.query(Organization).filter(Organization.slug == DEFAULT_ORGANIZATION_SLUG).one()
+        assert db_session.query(OrganizationMember).filter(OrganizationMember.organization_id == org.id).count() == 1
+        assert db_session.query(Project).filter(Project.owner_organization_id.is_(None)).count() == 0

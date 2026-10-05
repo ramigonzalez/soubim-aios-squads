@@ -49,6 +49,9 @@ def seed_database():
         # Check if data already seeded
         existing_user = db.query(User).filter(User.email == "test@example.com").first()
         if existing_user:
+            # Story 12.1: databases seeded before organizations existed still get them
+            ensure_default_organization(db)
+            db.commit()
             print("✓ Database already seeded. Skipping...")
             return
 
