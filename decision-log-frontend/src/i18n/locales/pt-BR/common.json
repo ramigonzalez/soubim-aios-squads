@@ -1,0 +1,13 @@
+{
+  "appName": "DecisionLog",
+  "loading": "Carregando…",
+  "retry": "Tentar novamente",
+  "cancel": "Cancelar",
+  "save": "Salvar",
+  "close": "Fechar",
+  "edit": "Editar",
+  "delete": "Excluir",
+  "back": "Voltar",
+  "items_one": "{{count}} item",
+  "items_other": "{{count}} itens"
+}

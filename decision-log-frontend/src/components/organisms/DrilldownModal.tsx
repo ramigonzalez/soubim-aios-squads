@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineCircle } from '../atoms/DisciplineCircle'
 import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
@@ -7,6 +8,7 @@ import { formatDate, formatDateTime, formatTimestamp, getDisciplineLabel } from 
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
 import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle, CheckSquare, Square, AlertTriangle, PlayCircle } from 'lucide-react'
 import { meetingLink } from '../../lib/transcript'
+import { dateLocale } from '../../i18n'
 
 interface DrilldownModalProps {
   decision: ProjectItem | null
@@ -36,6 +38,7 @@ function getStanceTextColor(stance: string) {
 }
 
 export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }: DrilldownModalProps) {
+  const { t } = useTranslation('item')
   const [activeTab, setActiveTab] = useState('overview')
   const toggleDone = useToggleDone(decision?.project_id || '')
 
@@ -116,7 +119,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
           {isActionItem && (
             <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">Action Item</span>
+                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">{t('modal.actionItem.heading')}</span>
                 <button
                   onClick={() => toggleDone.mutate({ itemId: decision.id, isDone: !decision.is_done })}
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
@@ -125,24 +128,24 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                     ? <CheckSquare className="w-4 h-4 text-green-600" />
                     : <Square className="w-4 h-4" />
                   }
-                  {decision.is_done ? 'Done' : 'Mark as done'}
+                  {decision.is_done ? t('modal.actionItem.done') : t('modal.actionItem.markDone')}
                 </button>
               </div>
               {decision.owner && (
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <User className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <span className="font-medium">Owner:</span> {decision.owner}
+                  <span className="font-medium">{t('modal.actionItem.owner')}</span> {decision.owner}
                 </div>
               )}
               {decision.due_date && (
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <span className="font-medium text-gray-700">Due:</span>
+                  <span className="font-medium text-gray-700">{t('modal.actionItem.due')}</span>
                   <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-700'}>
-                    {new Date(decision.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(decision.due_date).toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', year: 'numeric' })}
                     {isOverdue && (
                       <span className="inline-flex items-center gap-0.5 ml-1.5 text-xs text-red-600">
-                        <AlertTriangle className="w-3 h-3" /> Overdue
+                        <AlertTriangle className="w-3 h-3" /> {t('modal.actionItem.overdue')}
                       </span>
                     )}
                   </span>
@@ -182,13 +185,13 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                     className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
                   >
                     <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
-                    <span>in recording</span>
+                    <span>{t('modal.inRecording')}</span>
                     <PlayCircle className="w-4 h-4" aria-hidden="true" />
                   </Link>
                 ) : (
                   <>
                     <span className="font-mono tabular-nums">{formatTimestamp(decision.timestamp)}</span>
-                    <span>in recording</span>
+                    <span>{t('modal.inRecording')}</span>
                   </>
                 )}
               </div>
@@ -208,7 +211,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {t(`modal.tabs.${tab}`)}
             </button>
           ))}
         </div>
@@ -221,7 +224,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               {decision.title && (
                 <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                   <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</h3>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('modal.sections.description')}</h3>
                   </div>
                   <div className="px-4 py-3">
                     <p className="text-sm text-gray-700 leading-relaxed">{decision.statement}</p>
@@ -232,10 +235,10 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               {/* Rationale Card */}
               <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                 <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rationale</h3>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('modal.sections.rationale')}</h3>
                 </div>
                 <div className="px-4 py-3">
-                  <p className="text-sm text-gray-700 leading-relaxed">{decision.why || 'No rationale provided.'}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{decision.why || t('modal.noRationale')}</p>
                 </div>
               </section>
 
@@ -243,7 +246,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               {decision.causation && (
                 <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                   <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Causation</h3>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('modal.sections.causation')}</h3>
                   </div>
                   <div className="px-4 py-3">
                     <p className="text-sm text-gray-700 leading-relaxed">{decision.causation}</p>
@@ -255,9 +258,9 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               {consensusEntries.length > 0 && (
                 <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                   <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Consensus</h3>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('modal.sections.consensus')}</h3>
                     <span className="text-xs font-medium text-gray-400">
-                      {agreeCount}/{totalCount} agree
+                      {t('modal.consensus.agreeCount', { agree: agreeCount, total: totalCount })}
                     </span>
                   </div>
                   <div className="px-4 py-3">
@@ -267,9 +270,9 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                         return (
                           <div key={role} className="flex items-center gap-2">
                             {getStanceIcon(stance)}
-                            <span className="text-sm font-medium text-gray-700 capitalize">{role}</span>
+                            <span className="text-sm font-medium text-gray-700">{getDisciplineLabel(role)}</span>
                             <span className={`text-sm font-medium uppercase ${getStanceTextColor(stance)}`}>
-                              {stance}
+                              {t(`modal.consensus.status.${stance.toUpperCase()}`, { defaultValue: stance })}
                             </span>
                           </div>
                         )
@@ -283,7 +286,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
               {decision.impacts && (
                 <section className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                   <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Impacts</h3>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('modal.sections.impacts')}</h3>
                   </div>
                   <div className="px-4 py-3">
                     <div className="space-y-2">
@@ -291,7 +294,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                         <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-red-50">
                           <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-red-400" />
                           <div className="min-w-0">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-red-700">Cost</span>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-red-700">{t('modal.impacts.cost')}</span>
                             <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.cost_impact}</p>
                           </div>
                         </div>
@@ -300,7 +303,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                         <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-amber-50">
                           <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-amber-400" />
                           <div className="min-w-0">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">Timeline</span>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">{t('modal.impacts.timeline')}</span>
                             <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.timeline_impact}</p>
                           </div>
                         </div>
@@ -309,7 +312,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                         <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-blue-50">
                           <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-blue-400" />
                           <div className="min-w-0">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">Scope</span>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t('modal.impacts.scope')}</span>
                             <p className="text-sm text-gray-700 mt-0.5">{decision.impacts.scope_impact}</p>
                           </div>
                         </div>
@@ -318,8 +321,8 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                         <div className="flex items-start gap-2.5 rounded-md px-3 py-2 bg-gray-50">
                           <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-gray-400" />
                           <div className="min-w-0">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">Risk Level</span>
-                            <p className="text-sm text-gray-700 mt-0.5 capitalize">{decision.impacts.risk_level}</p>
+                            <span className="text-xs font-semibold uppercase tracking-wide text-gray-700">{t('modal.impacts.riskLevel')}</span>
+                            <p className="text-sm text-gray-700 mt-0.5 capitalize">{t(`modal.impacts.risk.${decision.impacts.risk_level.toLowerCase()}`, { defaultValue: decision.impacts.risk_level })}</p>
                           </div>
                         </div>
                       )}
@@ -334,7 +337,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
             <div className="space-y-2">
               {decision.source_excerpt ? (
                 <>
-                  <p className="text-gray-600 text-sm">Transcript lines this item was extracted from:</p>
+                  <p className="text-gray-600 text-sm">{t('modal.transcript.intro')}</p>
                   <div className="rounded-lg border-l-4 border-amber-300 bg-amber-50 divide-y divide-amber-100">
                     {parseExcerpt(decision.source_excerpt).map((line, i) => (
                       <div key={i} className="px-4 py-2.5 text-sm">
@@ -354,7 +357,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                   </div>
                 </>
               ) : (
-                <p className="text-gray-600 text-sm">No transcript excerpt for this item.</p>
+                <p className="text-gray-600 text-sm">{t('modal.transcript.empty')}</p>
               )}
               {decision.source?.id && (
                 <Link
@@ -362,7 +365,7 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                   className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline pt-1"
                 >
                   <PlayCircle className="w-4 h-4" aria-hidden="true" />
-                  Open in meeting
+                  {t('modal.transcript.openInMeeting')}
                 </Link>
               )}
             </div>
@@ -370,9 +373,9 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
 
           {activeTab === 'similar' && (
             <div className="space-y-2">
-              <p className="text-gray-600 text-sm">Similar decisions from this project:</p>
+              <p className="text-gray-600 text-sm">{t('modal.similar.intro')}</p>
               <div className="bg-gray-50 p-4 rounded text-sm text-gray-600">
-                Related decisions would be displayed here based on vector similarity.
+                {t('modal.similar.placeholder')}
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@
  * Story 6.2: Frontend — Project Create/Edit Form
  */
 import { Plus, Trash2, FileDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useStageTemplates, StageTemplate } from '../../hooks/useStageTemplates'
 
 export interface StageRow {
@@ -28,6 +29,7 @@ export default function StageScheduleBuilder({
   onChange,
   errors,
 }: StageScheduleBuilderProps) {
+  const { t } = useTranslation('projects')
   const { data: templatesData } = useStageTemplates()
 
   const addStage = () => {
@@ -46,7 +48,7 @@ export default function StageScheduleBuilder({
   }
 
   const loadTemplate = (template: StageTemplate) => {
-    if (stages.length > 0 && !window.confirm('This will replace existing stages. Continue?')) {
+    if (stages.length > 0 && !window.confirm(t('stages.replaceConfirm'))) {
       return
     }
     let startDate = new Date()
@@ -67,7 +69,7 @@ export default function StageScheduleBuilder({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">Stage Schedule</h3>
+        <h3 className="text-sm font-medium text-gray-700">{t('stages.title')}</h3>
         <div className="flex gap-2">
           {templatesData?.templates && templatesData.templates.length > 0 && (
             <div className="relative group">
@@ -76,7 +78,7 @@ export default function StageScheduleBuilder({
                 className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-200 rounded px-2 py-1"
               >
                 <FileDown className="h-3 w-3" />
-                Load Template
+                {t('stages.loadTemplate')}
               </button>
               <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[200px]">
                 {templatesData.templates.map((t) => (
@@ -98,14 +100,14 @@ export default function StageScheduleBuilder({
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
           >
             <Plus className="h-3 w-3" />
-            Add Stage
+            {t('stages.add')}
           </button>
         </div>
       </div>
 
       {stages.length === 0 ? (
         <div className="text-center py-6 text-sm text-gray-500 border border-dashed border-gray-300 rounded-md">
-          No stages defined. Add stages or load a template.
+          {t('stages.empty')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -117,7 +119,7 @@ export default function StageScheduleBuilder({
                     type="text"
                     value={stage.stage_name}
                     onChange={(e) => updateStage(index, 'stage_name', e.target.value)}
-                    placeholder="Stage name"
+                    placeholder={t('stages.namePlaceholder')}
                     className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                   <input

@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Loader } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ProjectForm, ProjectFormData } from '../components/organisms/ProjectForm'
 import { useProject } from '../hooks/useProject'
 import { useUpdateProject } from '../hooks/useProjectMutation'
@@ -16,6 +17,7 @@ import { ParticipantRow } from '../components/organisms/ParticipantRoster'
 import api from '../services/api'
 
 export default function ProjectEdit() {
+  const { t } = useTranslation('projects')
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(id)
@@ -38,7 +40,7 @@ export default function ProjectEdit() {
   if (projectError || !project) {
     return (
       <div className="py-8 px-4 sm:px-6 lg:px-8 text-center">
-        <p className="text-red-600">Failed to load project.</p>
+        <p className="text-red-600">{t('edit.loadError')}</p>
       </div>
     )
   }
@@ -97,7 +99,7 @@ export default function ProjectEdit() {
       navigate(`/projects/${id}`)
     } catch (err) {
       console.error('Error updating project:', err)
-      setError('Failed to update project. Please try again.')
+      setError(t('edit.error'))
     } finally {
       setIsSaving(false)
     }
@@ -107,7 +109,7 @@ export default function ProjectEdit() {
     <div className="min-h-screen bg-gray-50">
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8">Edit Project</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-8">{t('edit.title')}</h1>
           {error && (
             <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               {error}

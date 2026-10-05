@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { IngestionStatus } from '../../types/ingestion'
 
@@ -14,15 +15,17 @@ interface IngestionStatusBadgeProps {
 }
 
 export default function IngestionStatusBadge({ status }: IngestionStatusBadgeProps) {
+  const { t } = useTranslation('ingestion')
+  const label = t(`status.${status}`)
   return (
     <span
       className={cn(
         'inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full capitalize',
         STATUS_STYLES[status]
       )}
-      aria-label={`Status: ${status}`}
+      aria-label={t('status.ariaLabel', { status: label })}
     >
-      {status}
+      {label}
     </span>
   )
 }

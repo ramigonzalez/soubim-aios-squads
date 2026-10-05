@@ -4,11 +4,13 @@ import { useQuery } from 'react-query'
 import { useAuthStore } from '../../store/authStore'
 import { ingestionService } from '../../services/ingestionService'
 import { LogOut, Home } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Navigation bar component with logout button and breadcrumbs.
  */
 export function Navigation() {
+  const { t } = useTranslation('nav')
   const navigate = useNavigate()
   const location = useLocation()
   const { user, clearAuth } = useAuthStore()
@@ -24,11 +26,11 @@ export function Navigation() {
     const segments = path.split('/').filter(Boolean)
 
     const breadcrumbs = [
-      { label: 'Home', href: '/projects' },
+      { label: t('home'), href: '/projects' },
     ]
 
     if (segments.includes('projects') && segments.length > 1) {
-      breadcrumbs.push({ label: 'Projects', href: '/projects' })
+      breadcrumbs.push({ label: t('projects'), href: '/projects' })
     }
 
     return breadcrumbs
@@ -71,7 +73,7 @@ export function Navigation() {
             {user && (
               <div className="hidden sm:flex flex-col items-end">
                 <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.role}</p>
+                <p className="text-xs text-gray-500">{t(`roles.${user.role}`, { defaultValue: user.role })}</p>
               </div>
             )}
 
@@ -79,10 +81,10 @@ export function Navigation() {
             <button
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
-              title="Logout"
+              title={t('logout')}
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline text-sm font-medium">Logout</span>
+              <span className="hidden sm:inline text-sm font-medium">{t('logout')}</span>
             </button>
           </div>
         </div>
@@ -92,6 +94,7 @@ export function Navigation() {
 }
 
 function IngestionNavLink() {
+  const { t } = useTranslation('nav')
   const { data } = useQuery('ingestion-pending-count', ingestionService.getPendingCount, {
     staleTime: 30_000,
   })
@@ -103,7 +106,7 @@ function IngestionNavLink() {
       to="/ingestion"
       className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600 transition"
     >
-      Ingestion
+      {t('ingestion')}
       {pendingCount > 0 && (
         <span className="ml-1.5 bg-yellow-400 text-yellow-900 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
           {pendingCount}

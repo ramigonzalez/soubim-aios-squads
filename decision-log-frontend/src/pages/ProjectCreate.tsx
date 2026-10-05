@@ -5,11 +5,13 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ProjectForm, ProjectFormData } from '../components/organisms/ProjectForm'
 import { useCreateProject } from '../hooks/useProjectMutation'
 import api from '../services/api'
 
 export default function ProjectCreate() {
+  const { t } = useTranslation('projects')
   const navigate = useNavigate()
   const createProject = useCreateProject()
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +56,7 @@ export default function ProjectCreate() {
       navigate(`/projects/${projectId}`)
     } catch (err) {
       console.error('Error creating project:', err)
-      setError('Failed to create project. Please try again.')
+      setError(t('create.error'))
     } finally {
       setIsSaving(false)
     }
@@ -64,7 +66,7 @@ export default function ProjectCreate() {
     <div className="min-h-screen bg-gray-50">
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8">Create New Project</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-8">{t('create.title')}</h1>
           {error && (
             <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               {error}

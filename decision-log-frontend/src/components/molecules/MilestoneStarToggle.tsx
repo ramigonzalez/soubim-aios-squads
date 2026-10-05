@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 
 interface MilestoneStarToggleProps {
@@ -21,6 +22,7 @@ export function MilestoneStarToggle({
   size = 'sm',
   showOnHoverOnly = false,
 }: MilestoneStarToggleProps) {
+  const { t } = useTranslation('item')
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
 
   return (
@@ -45,7 +47,7 @@ export function MilestoneStarToggle({
               showOnHoverOnly && 'opacity-0 group-hover:opacity-100'
             ),
       )}
-      aria-label={isMilestone ? 'Remove milestone' : 'Mark as milestone'}
+      aria-label={isMilestone ? t('milestone.remove') : t('milestone.mark')}
       tabIndex={0}
     >
       <Star className={cn(iconSize, isMilestone && 'fill-current')} />

@@ -3,7 +3,9 @@
  * Story 6.2: Frontend — Project Create/Edit Form
  */
 import { Plus, Trash2 } from 'lucide-react'
-import { DISCIPLINE_LABELS, Discipline } from '../../types/projectItem'
+import { useTranslation } from 'react-i18next'
+import { ALL_DISCIPLINES } from '../../types/projectItem'
+import { getDisciplineLabel } from '../../lib/utils'
 
 export interface ParticipantRow {
   name: string
@@ -17,15 +19,11 @@ interface ParticipantRosterProps {
   onChange: (participants: ParticipantRow[]) => void
 }
 
-const DISCIPLINE_OPTIONS = Object.entries(DISCIPLINE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}))
-
 export default function ParticipantRoster({
   participants,
   onChange,
 }: ParticipantRosterProps) {
+  const { t } = useTranslation('projects')
   const addParticipant = () => {
     onChange([...participants, { name: '', email: '', discipline: 'general', role: '' }])
   }
@@ -48,20 +46,20 @@ export default function ParticipantRoster({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">Participants</h3>
+        <h3 className="text-sm font-medium text-gray-700">{t('participants.title')}</h3>
         <button
           type="button"
           onClick={addParticipant}
           className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
         >
           <Plus className="h-3 w-3" />
-          Add Participant
+          {t('participants.add')}
         </button>
       </div>
 
       {participants.length === 0 ? (
         <div className="text-center py-6 text-sm text-gray-500 border border-dashed border-gray-300 rounded-md">
-          No participants added. Add team members to improve AI discipline inference.
+          {t('participants.empty')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -72,7 +70,7 @@ export default function ParticipantRoster({
                   type="text"
                   value={p.name}
                   onChange={(e) => updateParticipant(index, 'name', e.target.value)}
-                  placeholder="Name *"
+                  placeholder={t('participants.namePlaceholder')}
                   required
                   className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
@@ -80,7 +78,7 @@ export default function ParticipantRoster({
                   type="email"
                   value={p.email}
                   onChange={(e) => updateParticipant(index, 'email', e.target.value)}
-                  placeholder="Email"
+                  placeholder={t('participants.emailPlaceholder')}
                   className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
                 <select
@@ -88,9 +86,9 @@ export default function ParticipantRoster({
                   onChange={(e) => updateParticipant(index, 'discipline', e.target.value)}
                   className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
                 >
-                  {DISCIPLINE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {ALL_DISCIPLINES.map((value) => (
+                    <option key={value} value={value}>
+                      {getDisciplineLabel(value)}
                     </option>
                   ))}
                 </select>
@@ -98,7 +96,7 @@ export default function ParticipantRoster({
                   type="text"
                   value={p.role}
                   onChange={(e) => updateParticipant(index, 'role', e.target.value)}
-                  placeholder="Role"
+                  placeholder={t('participants.rolePlaceholder')}
                   className="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>

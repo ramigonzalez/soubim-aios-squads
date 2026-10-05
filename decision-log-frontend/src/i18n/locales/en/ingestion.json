@@ -1,0 +1,105 @@
+{
+  "title": "Ingestion Approval",
+  "header": {
+    "pending_one": "{{count}} pending item",
+    "pending_other": "{{count}} pending items",
+    "total": "{{count}} total"
+  },
+  "tabs": {
+    "ariaLabel": "Tabs",
+    "pending": "Pending",
+    "history": "History"
+  },
+  "error": {
+    "title": "Failed to load sources",
+    "unexpected": "An unexpected error occurred"
+  },
+  "table": {
+    "selectAll": "Select all",
+    "id": "ID",
+    "project": "Project",
+    "date": "Date",
+    "detail": "Detail",
+    "typeFrom": "Type/From",
+    "info": "Info",
+    "status": "Status",
+    "included": "Incl.",
+    "aiSummary": "AI Summary",
+    "link": "Link",
+    "actions": "Actions",
+    "source": "Source",
+    "type": "Type",
+    "reviewedBy": "Reviewed By",
+    "reviewedAt": "Reviewed At",
+    "items": "Items"
+  },
+  "empty": {
+    "pendingTitle": "No pending items",
+    "pendingBody": "All ingestion sources have been reviewed or no sources match your filters.",
+    "historyTitle": "No history yet",
+    "historyBody": "Sources will appear here after being approved, rejected, or failed."
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "retry": "Retry",
+    "deleteSource": "Delete source and extracted items",
+    "approveItem": "Approve {{name}}",
+    "rejectItem": "Reject {{name}}",
+    "retryItem": "Retry {{name}}",
+    "selectItem": "Select {{name}}"
+  },
+  "deleteDialog": {
+    "title": "Delete Source",
+    "bodyPrefix": "This will permanently delete ",
+    "bodyItemsPrefix": " and its ",
+    "extractedItems_one": "{{count}} extracted item",
+    "extractedItems_other": "{{count}} extracted items",
+    "bodyItemsSuffix": " (including embeddings)",
+    "irreversible": "This action cannot be undone.",
+    "deleting": "Deleting..."
+  },
+  "row": {
+    "included": "Included",
+    "notIncluded": "Not included",
+    "file": "File",
+    "thread": "Thread",
+    "transcript": "Transcript",
+    "recipients_one": "{{count}} recipient",
+    "recipients_other": "{{count}} recipients"
+  },
+  "status": {
+    "ariaLabel": "Status: {{status}}",
+    "pending": "pending",
+    "approved": "approved",
+    "rejected": "rejected",
+    "processed": "processed",
+    "failed": "failed"
+  },
+  "filters": {
+    "byProject": "Filter by project",
+    "allProjects": "All Projects",
+    "all": "All",
+    "fromDate": "Filter from date",
+    "to": "to",
+    "toDate": "Filter to date",
+    "clearAll": "Clear All Filters",
+    "chipProject": "Project: {{value}}",
+    "chipType": "Type: {{value}}",
+    "chipFrom": "From: {{value}}",
+    "chipTo": "To: {{value}}",
+    "removeProject": "Remove project filter",
+    "removeType": "Remove type filter",
+    "removeFrom": "Remove from date filter",
+    "removeTo": "Remove to date filter"
+  },
+  "upload": {
+    "ariaLabel": "Upload document",
+    "idle": "Upload Document",
+    "uploading": "Uploading...",
+    "success": "Uploaded!",
+    "failed": "Failed",
+    "errorGeneric": "Upload failed",
+    "errorNetwork": "Upload failed — network error"
+  }
+}

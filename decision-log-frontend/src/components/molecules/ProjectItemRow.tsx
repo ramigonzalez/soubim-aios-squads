@@ -1,4 +1,6 @@
-import { cn } from '../../lib/utils'
+import { useTranslation } from 'react-i18next'
+import { cn, getItemTypeLabel } from '../../lib/utils'
+import { dateLocale } from '../../i18n'
 import { ItemTypeBadge } from '../atoms/ItemTypeBadge'
 import { DisciplineCircles } from '../atoms/DisciplineCircles'
 import { MilestoneStarToggle } from './MilestoneStarToggle'
@@ -23,6 +25,14 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
   const shortDate = formatShortDate(displayDate)
   const isActionItem = item.item_type === 'action_item'
   const toggleDone = useToggleDone(item.project_id)
+  const { t } = useTranslation('history')
+
+  // English keeps the raw type id (existing behaviour); Portuguese shows the translated type
+  const ariaLabel = t('itemRow.ariaLabel', {
+    typeId: item.item_type,
+    typeLabel: getItemTypeLabel(item.item_type),
+    title: item.title || item.statement,
+  })
 
   const isOverdue = isActionItem && item.due_date && !item.is_done && new Date(item.due_date) < new Date()
 
@@ -45,14 +55,14 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
       onKeyDown={(e) => {
         if (e.key === 'Enter') onClick(item.id)
       }}
-      aria-label={`${item.item_type}: ${item.title || item.statement}`}
+      aria-label={ariaLabel}
     >
       {/* Action item checkbox */}
       {isActionItem && (
         <button
           onClick={handleCheckboxClick}
           className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors"
-          aria-label={item.is_done ? 'Mark as not done' : 'Mark as done'}
+          aria-label={item.is_done ? t('itemRow.markNotDone') : t('itemRow.markDone')}
         >
           {item.is_done
             ? <CheckSquare className="w-4 h-4 text-green-600" />
@@ -104,11 +114,11 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
 }
 
 /**
- * Format date as short display: "Feb 8"
+ * Format date as short display: "Feb 8" (en) / "8 de fev." (pt-BR)
  */
 function formatShortDate(dateStr: string | undefined | null): string {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric' })
 }

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface BulkActionBarProps {
   selectedCount: number
   onApprove: () => void
@@ -11,6 +13,7 @@ export default function BulkActionBar({
   onReject,
   isLoading,
 }: BulkActionBarProps) {
+  const { t } = useTranslation('history')
   if (selectedCount === 0) return null
 
   return (
@@ -20,7 +23,7 @@ export default function BulkActionBar({
       role="status"
     >
       <span className="text-sm font-medium text-gray-700">
-        {selectedCount} {selectedCount === 1 ? 'item' : 'items'} selected
+        {t('bulkActions.selected', { count: selectedCount })}
       </span>
       <div className="flex items-center gap-3">
         <button
@@ -28,14 +31,14 @@ export default function BulkActionBar({
           disabled={isLoading}
           className="border border-red-300 text-red-700 text-sm font-medium px-4 py-2 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50"
         >
-          Reject Selected
+          {t('bulkActions.rejectSelected')}
         </button>
         <button
           onClick={onApprove}
           disabled={isLoading}
           className="bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
         >
-          Approve Selected
+          {t('bulkActions.approveSelected')}
         </button>
       </div>
     </div>

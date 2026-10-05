@@ -1,5 +1,7 @@
 import { Users, FileText, Calendar } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { StagePill } from '../molecules/StagePill'
+import { dateLocale } from '../../i18n'
 
 interface ProjectCardProject {
   id: string
@@ -20,7 +22,8 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
-  const createdDate = new Date(project.created_at).toLocaleDateString('en-US', {
+  const { t } = useTranslation('projects')
+  const createdDate = new Date(project.created_at).toLocaleDateString(dateLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -55,13 +58,13 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         {project.current_stage ? (
           <StagePill stageName={project.current_stage.name} isCurrent />
         ) : (
-          <span className="text-xs text-gray-400">No stages</span>
+          <span className="text-xs text-gray-400">{t('card.noStages')}</span>
         )}
       </div>
 
       {/* Description */}
       <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
-        {project.description || 'No description'}
+        {project.description || t('card.noDescription')}
       </p>
 
       {/* Stats */}
@@ -69,26 +72,26 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         <div className="flex items-center text-sm text-gray-700">
           <Users className="w-4 h-4 mr-2 text-blue-500" />
           <span>
-            {project.member_count || 0} member{project.member_count !== 1 ? 's' : ''}
+            {t('card.members', { count: project.member_count || 0 })}
           </span>
         </div>
 
         <div className="flex items-center text-sm text-gray-700">
           <FileText className="w-4 h-4 mr-2 text-green-500" />
           <span>
-            {itemCount} item{itemCount !== 1 ? 's' : ''}
+            {t('card.items', { count: itemCount })}
           </span>
         </div>
 
         <div className="flex items-center text-sm text-gray-500">
           <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-          <span>Created {createdDate}</span>
+          <span>{t('card.created', { date: createdDate })}</span>
         </div>
       </div>
 
       {/* CTA */}
       <div className="pt-4 border-t border-gray-200">
-        <p className="text-xs text-blue-600 font-medium">View Details →</p>
+        <p className="text-xs text-blue-600 font-medium">{t('card.viewDetails')}</p>
       </div>
     </div>
   )

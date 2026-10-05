@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ProjectItem } from '../../types/projectItem'
 import { cn } from '../../lib/utils'
 import { DisciplinePill } from '../atoms/DisciplinePill'
@@ -22,6 +23,7 @@ export function DecisionRow({
   showAffectedDisciplines = false,
   inMeetingGroup = false,
 }: DecisionRowProps) {
+  const { t } = useTranslation('history')
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -44,7 +46,7 @@ export function DecisionRow({
           ? 'bg-transparent hover:bg-white active:bg-white ml-1'
           : 'bg-white border-b border-gray-100 hover:bg-blue-50/50 active:bg-blue-50'
       )}
-      aria-label={`Decision: ${decision.statement}`}
+      aria-label={t('decisionRow.ariaLabel', { statement: decision.statement })}
     >
       {/* Row 1: Statement only (full width, truncated) */}
       <div className="flex items-center">

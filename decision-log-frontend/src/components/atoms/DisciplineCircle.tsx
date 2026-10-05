@@ -1,4 +1,5 @@
-import { cn, getDisciplineCircleColor, getDisciplineInitial } from '../../lib/utils'
+import { useTranslation } from 'react-i18next'
+import { cn, getDisciplineCircleColor, getDisciplineInitial, getDisciplineLabel } from '../../lib/utils'
 import type { Discipline } from '../../types/projectItem'
 
 interface DisciplineCircleProps {
@@ -17,6 +18,9 @@ const SIZE_CLASSES = {
 export function DisciplineCircle({ discipline, isPrimary = false, size = 'md', className }: DisciplineCircleProps) {
   const bgColor = getDisciplineCircleColor(discipline as Discipline)
   const initial = getDisciplineInitial(discipline as Discipline)
+  const { t } = useTranslation('history')
+  // English keeps the raw discipline id (existing behaviour); Portuguese shows the translated name
+  const label = t('disciplineCircle.label', { id: discipline, label: getDisciplineLabel(discipline) })
 
   return (
     <span
@@ -27,8 +31,8 @@ export function DisciplineCircle({ discipline, isPrimary = false, size = 'md', c
         className,
       )}
       style={{ backgroundColor: bgColor }}
-      title={discipline}
-      aria-label={discipline}
+      title={label}
+      aria-label={label}
     >
       {initial}
     </span>

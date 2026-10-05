@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface AISummaryExpanderProps {
   summary: string | null
@@ -6,9 +7,10 @@ interface AISummaryExpanderProps {
 
 export default function AISummaryExpander({ summary }: AISummaryExpanderProps) {
   const [expanded, setExpanded] = useState(false)
+  const { t } = useTranslation('history')
 
   if (!summary) {
-    return <span className="text-sm text-gray-400 italic">No summary available</span>
+    return <span className="text-sm text-gray-400 italic">{t('aiSummary.empty')}</span>
   }
 
   const isLong = summary.length > 80
@@ -26,7 +28,7 @@ export default function AISummaryExpander({ summary }: AISummaryExpanderProps) {
           className="ml-1 text-blue-600 hover:text-blue-800 text-xs font-medium cursor-pointer"
           aria-expanded={expanded}
         >
-          {expanded ? 'Show less' : 'Show more'}
+          {expanded ? t('aiSummary.showLess') : t('aiSummary.showMore')}
         </button>
       )}
     </div>

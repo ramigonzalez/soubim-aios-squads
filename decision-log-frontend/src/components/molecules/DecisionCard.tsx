@@ -2,6 +2,7 @@ import { ProjectItem } from '../../types/projectItem'
 import { formatDate } from '../../lib/utils'
 import { DisciplineBadge } from './DisciplineBadge'
 import { Users, Calendar } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface DecisionCardProps {
   decision: ProjectItem
@@ -10,6 +11,7 @@ interface DecisionCardProps {
 
 export function DecisionCard({ decision, onClick }: DecisionCardProps) {
   const primaryDiscipline = decision.affected_disciplines[0] ?? 'general'
+  const { t } = useTranslation('history')
 
   return (
     <div
@@ -24,7 +26,7 @@ export function DecisionCard({ decision, onClick }: DecisionCardProps) {
       </div>
 
       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-        {decision.why || 'No rationale provided'}
+        {decision.why || t('decisionCard.noRationale')}
       </p>
 
       <div className="flex items-center gap-4 text-xs text-gray-500">

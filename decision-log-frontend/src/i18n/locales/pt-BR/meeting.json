@@ -1,0 +1,17 @@
+{
+  "loading": "Carregando reunião…",
+  "unavailable": "Reunião indisponível",
+  "loadError": "Não foi possível carregar esta reunião.",
+  "backToProject": "Voltar ao projeto",
+  "untitled": "Reunião",
+  "durationMinutes": "{{count}} min",
+  "openRecording": "Abrir gravação",
+  "followRecording": "Acompanhar a gravação",
+  "transcript": {
+    "heading": "Transcrição",
+    "turns_one": "{{count}} fala",
+    "turns_other": "{{count}} falas",
+    "empty": "Nenhuma transcrição para esta reunião.",
+    "uncertainSpeaker": "Falante incerto"
+  }
+}

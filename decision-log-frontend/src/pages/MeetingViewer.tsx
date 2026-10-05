@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AlertTriangle, ArrowLeft, Calendar, Clock, ExternalLink } from 'lucide-react'
 import { useMeeting, recordingSrc } from '../hooks/useMeeting'
 import { formatSeconds, parseTranscript, turnIndexAt } from '../lib/transcript'
@@ -16,6 +17,7 @@ import { cn, formatDate } from '../lib/utils'
 const MANUAL_SCROLL_PAUSE_MS = 4000
 
 export function MeetingViewer() {
+  const { t } = useTranslation('meeting')
   const { sourceId = '' } = useParams<{ sourceId: string }>()
   const [searchParams] = useSearchParams()
   const startAt = Number(searchParams.get('t')) || 0
@@ -85,13 +87,13 @@ export function MeetingViewer() {
   }
 
   if (isLoading) {
-    return <div className="flex justify-center py-16 text-gray-500">Loading meeting…</div>
+    return <div className="flex justify-center py-16 text-gray-500">{t('loading')}</div>
   }
   if (error || !meeting) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-700 font-medium">Meeting not available</p>
-        <p className="text-sm text-gray-500 mt-1">{error?.message || 'This meeting could not be loaded.'}</p>
+        <p className="text-gray-700 font-medium">{t('unavailable')}</p>
+        <p className="text-sm text-gray-500 mt-1">{error?.message || t('loadError')}</p>
       </div>
     )
   }
@@ -104,9 +106,9 @@ export function MeetingViewer() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
       >
         <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Back to project
+        {t('backToProject')}
       </Link>
-      <h1 className="mt-2 text-xl font-semibold text-gray-900">{meeting.title || 'Meeting'}</h1>
+      <h1 className="mt-2 text-xl font-semibold text-gray-900">{meeting.title || t('untitled')}</h1>
       <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-500">
         {meeting.occurred_at && (
           <span className="inline-flex items-center gap-1.5">
@@ -117,7 +119,7 @@ export function MeetingViewer() {
         {meeting.duration_minutes ? (
           <span className="inline-flex items-center gap-1.5">
             <Clock className="w-4 h-4" aria-hidden="true" />
-            {meeting.duration_minutes} min
+            {t('durationMinutes', { count: meeting.duration_minutes })}
           </span>
         ) : null}
         {meeting.recording?.type === 'external' && (
@@ -128,7 +130,7 @@ export function MeetingViewer() {
             className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800"
           >
             <ExternalLink className="w-4 h-4" aria-hidden="true" />
-            Open recording
+            {t('openRecording')}
           </a>
         )}
       </div>
@@ -148,7 +150,7 @@ export function MeetingViewer() {
             />
             <label className="mt-3 flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
               <input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)} />
-              Follow the recording
+              {t('followRecording')}
             </label>
           </div>
         )}
@@ -156,10 +158,10 @@ export function MeetingViewer() {
         {/* Transcript */}
         <section className="rounded-lg border border-gray-200 bg-white flex flex-col min-h-0">
           <h2 className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
-            Transcript <span className="font-normal text-gray-400">· {turns.length} turns</span>
+            {t('transcript.heading')} <span className="font-normal text-gray-400">· {t('transcript.turns', { count: turns.length })}</span>
           </h2>
           {turns.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-500">No transcript for this meeting.</p>
+            <p className="px-4 py-6 text-sm text-gray-500">{t('transcript.empty')}</p>
           ) : (
             <div
               ref={listRef}
@@ -183,7 +185,7 @@ export function MeetingViewer() {
                     <div className="flex items-baseline gap-2">
                       <span className="font-mono tabular-nums text-xs text-gray-400">{formatSeconds(turn.start)}</span>
                       <span className={cn('font-semibold', turn.uncertain ? 'text-amber-700' : 'text-gray-800')}>
-                        {turn.uncertain && <AlertTriangle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" aria-label="Uncertain speaker" />}
+                        {turn.uncertain && <AlertTriangle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" aria-label={t('transcript.uncertainSpeaker')} />}
                         {turn.speaker}
                       </span>
                       {turn.reason && <span className="text-xs text-amber-600">{turn.reason}</span>}

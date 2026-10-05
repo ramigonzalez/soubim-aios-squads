@@ -1,0 +1,112 @@
+{
+  "modal": {
+    "actionItem": {
+      "heading": "Ação",
+      "done": "Concluído",
+      "markDone": "Marcar como concluído",
+      "owner": "Responsável:",
+      "due": "Prazo:",
+      "overdue": "Atrasado"
+    },
+    "inRecording": "na gravação",
+    "tabs": {
+      "overview": "Visão geral",
+      "transcript": "Transcrição",
+      "similar": "Similares"
+    },
+    "sections": {
+      "description": "Descrição",
+      "rationale": "Justificativa",
+      "causation": "Origem",
+      "consensus": "Consenso",
+      "impacts": "Impactos"
+    },
+    "noRationale": "Nenhuma justificativa informada.",
+    "consensus": {
+      "agreeCount": "{{agree}}/{{total}} concordam",
+      "status": {
+        "AGREE": "Concorda",
+        "DISAGREE": "Discorda",
+        "DISSENT": "Discorda",
+        "ABSTAIN": "Abstém-se"
+      }
+    },
+    "impacts": {
+      "cost": "Custo",
+      "timeline": "Prazo",
+      "scope": "Escopo",
+      "riskLevel": "Nível de risco",
+      "risk": {
+        "low": "baixo",
+        "medium": "médio",
+        "high": "alto"
+      }
+    },
+    "transcript": {
+      "intro": "Trechos da transcrição de onde este item foi extraído:",
+      "empty": "Nenhum trecho da transcrição para este item.",
+      "openInMeeting": "Abrir na reunião"
+    },
+    "similar": {
+      "intro": "Decisões similares deste projeto:",
+      "placeholder": "Decisões relacionadas serão exibidas aqui com base em similaridade vetorial."
+    }
+  },
+  "form": {
+    "statement": {
+      "label": "Enunciado",
+      "placeholder": "Descreva o item em uma ou duas frases",
+      "required": "O enunciado é obrigatório"
+    },
+    "itemType": {
+      "label": "Tipo de item",
+      "placeholder": "Selecione o tipo de item...",
+      "required": "O tipo de item é obrigatório"
+    },
+    "disciplines": {
+      "legend": "Disciplinas afetadas",
+      "required": "Selecione pelo menos uma disciplina"
+    },
+    "who": {
+      "label": "Quem",
+      "placeholder": "Nome ou função",
+      "required": "Informe quem"
+    },
+    "date": {
+      "label": "Data",
+      "required": "A data é obrigatória"
+    },
+    "contextNotes": {
+      "label": "Contexto / Observações",
+      "placeholder": "Contexto adicional, referência à reunião ou descrição da fonte"
+    },
+    "owner": {
+      "label": "Responsável",
+      "placeholder": "Pessoa responsável"
+    },
+    "dueDate": {
+      "label": "Prazo"
+    },
+    "consensus": {
+      "heading": "Consenso",
+      "statusAria": "Status de consenso de {{discipline}}",
+      "notesAria": "Observações de consenso de {{discipline}}",
+      "select": "Selecione...",
+      "agree": "Concorda",
+      "disagree": "Discorda",
+      "abstain": "Abstém-se",
+      "notesPlaceholder": "Observações (opcional)"
+    },
+    "saveError": "Não foi possível salvar o item. Tente novamente.",
+    "saving": "Salvando...",
+    "submit": "Salvar item"
+  },
+  "create": {
+    "title": "Adicionar item ao projeto",
+    "subtitle": "Registre manualmente informações de conversas ou fontes externas."
+  },
+  "milestone": {
+    "remove": "Desmarcar como marco",
+    "mark": "Marcar como marco"
+  }
+}

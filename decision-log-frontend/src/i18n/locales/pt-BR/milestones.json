@@ -1,0 +1,94 @@
+{
+  "timeline": {
+    "navLabel": "Linha do tempo de marcos",
+    "today": "Hoje",
+    "loadingLabel": "Carregando linha do tempo de marcos",
+    "stageRegion": "Etapa: {{name}}",
+    "milestonesInStage": "Marcos em {{name}}",
+    "other": "Outros",
+    "otherRegion": "Outros marcos",
+    "otherList": "Marcos fora do período das etapas",
+    "empty": {
+      "noMilestones": "Nenhum marco ainda. Marque itens importantes como marcos no Histórico do projeto.",
+      "noStages": "Configure as etapas do projeto nas configurações para ativar a linha do tempo.",
+      "noFilterMatch": "Nenhum marco corresponde aos filtros."
+    },
+    "error": {
+      "loadFailed": "Não foi possível carregar a linha do tempo de marcos.",
+      "retry": "Tentar novamente"
+    },
+    "clearFilters": "Limpar filtros"
+  },
+  "filters": {
+    "source": "Fonte:",
+    "type": "Tipo:",
+    "clear": "Limpar filtros",
+    "sourceType": {
+      "meeting": "Reunião",
+      "email": "E-mail",
+      "document": "Documento",
+      "manual_input": "Manual"
+    },
+    "itemType": {
+      "decision": "Decisão",
+      "topic": "Tópico",
+      "action_item": "Ação",
+      "idea": "Ideia",
+      "information": "Informação"
+    }
+  },
+  "node": {
+    "itemType": {
+      "decision": "Decisão",
+      "action_item": "Ação",
+      "topic": "Tópico",
+      "idea": "Ideia",
+      "information": "Info"
+    },
+    "sourceLabel": "Fonte: {{source}}",
+    "ariaLabel": "{{type}}: {{statement}}. {{date}}. Disciplinas: {{disciplines}}",
+    "noDisciplines": "nenhuma"
+  },
+  "stage": {
+    "current": "Atual",
+    "currentSuffix": " (atual)",
+    "dotLabel_one": "Etapa: {{name}}{{current}}, {{count}} marco",
+    "dotLabel_other": "Etapa: {{name}}{{current}}, {{count}} marcos"
+  },
+  "share": {
+    "dialog": {
+      "title": "Compartilhar linha do tempo de marcos",
+      "description": "Gere um link somente leitura para compartilhar a linha do tempo de marcos com clientes e fornecedores.",
+      "copyLink": "Copiar link",
+      "copied": "Copiado",
+      "copy": "Copiar",
+      "expiresOn": "Expira em {{date}}",
+      "viewed_one": "Visualizado {{count}} vez",
+      "viewed_other": "Visualizado {{count}} vezes",
+      "revokeConfirm": "Tem certeza? O link compartilhado será invalidado imediatamente.",
+      "revoking": "Revogando...",
+      "confirmRevoke": "Sim, revogar",
+      "cancel": "Cancelar",
+      "revokeLink": "Revogar link",
+      "noActiveLink": "Nenhum link compartilhado ativo. Gere um para compartilhar a linha do tempo de marcos.",
+      "generating": "Gerando...",
+      "generateLink": "Gerar link"
+    }
+  },
+  "shared": {
+    "invalidTitle": "Link compartilhado inválido",
+    "invalidBody": "O link acessado não é válido.",
+    "loading": "Carregando linha do tempo compartilhada...",
+    "expiredTitle": "Este link expirou ou foi revogado",
+    "expiredBody": "A linha do tempo de marcos compartilhada não está mais disponível. Entre em contato com o administrador do projeto para obter um novo link.",
+    "badge": "Visualização compartilhada",
+    "count_one": "{{count}} marco",
+    "count_other": "{{count}} marcos",
+    "poweredBy": "Desenvolvido com {{appName}}"
+  },
+  "export": {
+    "exportedOn": "Exportado em {{date}}",
+    "footerSingle": "Página 1 — Gerado por {{appName}}",
+    "footerMulti": "Página {{page}} de {{total}} — Gerado por {{appName}}"
+  }
+}

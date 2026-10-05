@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useAuthStore } from '../store/authStore'
 
 export function Login() {
+  const { t } = useTranslation('auth')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -25,7 +27,7 @@ export function Login() {
       navigate('/projects')
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } }
-      setError(e?.response?.data?.detail || 'Login failed. Please try again.')
+      setError(e?.response?.data?.detail || t('login.error'))
     } finally {
       setIsLoading(false)
     }
@@ -39,7 +41,7 @@ export function Login() {
           <div className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg mb-2 shadow-lg">
             <h1 className="text-3xl font-bold tracking-tight">DecisionLog</h1>
           </div>
-          <p className="text-slate-500 text-sm font-medium">Manage decisions with confidence</p>
+          <p className="text-slate-500 text-sm font-medium">{t('login.tagline')}</p>
         </div>
 
         {/* Login Card */}
@@ -48,7 +50,7 @@ export function Login() {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
-                Email Address
+                {t('login.email.label')}
               </label>
               <input
                 id="email"
@@ -56,7 +58,7 @@ export function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 font-medium transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
-                placeholder="you@example.com"
+                placeholder={t('login.email.placeholder')}
                 required
               />
             </div>
@@ -64,7 +66,7 @@ export function Login() {
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
-                Password
+                {t('login.password.label')}
               </label>
               <input
                 id="password"
@@ -72,7 +74,7 @@ export function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 font-medium transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
-                placeholder="Enter your password"
+                placeholder={t('login.password.placeholder')}
                 required
               />
             </div>
@@ -99,10 +101,10 @@ export function Login() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Logging in...
+                  {t('login.submitting')}
                 </span>
               ) : (
-                'Login'
+                t('login.submit')
               )}
             </button>
           </form>
@@ -110,10 +112,10 @@ export function Login() {
           {/* Demo Info */}
           <div className="mt-6 pt-6 border-t border-slate-100">
             <p className="text-xs text-slate-600 text-center">
-              <strong>Demo Login:</strong>
+              <strong>{t('login.demo.title')}</strong>
             </p>
             <p className="text-xs text-slate-600 text-center mt-1">
-              Use any email with password{' '}
+              {t('login.demo.hint')}{' '}
               <code className="bg-slate-100 text-slate-900 px-2 py-0.5 rounded font-mono font-bold">
                 "password"
               </code>
@@ -123,7 +125,7 @@ export function Login() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-500 mt-6">
-          Synkra AIOS © 2026 — All rights reserved
+          {t('login.footer')}
         </p>
       </div>
     </div>

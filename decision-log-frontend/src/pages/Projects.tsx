@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useProjects } from '../hooks/useProjects'
 import { ProjectCard } from '../components/common/ProjectCard'
 import { ChevronLeft, ChevronRight, AlertCircle, Loader, Plus, FolderPlus } from 'lucide-react'
@@ -7,6 +8,7 @@ import { ChevronLeft, ChevronRight, AlertCircle, Loader, Plus, FolderPlus } from
 const PAGE_SIZE = 12
 
 export function Projects() {
+  const { t } = useTranslation('projects')
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(0)
 
@@ -44,9 +46,9 @@ export function Projects() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Projects</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('list.title')}</h1>
             <p className="text-gray-600">
-              {data?.total || 0} project{data?.total !== 1 ? 's' : ''} available
+              {t('list.available', { count: data?.total || 0 })}
             </p>
           </div>
           <button
@@ -54,7 +56,7 @@ export function Projects() {
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition"
           >
             <Plus className="h-4 w-4" />
-            Create Project
+            {t('list.create')}
           </button>
         </div>
 
@@ -62,22 +64,22 @@ export function Projects() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-            <p className="text-gray-600">Loading projects...</p>
+            <p className="text-gray-600">{t('list.loading')}</p>
           </div>
         ) : error ? (
           /* Error State */
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 flex items-start space-x-4">
             <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-lg font-semibold text-red-900 mb-1">Failed to Load Projects</h3>
+              <h3 className="text-lg font-semibold text-red-900 mb-1">{t('list.errorTitle')}</h3>
               <p className="text-red-700 text-sm">
-                {error instanceof Error ? error.message : 'An error occurred while fetching projects.'}
+                {error instanceof Error ? error.message : t('list.errorFallback')}
               </p>
               <button
                 onClick={() => window.location.reload()}
                 className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
               >
-                Retry
+                {t('list.retry')}
               </button>
             </div>
           </div>
@@ -85,15 +87,15 @@ export function Projects() {
           /* Empty State */
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
             <FolderPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Create your first project</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('list.empty.title')}</h3>
             <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-              Set up a project with a stage schedule to start capturing project items from meetings, emails, and documents.
+              {t('list.empty.description')}
             </p>
             <button
               onClick={() => navigate('/projects/new')}
               className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 text-sm font-medium transition"
             >
-              Create Project
+              {t('list.create')}
             </button>
           </div>
         ) : (
@@ -113,7 +115,7 @@ export function Projects() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Page {currentPage + 1} of {totalPages}
+                  {t('list.pagination.page', { current: currentPage + 1, total: totalPages })}
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -122,14 +124,14 @@ export function Projects() {
                     className="flex items-center space-x-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    <span>Previous</span>
+                    <span>{t('list.pagination.previous')}</span>
                   </button>
                   <button
                     onClick={handleNextPage}
                     disabled={!hasNextPage}
                     className="flex items-center space-x-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
-                    <span>Next</span>
+                    <span>{t('list.pagination.next')}</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>

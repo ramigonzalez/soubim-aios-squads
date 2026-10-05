@@ -1,0 +1,105 @@
+{
+  "title": "Aprovação de ingestão",
+  "header": {
+    "pending_one": "{{count}} item pendente",
+    "pending_other": "{{count}} itens pendentes",
+    "total": "{{count}} no total"
+  },
+  "tabs": {
+    "ariaLabel": "Abas",
+    "pending": "Pendentes",
+    "history": "Histórico"
+  },
+  "error": {
+    "title": "Falha ao carregar as fontes",
+    "unexpected": "Ocorreu um erro inesperado"
+  },
+  "table": {
+    "selectAll": "Selecionar todos",
+    "id": "ID",
+    "project": "Projeto",
+    "date": "Data",
+    "detail": "Detalhe",
+    "typeFrom": "Tipo/De",
+    "info": "Info",
+    "status": "Status",
+    "included": "Incl.",
+    "aiSummary": "Resumo IA",
+    "link": "Link",
+    "actions": "Ações",
+    "source": "Fonte",
+    "type": "Tipo",
+    "reviewedBy": "Revisado por",
+    "reviewedAt": "Revisado em",
+    "items": "Itens"
+  },
+  "empty": {
+    "pendingTitle": "Nenhum item pendente",
+    "pendingBody": "Todas as fontes de ingestão foram revisadas ou nenhuma fonte corresponde aos filtros.",
+    "historyTitle": "Nenhum histórico ainda",
+    "historyBody": "As fontes aparecerão aqui depois de aprovadas, rejeitadas ou com falha."
+  },
+  "actions": {
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "retry": "Tentar novamente",
+    "deleteSource": "Excluir fonte e itens extraídos",
+    "approveItem": "Aprovar {{name}}",
+    "rejectItem": "Rejeitar {{name}}",
+    "retryItem": "Tentar novamente {{name}}",
+    "selectItem": "Selecionar {{name}}"
+  },
+  "deleteDialog": {
+    "title": "Excluir fonte",
+    "bodyPrefix": "Isso excluirá permanentemente ",
+    "bodyItemsPrefix": " e seus ",
+    "extractedItems_one": "{{count}} item extraído",
+    "extractedItems_other": "{{count}} itens extraídos",
+    "bodyItemsSuffix": " (incluindo embeddings)",
+    "irreversible": "Esta ação não pode ser desfeita.",
+    "deleting": "Excluindo..."
+  },
+  "row": {
+    "included": "Incluído",
+    "notIncluded": "Não incluído",
+    "file": "Arquivo",
+    "thread": "Conversa",
+    "transcript": "Transcrição",
+    "recipients_one": "{{count}} destinatário",
+    "recipients_other": "{{count}} destinatários"
+  },
+  "status": {
+    "ariaLabel": "Status: {{status}}",
+    "pending": "pendente",
+    "approved": "aprovado",
+    "rejected": "rejeitado",
+    "processed": "processado",
+    "failed": "falhou"
+  },
+  "filters": {
+    "byProject": "Filtrar por projeto",
+    "allProjects": "Todos os projetos",
+    "all": "Todos",
+    "fromDate": "Filtrar a partir da data",
+    "to": "até",
+    "toDate": "Filtrar até a data",
+    "clearAll": "Limpar todos os filtros",
+    "chipProject": "Projeto: {{value}}",
+    "chipType": "Tipo: {{value}}",
+    "chipFrom": "De: {{value}}",
+    "chipTo": "Até: {{value}}",
+    "removeProject": "Remover filtro de projeto",
+    "removeType": "Remover filtro de tipo",
+    "removeFrom": "Remover filtro de data inicial",
+    "removeTo": "Remover filtro de data final"
+  },
+  "upload": {
+    "ariaLabel": "Enviar documento",
+    "idle": "Enviar documento",
+    "uploading": "Enviando...",
+    "success": "Enviado!",
+    "failed": "Falhou",
+    "errorGeneric": "Falha no envio",
+    "errorNetwork": "Falha no envio — erro de rede"
+  }
+}

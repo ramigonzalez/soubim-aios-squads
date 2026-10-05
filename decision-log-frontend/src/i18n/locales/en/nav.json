@@ -1,0 +1,12 @@
+{
+  "home": "Home",
+  "projects": "Projects",
+  "ingestion": "Ingestion",
+  "logout": "Logout",
+  "loading": "Loading...",
+  "roles": {
+    "director": "director",
+    "architect": "architect",
+    "client": "client"
+  }
+}

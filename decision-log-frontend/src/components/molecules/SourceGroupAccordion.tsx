@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown, FileText, PlayCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { meetingLink } from '../../lib/transcript'
@@ -57,10 +58,11 @@ export function SourceGroupAccordion({
 }: SourceGroupAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(items.length <= 5)
   const [showSummary, setShowSummary] = useState(false)
+  const { t } = useTranslation('history')
 
   const borderColor = getSourceBorderColor(source.type)
   const itemCount = items.length
-  const itemLabel = itemCount === 1 ? '1 item' : `${itemCount} items`
+  const itemLabel = t('common:items', { count: itemCount })
 
   const accordionId = `source-${source.id}-items`
 
@@ -68,7 +70,7 @@ export function SourceGroupAccordion({
     <div
       className={cn('border-l-2 pl-2', borderColor)}
       role="region"
-      aria-label={`${source.title}, ${itemLabel}`}
+      aria-label={t('sourceGroup.regionLabel', { title: source.title, items: itemLabel })}
     >
       {/* Source Group Header */}
       <div
@@ -80,7 +82,11 @@ export function SourceGroupAccordion({
         tabIndex={0}
         aria-expanded={isExpanded}
         aria-controls={accordionId}
-        aria-label={`Source: ${source.title}, ${itemLabel}, ${isExpanded ? 'expanded' : 'collapsed'}`}
+        aria-label={t('sourceGroup.headerLabel', {
+          title: source.title,
+          items: itemLabel,
+          state: isExpanded ? t('sourceGroup.expanded') : t('sourceGroup.collapsed'),
+        })}
         onClick={() => setIsExpanded(!isExpanded)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -109,11 +115,11 @@ export function SourceGroupAccordion({
                 ? 'border-blue-200 bg-blue-50 text-blue-700'
                 : 'border-gray-200 text-gray-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700',
             )}
-            aria-label={showSummary ? 'Hide meeting summary' : 'Show meeting summary'}
+            aria-label={showSummary ? t('sourceGroup.hideSummary') : t('sourceGroup.showSummary')}
             aria-expanded={showSummary}
           >
             <FileText className="w-3.5 h-3.5" aria-hidden="true" />
-            Resumo
+            {t('sourceGroup.summary')}
             <ChevronDown
               className={cn('w-3 h-3 transition-transform duration-200', showSummary && 'rotate-180')}
               aria-hidden="true"
@@ -125,10 +131,10 @@ export function SourceGroupAccordion({
             to={meetingLink(source.meetingId)}
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-            aria-label={`Open meeting ${source.title}`}
+            aria-label={t('sourceGroup.openMeeting', { title: source.title })}
           >
             <PlayCircle className="w-3.5 h-3.5" aria-hidden="true" />
-            Meeting
+            {t('sourceGroup.meeting')}
           </Link>
         )}
         <ChevronDown

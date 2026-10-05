@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render as rtlRender, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { DrilldownModal } from '../../components/organisms/DrilldownModal'
 import type { ProjectItem } from '../../types/projectItem'
+import i18n from '../../i18n'
 
 // The modal's done-checkbox uses a React Query mutation; rendering doesn't need a real client.
 vi.mock('../../hooks/useProjectItemMutation', () => ({
@@ -105,5 +106,26 @@ describe('DrilldownModal — meeting viewer links (Story 7.13)', () => {
     render(<DrilldownModal decision={makeItem()} onClose={vi.fn()} />)
     expect(screen.getByText('00:33:40')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /in recording/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('DrilldownModal — Portuguese (Story 11.1)', () => {
+  afterEach(() => i18n.changeLanguage('en'))
+
+  it('renders labels, consensus disciplines and stance in Portuguese', async () => {
+    await i18n.changeLanguage('pt-BR')
+    const item = makeItem({
+      why: 'Evitar recortes na porta',
+      consensus: { client: { status: 'AGREE', notes: null }, architecture: { status: 'AGREE', notes: null } },
+      source: { id: 'src-1', title: 'Quinzenal', type: 'meeting', occurred_at: '2026-09-04T00:00:00' },
+    })
+    render(<DrilldownModal decision={item} onClose={vi.fn()} />)
+
+    expect(screen.getByText('Justificativa')).toBeInTheDocument()
+    expect(screen.getByText('Visão geral')).toBeInTheDocument()
+    expect(screen.getByText('4 de set. de 2026')).toBeInTheDocument()
+    expect(screen.getAllByText('Cliente').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Client')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Concorda').length).toBe(2)
   })
 })

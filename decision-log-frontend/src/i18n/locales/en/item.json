@@ -1,0 +1,112 @@
+{
+  "modal": {
+    "actionItem": {
+      "heading": "Action Item",
+      "done": "Done",
+      "markDone": "Mark as done",
+      "owner": "Owner:",
+      "due": "Due:",
+      "overdue": "Overdue"
+    },
+    "inRecording": "in recording",
+    "tabs": {
+      "overview": "Overview",
+      "transcript": "Transcript",
+      "similar": "Similar"
+    },
+    "sections": {
+      "description": "Description",
+      "rationale": "Rationale",
+      "causation": "Causation",
+      "consensus": "Consensus",
+      "impacts": "Impacts"
+    },
+    "noRationale": "No rationale provided.",
+    "consensus": {
+      "agreeCount": "{{agree}}/{{total}} agree",
+      "status": {
+        "AGREE": "AGREE",
+        "DISAGREE": "DISAGREE",
+        "DISSENT": "DISSENT",
+        "ABSTAIN": "ABSTAIN"
+      }
+    },
+    "impacts": {
+      "cost": "Cost",
+      "timeline": "Timeline",
+      "scope": "Scope",
+      "riskLevel": "Risk Level",
+      "risk": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
+      }
+    },
+    "transcript": {
+      "intro": "Transcript lines this item was extracted from:",
+      "empty": "No transcript excerpt for this item.",
+      "openInMeeting": "Open in meeting"
+    },
+    "similar": {
+      "intro": "Similar decisions from this project:",
+      "placeholder": "Related decisions would be displayed here based on vector similarity."
+    }
+  },
+  "form": {
+    "statement": {
+      "label": "Statement",
+      "placeholder": "Describe the item in one or two sentences",
+      "required": "Statement is required"
+    },
+    "itemType": {
+      "label": "Item Type",
+      "placeholder": "Select item type...",
+      "required": "Item type is required"
+    },
+    "disciplines": {
+      "legend": "Affected Disciplines",
+      "required": "Select at least one discipline"
+    },
+    "who": {
+      "label": "Who",
+      "placeholder": "Name or role",
+      "required": "Who is required"
+    },
+    "date": {
+      "label": "Date",
+      "required": "Date is required"
+    },
+    "contextNotes": {
+      "label": "Context / Notes",
+      "placeholder": "Additional context, meeting reference, or source description"
+    },
+    "owner": {
+      "label": "Owner",
+      "placeholder": "Person responsible"
+    },
+    "dueDate": {
+      "label": "Due Date"
+    },
+    "consensus": {
+      "heading": "Consensus",
+      "statusAria": "{{discipline}} consensus status",
+      "notesAria": "{{discipline}} consensus notes",
+      "select": "Select...",
+      "agree": "Agree",
+      "disagree": "Disagree",
+      "abstain": "Abstain",
+      "notesPlaceholder": "Notes (optional)"
+    },
+    "saveError": "Failed to save item. Please try again.",
+    "saving": "Saving...",
+    "submit": "Save Item"
+  },
+  "create": {
+    "title": "Add Project Item",
+    "subtitle": "Manually capture information from conversations or external sources."
+  },
+  "milestone": {
+    "remove": "Remove milestone",
+    "mark": "Mark as milestone"
+  }
+}

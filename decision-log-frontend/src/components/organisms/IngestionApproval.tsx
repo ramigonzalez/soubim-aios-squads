@@ -1,5 +1,8 @@
 import { useMemo } from 'react'
 import { AlertCircle, Inbox, RefreshCw, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { dateLocale } from '../../i18n'
+import { getSourceTypeLabel } from '../../lib/utils'
 import { useIngestion, useIngestionHistory, useFilteredSources } from '../../hooks/useIngestion'
 import { useBatchAction, useApproveSource, useRejectSource, useRetrySource, useDeleteSource } from '../../hooks/useIngestionMutation'
 import { useIngestionStore } from '../../store/ingestionStore'
@@ -42,6 +45,7 @@ function getSourceLabel(source: Source): string {
 }
 
 export default function IngestionApproval() {
+  const { t } = useTranslation('ingestion')
   const { data, isLoading, error, refetch } = useIngestion()
   const { data: historyData, isLoading: historyLoading, error: historyError, refetch: historyRefetch } = useIngestionHistory()
   const batchAction = useBatchAction()
@@ -158,18 +162,18 @@ export default function IngestionApproval() {
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Ingestion Approval</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {data && (
           <p className="mt-1 text-sm text-gray-500">
-            {data.pending_count} pending {data.pending_count === 1 ? 'item' : 'items'} &middot;{' '}
-            {data.total} total
+            {t('header.pending', { count: data.pending_count })} &middot;{' '}
+            {t('header.total', { count: data.total })}
           </p>
         )}
       </div>
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-4" aria-label="Tabs">
+        <nav className="flex gap-4" aria-label={t('tabs.ariaLabel')}>
           <button
             onClick={() => setActiveTab('pending')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
@@ -178,7 +182,7 @@ export default function IngestionApproval() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Pending
+            {t('tabs.pending')}
             {data && data.pending_count > 0 && (
               <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
                 {data.pending_count}
@@ -193,7 +197,7 @@ export default function IngestionApproval() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            History
+            {t('tabs.history')}
             {historyData && historyData.total > 0 && (
               <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-gray-600 bg-gray-100 rounded-full">
                 {historyData.total}
@@ -215,15 +219,15 @@ export default function IngestionApproval() {
       {!!currentError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-red-400 mb-2" />
-          <h3 className="text-sm font-medium text-red-800">Failed to load sources</h3>
+          <h3 className="text-sm font-medium text-red-800">{t('error.title')}</h3>
           <p className="mt-1 text-sm text-red-600">
-            {currentError instanceof Error ? currentError.message : 'An unexpected error occurred'}
+            {currentError instanceof Error ? currentError.message : t('error.unexpected')}
           </p>
           <button
             onClick={() => currentRefetch()}
             className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-red-700 hover:text-red-900"
           >
-            <RefreshCw className="w-4 h-4" /> Retry
+            <RefreshCw className="w-4 h-4" /> {t('common:retry')}
           </button>
         </div>
       )}
@@ -240,41 +244,41 @@ export default function IngestionApproval() {
                     checked={allSelected}
                     onChange={handleSelectAll}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    aria-label="Select all"
+                    aria-label={t('table.selectAll')}
                   />
                 </th>
                 <th scope="col" style={{ width: 120 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  ID
+                  {t('table.id')}
                 </th>
                 <th scope="col" style={{ width: 160 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  Project
+                  {t('table.project')}
                 </th>
                 <th scope="col" style={{ width: 160 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  Date
+                  {t('table.date')}
                 </th>
                 <th scope="col" style={{ width: 200 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  Detail
+                  {t('table.detail')}
                 </th>
                 <th scope="col" style={{ width: 140 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  Type/From
+                  {t('table.typeFrom')}
                 </th>
                 <th scope="col" style={{ width: 100 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  Info
+                  {t('table.info')}
                 </th>
                 <th scope="col" style={{ width: 80 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('table.status')}
                 </th>
                 <th scope="col" style={{ width: 60 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Incl.
+                  {t('table.included')}
                 </th>
                 <th scope="col" style={{ width: 220 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-hidden resize-x">
-                  AI Summary
+                  {t('table.aiSummary')}
                 </th>
                 <th scope="col" style={{ width: 70 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Link
+                  {t('table.link')}
                 </th>
                 <th scope="col" style={{ width: 80 }} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('table.actions')}
                 </th>
               </tr>
             </thead>
@@ -284,9 +288,9 @@ export default function IngestionApproval() {
                 <tr>
                   <td colSpan={12} className="px-4 py-12 text-center">
                     <Inbox className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-                    <h3 className="text-sm font-medium text-gray-900">No pending items</h3>
+                    <h3 className="text-sm font-medium text-gray-900">{t('empty.pendingTitle')}</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      All ingestion sources have been reviewed or no sources match your filters.
+                      {t('empty.pendingBody')}
                     </p>
                   </td>
                 </tr>
@@ -304,28 +308,28 @@ export default function IngestionApproval() {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Source
+                  {t('table.source')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Project
+                  {t('table.project')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  {t('table.type')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('table.status')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reviewed By
+                  {t('table.reviewedBy')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reviewed At
+                  {t('table.reviewedAt')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Items
+                  {t('table.items')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('table.actions')}
                 </th>
               </tr>
             </thead>
@@ -335,9 +339,9 @@ export default function IngestionApproval() {
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center">
                     <Inbox className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-                    <h3 className="text-sm font-medium text-gray-900">No history yet</h3>
+                    <h3 className="text-sm font-medium text-gray-900">{t('empty.historyTitle')}</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Sources will appear here after being approved, rejected, or failed.
+                      {t('empty.historyBody')}
                     </p>
                   </td>
                 </tr>
@@ -351,7 +355,7 @@ export default function IngestionApproval() {
                     {source.project_name}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500 capitalize">
-                    {source.source_type}
+                    {getSourceTypeLabel(source.source_type)}
                   </td>
                   <td className="px-4 py-3">
                     <IngestionStatusBadge status={source.status} />
@@ -361,15 +365,15 @@ export default function IngestionApproval() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                     {source.approved_at
-                      ? new Date(source.approved_at).toLocaleDateString()
+                      ? new Date(source.approved_at).toLocaleDateString(dateLocale())
                       : source.rejected_at
-                        ? new Date(source.rejected_at).toLocaleDateString()
+                        ? new Date(source.rejected_at).toLocaleDateString(dateLocale())
                         : '--'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {source.extracted_item_count > 0 ? (
                       <span className="inline-flex items-center bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full">
-                        {source.extracted_item_count} items
+                        {t('common:items', { count: source.extracted_item_count })}
                       </span>
                     ) : (
                       <span className="text-gray-400">--</span>
@@ -382,7 +386,7 @@ export default function IngestionApproval() {
                           onClick={() => handleRetrySource(source.id)}
                           disabled={retrySource.isLoading}
                           className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 transition-colors disabled:opacity-50"
-                          title="Retry"
+                          title={t('actions.retry')}
                         >
                           <RefreshCw className="w-4 h-4" />
                         </button>
@@ -392,7 +396,7 @@ export default function IngestionApproval() {
                           onClick={() => setDeleteConfirmId(source.id)}
                           disabled={deleteSource.isLoading}
                           className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors disabled:opacity-50"
-                          title="Delete source and extracted items"
+                          title={t('actions.deleteSource')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -410,27 +414,31 @@ export default function IngestionApproval() {
       {deleteConfirmId && deleteConfirmSource && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Delete Source</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('deleteDialog.title')}</h3>
             <p className="mt-2 text-sm text-gray-600">
-              This will permanently delete <strong>{getSourceLabel(deleteConfirmSource)}</strong>
+              {t('deleteDialog.bodyPrefix')}<strong>{getSourceLabel(deleteConfirmSource)}</strong>
               {deleteConfirmSource.extracted_item_count > 0 && (
-                <> and its <strong>{deleteConfirmSource.extracted_item_count} extracted items</strong> (including embeddings)</>
+                <>
+                  {t('deleteDialog.bodyItemsPrefix')}
+                  <strong>{t('deleteDialog.extractedItems', { count: deleteConfirmSource.extracted_item_count })}</strong>
+                  {t('deleteDialog.bodyItemsSuffix')}
+                </>
               )}.
             </p>
-            <p className="mt-1 text-sm text-red-600 font-medium">This action cannot be undone.</p>
+            <p className="mt-1 text-sm text-red-600 font-medium">{t('deleteDialog.irreversible')}</p>
             <div className="mt-4 flex justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
               >
-                Cancel
+                {t('common:cancel')}
               </button>
               <button
                 onClick={() => handleDeleteSource(deleteConfirmId)}
                 disabled={deleteSource.isLoading}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteSource.isLoading ? 'Deleting...' : 'Delete'}
+                {deleteSource.isLoading ? t('deleteDialog.deleting') : t('common:delete')}
               </button>
             </div>
           </div>

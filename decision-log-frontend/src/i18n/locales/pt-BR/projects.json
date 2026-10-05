@@ -1,0 +1,121 @@
+{
+  "list": {
+    "title": "Projetos",
+    "available_one": "{{count}} projeto disponível",
+    "available_other": "{{count}} projetos disponíveis",
+    "create": "Criar projeto",
+    "loading": "Carregando projetos...",
+    "errorTitle": "Não foi possível carregar os projetos",
+    "errorFallback": "Ocorreu um erro ao buscar os projetos.",
+    "retry": "Tentar novamente",
+    "empty": {
+      "title": "Crie seu primeiro projeto",
+      "description": "Configure um projeto com um cronograma de etapas para começar a registrar itens de reuniões, e-mails e documentos."
+    },
+    "pagination": {
+      "page": "Página {{current}} de {{total}}",
+      "previous": "Anterior",
+      "next": "Próxima"
+    }
+  },
+  "card": {
+    "noStages": "Nenhuma etapa",
+    "noDescription": "Sem descrição",
+    "members_one": "{{count}} participante",
+    "members_other": "{{count}} participantes",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} itens",
+    "created": "Criado em {{date}}",
+    "viewDetails": "Ver detalhes →"
+  },
+  "detail": {
+    "invalidId": "ID de projeto inválido",
+    "breadcrumb": {
+      "label": "Navegação estrutural",
+      "projects": "Projetos",
+      "project": "Projeto"
+    },
+    "tabs": {
+      "milestones": "Linha do tempo de marcos",
+      "history": "Histórico do projeto",
+      "digest": "Resumo executivo"
+    },
+    "found_one": "{{count}} item encontrado",
+    "found_other": "{{count}} itens encontrados",
+    "edit": "Editar",
+    "archive": "Arquivar",
+    "archiveDialog": {
+      "title": "Arquivar projeto?",
+      "body": "O projeto será arquivado. Ele poderá ser restaurado depois.",
+      "cancel": "Cancelar",
+      "error": "Não foi possível arquivar o projeto. Tente novamente.",
+      "archiving": "Arquivando...",
+      "confirm": "Arquivar"
+    },
+    "share": "Compartilhar",
+    "shareAria": "Compartilhar linha do tempo de marcos",
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "exportAria": "Exportar linha do tempo de marcos",
+    "exportPdf": "Exportar como PDF",
+    "exportJpeg": "Exportar como JPEG",
+    "exportTitle": "Marcos do projeto",
+    "noDescriptionAvailable": "Sem descrição disponível"
+  },
+  "create": {
+    "title": "Novo projeto",
+    "error": "Não foi possível criar o projeto. Tente novamente."
+  },
+  "edit": {
+    "title": "Editar projeto",
+    "loadError": "Não foi possível carregar o projeto.",
+    "error": "Não foi possível atualizar o projeto. Tente novamente."
+  },
+  "form": {
+    "details": "Dados do projeto",
+    "name": {
+      "label": "Nome do projeto",
+      "placeholder": "Digite o nome do projeto"
+    },
+    "description": {
+      "label": "Descrição",
+      "placeholder": "Descreva o projeto"
+    },
+    "type": {
+      "label": "Tipo de projeto",
+      "placeholder": "Selecione o tipo...",
+      "options": {
+        "residential": "Residencial",
+        "commercial": "Comercial",
+        "mixed-use": "Uso misto",
+        "institutional": "Institucional",
+        "infrastructure": "Infraestrutura"
+      }
+    },
+    "drive": {
+      "label": "ID da pasta do Google Drive",
+      "placeholder": "ex.: 1a2b3c4d5e6f7g8h9i0j",
+      "help": "Cole o ID da pasta do Google Drive para ativar o monitoramento automático de documentos"
+    },
+    "cancel": "Cancelar",
+    "saving": "Salvando...",
+    "update": "Salvar alterações",
+    "create": "Criar projeto"
+  },
+  "participants": {
+    "title": "Participantes",
+    "add": "Adicionar participante",
+    "empty": "Nenhum participante adicionado. Adicione membros da equipe para melhorar a identificação de disciplinas pela IA.",
+    "namePlaceholder": "Nome *",
+    "emailPlaceholder": "E-mail",
+    "rolePlaceholder": "Função"
+  },
+  "stages": {
+    "title": "Cronograma de etapas",
+    "loadTemplate": "Carregar modelo",
+    "add": "Adicionar etapa",
+    "empty": "Nenhuma etapa definida. Adicione etapas ou carregue um modelo.",
+    "namePlaceholder": "Nome da etapa",
+    "replaceConfirm": "Isso substituirá as etapas existentes. Continuar?"
+  }
+}

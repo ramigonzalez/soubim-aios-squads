@@ -1,4 +1,5 @@
 import { Video, Mail, FileText, PenLine, CheckCircle2, MessageCircle, Target, Lightbulb, Info } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { SourceType, ItemType } from '../../types/projectItem'
 import type { LucideIcon } from 'lucide-react'
@@ -13,24 +14,23 @@ interface MilestoneFilterBarProps {
 
 interface ChipConfig<T> {
   value: T
-  label: string
   icon: LucideIcon
   activeClass: string
 }
 
 const SOURCE_CHIPS: ChipConfig<SourceType>[] = [
-  { value: 'meeting', label: 'Meeting', icon: Video, activeClass: 'bg-indigo-100 text-indigo-700' },
-  { value: 'email', label: 'Email', icon: Mail, activeClass: 'bg-sky-100 text-sky-700' },
-  { value: 'document', label: 'Document', icon: FileText, activeClass: 'bg-orange-100 text-orange-700' },
-  { value: 'manual_input', label: 'Manual', icon: PenLine, activeClass: 'bg-gray-200 text-gray-700' },
+  { value: 'meeting', icon: Video, activeClass: 'bg-indigo-100 text-indigo-700' },
+  { value: 'email', icon: Mail, activeClass: 'bg-sky-100 text-sky-700' },
+  { value: 'document', icon: FileText, activeClass: 'bg-orange-100 text-orange-700' },
+  { value: 'manual_input', icon: PenLine, activeClass: 'bg-gray-200 text-gray-700' },
 ]
 
 const ITEM_TYPE_CHIPS: ChipConfig<ItemType>[] = [
-  { value: 'decision', label: 'Decision', icon: CheckCircle2, activeClass: 'bg-green-100 text-green-700' },
-  { value: 'topic', label: 'Topic', icon: MessageCircle, activeClass: 'bg-amber-100 text-amber-700' },
-  { value: 'action_item', label: 'Action Item', icon: Target, activeClass: 'bg-blue-100 text-blue-700' },
-  { value: 'idea', label: 'Idea', icon: Lightbulb, activeClass: 'bg-purple-100 text-purple-700' },
-  { value: 'information', label: 'Info', icon: Info, activeClass: 'bg-slate-100 text-slate-700' },
+  { value: 'decision', icon: CheckCircle2, activeClass: 'bg-green-100 text-green-700' },
+  { value: 'topic', icon: MessageCircle, activeClass: 'bg-amber-100 text-amber-700' },
+  { value: 'action_item', icon: Target, activeClass: 'bg-blue-100 text-blue-700' },
+  { value: 'idea', icon: Lightbulb, activeClass: 'bg-purple-100 text-purple-700' },
+  { value: 'information', icon: Info, activeClass: 'bg-slate-100 text-slate-700' },
 ]
 
 /**
@@ -45,13 +45,14 @@ export function MilestoneFilterBar({
   onToggleItemType,
   onClearAll,
 }: MilestoneFilterBarProps) {
+  const { t } = useTranslation('milestones')
   const activeCount = sourceFilters.length + itemTypeFilters.length
 
   return (
     <div className="flex flex-col gap-2 mb-4 p-3 bg-white border border-gray-200 rounded-lg" data-testid="milestone-filter-bar">
       {/* Source filters row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-gray-500 w-12 shrink-0">Source:</span>
+        <span className="text-xs font-semibold text-gray-500 w-12 shrink-0">{t('filters.source')}</span>
         {SOURCE_CHIPS.map((chip) => {
           const Icon = chip.icon
           const isActive = sourceFilters.includes(chip.value)
@@ -68,7 +69,7 @@ export function MilestoneFilterBar({
               data-testid={`source-chip-${chip.value}`}
             >
               <Icon className="w-3 h-3" />
-              {chip.label}
+              {t(`filters.sourceType.${chip.value}`)}
             </button>
           )
         })}
@@ -76,7 +77,7 @@ export function MilestoneFilterBar({
 
       {/* Item type filters row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-gray-500 w-12 shrink-0">Type:</span>
+        <span className="text-xs font-semibold text-gray-500 w-12 shrink-0">{t('filters.type')}</span>
         {ITEM_TYPE_CHIPS.map((chip) => {
           const Icon = chip.icon
           const isActive = itemTypeFilters.includes(chip.value)
@@ -93,7 +94,7 @@ export function MilestoneFilterBar({
               data-testid={`type-chip-${chip.value}`}
             >
               <Icon className="w-3 h-3" />
-              {chip.label}
+              {t(`filters.itemType.${chip.value}`)}
             </button>
           )
         })}
@@ -113,7 +114,7 @@ export function MilestoneFilterBar({
               className="text-xs text-blue-600 hover:underline"
               data-testid="clear-filters-button"
             >
-              Clear filters
+              {t('filters.clear')}
             </button>
           </div>
         )}

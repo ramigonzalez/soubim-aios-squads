@@ -9,6 +9,7 @@ import Ingestion from './pages/Ingestion'
 import { MeetingViewer } from './pages/MeetingViewer'
 import { Navigation } from './components/common/Navigation'
 import { useAuthStore } from './store/authStore'
+import { useTranslation } from 'react-i18next'
 
 const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
 const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
@@ -26,6 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const { t } = useTranslation('nav')
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   return (
@@ -46,7 +48,7 @@ function AppRoutes() {
           path="/projects/new"
           element={
             <ProtectedRoute>
-              <Suspense fallback={<div className="flex justify-center py-16">Loading...</div>}>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
                 <ProjectCreate />
               </Suspense>
             </ProtectedRoute>
@@ -56,7 +58,7 @@ function AppRoutes() {
           path="/projects/:id/edit"
           element={
             <ProtectedRoute>
-              <Suspense fallback={<div className="flex justify-center py-16">Loading...</div>}>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
                 <ProjectEdit />
               </Suspense>
             </ProtectedRoute>

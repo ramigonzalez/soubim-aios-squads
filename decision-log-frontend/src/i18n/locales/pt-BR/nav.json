@@ -1,0 +1,12 @@
+{
+  "home": "Início",
+  "projects": "Projetos",
+  "ingestion": "Ingestão",
+  "logout": "Sair",
+  "loading": "Carregando...",
+  "roles": {
+    "director": "diretor(a)",
+    "architect": "arquiteto(a)",
+    "client": "cliente"
+  }
+}

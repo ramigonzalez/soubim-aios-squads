@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { DisciplineCircle } from './DisciplineCircle'
 import { getDisciplineLabel } from '../../lib/utils'
 import type { Discipline } from '../../types/projectItem'
@@ -18,6 +19,7 @@ export const DisciplineCircles = React.memo(function DisciplineCircles({
   max = 3,
   size = 'md',
 }: DisciplineCirclesProps) {
+  const { t } = useTranslation('history')
   if (!disciplines || disciplines.length === 0) return null
 
   const visible = disciplines.slice(0, max)
@@ -39,7 +41,7 @@ export const DisciplineCircles = React.memo(function DisciplineCircles({
         <span className="relative group/overflow ml-1">
           <span
             className="text-xs text-gray-500 cursor-default"
-            aria-label={`${overflow} more disciplines: ${overflowDisciplines.map(getDisciplineLabel).join(', ')}`}
+            aria-label={t('disciplineCircles.overflow', { count: overflow, list: overflowDisciplines.map(getDisciplineLabel).join(', ') })}
           >
             +{overflow}
           </span>

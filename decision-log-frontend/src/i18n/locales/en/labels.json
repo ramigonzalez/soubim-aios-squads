@@ -1,0 +1,32 @@
+{
+  "discipline": {
+    "architecture": "Architecture",
+    "structural": "Structural",
+    "mep": "MEP",
+    "electrical": "Electrical",
+    "plumbing": "Plumbing",
+    "landscape": "Landscape",
+    "fire_protection": "Fire Protection",
+    "acoustical": "Acoustical",
+    "sustainability": "Sustainability",
+    "civil": "Civil",
+    "client": "Client",
+    "contractor": "Contractor",
+    "tenant": "Tenant",
+    "engineer": "Engineer",
+    "general": "General"
+  },
+  "itemType": {
+    "decision": "Decision",
+    "topic": "Topic",
+    "action_item": "Action Item",
+    "idea": "Idea",
+    "information": "Information"
+  },
+  "sourceType": {
+    "meeting": "Meeting",
+    "email": "Email",
+    "document": "Document",
+    "manual_input": "Manual Input"
+  }
+}
