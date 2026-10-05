@@ -19,7 +19,7 @@ interface ProjectItemRowProps {
  * Story 9.6 — Action item enhancements: checkbox, owner, due date, strikethrough.
  */
 export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: ProjectItemRowProps) {
-  const displayDate = item.meeting_date || item.created_at
+  const displayDate = item.meeting_date || item.source?.occurred_at || item.created_at
   const shortDate = formatShortDate(displayDate)
   const isActionItem = item.item_type === 'action_item'
   const toggleDone = useToggleDone(item.project_id)

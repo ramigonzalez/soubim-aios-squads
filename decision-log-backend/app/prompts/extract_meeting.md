@@ -58,6 +58,12 @@ Use ONLY these discipline identifiers:
 **For information:**
 - `reference_source`: Where the information comes from
 
+## Output Language
+
+- Write every free-text value (`statement`, `why`, `causation`, consensus `notes`, `impacts` texts, `discussion_points`, `related_topic`, `reference_source`) in the same language as the transcript — for a Brazilian Portuguese meeting, write in Brazilian Portuguese.
+- Keep `who` and `owner` as the participant names, as they appear in the roster.
+- Keep identifiers exactly as specified, in English: JSON keys, `item_type` values, discipline values, and consensus `status` (AGREE / DISAGREE / ABSTAIN).
+
 ## Discipline Inference Rules
 
 - **decision**: Disciplines with AGREE/DISAGREE status in consensus

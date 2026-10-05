@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineCircle } from '../atoms/DisciplineCircle'
 import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
-import { formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
+import { formatDate, formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
 import { X, Clock, FileText, User, Calendar, CheckCircle2, XCircle, MinusCircle, CheckSquare, Square, AlertTriangle } from 'lucide-react'
 
@@ -38,6 +38,10 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
   const toggleDone = useToggleDone(decision?.project_id || '')
 
   if (!decision) return null
+
+  // Legacy transcript fields first, then the V2 source the item was extracted from
+  const meetingTitle = decision.meeting_title || decision.source?.title
+  const meetingDate = decision.meeting_date || decision.source?.occurred_at
 
   const isActionItem = decision.item_type === 'action_item'
   const isOverdue = isActionItem && decision.due_date && !decision.is_done && new Date(decision.due_date) < new Date()
@@ -153,16 +157,17 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
                 <span>{decision.who}</span>
               </div>
             )}
-            {decision.meeting_title && (
+            {meetingTitle && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
-                <span>{decision.meeting_title}</span>
+                <span>{meetingTitle}</span>
               </div>
             )}
-            {(decision.created_at || decision.meeting_date) && (
+            {(meetingDate || decision.created_at) && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
-                <span>{formatDateTime(decision.created_at || decision.meeting_date || '')}</span>
+                {/* Meeting date (when it was said); creation time only for items without a meeting */}
+                <span>{meetingDate ? formatDate(meetingDate) : formatDateTime(decision.created_at)}</span>
               </div>
             )}
             {decision.timestamp && (

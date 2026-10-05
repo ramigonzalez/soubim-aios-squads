@@ -25,10 +25,15 @@ function getStoredToken(): string | null {
   return localStorage.getItem('access_token') || null
 }
 
+// Restore the session synchronously so the first render (and ProtectedRoute) already
+// sees it — otherwise a page reload redirects to /login before the session loads.
+const initialToken = getStoredToken()
+const initialUser = getStoredUser()
+
 export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
+  user: initialToken && initialUser ? initialUser : null,
+  token: initialToken && initialUser ? initialToken : null,
+  isAuthenticated: Boolean(initialToken && initialUser),
 
   setAuth: (user, token) => {
     // Store both token and user object

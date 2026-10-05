@@ -29,6 +29,26 @@ describe('Auth Store (Zustand)', () => {
       expect(state.token).toBeNull()
       expect(state.isAuthenticated).toBe(false)
     })
+
+    it('restores a stored session at creation, so a page reload stays logged in', async () => {
+      localStorage.setItem('access_token', 'stored-token')
+      localStorage.setItem('auth_user', JSON.stringify(testUser))
+      vi.resetModules()
+      const { useAuthStore: freshStore } = await import('../../store/authStore')
+
+      const state = freshStore.getState()
+      expect(state.isAuthenticated).toBe(true)
+      expect(state.token).toBe('stored-token')
+      expect(state.user).toEqual(testUser)
+    })
+
+    it('stays logged out at creation when only part of the session is stored', async () => {
+      localStorage.setItem('access_token', 'stored-token')
+      vi.resetModules()
+      const { useAuthStore: freshStore } = await import('../../store/authStore')
+
+      expect(freshStore.getState().isAuthenticated).toBe(false)
+    })
   })
 
   describe('setAuth()', () => {
