@@ -1,49 +1,107 @@
 """Pytest configuration and shared fixtures.
 
-TEST-003: Auto-detects PostgreSQL from .env.development when no DATABASE_URL
-is set in the environment. This ensures PostgreSQL-specific features (GIN indexes,
-JSONB @>, partial unique indexes, transactional DDL) are exercised by default
-when running tests locally with Docker Compose.
+Story 7.18 — every test run uses a throwaway database, never the dev database.
+
+- PostgreSQL reachable (TEST_DATABASE_URL > DATABASE_URL > .env.development): a fresh
+  database ``decisionlog_test_<random>`` is created on that server for this run and
+  dropped at the end, so PostgreSQL-specific features are still exercised (TEST-003).
+- Otherwise: in-memory SQLite.
+
+``DATABASE_URL`` is pointed at the throwaway database *before any app module is
+imported*, so the app's own engine/SessionLocal (used by services, middleware and
+tests that import ``app.database.session``) also never reaches the dev database.
+
+Every create_all/drop_all goes through ``assert_test_database`` and refuses to run on
+a database whose name does not start with ``decisionlog_test``.
 
 To force SQLite: TEST_DATABASE_URL=sqlite:// pytest
-To force PostgreSQL: TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/decisionlog pytest
 """
 
 import os
 import pathlib
+import uuid
 
 import pytest
 from dotenv import dotenv_values
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.database.models import Base
-
-# ──────────────────────────────────────────────────────────────────────────────
-# TEST-003: Auto-detect PostgreSQL from .env.development
-# Priority: TEST_DATABASE_URL > DATABASE_URL (env) > .env.development DATABASE_URL
-# ──────────────────────────────────────────────────────────────────────────────
 _BACKEND_DIR = pathlib.Path(__file__).parent.parent
 _ENV_DEV = _BACKEND_DIR / ".env.development"
+TEST_DB_PREFIX = "decisionlog_test"
+SQLITE_MEMORY_URL = "sqlite://"
 
 
-def _resolve_database_url() -> str:
-    """Resolve database URL with fallback to .env.development."""
+def _resolve_server_url() -> str:
+    """Database server to use: TEST_DATABASE_URL > DATABASE_URL (env) > .env.development."""
     url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
     if url:
         return url
-    # Auto-load from .env.development (local dev with Docker Compose)
     if _ENV_DEV.exists():
-        env_values = dotenv_values(_ENV_DEV)
-        url = env_values.get("DATABASE_URL", "")
-        if url:
-            return url
+        return dotenv_values(_ENV_DEV).get("DATABASE_URL", "") or ""
     return ""
 
 
-_DB_URL = _resolve_database_url()
-_POSTGRES_AVAILABLE = bool(_DB_URL and "postgresql" in _DB_URL.lower())
+def _admin_engine(server_url: str) -> Engine:
+    """Engine on the server's maintenance database, for CREATE/DROP DATABASE."""
+    return create_engine(
+        make_url(server_url).set(database="postgres"),
+        isolation_level="AUTOCOMMIT",
+        connect_args={"connect_timeout": 3},
+    )
+
+
+def _create_throwaway_database(server_url: str) -> str:
+    """Create an empty test database on the PostgreSQL server; return its URL ("" if unreachable)."""
+    name = f"{TEST_DB_PREFIX}_{uuid.uuid4().hex[:10]}"
+    try:
+        admin = _admin_engine(server_url)
+        with admin.connect() as conn:
+            conn.execute(text(f'CREATE DATABASE "{name}"'))
+        admin.dispose()
+    except Exception:
+        return ""
+    test_url = make_url(server_url).set(database=name).render_as_string(hide_password=False)
+    probe = create_engine(test_url)
+    with probe.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))  # project_items.embedding
+    probe.dispose()
+    return test_url
+
+
+def _drop_throwaway_database(server_url: str, test_url: str) -> None:
+    name = make_url(test_url).database
+    assert name and name.startswith(TEST_DB_PREFIX), f"refusing to drop non-test database {name!r}"
+    admin = _admin_engine(server_url)
+    with admin.connect() as conn:
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+    admin.dispose()
+
+
+def assert_test_database(bind) -> None:
+    """Refuse to create/drop tables anywhere but a throwaway test database."""
+    url = bind.engine.url if hasattr(bind, "engine") else bind.url
+    if url.get_backend_name() == "sqlite":
+        return
+    if not (url.database or "").startswith(TEST_DB_PREFIX):
+        raise RuntimeError(
+            f"Refusing to create/drop tables in database {url.database!r}: "
+            f"tests only run against '{TEST_DB_PREFIX}*' databases"
+        )
+
+
+_SERVER_URL = _resolve_server_url()
+_DB_URL = ""
+if _SERVER_URL and make_url(_SERVER_URL).get_backend_name() == "postgresql":
+    _DB_URL = _create_throwaway_database(_SERVER_URL)
+_POSTGRES_AVAILABLE = bool(_DB_URL)
+
+# Point the app at the throwaway database before any app module reads settings.
+os.environ["DATABASE_URL"] = _DB_URL or SQLITE_MEMORY_URL
+
+from app.database.models import Base  # noqa: E402  (must follow the DATABASE_URL override)
 
 
 def pytest_configure(config):
@@ -51,6 +109,15 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "postgresql: mark test as requiring PostgreSQL (skipped if unavailable)"
     )
+
+
+def pytest_unconfigure(config):
+    """Drop this run's throwaway database."""
+    if _POSTGRES_AVAILABLE:
+        from app.database.session import engine as app_engine
+
+        app_engine.dispose()
+        _drop_throwaway_database(_SERVER_URL, _DB_URL)
 
 
 def pytest_collection_modifyitems(config, items):
@@ -70,21 +137,10 @@ def db_session() -> Session:
     """
     Provide a clean database session for each test.
 
-    TEST-003: Prefers PostgreSQL when available (from env or .env.development).
-    Falls back to SQLite in-memory only when PostgreSQL is not configured or unreachable.
+    Uses this run's throwaway PostgreSQL database when available, else in-memory SQLite.
     """
     if _POSTGRES_AVAILABLE:
         engine = create_engine(_DB_URL, echo=False)
-        try:
-            with engine.begin() as conn:
-                Base.metadata.create_all(bind=conn)
-        except Exception:
-            # PostgreSQL unreachable — fall back to SQLite
-            engine = create_engine(
-                "sqlite:///:memory:",
-                connect_args={"check_same_thread": False},
-                poolclass=StaticPool,
-            )
     else:
         engine = create_engine(
             "sqlite:///:memory:",
@@ -92,6 +148,7 @@ def db_session() -> Session:
             poolclass=StaticPool,
         )
 
+    assert_test_database(engine)
     Base.metadata.create_all(bind=engine)
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -104,14 +161,14 @@ def db_session() -> Session:
         Base.metadata.drop_all(bind=engine)
     except Exception:
         pass
+    engine.dispose()
 
 
 @pytest.fixture(scope="function")
 def pg_engine():
     """
-    PostgreSQL engine for integration tests.
-    Skips automatically if PostgreSQL is not configured via TEST_DATABASE_URL,
-    DATABASE_URL, or .env.development.
+    PostgreSQL engine (this run's throwaway database) for integration tests.
+    Skips automatically if PostgreSQL is not reachable.
     """
     if not _POSTGRES_AVAILABLE:
         pytest.skip(
@@ -119,6 +176,7 @@ def pg_engine():
             "Set TEST_DATABASE_URL=postgresql://... or run: docker compose up -d db"
         )
     engine = create_engine(_DB_URL, echo=False)
+    assert_test_database(engine)
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:
