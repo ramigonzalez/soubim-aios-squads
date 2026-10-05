@@ -191,6 +191,8 @@ def _validate_item(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "timestamp": item.get("timestamp", ""),
         "affected_disciplines": disciplines,
         "confidence": min(max(float(item.get("confidence", 0.5)), 0.0), 1.0),
+        "title": (item.get("title") or "").strip()[:255] or None,
+        "source_excerpt": (item.get("source_excerpt") or "").strip() or None,
     }
 
     # Type-specific fields

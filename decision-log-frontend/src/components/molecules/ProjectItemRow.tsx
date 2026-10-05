@@ -45,7 +45,7 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
       onKeyDown={(e) => {
         if (e.key === 'Enter') onClick(item.id)
       }}
-      aria-label={`${item.item_type}: ${item.statement}`}
+      aria-label={`${item.item_type}: ${item.title || item.statement}`}
     >
       {/* Action item checkbox */}
       {isActionItem && (
@@ -65,7 +65,7 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
         'text-sm font-medium text-gray-900 truncate flex-1 min-w-0',
         item.is_done && isActionItem && 'line-through text-gray-500',
       )}>
-        {item.statement}
+        {item.title || item.statement}
       </span>
       {/* Owner badge for action items */}
       {isActionItem && item.owner && (

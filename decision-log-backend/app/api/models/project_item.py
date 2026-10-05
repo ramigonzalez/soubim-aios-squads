@@ -78,12 +78,14 @@ class SourceInfo(BaseModel):
     title: Optional[str] = None
     type: str
     occurred_at: Optional[str] = None
+    summary: Optional[str] = None  # Story 7.12: meeting summary (Source.ai_summary)
 
 
 class ProjectItemResponse(BaseModel):
     id: str
     project_id: str
     statement: str
+    title: Optional[str] = None
     who: str
     timestamp: Optional[str] = None
     item_type: str

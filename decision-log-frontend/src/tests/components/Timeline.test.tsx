@@ -310,4 +310,27 @@ describe('Timeline — Dense Rows Layout', () => {
       expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
   })
+
+  it('shows the meeting summary toggle when the source has a summary', async () => {
+    const item = makeSourceItem({
+      id: 'a',
+      source: { id: 'src-1', title: 'D/SEASON Quinzenal', type: 'meeting', occurred_at: '2026-09-04T00:00:00', summary: 'Reunião sobre pranchas e paginação.' },
+    })
+    render(
+      <Timeline
+        decisions={[item]}
+        onSelectDecision={mockOnSelect}
+        groupBy="date"
+      />
+    )
+    // Summary starts collapsed behind an always-visible "Resumo" button
+    expect(screen.queryByText('Reunião sobre pranchas e paginação.')).not.toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: 'Show meeting summary' })
+    expect(toggle).toHaveTextContent('Resumo')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.setup().click(toggle)
+    expect(screen.getByText('Reunião sobre pranchas e paginação.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Hide meeting summary' })).toHaveAttribute('aria-expanded', 'true')
+  })
 })

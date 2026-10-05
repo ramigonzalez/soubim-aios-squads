@@ -100,10 +100,21 @@ export function SourceGroupAccordion({
               e.stopPropagation()
               setShowSummary(!showSummary)
             }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-blue-50"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors',
+              showSummary
+                ? 'border-blue-200 bg-blue-50 text-blue-700'
+                : 'border-gray-200 text-gray-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700',
+            )}
             aria-label={showSummary ? 'Hide meeting summary' : 'Show meeting summary'}
+            aria-expanded={showSummary}
           >
-            <FileText className="w-4 h-4 text-blue-500 hover:text-blue-700" />
+            <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+            Resumo
+            <ChevronDown
+              className={cn('w-3 h-3 transition-transform duration-200', showSummary && 'rotate-180')}
+              aria-hidden="true"
+            />
           </button>
         )}
         <ChevronDown

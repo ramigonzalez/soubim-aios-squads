@@ -55,6 +55,12 @@ describe('ProjectItemRow', () => {
     expect(screen.queryByText('Oct 4')).not.toBeInTheDocument()
   })
 
+  it('shows the short title instead of the full statement when present', () => {
+    render(<ProjectItemRow item={makeItem({ title: 'Vidro duplo na fachada sul' })} onClick={mockOnClick} />)
+    expect(screen.getByText('Vidro duplo na fachada sul')).toBeInTheDocument()
+    expect(screen.queryByText('Use double-height glazing on south facade')).not.toBeInTheDocument()
+  })
+
   it('renders discipline circles', () => {
     render(<ProjectItemRow item={makeItem()} onClick={mockOnClick} />)
     // DisciplineCircle renders with aria-label for each discipline

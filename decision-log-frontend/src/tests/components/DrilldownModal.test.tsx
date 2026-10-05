@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { DrilldownModal } from '../../components/organisms/DrilldownModal'
 import type { ProjectItem } from '../../types/projectItem'
 
@@ -45,5 +46,39 @@ describe('DrilldownModal — meeting date and title', () => {
   it('falls back to creation date and time for items without a meeting', () => {
     render(<DrilldownModal decision={makeItem({ source_type: 'manual_input' })} onClose={vi.fn()} />)
     expect(screen.getByText(/Oct 4, 2026/)).toBeInTheDocument()
+  })
+})
+
+describe('DrilldownModal — title, description and transcript excerpt (Story 7.12)', () => {
+  it('shows the short title in the header and the full statement as description', () => {
+    render(<DrilldownModal decision={makeItem({ title: 'Paginação por ambiente' })} onClose={vi.fn()} />)
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Paginação por ambiente')
+    expect(screen.getByText('Description')).toBeInTheDocument()
+    expect(screen.getByText('Paginação de pisos por ambiente')).toBeInTheDocument()
+  })
+
+  it('falls back to the statement as header without a description card', () => {
+    render(<DrilldownModal decision={makeItem()} onClose={vi.fn()} />)
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Paginação de pisos por ambiente')
+    expect(screen.queryByText('Description')).not.toBeInTheDocument()
+  })
+
+  it('renders each excerpt turn with time and speaker in the Transcript tab', async () => {
+    const excerpt = '33:40 - Debora Rezende Gagliotti: Nos ambientes integrados é contínuo.\n1:02:10 - ⚠️ Camila / Erica [mixed voices]: Com soleira.'
+    render(<DrilldownModal decision={makeItem({ source_excerpt: excerpt })} onClose={vi.fn()} />)
+    await userEvent.setup().click(screen.getByText('Transcript'))
+
+    expect(screen.getByText('33:40')).toBeInTheDocument()
+    // name appears twice: the modal's "who" line and the excerpt turn
+    expect(screen.getAllByText('Debora Rezende Gagliotti')).toHaveLength(2)
+    expect(screen.getByText('Nos ambientes integrados é contínuo.')).toBeInTheDocument()
+    expect(screen.getByText('1:02:10')).toBeInTheDocument()
+    expect(screen.getByText('⚠️ Camila / Erica [mixed voices]')).toBeInTheDocument()
+  })
+
+  it('says so when the item has no excerpt', async () => {
+    render(<DrilldownModal decision={makeItem()} onClose={vi.fn()} />)
+    await userEvent.setup().click(screen.getByText('Transcript'))
+    expect(screen.getByText('No transcript excerpt for this item.')).toBeInTheDocument()
   })
 })
