@@ -70,8 +70,6 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
     clearDisciplines,
     clearDecisionMakers,
     clearMeetingTypes,
-    clearSourceTypes,
-    clearItemTypes,
     setDateRange,
     setSearchQuery,
     reset,

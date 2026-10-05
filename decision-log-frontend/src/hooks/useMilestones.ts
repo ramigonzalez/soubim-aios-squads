@@ -7,7 +7,7 @@ import api from '../services/api'
 import { ProjectItemsResponse } from '../types/projectItem'
 
 interface UseMilestonesOptions {
-  projectId: string
+  projectId?: string  // no request without a project (e.g. preloaded/shared timeline)
   limit?: number
   offset?: number
   enabled?: boolean

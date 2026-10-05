@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { SourceGroupAccordion } from '../../components/molecules/SourceGroupAccordion'
 import type { ProjectItem, SourceType } from '../../types/projectItem'
 
+// Item rows use a React Query mutation (done checkbox); rendering doesn't need a real client.
+vi.mock('../../hooks/useProjectItemMutation', () => ({
+  useToggleDone: () => ({ mutate: vi.fn(), isLoading: false }),
+  useToggleMilestone: () => ({ mutate: vi.fn(), isLoading: false }),
+}))
+
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
     id: `item-${Math.random().toString(36).slice(2, 8)}`,

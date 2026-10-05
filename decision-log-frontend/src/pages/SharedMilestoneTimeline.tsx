@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { AlertCircle, Loader2, Share2 } from 'lucide-react'
 import { useSharedTimeline } from '../hooks/useSharedLinks'
 import { MilestoneTimeline } from '../components/organisms/MilestoneTimeline'
-import type { ProjectItem, ProjectStage } from '../types/projectItem'
+import type { Discipline, ProjectItem, ProjectStage } from '../types/projectItem'
 
 export function SharedMilestoneTimeline() {
   const { t } = useTranslation('milestones')
@@ -37,7 +37,7 @@ export function SharedMilestoneTimeline() {
       statement: m.statement,
       decision_statement: m.statement,
       discipline: m.discipline,
-      affected_disciplines: m.affected_disciplines || [],
+      affected_disciplines: (m.affected_disciplines || []) as Discipline[],
       who: m.who,
       timestamp: m.timestamp,
       created_at: m.created_at,
