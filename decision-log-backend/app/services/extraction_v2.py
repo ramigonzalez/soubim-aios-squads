@@ -8,6 +8,7 @@ idea, topic, decision, action_item, information
 
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from app.services.prompt_loader import render_prompt
@@ -72,29 +73,105 @@ def build_extraction_prompt(
     return render_prompt("extract_meeting", variables)
 
 
-async def extract_items_from_transcript(
+class ExtractionError(Exception):
+    """Meeting extraction failed in a way the user should see (stored as the source's extraction_error)."""
+
+
+@dataclass
+class ExtractionResult:
+    items: List[Dict[str, Any]]
+    meeting_summary: Optional[str]
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
+# Server-side refusal fallback (Claude API): a declined request is re-run on a fallback model
+# inside the same call. Story 7.11 — opted in by default.
+_FALLBACK_BETA = "server-side-fallback-2026-07-01"
+
+
+def _client():
+    """Anthropic client (patched in tests)."""
+    import anthropic
+
+    from app.config import settings
+
+    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+
+def _strip_code_fence(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else ""
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3]
+    return text.strip()
+
+
+def run_meeting_extraction(prompt: str, client=None) -> ExtractionResult:
+    """Send a rendered extraction prompt to Claude and parse the items + meeting summary.
+
+    Streams the response (long meetings produce >10k output tokens) and raises
+    ExtractionError on truncation, refusal or invalid JSON instead of returning nothing.
+    """
+    from app.config import settings
+
+    client = client or _client()
+    with client.messages.stream(
+        model=settings.llm_model,
+        max_tokens=settings.extraction_max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+        extra_headers={"anthropic-beta": _FALLBACK_BETA},
+        extra_body={"output_config": {"effort": settings.extraction_effort}, "fallbacks": "default"},
+    ) as stream:
+        message = stream.get_final_message()
+
+    usage = getattr(message, "usage", None)
+    input_tokens = getattr(usage, "input_tokens", 0) or 0
+    output_tokens = getattr(usage, "output_tokens", 0) or 0
+    logger.info(f"Extraction model={message.model} input_tokens={input_tokens} output_tokens={output_tokens}")
+
+    if message.stop_reason == "max_tokens":
+        raise ExtractionError(
+            f"Extraction output was cut off at the {settings.extraction_max_tokens}-token limit "
+            f"(EXTRACTION_MAX_TOKENS); the meeting may be too long for one request"
+        )
+    if message.stop_reason == "refusal":
+        details = getattr(message, "stop_details", None)
+        raise ExtractionError(f"The model declined the extraction ({getattr(details, 'category', None) or 'no category'})")
+
+    text = "".join(block.text for block in message.content if getattr(block, "type", None) == "text")
+    try:
+        data = json.loads(_strip_code_fence(text))
+    except json.JSONDecodeError as e:
+        raise ExtractionError(f"Model response is not valid JSON: {e.msg} at character {e.pos}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+        raise ExtractionError('Model response has no "items" list')
+
+    items = [v for v in (_validate_item(i) for i in data["items"] if isinstance(i, dict)) if v]
+    summary = data.get("meeting_summary")
+    return ExtractionResult(
+        items=items,
+        meeting_summary=summary.strip() if isinstance(summary, str) and summary.strip() else None,
+        model=message.model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
+
+
+def extract_meeting(
     transcript_text: str,
     meeting_title: str = "Untitled Meeting",
     meeting_date: str = "",
     meeting_type: str = "General",
     duration_minutes: int = 0,
     participants: Optional[List[Dict[str, Any]]] = None,
-    api_key: Optional[str] = None,
-) -> List[Dict[str, Any]]:
-    """Extract project items from a meeting transcript using Claude API.
-
-    Args:
-        transcript_text: Full meeting transcript text
-        meeting_title: Title of the meeting
-        meeting_date: Date of the meeting
-        meeting_type: Type of meeting
-        duration_minutes: Duration in minutes
-        participants: Participant roster for discipline inference
-        api_key: Anthropic API key (falls back to settings)
-
-    Returns:
-        List of extracted item dicts with item_type, statement, who, etc.
-    """
+    client=None,
+) -> ExtractionResult:
+    """Extract project items and a meeting summary from a meeting transcript (Story 7.11)."""
+    if not transcript_text.strip():
+        raise ExtractionError("The meeting has no transcript text to extract from")
     prompt = build_extraction_prompt(
         transcript_text=transcript_text,
         meeting_title=meeting_title,
@@ -103,53 +180,9 @@ async def extract_items_from_transcript(
         duration_minutes=duration_minutes,
         participants=participants,
     )
-
-    try:
-        import anthropic
-        from app.config import settings
-
-        client = anthropic.Anthropic(api_key=api_key or settings.anthropic_api_key)
-
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
-        )
-
-        # Parse JSON from response
-        response_text = response.content[0].text
-
-        # Extract JSON from response (may be wrapped in markdown code blocks)
-        json_text = response_text
-        if "```json" in json_text:
-            json_text = json_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in json_text:
-            json_text = json_text.split("```")[1].split("```")[0].strip()
-
-        result = json.loads(json_text)
-        items = result.get("items", [])
-
-        # Validate and normalize items
-        validated = []
-        for item in items:
-            validated_item = _validate_item(item)
-            if validated_item:
-                validated.append(validated_item)
-
-        logger.info(f"Extracted {len(validated)} items from transcript: {meeting_title}")
-        return validated
-
-    except ImportError:
-        logger.warning("anthropic package not available — returning empty extraction")
-        return []
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse extraction response as JSON: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Extraction failed: {e}")
-        return []
+    result = run_meeting_extraction(prompt, client=client)
+    logger.info(f"Extracted {len(result.items)} items from: {meeting_title}")
+    return result
 
 
 VALID_ITEM_TYPES = {"idea", "topic", "decision", "action_item", "information"}

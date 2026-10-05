@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     # Anthropic API
     anthropic_api_key: str
+    # Story 7.11: one model setting for every Claude call (extraction, summaries, email, documents)
+    llm_model: str = "claude-opus-5-5"
+    extraction_max_tokens: int = 64000  # streamed; a 98-min meeting needed ~11k output tokens
+    extraction_effort: str = "high"
 
     # Tactiq Webhook
     tactiq_webhook_secret: str

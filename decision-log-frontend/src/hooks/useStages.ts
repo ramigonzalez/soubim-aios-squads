@@ -3,7 +3,7 @@ import api from '../services/api'
 import { StagesResponse } from '../types/projectItem'
 
 interface UseStagesOptions {
-  projectId: string
+  projectId?: string  // no request without a project (e.g. preloaded/shared timeline)
   enabled?: boolean
 }
 

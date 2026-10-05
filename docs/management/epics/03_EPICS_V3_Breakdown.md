@@ -129,7 +129,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 - [ ] Deployed on Railway (API + worker + Postgres with pgvector) with an HTTPS domain and rotated secrets
 - [ ] (Phase C) Fathom webhook lands new meetings in Ingestão as pending
 
-### Stories (9)
+### Stories (10)
 
 | Story | Title | Effort | Priority | Phase |
 |-------|-------|--------|----------|-------|
@@ -142,6 +142,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.7 | Extraction Versions & Rollback | M | Medium | B |
 | 13.8 | Deploy API + Worker + Postgres on Railway | M | High | B |
 | 13.9 | Fathom Webhook (Push) | M | Low | C |
+| 13.10 | CI Checks (GitHub Actions) | S | High | ✅ |
 
 ### Agent Assignment
 
@@ -156,6 +157,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.7 | @dev | @qa | @po |
 | 13.8 | @devops | @qa | @architect |
 | 13.9 | @dev | @qa | @architect (security) |
+| 13.10 | @devops | @qa | @architect |
 
 ---
 

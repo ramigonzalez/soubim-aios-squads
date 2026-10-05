@@ -48,7 +48,7 @@ def _generate_summary(text: str) -> str:
 
         client = Anthropic(api_key=settings.anthropic_api_key)
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=settings.llm_model,
             max_tokens=100,
             messages=[
                 {

@@ -5,7 +5,6 @@ Story 10.1: Added email source handling via EmailExtractor.
 Story 10.2: Added document source handling via DocumentExtractor.
 """
 
-import asyncio
 import logging
 
 from app.database.models import ProjectItem, ProjectParticipant, Source
@@ -20,7 +19,7 @@ def process_approved_source(source_id: str) -> None:
     Dispatches to the appropriate extractor based on source_type:
     - 'email' -> EmailExtractor
     - 'document' -> DocumentExtractor
-    - 'meeting' -> extraction_v2 transcript extractor (legacy)
+    - 'meeting' / 'manual_input' -> extraction_v2.extract_meeting (Story 7.11)
 
     Args:
         source_id: UUID string of the Source record to process.
@@ -67,22 +66,29 @@ def process_approved_source(source_id: str) -> None:
             extracted_items = extractor.extract(source, participant_dicts)
 
         else:
-            # Existing meeting extraction (Story 7.1)
-            from app.services.extraction_v2 import extract_items_from_transcript
+            # Meetings and manual input (Story 7.11): full meeting context, items keep every
+            # extracted field (same mapping as the import script, Story 7.10), meeting summary stored
+            from app.services.extraction_v2 import extract_meeting
+            from app.services.item_import import build_project_item
 
-            extracted_items = asyncio.run(
-                extract_items_from_transcript(
-                    transcript_text=source.raw_content or "",
-                    participants=[
-                        {"name": p.name, "discipline": p.discipline}
-                        for p in participants
-                    ],
-                    project_id=str(source.project_id),
-                    source_id=str(source.id),
-                )
+            result = extract_meeting(
+                transcript_text=source.raw_content or "",
+                meeting_title=source.title or "Untitled Meeting",
+                meeting_date=source.occurred_at.date().isoformat() if source.occurred_at else "",
+                meeting_type=source.meeting_type or "General",
+                duration_minutes=source.duration_minutes or 0,
+                participants=[
+                    {"name": p.name, "discipline": p.discipline or "general", "role": p.role or ""}
+                    for p in participants
+                ],
             )
+            for item_data in result.items:
+                db.add(build_project_item(source, item_data))
+            if result.meeting_summary:
+                source.ai_summary = result.meeting_summary
+            extracted_items = []  # already stored
 
-        # Store extracted items
+        # Store items from the email / document extractors
         for item_data in extracted_items:
             if isinstance(item_data, dict):
                 item = ProjectItem(
@@ -118,7 +124,7 @@ def process_approved_source(source_id: str) -> None:
             source = db.query(Source).filter(Source.id == source_id).first()
             if source:
                 source.ingestion_status = "failed"
-                source.extraction_error = str(e)[:2000]
+                source.extraction_error = (str(e) or e.__class__.__name__)[:2000]
                 db.commit()
         except Exception as status_err:
             logger.error(f"Failed to set failed status for source {source_id}: {status_err}")

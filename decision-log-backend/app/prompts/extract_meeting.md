@@ -33,7 +33,7 @@ Use ONLY these discipline identifiers:
 1. **title**: Short headline that names the item at a glance — at most 10 words, no final period (e.g. "Paginação de pisos por ambiente")
 2. **statement**: Full description of the item in 1-3 sentences: what was decided / asked / said, with the specifics (places, materials, sheets, quantities). Do not repeat the title verbatim; do not paste the quote
 3. **who**: The person who made the statement or is responsible
-4. **timestamp**: Time in the transcript (format: HH:MM:SS) if available
+4. **timestamp**: When the item was said, from the transcript turn it comes from, written as HH:MM:SS. Transcript turn headers use `M:SS` before the first hour and `H:MM:SS` after it — `20:05` means 00:20:05, `1:20:05` means 01:20:05
 5. **affected_disciplines**: Array of disciplines involved or impacted
 6. **confidence**: Your confidence in the classification (0.0-1.0)
 7. **source_excerpt**: The transcript lines this item comes from, copied verbatim (do not translate or fix wording) — 1 to 4 consecutive turns, each as `M:SS - Speaker: text`, one turn per line. Trim long turns with "…" but keep the sentences that support the item
@@ -66,6 +66,11 @@ Use ONLY these discipline identifiers:
 - Keep `who` and `owner` as the participant names, as they appear in the roster.
 - `source_excerpt` is a verbatim copy of the transcript: never translate or rewrite it.
 - Keep identifiers exactly as specified, in English: JSON keys, `item_type` values, discipline values, and consensus `status` (AGREE / DISAGREE / ABSTAIN).
+
+## Speakers
+
+- Each transcript turn starts with `M:SS - Speaker Name` (sometimes followed by the company in parentheses). Use the speaker's name without the company for `who` and `owner`.
+- A turn marked `⚠️ Name / Name [reason]` has an **uncertain speaker** (e.g. several people sharing one microphone). Attribute it to the group exactly as written (`"who": "Camila / Erica"`); never pick one of them. A single name with `⚠️ [overlapping speech]` may contain words from other speakers — use the context.
 
 ## Meeting Summary
 
