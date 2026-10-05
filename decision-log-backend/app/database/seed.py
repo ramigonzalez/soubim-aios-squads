@@ -26,6 +26,7 @@ from app.database.models import (
     User,
 )
 from app.database.session import SessionLocal
+from app.services.organizations import ensure_default_organization
 from app.utils.security import hash_password
 
 
@@ -940,6 +941,10 @@ def seed_database():
         db.add_all([topic2, action2, manual_info])
         db.flush()
         print("  ✓ Created 5 project items (Project 2) incl. V2 types")
+
+        # Story 12.1: every user and project belongs to an organization
+        org = ensure_default_organization(db)
+        print(f"  ✓ Organization '{org.name}' with all users and projects")
 
         db.commit()
         print("  ✓ Committed all data")

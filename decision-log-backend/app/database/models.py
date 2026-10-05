@@ -97,6 +97,41 @@ class User(Base):
     )
 
 
+class Organization(Base):
+    """A company using DecisionLog (Story 12.1): souBIM, DIMAS, future AEC firms.
+
+    Every company is an organization; none is special-cased. Organizations own
+    projects and (Story 12.4) meetings; projects can be shared between them (12.3).
+    """
+
+    __tablename__ = "organizations"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    slug = Column(String(100), unique=True, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    members = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
+
+
+class OrganizationMember(Base):
+    """A user's membership and role in an organization (Story 12.1)."""
+
+    __tablename__ = "organization_members"
+
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    role = Column(String(20), nullable=False, default="member")
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    organization = relationship("Organization", back_populates="members")
+
+    __table_args__ = (
+        CheckConstraint("role IN ('owner', 'admin', 'member')", name="ck_organization_member_role"),
+        Index("idx_organization_members_org", "organization_id"),
+    )
+
+
 class Project(Base):
     """Project model for architectural projects."""
 
@@ -107,6 +142,8 @@ class Project(Base):
     description = Column(Text)
     project_type = Column(String(100))  # V2: residential, commercial, mixed-use, etc.
     actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
+    # Story 12.1: organization that owns the project (nullable until every path sets it — 12.2)
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"))
     created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
 
@@ -122,6 +159,7 @@ class Project(Base):
     __table_args__ = (
         Index("idx_projects_created", "created_at"),
         Index("idx_projects_archived", "archived_at"),
+        Index("idx_projects_owner_org", "owner_organization_id"),
     )
 
 

@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import UUID
 
 from app.database.session import get_db
+from app.services.organizations import primary_organization
 from app.database.models import Project, ProjectMember
 from app.services.project_service import (
     get_projects,
@@ -233,11 +234,13 @@ async def create_project(
             detail="Project name is required",
         )
 
+    owner_org = primary_organization(db, user)  # Story 12.1: projects belong to an organization
     project = Project(
         name=project_name,
         description=payload.description,
         project_type=payload.project_type,
         drive_folder_id=payload.drive_folder_id,
+        owner_organization_id=owner_org.id if owner_org else None,
     )
     db.add(project)
     db.flush()
