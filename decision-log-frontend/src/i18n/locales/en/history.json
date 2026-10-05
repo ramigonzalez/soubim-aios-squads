@@ -1,0 +1,154 @@
+{
+  "timeline": {
+    "untitledSource": "Untitled Source",
+    "empty": {
+      "title": "No project items yet",
+      "description": "Items will appear here once sources are processed"
+    },
+    "error": {
+      "title": "Failed to load project history"
+    }
+  },
+  "sourceGroup": {
+    "regionLabel": "{{title}}, {{items}}",
+    "headerLabel": "Source: {{title}}, {{items}}, {{state}}",
+    "expanded": "expanded",
+    "collapsed": "collapsed",
+    "summary": "Resumo",
+    "showSummary": "Show meeting summary",
+    "hideSummary": "Hide meeting summary",
+    "meeting": "Meeting",
+    "openMeeting": "Open meeting {{title}}"
+  },
+  "itemRow": {
+    "ariaLabel": "{{typeId}}: {{title}}",
+    "markDone": "Mark as done",
+    "markNotDone": "Mark as not done"
+  },
+  "filters": {
+    "ariaLabel": "Filter decisions",
+    "filterBy": "Filter by {{label}}",
+    "remove": "Remove {{label}} filter",
+    "removeDate": "Remove date filter",
+    "removeSearch": "Remove search filter",
+    "clearSelection": "Clear selection",
+    "search": {
+      "placeholder": "Search decisions...",
+      "ariaLabel": "Search decisions by keyword",
+      "clear": "Clear search"
+    },
+    "discipline": {
+      "label": "Discipline"
+    },
+    "dateRange": {
+      "label": "Date range",
+      "from": "From",
+      "to": "To",
+      "placeholder": "Select date",
+      "quick": "Quick",
+      "presets": {
+        "7days": "7d",
+        "30days": "30d",
+        "month": "Month",
+        "all": "All"
+      }
+    },
+    "who": {
+      "label": "Who",
+      "placeholder": "Filter names...",
+      "ariaLabel": "Filter decision makers by name",
+      "empty": "No names found"
+    },
+    "meetingType": {
+      "label": "Type",
+      "empty": "No meeting types found"
+    },
+    "source": {
+      "groupLabel": "Source type filters",
+      "filterBy": "Filter by {{label}} source",
+      "remove": "Remove {{label}} source filter",
+      "meeting": "Meeting",
+      "email": "Email",
+      "document": "Document",
+      "manual_input": "Manual"
+    },
+    "itemType": {
+      "groupLabel": "Item type filters",
+      "filterBy": "Filter by {{label}} type",
+      "remove": "Remove {{label}} type filter",
+      "decision": "Decision",
+      "topic": "Topic",
+      "action_item": "Action",
+      "idea": "Idea",
+      "information": "Info"
+    },
+    "clearAll": {
+      "ariaLabel": "Clear all filters",
+      "label": "Clear ({{count}})"
+    },
+    "groupBy": {
+      "ariaLabel": "Group decisions by",
+      "date": "Date",
+      "discipline": "Discipline"
+    }
+  },
+  "filtersSidebar": {
+    "title": "Filters",
+    "clear": "Clear",
+    "search": "Search",
+    "disciplines": "Disciplines",
+    "activeFilters": "Active Filters:"
+  },
+  "groupingToggle": {
+    "label": "Group by:",
+    "byDate": "By Date",
+    "byDiscipline": "By Discipline"
+  },
+  "bulkActions": {
+    "selected_one": "{{count}} item selected",
+    "selected_other": "{{count}} items selected",
+    "rejectSelected": "Reject Selected",
+    "approveSelected": "Approve Selected"
+  },
+  "digest": {
+    "totalDecisions": "Total Decisions",
+    "meetings": "Meetings",
+    "consensus": "Consensus",
+    "highImpact": "High Impact",
+    "keyHighlights": "Key Highlights"
+  },
+  "decisionCard": {
+    "noRationale": "No rationale provided"
+  },
+  "decisionRow": {
+    "ariaLabel": "Decision: {{statement}}"
+  },
+  "meetingGroup": {
+    "meetingLabel": "Meeting: {{title}}",
+    "regionLabel": "{{title}}, {{decisions}}",
+    "decisions_one": "{{count}} decision",
+    "decisions_other": "{{count}} decisions",
+    "participants_one": "{{count}} participant",
+    "participants_other": "{{count}} participants",
+    "moreDisciplines": "+{{count}} more",
+    "expanded": "expanded",
+    "collapsed": "collapsed"
+  },
+  "participants": {
+    "title": "Participants",
+    "count_one": "{{count}} participant",
+    "count_other": "{{count}} participants"
+  },
+  "aiSummary": {
+    "empty": "No summary available",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "disciplineCircle": {
+    "label": "{{id}}"
+  },
+  "disciplineCircles": {
+    "overflow_one": "{{count}} more discipline: {{list}}",
+    "overflow_other": "{{count}} more disciplines: {{list}}"
+  }
+}

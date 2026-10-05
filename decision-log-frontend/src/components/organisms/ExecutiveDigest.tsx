@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { DisciplineBadge } from '../molecules/DisciplineBadge'
 import { formatDate } from '../../lib/utils'
 
@@ -22,6 +23,7 @@ interface ExecutiveDigestProps {
 }
 
 export function ExecutiveDigest({ digest }: ExecutiveDigestProps) {
+  const { t } = useTranslation('history')
   const getImpactColor = (level: string) => {
     switch (level) {
       case 'high': return 'bg-red-50 border-red-200'
@@ -38,32 +40,32 @@ export function ExecutiveDigest({ digest }: ExecutiveDigestProps) {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="text-center">
             <p className="text-3xl font-bold text-gray-900">{digest.total_decisions}</p>
-            <p className="text-sm text-gray-600 mt-1">Total Decisions</p>
+            <p className="text-sm text-gray-600 mt-1">{t('digest.totalDecisions')}</p>
           </div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="text-center">
             <p className="text-3xl font-bold text-gray-900">{digest.meetings_count}</p>
-            <p className="text-sm text-gray-600 mt-1">Meetings</p>
+            <p className="text-sm text-gray-600 mt-1">{t('digest.meetings')}</p>
           </div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="text-center">
             <p className="text-3xl font-bold text-green-600">{digest.consensus_percentage}%</p>
-            <p className="text-sm text-gray-600 mt-1">Consensus</p>
+            <p className="text-sm text-gray-600 mt-1">{t('digest.consensus')}</p>
           </div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="text-center">
             <p className="text-3xl font-bold text-red-600">{digest.high_impact_count}</p>
-            <p className="text-sm text-gray-600 mt-1">High Impact</p>
+            <p className="text-sm text-gray-600 mt-1">{t('digest.highImpact')}</p>
           </div>
         </div>
       </div>
 
       {/* Highlights */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Highlights</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('digest.keyHighlights')}</h3>
         <div className="space-y-3">
           {digest.highlights.map((highlight, idx) => (
             <div key={idx} className={`border rounded-lg p-4 ${getImpactColor(highlight.impact_level)}`}>

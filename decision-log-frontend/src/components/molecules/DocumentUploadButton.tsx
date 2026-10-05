@@ -9,6 +9,7 @@
 
 import { Upload, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../../services/api'
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
@@ -19,6 +20,7 @@ interface DocumentUploadButtonProps {
 }
 
 export function DocumentUploadButton({ projectId, onUploadComplete }: DocumentUploadButtonProps) {
+  const { t } = useTranslation('ingestion')
   const [status, setStatus] = useState<UploadStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string>('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -44,8 +46,8 @@ export function DocumentUploadButton({ projectId, onUploadComplete }: DocumentUp
       const message =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
-            'Upload failed'
-          : 'Upload failed — network error'
+            t('upload.errorGeneric')
+          : t('upload.errorNetwork')
       setErrorMessage(message)
       console.error('Document upload failed:', err)
 
@@ -75,7 +77,7 @@ export function DocumentUploadButton({ projectId, onUploadComplete }: DocumentUp
                    text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50
                    disabled:opacity-50 disabled:cursor-not-allowed
                    transition-colors"
-        aria-label="Upload document"
+        aria-label={t('upload.ariaLabel')}
       >
         {status === 'uploading' ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -87,12 +89,12 @@ export function DocumentUploadButton({ projectId, onUploadComplete }: DocumentUp
           <Upload className="w-4 h-4" />
         )}
         {status === 'uploading'
-          ? 'Uploading...'
+          ? t('upload.uploading')
           : status === 'success'
-            ? 'Uploaded!'
+            ? t('upload.success')
             : status === 'error'
-              ? 'Failed'
-              : 'Upload Document'}
+              ? t('upload.failed')
+              : t('upload.idle')}
       </button>
 
       {status === 'error' && errorMessage && (

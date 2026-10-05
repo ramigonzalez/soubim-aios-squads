@@ -1,4 +1,5 @@
 import { ExternalLink, Check, X, RefreshCw, CheckCircle, MinusCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import IngestionStatusBadge from './IngestionStatusBadge'
 import AISummaryExpander from './AISummaryExpander'
 import { formatDateTime } from '../../lib/utils'
@@ -23,6 +24,7 @@ export default function MeetingSourceRow({
   onRetry,
   isActionLoading,
 }: MeetingSourceRowProps) {
+  const { t } = useTranslation('ingestion')
   const isPending = source.status === 'pending'
   const isFailed = source.status === 'failed'
 
@@ -34,7 +36,7 @@ export default function MeetingSourceRow({
           checked={selected}
           onChange={() => onToggleSelect(source.id)}
           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          aria-label={`Select ${source.call_id}`}
+          aria-label={t('actions.selectItem', { name: source.call_id })}
         />
       </td>
       <td className="px-4 py-3 text-sm text-gray-900 truncate font-mono" title={source.call_id}>
@@ -60,9 +62,9 @@ export default function MeetingSourceRow({
       </td>
       <td className="px-4 py-3">
         {source.included ? (
-          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Included" />
+          <CheckCircle className="w-4 h-4 text-green-500" aria-label={t('row.included')} />
         ) : (
-          <MinusCircle className="w-4 h-4 text-gray-300" aria-label="Not included" />
+          <MinusCircle className="w-4 h-4 text-gray-300" aria-label={t('row.notIncluded')} />
         )}
       </td>
       <td className="px-4 py-3">
@@ -76,7 +78,7 @@ export default function MeetingSourceRow({
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
           >
-            Transcript <ExternalLink className="w-3 h-3" />
+            {t('row.transcript')} <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
           <span className="text-gray-400">--</span>
@@ -89,8 +91,8 @@ export default function MeetingSourceRow({
               onClick={() => onApprove?.(source.id)}
               disabled={isActionLoading}
               className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors disabled:opacity-50"
-              aria-label={`Approve ${source.title}`}
-              title="Approve"
+              aria-label={t('actions.approveItem', { name: source.title })}
+              title={t('actions.approve')}
             >
               <Check className="w-4 h-4" />
             </button>
@@ -98,8 +100,8 @@ export default function MeetingSourceRow({
               onClick={() => onReject?.(source.id)}
               disabled={isActionLoading}
               className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors disabled:opacity-50"
-              aria-label={`Reject ${source.title}`}
-              title="Reject"
+              aria-label={t('actions.rejectItem', { name: source.title })}
+              title={t('actions.reject')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -110,8 +112,8 @@ export default function MeetingSourceRow({
             onClick={() => onRetry?.(source.id)}
             disabled={isActionLoading}
             className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 transition-colors disabled:opacity-50"
-            aria-label={`Retry ${source.title}`}
-            title="Retry"
+            aria-label={t('actions.retryItem', { name: source.title })}
+            title={t('actions.retry')}
           >
             <RefreshCw className="w-4 h-4" />
           </button>

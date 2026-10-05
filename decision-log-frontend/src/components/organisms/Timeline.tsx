@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
 import { ProjectItem, SourceType } from '../../types/projectItem'
 import { SourceGroupAccordion } from '../molecules/SourceGroupAccordion'
 import { timestampToSeconds } from '../../lib/transcript'
 import { ProjectItemRow } from '../molecules/ProjectItemRow'
-import { formatDenseDate, getDisciplineNodeColor } from '../../lib/utils'
+import { formatDenseDate, getDisciplineLabel, getDisciplineNodeColor } from '../../lib/utils'
 import { Calendar, AlertCircle } from 'lucide-react'
 
 interface TimelineProps {
@@ -70,7 +72,7 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
         sourceMap.set(sourceId, {
           source: {
             id: sourceId,
-            title: item.meeting_title || item.source?.title || 'Untitled Source',
+            title: item.meeting_title || item.source?.title || i18n.t('history:timeline.untitledSource'),
             type: item.source_type || 'meeting',
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
@@ -130,7 +132,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
         sourceMap.set(sourceId, {
           source: {
             id: sourceId,
-            title: item.meeting_title || item.source?.title || 'Untitled Source',
+            title: item.meeting_title || item.source?.title || i18n.t('history:timeline.untitledSource'),
             type: item.source_type || 'meeting',
             meetingType: item.meeting_type,
             participants: item.meeting_participants,
@@ -148,7 +150,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
 
     return {
       date: discipline,
-      dateLabel: discipline.charAt(0).toUpperCase() + discipline.slice(1),
+      dateLabel: getDisciplineLabel(discipline),
       totalItems: discItems.length,
       sources,
       orphanItems,
@@ -232,30 +234,32 @@ function TimelineSkeleton() {
 }
 
 function EmptyTimeline() {
+  const { t } = useTranslation('history')
   return (
     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
       <Calendar className="w-12 h-12 text-gray-400 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-1">No project items yet</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('timeline.empty.title')}</h3>
       <p className="text-sm text-gray-500">
-        Items will appear here once sources are processed
+        {t('timeline.empty.description')}
       </p>
     </div>
   )
 }
 
 function ErrorState({ error, onRetry }: { error: Error; onRetry?: () => void }) {
+  const { t } = useTranslation('history')
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-start gap-3">
       <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
       <div>
-        <h3 className="text-sm font-semibold text-red-900 mb-1">Failed to load project history</h3>
+        <h3 className="text-sm font-semibold text-red-900 mb-1">{t('timeline.error.title')}</h3>
         <p className="text-sm text-red-700">{error.message}</p>
         {onRetry && (
           <button
             onClick={onRetry}
             className="mt-3 px-3 py-1.5 text-sm font-medium text-red-700 border border-red-300 rounded-md hover:bg-red-100 transition-colors"
           >
-            Retry
+            {t('common:retry')}
           </button>
         )}
       </div>
@@ -279,9 +283,13 @@ export function Timeline({
   onToggleMilestone,
   isAdmin,
 }: TimelineProps) {
+  const { t, i18n: i18nInstance } = useTranslation('history')
+  const language = i18nInstance.language
   const denseGroups = useMemo(
     () => (groupBy === 'date' ? buildDenseGroups(decisions) : buildDenseGroupsByDiscipline(decisions)),
-    [decisions, groupBy],
+    // language: group labels (dates, disciplines) are translated at build time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [decisions, groupBy, language],
   )
 
   if (isLoading) return <TimelineSkeleton />
@@ -312,7 +320,7 @@ export function Timeline({
                 {group.dateLabel}
               </span>
               <span className="text-xs text-gray-400 ml-2">
-                {group.totalItems} item{group.totalItems !== 1 ? 's' : ''}
+                {t('common:items', { count: group.totalItems })}
               </span>
             </div>
 

@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Search, X, Building2, Calendar, Users, Tag, Video, Mail, FileText as FileTextIcon, PenLine, CheckCircle2, MessageCircle, Target, Lightbulb, Info } from 'lucide-react'
 import DatePicker from 'react-datepicker'
+import { useTranslation } from 'react-i18next'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useFilterStore } from '../../store/filterStore'
 import { useDebounce } from '../../hooks/useDebounce'
 import { FilterPopover } from '../molecules/FilterPopover'
-import { getDisciplinePillColors, getMeetingTypeColors, formatDate } from '../../lib/utils'
+import { getDisciplinePillColors, getDisciplineLabel, getMeetingTypeColors, formatDate } from '../../lib/utils'
 import { ProjectItem } from '../../types/projectItem'
 import type { LucideIcon } from 'lucide-react'
 
@@ -21,22 +22,24 @@ const DISCIPLINE_DOT_COLORS: Record<string, string> = {
   landscape: 'bg-green-400',
 }
 
-// Source type filter chips (Story 9.4)
-const SOURCE_CHIPS: Array<{ value: string; label: string; icon: LucideIcon; activeClass: string }> = [
-  { value: 'meeting', label: 'Meeting', icon: Video, activeClass: 'bg-indigo-100 text-indigo-700' },
-  { value: 'email', label: 'Email', icon: Mail, activeClass: 'bg-sky-100 text-sky-700' },
-  { value: 'document', label: 'Document', icon: FileTextIcon, activeClass: 'bg-orange-100 text-orange-700' },
-  { value: 'manual_input', label: 'Manual', icon: PenLine, activeClass: 'bg-gray-200 text-gray-700' },
+// Source type filter chips (Story 9.4). Labels: history:filters.source.<value>
+const SOURCE_CHIPS: Array<{ value: string; icon: LucideIcon; activeClass: string }> = [
+  { value: 'meeting', icon: Video, activeClass: 'bg-indigo-100 text-indigo-700' },
+  { value: 'email', icon: Mail, activeClass: 'bg-sky-100 text-sky-700' },
+  { value: 'document', icon: FileTextIcon, activeClass: 'bg-orange-100 text-orange-700' },
+  { value: 'manual_input', icon: PenLine, activeClass: 'bg-gray-200 text-gray-700' },
 ]
 
-// Item type filter chips (Story 9.4)
-const TYPE_CHIPS: Array<{ value: string; label: string; icon: LucideIcon; activeClass: string }> = [
-  { value: 'decision', label: 'Decision', icon: CheckCircle2, activeClass: 'bg-green-100 text-green-700' },
-  { value: 'topic', label: 'Topic', icon: MessageCircle, activeClass: 'bg-amber-100 text-amber-700' },
-  { value: 'action_item', label: 'Action', icon: Target, activeClass: 'bg-blue-100 text-blue-700' },
-  { value: 'idea', label: 'Idea', icon: Lightbulb, activeClass: 'bg-purple-100 text-purple-700' },
-  { value: 'information', label: 'Info', icon: Info, activeClass: 'bg-slate-100 text-slate-700' },
+// Item type filter chips (Story 9.4). Labels: history:filters.itemType.<value>
+const TYPE_CHIPS: Array<{ value: string; icon: LucideIcon; activeClass: string }> = [
+  { value: 'decision', icon: CheckCircle2, activeClass: 'bg-green-100 text-green-700' },
+  { value: 'topic', icon: MessageCircle, activeClass: 'bg-amber-100 text-amber-700' },
+  { value: 'action_item', icon: Target, activeClass: 'bg-blue-100 text-blue-700' },
+  { value: 'idea', icon: Lightbulb, activeClass: 'bg-purple-100 text-purple-700' },
+  { value: 'information', icon: Info, activeClass: 'bg-slate-100 text-slate-700' },
 ]
+
+const DATE_PRESETS = ['7days', '30days', 'month', 'all'] as const
 
 interface FilterBarProps {
   decisions: ProjectItem[]
@@ -45,6 +48,11 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProps) {
+  const { t, i18n } = useTranslation('history')
+  const sourceLabel = (value: string) => (SOURCE_CHIPS.some(c => c.value === value) ? t(`filters.source.${value}`) : value)
+  const itemTypeLabel = (value: string) => (TYPE_CHIPS.some(c => c.value === value) ? t(`filters.itemType.${value}`) : value)
+  // Typed input format: English month names in English, numeric dd/MM/yyyy otherwise
+  const pickerDateFormat = i18n.language === 'en' ? 'MMM d, yyyy' : 'dd/MM/yyyy'
   const {
     disciplines,
     decisionMakers,
@@ -188,10 +196,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         key={`disc-${d}`}
         className={`inline-flex items-center gap-1 ${colors.bg} ${colors.text} text-xs px-2 py-1 rounded-full`}
       >
-        {d.charAt(0).toUpperCase() + d.slice(1)}
+        {getDisciplineLabel(d)}
         <button
           onClick={() => toggleDiscipline(d)}
-          aria-label={`Remove ${d} filter`}
+          aria-label={t('filters.remove', { label: getDisciplineLabel(d) })}
           className="hover:opacity-70"
         >
           <X className="w-3 h-3" />
@@ -205,7 +213,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
       {dateFrom ? formatDate(dateFrom) : '...'} – {dateTo ? formatDate(dateTo) : '...'}
       <button
         onClick={() => setDateRange(null, null)}
-        aria-label="Remove date filter"
+        aria-label={t('filters.removeDate')}
         className="hover:opacity-70"
       >
         <X className="w-3 h-3" />
@@ -221,7 +229,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
       {name}
       <button
         onClick={() => toggleDecisionMaker(name)}
-        aria-label={`Remove ${name} filter`}
+        aria-label={t('filters.remove', { label: name })}
         className="hover:opacity-70"
       >
         <X className="w-3 h-3" />
@@ -239,7 +247,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         {formatMeetingType(type)}
         <button
           onClick={() => toggleMeetingType(type)}
-          aria-label={`Remove ${type} filter`}
+          aria-label={t('filters.remove', { label: type })}
           className="hover:opacity-70"
         >
           <X className="w-3 h-3" />
@@ -253,7 +261,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
       &quot;{searchQuery}&quot;
       <button
         onClick={() => { setSearchQuery(''); setLocalSearch('') }}
-        aria-label="Remove search filter"
+        aria-label={t('filters.removeSearch')}
         className="hover:opacity-70"
       >
         <X className="w-3 h-3" />
@@ -269,10 +277,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         key={`source-${st}`}
         className={`inline-flex items-center gap-1 ${chip?.activeClass || 'bg-gray-100 text-gray-600'} text-xs px-2 py-1 rounded-full`}
       >
-        {chip?.label || st}
+        {sourceLabel(st)}
         <button
           onClick={() => toggleSourceType(st)}
-          aria-label={`Remove ${chip?.label || st} source filter`}
+          aria-label={t('filters.source.remove', { label: sourceLabel(st) })}
           className="hover:opacity-70"
         >
           <X className="w-3 h-3" />
@@ -289,10 +297,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         key={`itemtype-${it}`}
         className={`inline-flex items-center gap-1 ${chip?.activeClass || 'bg-gray-100 text-gray-600'} text-xs px-2 py-1 rounded-full`}
       >
-        {chip?.label || it}
+        {itemTypeLabel(it)}
         <button
           onClick={() => toggleItemType(it)}
-          aria-label={`Remove ${chip?.label || it} type filter`}
+          aria-label={t('filters.itemType.remove', { label: itemTypeLabel(it) })}
           className="hover:opacity-70"
         >
           <X className="w-3 h-3" />
@@ -307,7 +315,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
   return (
     <nav
       className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4"
-      aria-label="Filter decisions"
+      aria-label={t('filters.ariaLabel')}
     >
       {/* Row 1: Search input — full width */}
       <div className="px-3 pt-3 pb-2">
@@ -318,15 +326,15 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search decisions..."
-            aria-label="Search decisions by keyword"
+            placeholder={t('filters.search.placeholder')}
+            aria-label={t('filters.search.ariaLabel')}
             className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none bg-white text-gray-700"
           />
           {localSearch && (
             <button
               onClick={() => { setLocalSearch(''); setSearchQuery('') }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              aria-label="Clear search"
+              aria-label={t('filters.search.clear')}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -338,7 +346,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
       <div className="px-3 pb-3 flex items-center gap-2 flex-wrap">
         {/* Discipline Filter */}
         <FilterPopover
-          label="Discipline"
+          label={t('filters.discipline.label')}
           icon={<Building2 className="w-3.5 h-3.5" />}
           activeCount={disciplines.length}
         >
@@ -355,7 +363,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                 />
                 <span className={`w-2.5 h-2.5 rounded-full ${DISCIPLINE_DOT_COLORS[d] || 'bg-gray-400'} flex-shrink-0`} />
-                <span className="text-sm text-gray-700 capitalize">{d}</span>
+                <span className="text-sm text-gray-700">{getDisciplineLabel(d)}</span>
               </label>
             ))}
             {disciplines.length > 0 && (
@@ -363,7 +371,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 onClick={clearDisciplines}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
               >
-                Clear selection
+                {t('filters.clearSelection')}
               </button>
             )}
           </div>
@@ -371,49 +379,44 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
 
         {/* Date Range Filter */}
         <FilterPopover
-          label="Date range"
+          label={t('filters.dateRange.label')}
           icon={<Calendar className="w-3.5 h-3.5" />}
           activeCount={dateFrom || dateTo ? 1 : 0}
           width="w-64"
         >
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('filters.dateRange.from')}</label>
               <DatePicker
                 selected={parseDate(dateFrom)}
                 onChange={(date: Date | null) => setDateRange(toDateString(date), dateTo)}
-                dateFormat="MMM d, yyyy"
-                placeholderText="Select date"
+                dateFormat={pickerDateFormat}
+                placeholderText={t('filters.dateRange.placeholder')}
                 className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
                 isClearable
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('filters.dateRange.to')}</label>
               <DatePicker
                 selected={parseDate(dateTo)}
                 onChange={(date: Date | null) => setDateRange(dateFrom, toDateString(date))}
-                dateFormat="MMM d, yyyy"
-                placeholderText="Select date"
+                dateFormat={pickerDateFormat}
+                placeholderText={t('filters.dateRange.placeholder')}
                 className="w-full text-sm bg-white border border-gray-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
                 isClearable
               />
             </div>
             <div className="border-t border-gray-100 pt-2">
-              <p className="text-xs font-medium text-gray-400 mb-1.5">Quick</p>
+              <p className="text-xs font-medium text-gray-400 mb-1.5">{t('filters.dateRange.quick')}</p>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  { label: '7d', value: '7days' },
-                  { label: '30d', value: '30days' },
-                  { label: 'Month', value: 'month' },
-                  { label: 'All', value: 'all' },
-                ].map((preset) => (
+                {DATE_PRESETS.map((preset) => (
                   <button
-                    key={preset.value}
-                    onClick={() => handleDatePreset(preset.value)}
+                    key={preset}
+                    onClick={() => handleDatePreset(preset)}
                     className="text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-gray-200 px-2.5 py-1 rounded-full transition-colors"
                   >
-                    {preset.label}
+                    {t(`filters.dateRange.presets.${preset}`)}
                   </button>
                 ))}
               </div>
@@ -423,7 +426,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
 
         {/* Who (Decision Maker) Filter */}
         <FilterPopover
-          label="Who"
+          label={t('filters.who.label')}
           icon={<Users className="w-3.5 h-3.5" />}
           activeCount={decisionMakers.length}
           width="w-72"
@@ -436,14 +439,14 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 type="text"
                 value={whoSearch}
                 onChange={(e) => setWhoSearch(e.target.value)}
-                placeholder="Filter names..."
-                aria-label="Filter decision makers by name"
+                placeholder={t('filters.who.placeholder')}
+                aria-label={t('filters.who.ariaLabel')}
                 className="w-full pl-7 pr-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-200 focus:border-blue-300 focus:outline-none text-gray-700"
               />
             </div>
             <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">
               {filteredMakers.length === 0 ? (
-                <p className="text-xs text-gray-400 py-1 px-2">No names found</p>
+                <p className="text-xs text-gray-400 py-1 px-2">{t('filters.who.empty')}</p>
               ) : (
                 filteredMakers.map((name) => (
                   <label
@@ -466,7 +469,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 onClick={clearDecisionMakers}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
               >
-                Clear selection
+                {t('filters.clearSelection')}
               </button>
             )}
           </div>
@@ -474,13 +477,13 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
 
         {/* Meeting Type Filter */}
         <FilterPopover
-          label="Type"
+          label={t('filters.meetingType.label')}
           icon={<Tag className="w-3.5 h-3.5" />}
           activeCount={meetingTypes.length}
         >
           <div className="space-y-1">
             {availableMeetingTypes.length === 0 ? (
-              <p className="text-xs text-gray-400 py-1 px-2">No meeting types found</p>
+              <p className="text-xs text-gray-400 py-1 px-2">{t('filters.meetingType.empty')}</p>
             ) : (
               availableMeetingTypes.map((type) => {
                 const colors = getMeetingTypeColors(type)
@@ -506,7 +509,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 onClick={clearMeetingTypes}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 mt-2 pt-2 border-t border-gray-100 text-left transition-colors"
               >
-                Clear selection
+                {t('filters.clearSelection')}
               </button>
             )}
           </div>
@@ -514,7 +517,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
 
         {/* Source Type Chips (Story 9.4) */}
         <span className="w-px h-4 bg-gray-200 mx-1 self-center" />
-        <div className="inline-flex items-center gap-1" role="group" aria-label="Source type filters">
+        <div className="inline-flex items-center gap-1" role="group" aria-label={t('filters.source.groupLabel')}>
           {SOURCE_CHIPS.map((chip) => {
             const Icon = chip.icon
             const isActive = sourceTypes.includes(chip.value)
@@ -528,10 +531,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                   isActive ? chip.activeClass : 'bg-gray-100 text-gray-600'
                 }`}
                 aria-pressed={isActive}
-                aria-label={`Filter by ${chip.label} source`}
+                aria-label={t('filters.source.filterBy', { label: sourceLabel(chip.value) })}
               >
                 <Icon className="w-3 h-3" />
-                {chip.label}
+                {sourceLabel(chip.value)}
                 <span className="text-[10px] font-medium text-gray-400 ml-0.5">{count}</span>
               </button>
             )
@@ -540,7 +543,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
 
         {/* Item Type Chips (Story 9.4) */}
         <span className="w-px h-4 bg-gray-200 mx-1 self-center" />
-        <div className="inline-flex items-center gap-1" role="group" aria-label="Item type filters">
+        <div className="inline-flex items-center gap-1" role="group" aria-label={t('filters.itemType.groupLabel')}>
           {TYPE_CHIPS.map((chip) => {
             const Icon = chip.icon
             const isActive = itemTypes.includes(chip.value)
@@ -554,10 +557,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                   isActive ? chip.activeClass : 'bg-gray-100 text-gray-600'
                 }`}
                 aria-pressed={isActive}
-                aria-label={`Filter by ${chip.label} type`}
+                aria-label={t('filters.itemType.filterBy', { label: itemTypeLabel(chip.value) })}
               >
                 <Icon className="w-3 h-3" />
-                {chip.label}
+                {itemTypeLabel(chip.value)}
                 <span className="text-[10px] font-medium text-gray-400 ml-0.5">{count}</span>
               </button>
             )
@@ -569,10 +572,10 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
           <button
             onClick={() => { reset(); setLocalSearch('') }}
             className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-            aria-label="Clear all filters"
+            aria-label={t('filters.clearAll.ariaLabel')}
           >
             <X className="w-3 h-3" />
-            Clear ({activeFilterCount})
+            {t('filters.clearAll.label', { count: activeFilterCount })}
           </button>
         )}
 
@@ -583,7 +586,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
         <div
           className="inline-flex rounded-full border border-gray-200 p-0.5 bg-gray-100"
           role="radiogroup"
-          aria-label="Group decisions by"
+          aria-label={t('filters.groupBy.ariaLabel')}
         >
           <button
             role="radio"
@@ -595,7 +598,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Date
+            {t('filters.groupBy.date')}
           </button>
           <button
             role="radio"
@@ -607,7 +610,7 @@ export function FilterBar({ decisions, groupBy, onGroupByChange }: FilterBarProp
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Discipline
+            {t('filters.groupBy.discipline')}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { cn, formatDate } from '../../lib/utils'
 import { ProjectStage } from '../../types/projectItem'
 
@@ -14,6 +15,7 @@ interface StageNodeProps {
  * Story 8.1: Milestone Timeline Component
  */
 export function StageNode({ stage, isCurrent, milestoneCount }: StageNodeProps) {
+  const { t } = useTranslation('milestones')
   return (
     <div className="flex items-start gap-4">
       {/* Stage label — positioned to the left */}
@@ -26,7 +28,7 @@ export function StageNode({ stage, isCurrent, milestoneCount }: StageNodeProps) 
         </p>
         {isCurrent && (
           <span className="inline-block mt-1 text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-            Current
+            {t('stage.current')}
           </span>
         )}
       </div>
@@ -41,7 +43,11 @@ export function StageNode({ stage, isCurrent, milestoneCount }: StageNodeProps) 
               ? 'bg-blue-600 ring-2 ring-blue-200'
               : 'bg-gray-400'
           )}
-          aria-label={`Stage: ${stage.stage_name}${isCurrent ? ' (Current)' : ''}, ${milestoneCount} milestone${milestoneCount !== 1 ? 's' : ''}`}
+          aria-label={t('stage.dotLabel', {
+            name: stage.stage_name,
+            current: isCurrent ? t('stage.currentSuffix') : '',
+            count: milestoneCount,
+          })}
         />
       </div>
 

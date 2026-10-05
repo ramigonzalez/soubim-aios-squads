@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useProjectItems } from '../hooks/useProjectItems'
 import { useToggleMilestone } from '../hooks/useProjectItemMutation'
 import { Timeline } from '../components/organisms/Timeline'
@@ -41,6 +42,7 @@ function getInitialView(): View {
  * Story 10.2 - Added document upload button
  */
 export function ProjectDetail() {
+  const { t } = useTranslation('projects')
   const { id: projectId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [view, setView] = useState<View>(getInitialView)
@@ -158,18 +160,14 @@ export function ProjectDetail() {
   }
 
   /** Human-readable label for the active tab (Story 9.5) */
-  const viewLabel = view === 'milestones'
-    ? 'Milestone Timeline'
-    : view === 'history'
-      ? 'Project History'
-      : 'Executive Digest'
+  const viewLabel = t(`detail.tabs.${view}`)
 
   if (!projectId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <p className="text-gray-900 text-lg">Invalid project ID</p>
+          <p className="text-gray-900 text-lg">{t('detail.invalidId')}</p>
         </div>
       </div>
     )
@@ -207,7 +205,7 @@ export function ProjectDetail() {
       return {
         category: d.affected_disciplines?.[0] || d.discipline || 'general',
         title: displayStatement.substring(0, 60) + '...',
-        description: d.why || 'No description available',
+        description: d.why || t('detail.noDescriptionAvailable'),
         impact_level,
         date: d.meeting_date || d.timestamp || d.created_at,
       }
@@ -228,7 +226,7 @@ export function ProjectDetail() {
     setIsExporting(true)
     setExportMenuOpen(false)
     try {
-      await exportAsPDF(milestoneTimelineRef.current, 'Project Milestones')
+      await exportAsPDF(milestoneTimelineRef.current, t('detail.exportTitle'))
     } catch (err) {
       console.error('Error exporting PDF:', err)
     } finally {
@@ -241,7 +239,7 @@ export function ProjectDetail() {
     setIsExporting(true)
     setExportMenuOpen(false)
     try {
-      await exportAsJPEG(milestoneTimelineRef.current, 'Project Milestones')
+      await exportAsJPEG(milestoneTimelineRef.current, t('detail.exportTitle'))
     } catch (err) {
       console.error('Error exporting JPEG:', err)
     } finally {
@@ -253,10 +251,10 @@ export function ProjectDetail() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb (Story 9.5) */}
-        <nav className="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
-          <Link to="/projects" className="hover:text-blue-600">Projects</Link>
+        <nav className="text-sm text-gray-500 mb-4" aria-label={t('detail.breadcrumb.label')}>
+          <Link to="/projects" className="hover:text-blue-600">{t('detail.breadcrumb.projects')}</Link>
           <span className="mx-2" aria-hidden="true">&rsaquo;</span>
-          <span>Project</span>
+          <span>{t('detail.breadcrumb.project')}</span>
           <span className="mx-2" aria-hidden="true">&rsaquo;</span>
           <span className="text-gray-900 font-medium">{viewLabel}</span>
         </nav>
@@ -266,7 +264,7 @@ export function ProjectDetail() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">{viewLabel}</h1>
             <p className="text-sm text-gray-600">
-              {filteredDecisions.length} decision{filteredDecisions.length !== 1 ? 's' : ''} found
+              {t('detail.found', { count: filteredDecisions.length })}
             </p>
           </div>
           {isAdmin && (
@@ -276,14 +274,14 @@ export function ProjectDetail() {
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
                 <Pencil className="w-4 h-4" />
-                Edit
+                {t('detail.edit')}
               </button>
               <button
                 onClick={() => setShowArchiveConfirm(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition"
               >
                 <Archive className="w-4 h-4" />
-                Archive
+                {t('detail.archive')}
               </button>
             </div>
           )}
@@ -303,19 +301,19 @@ export function ProjectDetail() {
               className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 id="archive-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">Archive Project?</h3>
+              <h3 id="archive-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">{t('detail.archiveDialog.title')}</h3>
               <p className="text-sm text-gray-600 mb-4">
-                This will archive the project. It can be restored later.
+                {t('detail.archiveDialog.body')}
               </p>
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowArchiveConfirm(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Cancel
+                  {t('detail.archiveDialog.cancel')}
                 </button>
                 {archiveProjectMutation.isError && (
-                  <p className="text-sm text-red-600 mb-2">Failed to archive project. Please try again.</p>
+                  <p className="text-sm text-red-600 mb-2">{t('detail.archiveDialog.error')}</p>
                 )}
                 <button
                   onClick={() => {
@@ -326,7 +324,7 @@ export function ProjectDetail() {
                   disabled={archiveProjectMutation.isLoading}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
                 >
-                  {archiveProjectMutation.isLoading ? 'Archiving...' : 'Archive'}
+                  {archiveProjectMutation.isLoading ? t('detail.archiveDialog.archiving') : t('detail.archiveDialog.confirm')}
                 </button>
               </div>
             </div>
@@ -347,7 +345,7 @@ export function ProjectDetail() {
             )}
           >
             <Star className="w-4 h-4 mr-1.5" />
-            Milestone Timeline
+            {t('detail.tabs.milestones')}
           </button>
           <button
             role="tab"
@@ -361,7 +359,7 @@ export function ProjectDetail() {
             )}
           >
             <Clock className="w-4 h-4 mr-1.5" />
-            Project History
+            {t('detail.tabs.history')}
           </button>
           <button
             role="tab"
@@ -375,7 +373,7 @@ export function ProjectDetail() {
             )}
           >
             <FileText className="w-4 h-4 mr-1.5" />
-            Executive Digest
+            {t('detail.tabs.digest')}
           </button>
         </div>
 
@@ -386,10 +384,10 @@ export function ProjectDetail() {
             <button
               onClick={() => setShareDialogOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              aria-label="Share milestone timeline"
+              aria-label={t('detail.shareAria')}
             >
               <Share2 className="w-4 h-4" />
-              Share
+              {t('detail.share')}
             </button>
 
             <div className="relative">
@@ -397,10 +395,10 @@ export function ProjectDetail() {
                 onClick={() => setExportMenuOpen(!exportMenuOpen)}
                 disabled={isExporting}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
-                aria-label="Export milestone timeline"
+                aria-label={t('detail.exportAria')}
               >
                 <Download className="w-4 h-4" />
-                {isExporting ? 'Exporting...' : 'Export'}
+                {isExporting ? t('detail.exporting') : t('detail.export')}
                 <ChevronDown className="w-3 h-3" />
               </button>
 
@@ -411,14 +409,14 @@ export function ProjectDetail() {
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                   >
                     <FileText className="w-4 h-4 text-red-500" />
-                    Export as PDF
+                    {t('detail.exportPdf')}
                   </button>
                   <button
                     onClick={handleExportJPEG}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                   >
                     <Image className="w-4 h-4 text-green-500" />
-                    Export as JPEG
+                    {t('detail.exportJpeg')}
                   </button>
                 </div>
               )}

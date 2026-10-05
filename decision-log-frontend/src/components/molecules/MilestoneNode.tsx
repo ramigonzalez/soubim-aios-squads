@@ -1,21 +1,24 @@
 import React from 'react'
-import { cn, formatDate } from '../../lib/utils'
+import { useTranslation } from 'react-i18next'
+import { cn, formatDate, getDisciplineLabel, getSourceTypeLabel } from '../../lib/utils'
 import { ProjectItem, ItemType, SourceType } from '../../types/projectItem'
 import { Video, Mail, FileText, PenLine } from 'lucide-react'
 import { MilestoneStarToggle } from './MilestoneStarToggle'
 import { DisciplineCircles } from '../atoms/DisciplineCircles'
 
 // --- Inline atom: ItemTypeBadge ---
-const itemTypeConfig: Record<ItemType, { label: string; bg: string; text: string }> = {
-  decision:    { label: 'Decision',    bg: 'bg-blue-100',   text: 'text-blue-700' },
-  action_item: { label: 'Action',      bg: 'bg-amber-100',  text: 'text-amber-700' },
-  topic:       { label: 'Topic',       bg: 'bg-purple-100', text: 'text-purple-700' },
-  idea:        { label: 'Idea',        bg: 'bg-green-100',  text: 'text-green-700' },
-  information: { label: 'Info',        bg: 'bg-gray-100',   text: 'text-gray-700' },
+const itemTypeConfig: Record<ItemType, { bg: string; text: string }> = {
+  decision:    { bg: 'bg-blue-100',   text: 'text-blue-700' },
+  action_item: { bg: 'bg-amber-100',  text: 'text-amber-700' },
+  topic:       { bg: 'bg-purple-100', text: 'text-purple-700' },
+  idea:        { bg: 'bg-green-100',  text: 'text-green-700' },
+  information: { bg: 'bg-gray-100',   text: 'text-gray-700' },
 }
 
 function ItemTypeBadgeInline({ type }: { type: ItemType }) {
-  const config = itemTypeConfig[type] || itemTypeConfig.information
+  const { t } = useTranslation('milestones')
+  const key: ItemType = itemTypeConfig[type] ? type : 'information'
+  const config = itemTypeConfig[key]
   return (
     <span
       className={cn(
@@ -24,7 +27,7 @@ function ItemTypeBadgeInline({ type }: { type: ItemType }) {
         config.text
       )}
     >
-      {config.label}
+      {t(`node.itemType.${key}`)}
     </span>
   )
 }
@@ -38,8 +41,9 @@ const sourceIconMap: Record<SourceType, React.ComponentType<{ className?: string
 }
 
 function SourceIconInline({ type }: { type: SourceType }) {
+  const { t } = useTranslation('milestones')
   const Icon = sourceIconMap[type] || FileText
-  return <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-label={`Source: ${type}`} />
+  return <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-label={t('node.sourceLabel', { source: getSourceTypeLabel(type) })} />
 }
 
 // --- MilestoneNode molecule ---
@@ -64,7 +68,10 @@ export const MilestoneNode = React.memo(function MilestoneNode({
   onToggleMilestone,
   isAdmin,
 }: MilestoneNodeProps) {
+  const { t } = useTranslation('milestones')
   const displayDate = item.meeting_date || item.created_at
+  const typeLabel = itemTypeConfig[item.item_type] ? t(`node.itemType.${item.item_type}`) : item.item_type
+  const disciplinesLabel = item.affected_disciplines.map(getDisciplineLabel).join(', ') || t('node.noDisciplines')
 
   const handleClick = () => {
     onClick?.(item.id)
@@ -87,7 +94,12 @@ export const MilestoneNode = React.memo(function MilestoneNode({
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      aria-label={`${itemTypeConfig[item.item_type]?.label || item.item_type}: ${item.statement || item.decision_statement}. ${formatDate(displayDate)}. Disciplines: ${item.affected_disciplines.join(', ') || 'none'}`}
+      aria-label={t('node.ariaLabel', {
+        type: typeLabel,
+        statement: item.statement || item.decision_statement,
+        date: formatDate(displayDate),
+        disciplines: disciplinesLabel,
+      })}
     >
       {/* Small dot on vertical line + connector to content */}
       <div className="absolute -left-[1.75rem] flex items-center">

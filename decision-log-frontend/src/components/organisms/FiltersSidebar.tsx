@@ -5,10 +5,13 @@
 
 import { useFilterStore } from '../../store/filterStore'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { getDisciplineLabel } from '../../lib/utils'
 
 const DISCIPLINES = ['architecture', 'mep', 'landscape', 'structural', 'electrical', 'plumbing']
 
 export function FiltersSidebar() {
+  const { t } = useTranslation('history')
   const {
     disciplines,
     searchQuery,
@@ -20,23 +23,23 @@ export function FiltersSidebar() {
   return (
     <div className="bg-white border-r border-gray-200 p-6 w-64 overflow-y-auto max-h-[calc(100vh-64px)]">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('filtersSidebar.title')}</h2>
         <button
           onClick={reset}
           className="text-sm text-blue-600 hover:text-blue-700"
         >
-          Clear
+          {t('filtersSidebar.clear')}
         </button>
       </div>
 
       {/* Search */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{t('filtersSidebar.search')}</label>
         <div className="relative">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search decisions..."
+            placeholder={t('filters.search.placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -46,7 +49,7 @@ export function FiltersSidebar() {
 
       {/* Disciplines */}
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Disciplines</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('filtersSidebar.disciplines')}</h3>
         <div className="space-y-2">
           {DISCIPLINES.map((discipline) => (
             <label key={discipline} className="flex items-center">
@@ -56,7 +59,7 @@ export function FiltersSidebar() {
                 onChange={() => toggleDiscipline(discipline)}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm text-gray-700 capitalize">{discipline}</span>
+              <span className="ml-2 text-sm text-gray-700">{getDisciplineLabel(discipline)}</span>
             </label>
           ))}
         </div>
@@ -65,11 +68,11 @@ export function FiltersSidebar() {
       {/* Active Filters Summary */}
       {(disciplines.length > 0 || searchQuery) && (
         <div className="pt-6 border-t border-gray-200">
-          <p className="text-xs font-medium text-gray-600 mb-2">Active Filters:</p>
+          <p className="text-xs font-medium text-gray-600 mb-2">{t('filtersSidebar.activeFilters')}</p>
           <div className="flex flex-wrap gap-2">
             {disciplines.map((d) => (
               <span key={d} className="inline-flex items-center gap-1 bg-blue-100 text-blue-900 px-2 py-1 rounded-full text-xs">
-                {d}
+                {getDisciplineLabel(d)}
                 <button onClick={() => toggleDiscipline(d)} className="hover:text-blue-700">
                   <X className="w-3 h-3" />
                 </button>

@@ -1,12 +1,9 @@
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { getSourceTypeLabel } from '../../lib/utils'
 import type { SourceType, IngestionFilters } from '../../types/ingestion'
 
-const SOURCE_TYPES: { label: string; value: SourceType | null }[] = [
-  { label: 'All', value: null },
-  { label: 'Meeting', value: 'meeting' },
-  { label: 'Email', value: 'email' },
-  { label: 'Document', value: 'document' },
-]
+const SOURCE_TYPES: (SourceType | null)[] = [null, 'meeting', 'email', 'document']
 
 interface IngestionFiltersBarProps {
   filters: IngestionFilters
@@ -21,6 +18,7 @@ export default function IngestionFiltersBar({
   onSetFilter,
   onClearFilters,
 }: IngestionFiltersBarProps) {
+  const { t } = useTranslation('ingestion')
   const hasActiveFilters =
     filters.project_id !== null ||
     filters.source_type !== null ||
@@ -36,9 +34,9 @@ export default function IngestionFiltersBar({
           value={filters.project_id || ''}
           onChange={(e) => onSetFilter('project_id', e.target.value || null)}
           className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500"
-          aria-label="Filter by project"
+          aria-label={t('filters.byProject')}
         >
-          <option value="">All Projects</option>
+          <option value="">{t('filters.allProjects')}</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -48,17 +46,17 @@ export default function IngestionFiltersBar({
 
         {/* Source type chips */}
         <div className="flex items-center gap-1">
-          {SOURCE_TYPES.map((st) => (
+          {SOURCE_TYPES.map((value) => (
             <button
-              key={st.label}
-              onClick={() => onSetFilter('source_type', st.value)}
+              key={value ?? 'all'}
+              onClick={() => onSetFilter('source_type', value)}
               className={`text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${
-                filters.source_type === st.value
+                filters.source_type === value
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {st.label}
+              {value ? getSourceTypeLabel(value) : t('filters.all')}
             </button>
           ))}
         </div>
@@ -70,15 +68,15 @@ export default function IngestionFiltersBar({
             value={filters.date_from || ''}
             onChange={(e) => onSetFilter('date_from', e.target.value || null)}
             className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500"
-            aria-label="Filter from date"
+            aria-label={t('filters.fromDate')}
           />
-          <span className="text-gray-400 text-sm">to</span>
+          <span className="text-gray-400 text-sm">{t('filters.to')}</span>
           <input
             type="date"
             value={filters.date_to || ''}
             onChange={(e) => onSetFilter('date_to', e.target.value || null)}
             className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500"
-            aria-label="Filter to date"
+            aria-label={t('filters.toDate')}
           />
         </div>
 
@@ -88,7 +86,7 @@ export default function IngestionFiltersBar({
             onClick={onClearFilters}
             className="text-sm text-red-600 hover:text-red-800 font-medium"
           >
-            Clear All Filters
+            {t('filters.clearAll')}
           </button>
         )}
       </div>
@@ -98,11 +96,11 @@ export default function IngestionFiltersBar({
         <div className="flex flex-wrap items-center gap-2">
           {filters.project_id && (
             <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">
-              Project: {projects.find((p) => p.id === filters.project_id)?.name || filters.project_id}
+              {t('filters.chipProject', { value: projects.find((p) => p.id === filters.project_id)?.name || filters.project_id })}
               <button
                 onClick={() => onSetFilter('project_id', null)}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label="Remove project filter"
+                aria-label={t('filters.removeProject')}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -110,11 +108,11 @@ export default function IngestionFiltersBar({
           )}
           {filters.source_type && (
             <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">
-              Type: {filters.source_type}
+              {t('filters.chipType', { value: getSourceTypeLabel(filters.source_type) })}
               <button
                 onClick={() => onSetFilter('source_type', null)}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label="Remove type filter"
+                aria-label={t('filters.removeType')}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -122,11 +120,11 @@ export default function IngestionFiltersBar({
           )}
           {filters.date_from && (
             <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">
-              From: {filters.date_from}
+              {t('filters.chipFrom', { value: filters.date_from })}
               <button
                 onClick={() => onSetFilter('date_from', null)}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label="Remove from date filter"
+                aria-label={t('filters.removeFrom')}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -134,11 +132,11 @@ export default function IngestionFiltersBar({
           )}
           {filters.date_to && (
             <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full">
-              To: {filters.date_to}
+              {t('filters.chipTo', { value: filters.date_to })}
               <button
                 onClick={() => onSetFilter('date_to', null)}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                aria-label="Remove to date filter"
+                aria-label={t('filters.removeTo')}
               >
                 <X className="w-3 h-3" />
               </button>

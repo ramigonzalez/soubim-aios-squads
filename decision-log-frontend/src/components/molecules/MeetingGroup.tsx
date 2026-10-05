@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { ProjectItem } from '../../types/projectItem'
 import { DecisionRow } from './DecisionRow'
 import { MeetingTypeBadge } from '../atoms/MeetingTypeBadge'
@@ -44,6 +45,7 @@ const MAX_VISIBLE_DISCIPLINES = 3
 const COLLAPSE_THRESHOLD = 5
 
 export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
+  const { t } = useTranslation('history')
   const defaultExpanded = meeting.decisions.length <= COLLAPSE_THRESHOLD
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
@@ -70,18 +72,19 @@ export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
     }
   }
 
+  const decisionCountLabel = t('meetingGroup.decisions', { count: meeting.decisions.length })
   const srLabel = [
-    `Meeting: ${meeting.meetingTitle}`,
+    t('meetingGroup.meetingLabel', { title: meeting.meetingTitle }),
     meeting.meetingType,
-    meeting.participants.length > 0 ? `${meeting.participants.length} participants` : null,
-    `${meeting.decisions.length} decisions`,
-    isExpanded ? 'expanded' : 'collapsed',
+    meeting.participants.length > 0 ? t('meetingGroup.participants', { count: meeting.participants.length }) : null,
+    decisionCountLabel,
+    isExpanded ? t('meetingGroup.expanded') : t('meetingGroup.collapsed'),
   ].filter(Boolean).join(', ')
 
   return (
     <div
       role="region"
-      aria-label={`${meeting.meetingTitle}, ${meeting.decisions.length} decisions`}
+      aria-label={t('meetingGroup.regionLabel', { title: meeting.meetingTitle, decisions: decisionCountLabel })}
       className={`bg-white border border-gray-200 border-l-4 ${borderColor} rounded-lg shadow-sm overflow-hidden`}
     >
       {/* Header — clickable to toggle */}
@@ -112,7 +115,7 @@ export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
             ))}
             {overflowCount > 0 && (
               <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                +{overflowCount} more
+                {t('meetingGroup.moreDisciplines', { count: overflowCount })}
               </span>
             )}
           </div>
@@ -126,7 +129,7 @@ export function MeetingGroup({ meeting, onSelectDecision }: MeetingGroupProps) {
 
           {/* Decision count */}
           <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-            {meeting.decisions.length} decision{meeting.decisions.length !== 1 ? 's' : ''}
+            {decisionCountLabel}
           </span>
 
           {/* Chevron */}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Project } from '../../types/project'
 import StageScheduleBuilder, { StageRow } from './StageScheduleBuilder'
 import ParticipantRoster, { ParticipantRow } from './ParticipantRoster'
@@ -31,6 +32,7 @@ export function ProjectForm({
   onCancel,
   isLoading = false,
 }: ProjectFormProps) {
+  const { t } = useTranslation('projects')
   const [name, setName] = useState(initialData?.name || '')
   const [description, setDescription] = useState(initialData?.description || '')
   const [projectType, setProjectType] = useState(initialData?.project_type || '')
@@ -54,12 +56,12 @@ export function ProjectForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Project Details */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Project Details</h3>
+        <h3 className="text-lg font-medium text-gray-900">{t('form.details')}</h3>
 
         {/* Name */}
         <div>
           <label htmlFor="projectName" className="block text-sm font-medium text-gray-700">
-            Project Name
+            {t('form.name.label')}
           </label>
           <input
             id="projectName"
@@ -68,14 +70,14 @@ export function ProjectForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="Enter project name"
+            placeholder={t('form.name.placeholder')}
           />
         </div>
 
         {/* Description */}
         <div>
           <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700">
-            Description
+            {t('form.description.label')}
           </label>
           <textarea
             id="projectDescription"
@@ -83,14 +85,14 @@ export function ProjectForm({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="Describe the project"
+            placeholder={t('form.description.placeholder')}
           />
         </div>
 
         {/* Project Type */}
         <div>
           <label htmlFor="projectType" className="block text-sm font-medium text-gray-700">
-            Project Type
+            {t('form.type.label')}
           </label>
           <select
             id="projectType"
@@ -98,19 +100,19 @@ export function ProjectForm({
             onChange={(e) => setProjectType(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            <option value="">Select type...</option>
-            <option value="residential">Residential</option>
-            <option value="commercial">Commercial</option>
-            <option value="mixed-use">Mixed Use</option>
-            <option value="institutional">Institutional</option>
-            <option value="infrastructure">Infrastructure</option>
+            <option value="">{t('form.type.placeholder')}</option>
+            <option value="residential">{t('form.type.options.residential')}</option>
+            <option value="commercial">{t('form.type.options.commercial')}</option>
+            <option value="mixed-use">{t('form.type.options.mixed-use')}</option>
+            <option value="institutional">{t('form.type.options.institutional')}</option>
+            <option value="infrastructure">{t('form.type.options.infrastructure')}</option>
           </select>
         </div>
 
         {/* Google Drive Folder ID (Story 10.3) */}
         <div>
           <label htmlFor="driveFolderId" className="block text-sm font-medium text-gray-700">
-            Google Drive Folder ID
+            {t('form.drive.label')}
           </label>
           <input
             id="driveFolderId"
@@ -118,10 +120,10 @@ export function ProjectForm({
             value={driveFolderId}
             onChange={(e) => setDriveFolderId(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j"
+            placeholder={t('form.drive.placeholder')}
           />
           <p className="mt-1 text-xs text-gray-500">
-            Paste the folder ID from Google Drive to enable automatic document monitoring
+            {t('form.drive.help')}
           </p>
         </div>
       </div>
@@ -144,7 +146,7 @@ export function ProjectForm({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
-            Cancel
+            {t('form.cancel')}
           </button>
         )}
         <button
@@ -152,7 +154,7 @@ export function ProjectForm({
           disabled={isLoading || !name.trim()}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Saving...' : initialData?.id ? 'Update Project' : 'Create Project'}
+          {isLoading ? t('form.saving') : initialData?.id ? t('form.update') : t('form.create')}
         </button>
       </div>
     </form>

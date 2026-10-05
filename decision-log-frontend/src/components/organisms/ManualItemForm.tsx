@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useCreateProjectItem } from '../../hooks/useProjectItemMutation'
 import { useParticipants } from '../../hooks/useParticipants'
 import {
@@ -11,11 +12,10 @@ import {
   Discipline,
   ConsensusEntry,
   ConsensusMap,
-  ITEM_TYPE_LABELS,
-  DISCIPLINE_LABELS,
   ALL_DISCIPLINES,
   ProjectItemCreate,
 } from '../../types/projectItem'
+import { getDisciplineLabel, getItemTypeLabel } from '../../lib/utils'
 
 interface ManualItemFormProps {
   projectId: string
@@ -42,15 +42,10 @@ function getTodayString(): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
-const ITEM_TYPE_OPTIONS: { value: ItemType; label: string }[] = [
-  { value: 'idea', label: 'Idea' },
-  { value: 'topic', label: 'Topic' },
-  { value: 'decision', label: 'Decision' },
-  { value: 'action_item', label: 'Action Item' },
-  { value: 'information', label: 'Information' },
-]
+const ITEM_TYPE_OPTIONS: ItemType[] = ['idea', 'topic', 'decision', 'action_item', 'information']
 
 export default function ManualItemForm({ projectId }: ManualItemFormProps) {
+  const { t } = useTranslation('item')
   const navigate = useNavigate()
   const createMutation = useCreateProjectItem(projectId)
   const { data: participants } = useParticipants(projectId)
@@ -94,12 +89,12 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
 
   function validate(): FormErrors {
     const errs: FormErrors = {}
-    if (!statement.trim()) errs.statement = 'Statement is required'
-    if (!itemType) errs.itemType = 'Item type is required'
+    if (!statement.trim()) errs.statement = t('form.statement.required')
+    if (!itemType) errs.itemType = t('form.itemType.required')
     if (affectedDisciplines.length === 0)
-      errs.affectedDisciplines = 'Select at least one discipline'
-    if (!who.trim()) errs.who = 'Who is required'
-    if (!date) errs.date = 'Date is required'
+      errs.affectedDisciplines = t('form.disciplines.required')
+    if (!who.trim()) errs.who = t('form.who.required')
+    if (!date) errs.date = t('form.date.required')
     return errs
   }
 
@@ -154,7 +149,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } }; message?: string }
       setApiError(
-        e?.response?.data?.detail || e?.message || 'Failed to save item. Please try again.'
+        e?.response?.data?.detail || e?.message || t('form.saveError')
       )
     }
   }
@@ -183,13 +178,13 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Statement */}
       <div>
         <label htmlFor="statement" className="block text-sm font-medium text-gray-700 mb-1">
-          Statement <span className="text-red-500 ml-0.5">*</span>
+          {t('form.statement.label')} <span className="text-red-500 ml-0.5">*</span>
         </label>
         <textarea
           id="statement"
           value={statement}
           onChange={(e) => setStatement(e.target.value)}
-          placeholder="Describe the item in one or two sentences"
+          placeholder={t('form.statement.placeholder')}
           rows={3}
           aria-required="true"
           aria-describedby={errors.statement ? 'statement-error' : undefined}
@@ -205,7 +200,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Item Type */}
       <div>
         <label htmlFor="itemType" className="block text-sm font-medium text-gray-700 mb-1">
-          Item Type <span className="text-red-500 ml-0.5">*</span>
+          {t('form.itemType.label')} <span className="text-red-500 ml-0.5">*</span>
         </label>
         <select
           id="itemType"
@@ -215,10 +210,10 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
           aria-describedby={errors.itemType ? 'itemType-error' : undefined}
           className={errors.itemType ? inputErrorClass : inputBaseClass}
         >
-          <option value="">Select item type...</option>
-          {ITEM_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
+          <option value="">{t('form.itemType.placeholder')}</option>
+          {ITEM_TYPE_OPTIONS.map((type) => (
+            <option key={type} value={type}>
+              {getItemTypeLabel(type)}
             </option>
           ))}
         </select>
@@ -232,7 +227,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Affected Disciplines */}
       <fieldset>
         <legend className="block text-sm font-medium text-gray-700 mb-1">
-          Affected Disciplines <span className="text-red-500 ml-0.5">*</span>
+          {t('form.disciplines.legend')} <span className="text-red-500 ml-0.5">*</span>
         </legend>
         <div
           className="grid grid-cols-2 sm:grid-cols-3 gap-2 border border-gray-200 rounded-md p-3 max-h-60 overflow-y-auto"
@@ -248,7 +243,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
                 onChange={() => toggleDiscipline(d)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              {DISCIPLINE_LABELS[d]}
+              {getDisciplineLabel(d)}
             </label>
           ))}
         </div>
@@ -262,7 +257,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Who */}
       <div>
         <label htmlFor="who" className="block text-sm font-medium text-gray-700 mb-1">
-          Who <span className="text-red-500 ml-0.5">*</span>
+          {t('form.who.label')} <span className="text-red-500 ml-0.5">*</span>
         </label>
         <input
           id="who"
@@ -270,7 +265,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
           list="participants-list"
           value={who}
           onChange={(e) => setWho(e.target.value)}
-          placeholder="Name or role"
+          placeholder={t('form.who.placeholder')}
           aria-required="true"
           aria-describedby={errors.who ? 'who-error' : undefined}
           className={errors.who ? inputErrorClass : inputBaseClass}
@@ -290,7 +285,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Date */}
       <div>
         <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-          Date <span className="text-red-500 ml-0.5">*</span>
+          {t('form.date.label')} <span className="text-red-500 ml-0.5">*</span>
         </label>
         <input
           id="date"
@@ -311,13 +306,13 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Context Notes */}
       <div>
         <label htmlFor="contextNotes" className="block text-sm font-medium text-gray-700 mb-1">
-          Context / Notes
+          {t('form.contextNotes.label')}
         </label>
         <textarea
           id="contextNotes"
           value={contextNotes}
           onChange={(e) => setContextNotes(e.target.value)}
-          placeholder="Additional context, meeting reference, or source description"
+          placeholder={t('form.contextNotes.placeholder')}
           rows={2}
           className={inputBaseClass}
         />
@@ -328,7 +323,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
         <>
           <div>
             <label htmlFor="owner" className="block text-sm font-medium text-gray-700 mb-1">
-              Owner <span className="text-red-500 ml-0.5">*</span>
+              {t('form.owner.label')} <span className="text-red-500 ml-0.5">*</span>
             </label>
             <input
               id="owner"
@@ -336,7 +331,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
               list="owner-participants-list"
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
-              placeholder="Person responsible"
+              placeholder={t('form.owner.placeholder')}
               aria-required="true"
               className={inputBaseClass}
             />
@@ -348,7 +343,7 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
           </div>
           <div>
             <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Due Date
+              {t('form.dueDate.label')}
             </label>
             <input
               id="dueDate"
@@ -364,32 +359,32 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
       {/* Conditional: Decision consensus section */}
       {itemType === 'decision' && affectedDisciplines.length > 0 && (
         <div>
-          <h3 className="block text-sm font-medium text-gray-700 mb-2">Consensus</h3>
+          <h3 className="block text-sm font-medium text-gray-700 mb-2">{t('form.consensus.heading')}</h3>
           <div className="space-y-3 border border-gray-200 rounded-md p-4">
             {affectedDisciplines.map((d) => (
               <div key={d} className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-sm font-medium text-gray-700 min-w-[120px]">
-                  {DISCIPLINE_LABELS[d]}
+                  {getDisciplineLabel(d)}
                 </span>
                 <select
                   value={consensus[d]?.status || ''}
                   onChange={(e) =>
                     updateConsensusStatus(d, e.target.value as ConsensusFormEntry['status'])
                   }
-                  aria-label={`${DISCIPLINE_LABELS[d]} consensus status`}
+                  aria-label={t('form.consensus.statusAria', { discipline: getDisciplineLabel(d) })}
                   className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Select...</option>
-                  <option value="AGREE">Agree</option>
-                  <option value="DISAGREE">Disagree</option>
-                  <option value="ABSTAIN">Abstain</option>
+                  <option value="">{t('form.consensus.select')}</option>
+                  <option value="AGREE">{t('form.consensus.agree')}</option>
+                  <option value="DISAGREE">{t('form.consensus.disagree')}</option>
+                  <option value="ABSTAIN">{t('form.consensus.abstain')}</option>
                 </select>
                 <input
                   type="text"
                   value={consensus[d]?.notes || ''}
                   onChange={(e) => updateConsensusNotes(d, e.target.value)}
-                  placeholder="Notes (optional)"
-                  aria-label={`${DISCIPLINE_LABELS[d]} consensus notes`}
+                  placeholder={t('form.consensus.notesPlaceholder')}
+                  aria-label={t('form.consensus.notesAria', { discipline: getDisciplineLabel(d) })}
                   className="flex-1 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -412,14 +407,14 @@ export default function ManualItemForm({ projectId }: ManualItemFormProps) {
           onClick={() => navigate(-1)}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          Cancel
+          {t('common:cancel')}
         </button>
         <button
           type="submit"
           disabled={createMutation.isLoading}
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {createMutation.isLoading ? 'Saving...' : 'Save Item'}
+          {createMutation.isLoading ? t('form.saving') : t('form.submit')}
         </button>
       </div>
     </form>

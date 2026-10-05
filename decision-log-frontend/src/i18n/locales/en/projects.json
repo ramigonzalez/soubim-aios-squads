@@ -1,0 +1,121 @@
+{
+  "list": {
+    "title": "Projects",
+    "available_one": "{{count}} project available",
+    "available_other": "{{count}} projects available",
+    "create": "Create Project",
+    "loading": "Loading projects...",
+    "errorTitle": "Failed to Load Projects",
+    "errorFallback": "An error occurred while fetching projects.",
+    "retry": "Retry",
+    "empty": {
+      "title": "Create your first project",
+      "description": "Set up a project with a stage schedule to start capturing project items from meetings, emails, and documents."
+    },
+    "pagination": {
+      "page": "Page {{current}} of {{total}}",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "card": {
+    "noStages": "No stages",
+    "noDescription": "No description",
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "created": "Created {{date}}",
+    "viewDetails": "View Details →"
+  },
+  "detail": {
+    "invalidId": "Invalid project ID",
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "projects": "Projects",
+      "project": "Project"
+    },
+    "tabs": {
+      "milestones": "Milestone Timeline",
+      "history": "Project History",
+      "digest": "Executive Digest"
+    },
+    "found_one": "{{count}} decision found",
+    "found_other": "{{count}} decisions found",
+    "edit": "Edit",
+    "archive": "Archive",
+    "archiveDialog": {
+      "title": "Archive Project?",
+      "body": "This will archive the project. It can be restored later.",
+      "cancel": "Cancel",
+      "error": "Failed to archive project. Please try again.",
+      "archiving": "Archiving...",
+      "confirm": "Archive"
+    },
+    "share": "Share",
+    "shareAria": "Share milestone timeline",
+    "export": "Export",
+    "exporting": "Exporting...",
+    "exportAria": "Export milestone timeline",
+    "exportPdf": "Export as PDF",
+    "exportJpeg": "Export as JPEG",
+    "exportTitle": "Project Milestones",
+    "noDescriptionAvailable": "No description available"
+  },
+  "create": {
+    "title": "Create New Project",
+    "error": "Failed to create project. Please try again."
+  },
+  "edit": {
+    "title": "Edit Project",
+    "loadError": "Failed to load project.",
+    "error": "Failed to update project. Please try again."
+  },
+  "form": {
+    "details": "Project Details",
+    "name": {
+      "label": "Project Name",
+      "placeholder": "Enter project name"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Describe the project"
+    },
+    "type": {
+      "label": "Project Type",
+      "placeholder": "Select type...",
+      "options": {
+        "residential": "Residential",
+        "commercial": "Commercial",
+        "mixed-use": "Mixed Use",
+        "institutional": "Institutional",
+        "infrastructure": "Infrastructure"
+      }
+    },
+    "drive": {
+      "label": "Google Drive Folder ID",
+      "placeholder": "e.g., 1a2b3c4d5e6f7g8h9i0j",
+      "help": "Paste the folder ID from Google Drive to enable automatic document monitoring"
+    },
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "update": "Update Project",
+    "create": "Create Project"
+  },
+  "participants": {
+    "title": "Participants",
+    "add": "Add Participant",
+    "empty": "No participants added. Add team members to improve AI discipline inference.",
+    "namePlaceholder": "Name *",
+    "emailPlaceholder": "Email",
+    "rolePlaceholder": "Role"
+  },
+  "stages": {
+    "title": "Stage Schedule",
+    "loadTemplate": "Load Template",
+    "add": "Add Stage",
+    "empty": "No stages defined. Add stages or load a template.",
+    "namePlaceholder": "Stage name",
+    "replaceConfirm": "This will replace existing stages. Continue?"
+  }
+}

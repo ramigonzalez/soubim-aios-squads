@@ -1,0 +1,154 @@
+{
+  "timeline": {
+    "untitledSource": "Fonte sem título",
+    "empty": {
+      "title": "Nenhum item do projeto ainda",
+      "description": "Os itens aparecerão aqui assim que as fontes forem processadas"
+    },
+    "error": {
+      "title": "Falha ao carregar o histórico do projeto"
+    }
+  },
+  "sourceGroup": {
+    "regionLabel": "{{title}}, {{items}}",
+    "headerLabel": "Fonte: {{title}}, {{items}}, {{state}}",
+    "expanded": "expandido",
+    "collapsed": "recolhido",
+    "summary": "Resumo",
+    "showSummary": "Mostrar resumo da reunião",
+    "hideSummary": "Ocultar resumo da reunião",
+    "meeting": "Reunião",
+    "openMeeting": "Abrir reunião {{title}}"
+  },
+  "itemRow": {
+    "ariaLabel": "{{typeLabel}}: {{title}}",
+    "markDone": "Marcar como concluído",
+    "markNotDone": "Marcar como não concluído"
+  },
+  "filters": {
+    "ariaLabel": "Filtrar itens",
+    "filterBy": "Filtrar por {{label}}",
+    "remove": "Remover filtro {{label}}",
+    "removeDate": "Remover filtro de data",
+    "removeSearch": "Remover filtro de busca",
+    "clearSelection": "Limpar seleção",
+    "search": {
+      "placeholder": "Buscar itens...",
+      "ariaLabel": "Buscar itens por palavra-chave",
+      "clear": "Limpar busca"
+    },
+    "discipline": {
+      "label": "Disciplina"
+    },
+    "dateRange": {
+      "label": "Período",
+      "from": "De",
+      "to": "Até",
+      "placeholder": "Selecione a data",
+      "quick": "Atalhos",
+      "presets": {
+        "7days": "7d",
+        "30days": "30d",
+        "month": "Mês",
+        "all": "Tudo"
+      }
+    },
+    "who": {
+      "label": "Quem",
+      "placeholder": "Filtrar nomes...",
+      "ariaLabel": "Filtrar quem decidiu por nome",
+      "empty": "Nenhum nome encontrado"
+    },
+    "meetingType": {
+      "label": "Tipo",
+      "empty": "Nenhum tipo de reunião encontrado"
+    },
+    "source": {
+      "groupLabel": "Filtros por tipo de fonte",
+      "filterBy": "Filtrar pela fonte {{label}}",
+      "remove": "Remover filtro de fonte {{label}}",
+      "meeting": "Reunião",
+      "email": "E-mail",
+      "document": "Documento",
+      "manual_input": "Manual"
+    },
+    "itemType": {
+      "groupLabel": "Filtros por tipo de item",
+      "filterBy": "Filtrar pelo tipo {{label}}",
+      "remove": "Remover filtro de tipo {{label}}",
+      "decision": "Decisão",
+      "topic": "Tópico",
+      "action_item": "Ação",
+      "idea": "Ideia",
+      "information": "Informação"
+    },
+    "clearAll": {
+      "ariaLabel": "Limpar todos os filtros",
+      "label": "Limpar ({{count}})"
+    },
+    "groupBy": {
+      "ariaLabel": "Agrupar itens por",
+      "date": "Data",
+      "discipline": "Disciplina"
+    }
+  },
+  "filtersSidebar": {
+    "title": "Filtros",
+    "clear": "Limpar",
+    "search": "Buscar",
+    "disciplines": "Disciplinas",
+    "activeFilters": "Filtros ativos:"
+  },
+  "groupingToggle": {
+    "label": "Agrupar por:",
+    "byDate": "Por data",
+    "byDiscipline": "Por disciplina"
+  },
+  "bulkActions": {
+    "selected_one": "{{count}} item selecionado",
+    "selected_other": "{{count}} itens selecionados",
+    "rejectSelected": "Rejeitar selecionados",
+    "approveSelected": "Aprovar selecionados"
+  },
+  "digest": {
+    "totalDecisions": "Total de decisões",
+    "meetings": "Reuniões",
+    "consensus": "Consenso",
+    "highImpact": "Alto impacto",
+    "keyHighlights": "Principais destaques"
+  },
+  "decisionCard": {
+    "noRationale": "Nenhuma justificativa informada"
+  },
+  "decisionRow": {
+    "ariaLabel": "Decisão: {{statement}}"
+  },
+  "meetingGroup": {
+    "meetingLabel": "Reunião: {{title}}",
+    "regionLabel": "{{title}}, {{decisions}}",
+    "decisions_one": "{{count}} decisão",
+    "decisions_other": "{{count}} decisões",
+    "participants_one": "{{count}} participante",
+    "participants_other": "{{count}} participantes",
+    "moreDisciplines": "+{{count}} mais",
+    "expanded": "expandido",
+    "collapsed": "recolhido"
+  },
+  "participants": {
+    "title": "Participantes",
+    "count_one": "{{count}} participante",
+    "count_other": "{{count}} participantes"
+  },
+  "aiSummary": {
+    "empty": "Nenhum resumo disponível",
+    "showMore": "Mostrar mais",
+    "showLess": "Mostrar menos"
+  },
+  "disciplineCircle": {
+    "label": "{{label}}"
+  },
+  "disciplineCircles": {
+    "overflow_one": "Mais {{count}} disciplina: {{list}}",
+    "overflow_other": "Mais {{count}} disciplinas: {{list}}"
+  }
+}

@@ -7,12 +7,14 @@
 
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useTranslation } from 'react-i18next'
 import { X, Copy, Check, Link2, Trash2, Eye, Loader2 } from 'lucide-react'
 import {
   useShareLinks,
   useCreateShareLink,
   useRevokeShareLink,
 } from '../../hooks/useSharedLinks'
+import { dateLocale } from '../../i18n'
 
 interface ShareDialogProps {
   projectId: string
@@ -21,6 +23,7 @@ interface ShareDialogProps {
 }
 
 export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps) {
+  const { t } = useTranslation('milestones')
   const [copied, setCopied] = useState(false)
   const [confirmRevoke, setConfirmRevoke] = useState(false)
 
@@ -63,7 +66,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
   const formatExpiration = (dateStr: string) => {
     try {
       const date = new Date(dateStr)
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(dateLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -80,7 +83,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-50 focus:outline-none">
           <div className="flex items-center justify-between mb-4">
             <Dialog.Title className="text-lg font-semibold text-gray-900">
-              Share Milestone Timeline
+              {t('share.dialog.title')}
             </Dialog.Title>
             <Dialog.Close className="text-gray-400 hover:text-gray-600 p-1 rounded">
               <X className="w-5 h-5" />
@@ -88,7 +91,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
           </div>
 
           <Dialog.Description className="text-sm text-gray-600 mb-4">
-            Generate a read-only link to share the milestone timeline with clients and providers.
+            {t('share.dialog.description')}
           </Dialog.Description>
 
           {isLoading ? (
@@ -107,17 +110,17 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
                 <button
                   onClick={handleCopy}
                   className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
-                  aria-label="Copy link"
+                  aria-label={t('share.dialog.copyLink')}
                 >
                   {copied ? (
                     <>
                       <Check className="w-4 h-4" />
-                      Copied
+                      {t('share.dialog.copied')}
                     </>
                   ) : (
                     <>
                       <Copy className="w-4 h-4" />
-                      Copy
+                      {t('share.dialog.copy')}
                     </>
                   )}
                 </button>
@@ -125,10 +128,10 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
 
               {/* Metadata */}
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>Expires on {formatExpiration(activeLink.expires_at)}</span>
+                <span>{t('share.dialog.expiresOn', { date: formatExpiration(activeLink.expires_at) })}</span>
                 <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  Viewed {activeLink.view_count} time{activeLink.view_count !== 1 ? 's' : ''}
+                  {t('share.dialog.viewed', { count: activeLink.view_count })}
                 </span>
               </div>
 
@@ -136,7 +139,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
               {confirmRevoke ? (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-sm text-red-700 mb-2">
-                    Are you sure? This will immediately invalidate the shared link.
+                    {t('share.dialog.revokeConfirm')}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -144,13 +147,13 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
                       disabled={revokeMutation.isLoading}
                       className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
                     >
-                      {revokeMutation.isLoading ? 'Revoking...' : 'Yes, revoke'}
+                      {revokeMutation.isLoading ? t('share.dialog.revoking') : t('share.dialog.confirmRevoke')}
                     </button>
                     <button
                       onClick={() => setConfirmRevoke(false)}
                       className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition"
                     >
-                      Cancel
+                      {t('share.dialog.cancel')}
                     </button>
                   </div>
                 </div>
@@ -160,7 +163,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
                   className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Revoke Link
+                  {t('share.dialog.revokeLink')}
                 </button>
               )}
             </div>
@@ -168,7 +171,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
             /* No active link */
             <div className="text-center py-4">
               <p className="text-sm text-gray-600 mb-4">
-                No active share link. Generate one to share the milestone timeline.
+                {t('share.dialog.noActiveLink')}
               </p>
               <button
                 onClick={handleGenerate}
@@ -178,12 +181,12 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
                 {createMutation.isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating...
+                    {t('share.dialog.generating')}
                   </>
                 ) : (
                   <>
                     <Link2 className="w-4 h-4" />
-                    Generate Link
+                    {t('share.dialog.generateLink')}
                   </>
                 )}
               </button>

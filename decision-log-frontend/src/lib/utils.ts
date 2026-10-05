@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
+import i18n, { dateLocale } from '../i18n'
 import { twMerge } from "tailwind-merge"
 import { CheckCircle2, MessageCircle, Target, Lightbulb, Info, Video, Mail, FileText, PenLine, HelpCircle, FileQuestion } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -28,7 +29,7 @@ export function formatDate(date: string | Date | null | undefined): string {
     d = date
   }
   if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleDateString(dateLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -40,7 +41,7 @@ export function formatDate(date: string | Date | null | undefined): string {
  */
 export function formatDateTime(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
-  return d.toLocaleString('en-US', {
+  return d.toLocaleString(dateLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -122,7 +123,7 @@ export function getPercentageColor(change: number): string {
  * Format date as "Friday, 7 February 2026" (full human-readable)
  */
 export function formatFullDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-GB', {
+  return new Date(dateStr).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : dateLocale(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -223,12 +224,12 @@ export function getMeetingTypeColors(type: string): { bg: string; text: string; 
 
 // --- Item Type utilities (Story 9.1) ---
 
-const ITEM_TYPE_CONFIG: Record<ItemType, { bg: string; text: string; icon: LucideIcon; label: string }> = {
-  decision:    { bg: 'bg-green-100',  text: 'text-green-700',  icon: CheckCircle2,  label: 'Decision' },
-  topic:       { bg: 'bg-amber-100',  text: 'text-amber-700',  icon: MessageCircle, label: 'Topic' },
-  action_item: { bg: 'bg-blue-100',   text: 'text-blue-700',   icon: Target,        label: 'Action Item' },
-  idea:        { bg: 'bg-purple-100', text: 'text-purple-700', icon: Lightbulb,     label: 'Idea' },
-  information: { bg: 'bg-slate-100',  text: 'text-slate-700',  icon: Info,          label: 'Information' },
+const ITEM_TYPE_CONFIG: Record<ItemType, { bg: string; text: string; icon: LucideIcon }> = {
+  decision:    { bg: 'bg-green-100',  text: 'text-green-700',  icon: CheckCircle2 },
+  topic:       { bg: 'bg-amber-100',  text: 'text-amber-700',  icon: MessageCircle },
+  action_item: { bg: 'bg-blue-100',   text: 'text-blue-700',   icon: Target },
+  idea:        { bg: 'bg-purple-100', text: 'text-purple-700', icon: Lightbulb },
+  information: { bg: 'bg-slate-100',  text: 'text-slate-700',  icon: Info },
 }
 
 export function getItemTypeColors(type: ItemType): { bg: string; text: string } {
@@ -240,16 +241,16 @@ export function getItemTypeIcon(type: ItemType): LucideIcon {
 }
 
 export function getItemTypeLabel(type: ItemType): string {
-  return ITEM_TYPE_CONFIG[type]?.label ?? type
+  return ITEM_TYPE_CONFIG[type] ? i18n.t(`labels:itemType.${type}`) : type
 }
 
 // --- Source Type utilities (Story 9.1) ---
 
-const SOURCE_TYPE_CONFIG: Record<SourceType, { bg: string; text: string; icon: LucideIcon; label: string }> = {
-  meeting:      { bg: 'bg-indigo-100', text: 'text-indigo-700', icon: Video,    label: 'Meeting' },
-  email:        { bg: 'bg-sky-100',    text: 'text-sky-700',    icon: Mail,     label: 'Email' },
-  document:     { bg: 'bg-orange-100', text: 'text-orange-700', icon: FileText, label: 'Document' },
-  manual_input: { bg: 'bg-gray-100',   text: 'text-gray-700',   icon: PenLine,  label: 'Manual Input' },
+const SOURCE_TYPE_CONFIG: Record<SourceType, { bg: string; text: string; icon: LucideIcon }> = {
+  meeting:      { bg: 'bg-indigo-100', text: 'text-indigo-700', icon: Video },
+  email:        { bg: 'bg-sky-100',    text: 'text-sky-700',    icon: Mail },
+  document:     { bg: 'bg-orange-100', text: 'text-orange-700', icon: FileText },
+  manual_input: { bg: 'bg-gray-100',   text: 'text-gray-700',   icon: PenLine },
 }
 
 export function getSourceTypeColors(type: SourceType): { bg: string; text: string } {
@@ -261,7 +262,7 @@ export function getSourceTypeIcon(type: SourceType): LucideIcon {
 }
 
 export function getSourceTypeLabel(type: SourceType): string {
-  return SOURCE_TYPE_CONFIG[type]?.label ?? type
+  return SOURCE_TYPE_CONFIG[type] ? i18n.t(`labels:sourceType.${type}`) : type
 }
 
 // --- Discipline Circle utilities (Story 9.1) ---
@@ -315,25 +316,10 @@ export function getDisciplineInitial(discipline: Discipline): string {
  * Story 9.3 — Multi-Discipline Circles
  */
 export function getDisciplineLabel(discipline: string): string {
-  const labelMap: Record<string, string> = {
-    architecture: 'Architecture',
-    architect: 'Architecture',
-    mep: 'MEP',
-    landscape: 'Landscape',
-    structural: 'Structural',
-    electrical: 'Electrical',
-    plumbing: 'Plumbing',
-    engineer: 'Engineer',
-    client: 'Client',
-    contractor: 'Contractor',
-    civil: 'Civil',
-    sustainability: 'Sustainability',
-    fire_protection: 'Fire Protection',
-    acoustical: 'Acoustical',
-    tenant: 'Tenant',
-    general: 'General',
-  }
-  return labelMap[discipline.toLowerCase()] || discipline.charAt(0).toUpperCase() + discipline.slice(1)
+  const key = discipline.toLowerCase() === 'architect' ? 'architecture' : discipline.toLowerCase()
+  return i18n.exists(`labels:discipline.${key}`)
+    ? i18n.t(`labels:discipline.${key}`)
+    : discipline.charAt(0).toUpperCase() + discipline.slice(1)
 }
 
 /**
@@ -357,10 +343,11 @@ export function formatDenseDate(dateStr: string): string {
   } else {
     date = new Date(dateStr)
   }
-  const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+  const month = date.toLocaleString(dateLocale(), { month: 'short' }).replace('.', '').toUpperCase()
   const day = date.getDate()
   const year = date.getFullYear()
-  return `${month} ${day}, ${year}`
+  // "SEP 4, 2026" in English, "4 SET 2026" in Portuguese
+  return i18n.language === 'en' ? `${month} ${day}, ${year}` : `${day} ${month} ${year}`
 }
 
 /**

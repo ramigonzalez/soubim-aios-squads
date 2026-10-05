@@ -1,10 +1,12 @@
 import { Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface ParticipantIndicatorProps {
   participants: Array<{ name: string; role: string }>
 }
 
 export function ParticipantIndicator({ participants }: ParticipantIndicatorProps) {
+  const { t } = useTranslation('history')
   if (!participants || participants.length === 0) return null
 
   return (
@@ -12,7 +14,7 @@ export function ParticipantIndicator({ participants }: ParticipantIndicatorProps
       <button
         type="button"
         className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1"
-        aria-label={`${participants.length} participants`}
+        aria-label={t('participants.count', { count: participants.length })}
       >
         <Users className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{participants.length}</span>
@@ -24,7 +26,7 @@ export function ParticipantIndicator({ participants }: ParticipantIndicatorProps
         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block group-focus-within:block z-50"
       >
         <div className="bg-gray-900 text-white text-xs rounded-lg shadow-lg py-2 px-3 max-h-48 overflow-y-auto min-w-[180px]">
-          <p className="font-semibold mb-1.5 text-gray-300">Participants</p>
+          <p className="font-semibold mb-1.5 text-gray-300">{t('participants.title')}</p>
           <ul className="space-y-1">
             {participants.map((p, i) => (
               <li key={i} className="flex items-baseline gap-1">

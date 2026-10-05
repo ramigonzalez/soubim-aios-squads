@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState, useCallback, forwardRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMilestones } from '../../hooks/useMilestones'
 import { useStages } from '../../hooks/useStages'
 import { useMilestoneFilters } from '../../hooks/useMilestoneFilters'
@@ -68,17 +69,18 @@ function getCurrentStage(stages: ProjectStage[]): ProjectStage | null {
 
 // --- TodayMarker internal component (pixel-positioned) ---
 function TodayMarker({ topPx }: { topPx: number }) {
+  const { t } = useTranslation('milestones')
   return (
     <div
       className="absolute right-0 left-[calc(10rem_+_10px)] lg:left-[calc(12rem_+_10px)] flex items-center z-20 pointer-events-none"
       style={{ top: `${topPx}px` }}
       data-testid="today-marker"
       data-export-exclude
-      aria-label="Today"
+      aria-label={t('timeline.today')}
     >
       <div className="w-full border-t-2 border-dashed border-blue-400" />
       <span className="absolute -right-2 lg:right-0 -translate-y-full text-xs text-blue-600 font-medium bg-white px-1">
-        Today
+        {t('timeline.today')}
       </span>
     </div>
   )
@@ -176,8 +178,9 @@ function useTodayPixelPosition(
 
 // --- Loading skeleton ---
 function TimelineSkeleton() {
+  const { t } = useTranslation('milestones')
   return (
-    <div className="animate-pulse" data-testid="timeline-skeleton" role="status" aria-label="Loading milestone timeline">
+    <div className="animate-pulse" data-testid="timeline-skeleton" role="status" aria-label={t('timeline.loadingLabel')}>
       {[1, 2, 3].map((i) => (
         <div key={i} className="mb-10">
           {/* Stage skeleton */}
@@ -208,12 +211,13 @@ function TimelineSkeleton() {
 
 // --- Empty state ---
 function EmptyState() {
+  const { t } = useTranslation('milestones')
   return (
     <div className="flex flex-col items-center justify-center py-16" data-testid="empty-state">
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center max-w-md">
         <Star className="w-10 h-10 text-gray-400 mx-auto mb-3" />
         <p className="text-gray-600 text-sm">
-          No milestones yet. Mark important items as milestones from the Project History.
+          {t('timeline.empty.noMilestones')}
         </p>
       </div>
     </div>
@@ -222,12 +226,13 @@ function EmptyState() {
 
 // --- No stages state ---
 function NoStagesState() {
+  const { t } = useTranslation('milestones')
   return (
     <div className="flex flex-col items-center justify-center py-16" data-testid="no-stages-state">
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center max-w-md">
         <Star className="w-10 h-10 text-gray-400 mx-auto mb-3" />
         <p className="text-gray-600 text-sm">
-          Set up project stages in Project Settings to enable the timeline view.
+          {t('timeline.empty.noStages')}
         </p>
       </div>
     </div>
@@ -236,15 +241,16 @@ function NoStagesState() {
 
 // --- Error state ---
 function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation('milestones')
   return (
     <div className="flex flex-col items-center justify-center py-16" data-testid="error-state">
       <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-      <p className="text-gray-600 text-sm mb-4">Failed to load milestone timeline.</p>
+      <p className="text-gray-600 text-sm mb-4">{t('timeline.error.loadFailed')}</p>
       <button
         onClick={onRetry}
         className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
       >
-        Retry
+        {t('timeline.error.retry')}
       </button>
     </div>
   )
@@ -259,6 +265,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
  */
 export const MilestoneTimeline = forwardRef<HTMLDivElement, MilestoneTimelineProps>(
 function MilestoneTimelineInner({ projectId, milestones: propMilestones, preloadedStages, onSelectItem, onToggleMilestone, isAdmin, readOnly = false }, ref) {
+  const { t } = useTranslation('milestones')
   const isPreloaded = !!preloadedStages
   // Callback ref pattern: setting state on mount triggers re-render so the
   // useTodayPixelPosition hook receives the real DOM element.
@@ -318,7 +325,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
   // Loading state
   if (isLoading) {
     return (
-      <nav aria-label="Milestone Timeline">
+      <nav aria-label={t('timeline.navLabel')}>
         <TimelineSkeleton />
       </nav>
     )
@@ -327,7 +334,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
   // Error state
   if (error) {
     return (
-      <nav aria-label="Milestone Timeline">
+      <nav aria-label={t('timeline.navLabel')}>
         <ErrorState onRetry={handleRetry} />
       </nav>
     )
@@ -336,7 +343,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
   // No stages state
   if (stages.length === 0) {
     return (
-      <nav aria-label="Milestone Timeline">
+      <nav aria-label={t('timeline.navLabel')}>
         <NoStagesState />
       </nav>
     )
@@ -345,7 +352,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
   // Empty milestones state (no milestones at all)
   if (milestones.length === 0) {
     return (
-      <nav aria-label="Milestone Timeline">
+      <nav aria-label={t('timeline.navLabel')}>
         <EmptyState />
       </nav>
     )
@@ -354,7 +361,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
   const otherMilestones = groupedMilestones.get('other') || []
 
   return (
-    <nav ref={ref} aria-label="Milestone Timeline">
+    <nav ref={ref} aria-label={t('timeline.navLabel')}>
       {/* Filter bar — hidden in readOnly mode, excluded from export */}
       {!readOnly && <div data-export-exclude>
         <MilestoneFilterBar
@@ -372,7 +379,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center max-w-md">
             <Star className="w-10 h-10 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 text-sm">
-              No milestones match your filters.
+              {t('timeline.empty.noFilterMatch')}
             </p>
             <button
               type="button"
@@ -380,7 +387,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
               className="text-xs text-blue-600 hover:underline mt-2"
               data-testid="filter-empty-clear"
             >
-              Clear filters
+              {t('timeline.clearFilters')}
             </button>
           </div>
         </div>
@@ -408,7 +415,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
               key={stage.id}
               data-stage-id={stage.id}
               className="relative mb-8"
-              aria-label={`Stage: ${stage.stage_name}`}
+              aria-label={t('timeline.stageRegion', { name: stage.stage_name })}
             >
               {/* Stage node */}
               <StageNode
@@ -422,7 +429,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
                 <div
                   className="ml-[12rem] lg:ml-[14rem] mt-3 space-y-1"
                   role="list"
-                  aria-label={`Milestones in ${stage.stage_name}`}
+                  aria-label={t('timeline.milestonesInStage', { name: stage.stage_name })}
                 >
                   {stageMilestones.map((milestone) => (
                     <div key={milestone.id} role="listitem">
@@ -442,10 +449,10 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
 
         {/* "Other" milestones not in any stage */}
         {otherMilestones.length > 0 && (
-          <section className="relative mb-8" aria-label="Other milestones">
+          <section className="relative mb-8" aria-label={t('timeline.otherRegion')}>
             <div className="flex items-start gap-4">
               <div className="w-36 lg:w-44 text-right shrink-0 pt-0.5">
-                <h3 className="text-sm font-semibold text-gray-500 italic">Other</h3>
+                <h3 className="text-sm font-semibold text-gray-500 italic">{t('timeline.other')}</h3>
               </div>
               <div className="relative flex items-center justify-center shrink-0" style={{ width: '20px' }}>
                 <div className="w-5 h-5 rounded-full bg-gray-300 border-2 border-white shadow-sm z-10" />
@@ -456,7 +463,7 @@ function MilestoneTimelineInner({ projectId, milestones: propMilestones, preload
             <div
               className="ml-[12rem] lg:ml-[14rem] mt-3 space-y-1"
               role="list"
-              aria-label="Milestones outside stage ranges"
+              aria-label={t('timeline.otherList')}
             >
               {otherMilestones.map((milestone) => (
                 <div key={milestone.id} role="listitem">

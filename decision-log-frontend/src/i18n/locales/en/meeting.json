@@ -1,0 +1,17 @@
+{
+  "loading": "Loading meeting…",
+  "unavailable": "Meeting not available",
+  "loadError": "This meeting could not be loaded.",
+  "backToProject": "Back to project",
+  "untitled": "Meeting",
+  "durationMinutes": "{{count}} min",
+  "openRecording": "Open recording",
+  "followRecording": "Follow the recording",
+  "transcript": {
+    "heading": "Transcript",
+    "turns_one": "{{count}} turn",
+    "turns_other": "{{count}} turns",
+    "empty": "No transcript for this meeting.",
+    "uncertainSpeaker": "Uncertain speaker"
+  }
+}

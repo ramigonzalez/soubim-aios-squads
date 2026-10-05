@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 
 interface FilterPopoverProps {
@@ -18,6 +19,7 @@ export function FilterPopover({
   width = 'w-56',
 }: FilterPopoverProps) {
   const [open, setOpen] = useState(false)
+  const { t } = useTranslation('history')
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function FilterPopover({
             ? 'border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
             : 'border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
         )}
-        aria-label={`Filter by ${label}`}
+        aria-label={t('filters.filterBy', { label })}
         aria-expanded={open}
       >
         {icon && <span className="flex-shrink-0">{icon}</span>}
