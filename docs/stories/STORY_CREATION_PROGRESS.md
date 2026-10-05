@@ -1,5 +1,7 @@
 # DecisionLog User Stories - Creation Progress
 
+> **V3 (E11–E14):** see `docs/management/epics/03_EPICS_V3_Breakdown.md` — organizations & client access, recording ingestion (Fathom, storage, worker), speaker review. This file tracks V1/V2 only.
+
 **Date:** 2026-02-08
 **Status:** ✅ COMPLETE
 **Total Stories:** 31
