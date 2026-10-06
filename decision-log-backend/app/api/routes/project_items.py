@@ -6,7 +6,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.models.project_item import (
     ProjectItemCreate,
@@ -18,14 +18,18 @@ from app.api.models.project_item import (
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
 from app.services.extraction_runs import active_items_filter
+from app.services.item_review import capture_original
 from app.services.access import (
     ADMIN,
     READ,
     WRITE,
+    REVIEW_STATUSES,
     acting_organization_id,
+    can_review_items,
     has_access,
     item_visible,
     project_access_level,
+    reaches_through_owner,
     require_project_access,
     visible_items_filter,
 )
@@ -49,8 +53,11 @@ def _check_project_access(db: Session, project_id: str, user, required: str = RE
     return require_project_access(db, user, project_id, required)
 
 
-def _item_to_response(item: ProjectItem) -> dict:
-    """Convert a ProjectItem ORM object to response dict."""
+def _item_to_response(item: ProjectItem, show_original: bool = False) -> dict:
+    """Convert a ProjectItem ORM object to response dict.
+
+    Story 12.6: ``original`` (the AI's values before a reviewer edited the item) is only sent to
+    users of the owning organization (``show_original``)."""
     source_info = None
     if item.source:
         source_info = SourceInfo(
@@ -83,16 +90,26 @@ def _item_to_response(item: ProjectItem) -> dict:
         "confidence": item.confidence,
         "source_excerpt": item.source_excerpt,
         "source": source_info,
+        "review_status": item.review_status or "approved",
+        "reviewed_by": str(item.reviewed_by) if item.reviewed_by else None,
+        "reviewed_by_name": item.reviewer.name if item.reviewer else None,
+        "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None,
+        "is_edited": item.original is not None,
+        "original": item.original if show_original else None,
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
     }
 
 
-def _compute_facets(db: Session, project_id: str, user) -> dict:
-    """Compute facet counts for a project's items the user can see (Story 12.4)."""
+def _compute_facets(db: Session, project_id: str, user, include_rejected: bool = False) -> dict:
+    """Compute facet counts for a project's items the user can see (Story 12.4, 12.6)."""
     items = (
         db.query(ProjectItem)
-        .filter(ProjectItem.project_id == project_id, visible_items_filter(user), active_items_filter())
+        .filter(
+            ProjectItem.project_id == project_id,
+            visible_items_filter(user, include_rejected),
+            active_items_filter(),
+        )
         .all()
     )
 
@@ -136,16 +153,37 @@ async def list_project_items(
     sort_order: str = Query("desc", pattern=r"^(asc|desc)$"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    review_status: Optional[str] = None,
+    include_rejected: bool = False,
 ):
-    """List project items with full filter support."""
+    """List project items with full filter support.
+
+    Story 12.6: rejected items are hidden unless ``include_rejected`` (or ``review_status=rejected``);
+    ``review_status=pending,rejected`` filters by status. Users outside the owning organization
+    only ever get approved items.
+    """
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    project = _check_project_access(db, project_id, user)
+
+    statuses = [s.strip() for s in review_status.split(",")] if review_status else []
+    if any(s not in REVIEW_STATUSES for s in statuses):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid review_status")
+    include_rejected = include_rejected or "rejected" in statuses
 
     # Story 12.4: only items of meetings visible to the user's organization
     # Story 13.7: and only the active extraction run of each meeting
-    query = db.query(ProjectItem).filter(
-        ProjectItem.project_id == project_id, visible_items_filter(user), active_items_filter()
+    # Story 12.6: and only reviewed items the user may see
+    query = (
+        db.query(ProjectItem)
+        .options(joinedload(ProjectItem.reviewer))
+        .filter(
+            ProjectItem.project_id == project_id,
+            visible_items_filter(user, include_rejected),
+            active_items_filter(),
+        )
     )
+    if statuses:
+        query = query.filter(ProjectItem.review_status.in_(statuses))
 
     # Multi-value filter: ?item_type=decision,topic
     if item_type:
@@ -209,10 +247,12 @@ async def list_project_items(
     items = query.limit(limit).offset(offset).all()
 
     # Compute facets
-    facets = _compute_facets(db, project_id, user)
+    facets = _compute_facets(db, project_id, user, include_rejected)
+    owner_side = reaches_through_owner(db, user, project)
 
     return {
-        "items": [_item_to_response(item) for item in items],
+        "can_review": can_review_items(db, user, project),
+        "items": [_item_to_response(item, show_original=owner_side) for item in items],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -229,20 +269,22 @@ async def get_project_item(
 ):
     """Get single project item detail with source info."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    project = _check_project_access(db, project_id, user)
 
     item = (
         db.query(ProjectItem)
         .filter(ProjectItem.id == item_id, ProjectItem.project_id == project_id)
         .first()
     )
-    if not item_visible(db, user, item):  # Story 12.4: internal items of other organizations → 404
+    # Story 12.4: internal items of other organizations → 404; Story 12.6: so are unreviewed ones
+    if not item_visible(db, user, item):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project item {item_id} not found",
         )
 
-    return _item_to_response(item)
+    return {**_item_to_response(item, show_original=reaches_through_owner(db, user, project)),
+            "can_review": can_review_items(db, user, project)}
 
 
 @router.post("/projects/{project_id}/items", status_code=status.HTTP_201_CREATED)
@@ -322,13 +364,15 @@ async def update_project_item(
         item.is_done = body.is_done
 
     if body.statement is not None:
+        if body.statement != item.statement:
+            capture_original(item)  # Story 12.6: keep what the AI produced
         item.statement = body.statement
         item.decision_statement = body.statement
 
     db.commit()
     db.refresh(item)
 
-    return _item_to_response(item)
+    return _item_to_response(item, show_original=reaches_through_owner(db, user, project))
 
 
 @router.get("/projects/{project_id}/milestones")
@@ -364,4 +408,6 @@ async def list_milestones(
         sort_order=sort_order,
         limit=limit,
         offset=offset,
+        review_status=None,
+        include_rejected=False,
     )

@@ -579,6 +579,14 @@ class ProjectItem(Base):
     # extraction (manual items, email/document items) and always shown
     extraction_run_id = Column(GUID(), ForeignKey("extraction_runs.id", ondelete="CASCADE"))
 
+    # Story 12.6: review by role. Extracted items start 'pending' (set by the extraction code);
+    # existing / manual items are 'approved'. ``original`` keeps the AI's values the first time a
+    # reviewer edits the item ({title, statement, why, owner, due_date}); NULL = never edited.
+    review_status = Column(String(20), nullable=False, default="approved", server_default="approved")
+    reviewed_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at = Column(DateTime)
+    original = Column(JSONType)
+
     # V2 taxonomy fields
     item_type = Column(String(50), nullable=False, default="decision")
     source_type = Column(String(50), nullable=False, default="meeting")
@@ -620,9 +628,11 @@ class ProjectItem(Base):
     # Relationships
     project = relationship("Project", back_populates="items")
     source = relationship("Source", back_populates="items")
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
 
     __table_args__ = (
         CheckConstraint("confidence BETWEEN 0 AND 1", name="ck_project_items_confidence_range"),
+        CheckConstraint("review_status IN ('pending', 'approved', 'rejected')", name="ck_project_items_review_status"),
         CheckConstraint(
             "item_type IN ('idea', 'topic', 'decision', 'action_item', 'information')",
             name="ck_item_type",

@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.config import settings
-from app.api.routes import admin, auth, fathom, health, ingestion, meetings, organizations, participants, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, source_curation, stages, uploads, webhooks
+from app.api.routes import admin, auth, fathom, health, ingestion, meetings, organizations, participants, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, source_curation, stages, uploads, webhooks
 from app.api.routes.shared_links import router as shared_links_router
 from app.api.middleware.auth import auth_middleware
 from app.database.init_db import init_db
@@ -82,6 +82,7 @@ app.include_router(documents.router, prefix="/api", tags=["documents"])
 app.include_router(webhooks.router, prefix="/api/webhooks", tags=["webhooks"])
 app.include_router(ingestion.router, prefix="/api", tags=["ingestion"])
 app.include_router(project_items.router, prefix="/api", tags=["project-items"])
+app.include_router(item_reviews.router, prefix="/api", tags=["item-reviews"])
 app.include_router(stages.router, prefix="/api", tags=["stages"])
 app.include_router(participants.router, prefix="/api", tags=["participants"])
 app.include_router(admin.router, tags=["admin"])

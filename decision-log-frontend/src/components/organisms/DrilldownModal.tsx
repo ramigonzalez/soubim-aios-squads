@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ProjectItem, ConsensusEntry } from '../../types/projectItem'
 import { DisciplineCircle } from '../atoms/DisciplineCircle'
+import { ItemReviewPanel } from './ItemReviewPanel'
 import { MilestoneStarToggle } from '../molecules/MilestoneStarToggle'
 import { formatDate, formatDateTime, formatTimestamp, getDisciplineLabel } from '../../lib/utils'
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
@@ -15,6 +16,7 @@ interface DrilldownModalProps {
   onClose: () => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean
+  canReview?: boolean  // Story 12.6
 }
 
 /** Normalize consensus value — handles both V2 ConsensusEntry objects and V1 string values */
@@ -37,7 +39,7 @@ function getStanceTextColor(stance: string) {
   return 'text-amber-700'
 }
 
-export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }: DrilldownModalProps) {
+export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin, canReview }: DrilldownModalProps) {
   const { t } = useTranslation('item')
   const [activeTab, setActiveTab] = useState('overview')
   const toggleDone = useToggleDone(decision?.project_id || '')
@@ -198,6 +200,9 @@ export function DrilldownModal({ decision, onClose, onToggleMilestone, isAdmin }
             )}
           </div>
         </div>
+
+        {/* Story 12.6: review (approve / reject / edit, AI original) */}
+        {(canReview || decision.original) && <ItemReviewPanel item={decision} canReview={canReview} />}
 
         {/* Tabs */}
         <div className="flex border-b border-t bg-gray-50/80">

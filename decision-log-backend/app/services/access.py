@@ -28,6 +28,13 @@ organization (``project_items.owner_organization_id``) and are internal to it (n
 visibility yet). Every route that exposes sources or items filters with ``visible_sources_filter`` /
 ``visible_items_filter`` (lists, counts) or ``source_visible`` / ``item_visible`` (single object).
 ``users.role`` is not used for authorization anymore.
+
+Story 12.6 — item review. Items are ``pending`` / ``approved`` / ``rejected``. Approved items follow
+the visibility above; ``pending`` items (and ``rejected`` ones, only on request) are visible only to
+users who reach the project through its owning organization. Reviewing (approve / reject / edit)
+needs ``admin`` on the project, which only the owning organization's owner/admin have. Every item
+listing goes through ``visible_items_filter`` and ``item_visible``, so the review rule is applied
+with the visibility rule; public share links show approved items only.
 """
 
 from typing import Dict, Optional
@@ -56,6 +63,9 @@ SHARED_ACCESS_LEVELS = {"contributor": WRITE, "viewer": READ}
 # Story 12.4: meeting (source) visibility
 INTERNAL, SHARED = "internal", "shared"
 VISIBILITIES = (INTERNAL, SHARED)
+# Story 12.6: item review status
+PENDING, APPROVED, REJECTED = "pending", "approved", "rejected"
+REVIEW_STATUSES = (PENDING, APPROVED, REJECTED)
 
 
 def _user_id(user) -> str:
@@ -214,9 +224,30 @@ def visible_sources_filter(user):
     )
 
 
-def visible_items_filter(user):
+def review_visible_filter(user, include_rejected: bool = False):
+    """Story 12.6, SQL condition on ``ProjectItem``: approved items, plus ``pending`` (and, when
+    ``include_rejected``, ``rejected``) items for users who reach the project through its owning
+    organization. Shared organizations only ever see approved items."""
+    uid = _user_id(user)
+    admin_orgs = select(OrganizationMember.organization_id).where(
+        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
+    )
+    member_orgs = select(OrganizationMember.organization_id).where(
+        OrganizationMember.user_id == uid, OrganizationMember.role == "member"
+    )
+    assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
+    # projects the user reaches through the organization that owns them (not through a share)
+    owned_as_admin = select(Project.id).where(Project.owner_organization_id.in_(admin_orgs))
+    owned_as_member = select(Project.id).where(Project.owner_organization_id.in_(member_orgs), Project.id.in_(assigned))
+    owner_org = or_(ProjectItem.project_id.in_(owned_as_admin), ProjectItem.project_id.in_(owned_as_member))
+    statuses = [PENDING, REJECTED] if include_rejected else [PENDING]
+    return or_(ProjectItem.review_status == APPROVED, and_(ProjectItem.review_status.in_(statuses), owner_org))
+
+
+def visible_items_filter(user, include_rejected: bool = False):
     """SQL condition on ``ProjectItem``: items of visible sources, or source-less items owned by an
-    organization through which the user reaches the project."""
+    organization through which the user reaches the project; Story 12.6: and reviewable by the user
+    (rejected items are left out unless ``include_rejected``)."""
     visible_source_ids = select(Source.id).where(visible_sources_filter(user))
     return and_(
         ProjectItem.project_id.in_(accessible_project_ids(user)),
@@ -227,13 +258,18 @@ def visible_items_filter(user):
                 _org_grants_access(user, ProjectItem.owner_organization_id, ProjectItem.project_id),
             ),
         ),
+        review_visible_filter(user, include_rejected),
     )
 
 
 def public_items_filter():
-    """SQL condition on ``ProjectItem`` for anonymous views (public share links): items of shared
-    sources only — internal meetings and source-less (internal) items never leave the organization."""
-    return ProjectItem.source_id.in_(select(Source.id).where(Source.visibility == SHARED))
+    """SQL condition on ``ProjectItem`` for anonymous views (public share links): approved items of
+    shared sources only — internal meetings, source-less (internal) items and items not approved
+    never leave the organization."""
+    return and_(
+        ProjectItem.source_id.in_(select(Source.id).where(Source.visibility == SHARED)),
+        ProjectItem.review_status == APPROVED,
+    )
 
 
 def source_visible(db: Session, user, source: Optional[Source]) -> bool:
@@ -246,9 +282,24 @@ def source_visible(db: Session, user, source: Optional[Source]) -> bool:
     return source.visibility == SHARED or str(source.owner_organization_id) in orgs
 
 
+def reaches_through_owner(db: Session, user, project: Project) -> bool:
+    """Does the user reach ``project`` through its owning organization (sees pending / rejected items)?"""
+    return project is not None and str(project.owner_organization_id) in project_access_by_organization(
+        db, user, project
+    )
+
+
+def can_review_items(db: Session, user, project: Project) -> bool:
+    """Story 12.6: approve / reject / edit items — admin on the project (owning organization's owner/admin)."""
+    return has_access(project_access_level(db, user, project), ADMIN)
+
+
 def item_visible(db: Session, user, item: Optional[ProjectItem]) -> bool:
-    """Can ``user`` see ``item``? Items follow their source; source-less items their owner organization."""
+    """Can ``user`` see ``item``? Items follow their source; source-less items their owner organization;
+    Story 12.6: items not approved only through the project's owning organization."""
     if item is None:
+        return False
+    if item.review_status != APPROVED and not reaches_through_owner(db, user, item.project):
         return False
     if item.source_id is not None:
         return source_visible(db, user, item.source)

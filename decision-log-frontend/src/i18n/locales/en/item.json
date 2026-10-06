@@ -108,5 +108,41 @@
   "milestone": {
     "remove": "Remove milestone",
     "mark": "Mark as milestone"
+  },
+  "review": {
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "pendingHint": "Not reviewed yet - only visible to your organization",
+    "rejectedHint": "Rejected - hidden from History by default",
+    "edited": "Edited",
+    "editedHint": "Edited by a reviewer; the AI's original is kept",
+    "heading": "Review",
+    "reviewedBy": "{{status}} by {{name}}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "backToPending": "Back to pending",
+    "edit": "Edit",
+    "save": "Save and approve",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "error": "Could not update the item. Please try again.",
+    "fields": {
+      "title": "Title",
+      "statement": "Statement",
+      "why": "Why",
+      "owner": "Owner",
+      "dueDate": "Due date"
+    },
+    "showOriginal": "Show AI original",
+    "hideOriginal": "Hide AI original",
+    "restore": "Restore original",
+    "originalHeading": "Extracted by the AI",
+    "empty": "(empty)",
+    "approvePending": "Approve pending ({{count}})",
+    "approvePendingAria": "Approve the {{count}} pending items of {{title}}",
+    "showRejected": "Show rejected items"
   }
 }
