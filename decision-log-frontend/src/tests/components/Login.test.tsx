@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, useLocation } from 'react-router-dom'
 import { Login } from '../../pages/Login'
 import * as apiModule from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
@@ -360,27 +360,37 @@ describe('Login ?redirect= (Story 12.5 security review)', () => {
     vi.clearAllMocks()
   })
 
+  // Own in-memory history: a late navigate() from an earlier test (shared BrowserRouter history)
+  // can no longer move this test's location (CI flake).
+  let currentPath = ''
+  function LocationProbe() {
+    currentPath = useLocation().pathname
+    return null
+  }
+
   async function loginWith(redirect: string) {
-    window.history.pushState({}, '', `/login?redirect=${encodeURIComponent(redirect)}`)
+    currentPath = ''
     vi.mocked(apiModule.default.post).mockResolvedValueOnce({
       data: { access_token: 't', user: { id: '1', email: 'a@b.com', name: 'A', role: 'client', projects: [] } },
     })
-    renderLogin()
+    render(
+      <MemoryRouter initialEntries={[`/login?redirect=${encodeURIComponent(redirect)}`]}>
+        <Login />
+        <LocationProbe />
+      </MemoryRouter>
+    )
     await userEvent.type(screen.getByLabelText(/email/i), 'a@b.com')
     await userEvent.type(screen.getByLabelText(/password/i), 'password123')
     await userEvent.click(screen.getByRole('button', { name: /login/i }))
-    await waitFor(() => expect(window.location.pathname).not.toBe('/login'))
   }
 
   it('goes back to the invitation after logging in', async () => {
     await loginWith('/invite/tok123')
-    await waitFor(() => expect(window.location.pathname).toBe('/invite/tok123'))
+    await waitFor(() => expect(currentPath).toBe('/invite/tok123'))
   })
 
   it.each(['/\\evil.com', '//evil.com', 'https://evil.com'])('ignores the open redirect %j', async value => {
-    const before = window.location.origin
     await loginWith(value)
-    await waitFor(() => expect(window.location.pathname).toBe('/projects'))
-    expect(window.location.origin).toBe(before)
+    await waitFor(() => expect(currentPath).toBe('/projects'))
   })
 })
