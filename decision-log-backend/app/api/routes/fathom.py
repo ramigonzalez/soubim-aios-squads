@@ -34,6 +34,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -460,29 +461,46 @@ def fathom_discard_unassigned(item_id: str, db: Session = Depends(get_db), user=
     db.commit()
 
 
+async def _read_capped_body(request: Request, limit: int) -> Optional[bytes]:
+    """The raw body, read once as it streams in; None as soon as it exceeds ``limit`` (a chunked
+    request has no Content-Length, so the declared size alone does not bound memory)."""
+    chunks, size = [], 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > limit:
+            return None
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _handle_webhook(db: Session, conn_uuid: uuid.UUID, headers, body: bytes) -> dict:
+    """Signature check + processing (sync DB work, run in the threadpool)."""
+    conn = db.get(FathomConnection, conn_uuid)
+    secret = fathom_webhook.load_secret(conn)
+    webhook_id = headers.get("webhook-id")
+    if secret is None or not fathom_webhook.verify_signature(
+        secret, webhook_id, headers.get("webhook-timestamp"), headers.get("webhook-signature"), body, time.time(),
+    ):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook")
+    outcome = fathom_webhook.process(db, conn, webhook_id, body)
+    return {"status": outcome.status}
+
+
 @router.post("/fathom/webhook/{connection_id}", status_code=status.HTTP_202_ACCEPTED)
 async def fathom_webhook_receive(connection_id: str, request: Request, db: Session = Depends(get_db)):
     """Fathom ``new_meeting`` webhook. Public: authenticated only by the signature (HMAC over the raw body
     with the connection's secret). Every failure answers the same 401 (unknown / disabled connection, bad
     or stale signature, malformed headers). Only enqueues — nothing is downloaded here."""
-    rejected = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook")
     try:
         conn_uuid = uuid.UUID(connection_id)
     except ValueError:
-        raise rejected
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook")
+    too_large = HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
     declared = request.headers.get("content-length")
     if declared and declared.isdigit() and int(declared) > fathom_webhook.MAX_BODY_BYTES:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
-    body = await request.body()
-    if len(body) > fathom_webhook.MAX_BODY_BYTES:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
-    conn = db.get(FathomConnection, conn_uuid)
-    secret = fathom_webhook.load_secret(conn)
-    webhook_id = request.headers.get("webhook-id")
-    if secret is None or not fathom_webhook.verify_signature(
-        secret, webhook_id, request.headers.get("webhook-timestamp"), request.headers.get("webhook-signature"),
-        body, time.time(),
-    ):
-        raise rejected
-    outcome = fathom_webhook.process(db, conn, webhook_id, body)
-    return {"status": outcome.status}
+        raise too_large
+    body = await _read_capped_body(request, fathom_webhook.MAX_BODY_BYTES)
+    if body is None:
+        raise too_large
+    # The session is synchronous: keep its queries/commits off the event loop.
+    return await run_in_threadpool(_handle_webhook, db, conn_uuid, request.headers, body)

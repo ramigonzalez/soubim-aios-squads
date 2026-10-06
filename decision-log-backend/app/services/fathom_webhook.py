@@ -202,7 +202,7 @@ def process(db: Session, connection: FathomConnection, webhook_id: str, body: by
     project = _usable_default_project(db, user, connection)
     if project is None:
         reason = "project_unavailable" if connection.auto_import_project_id else "no_default_project"
-        return _park(db, user, recording_id, payload, reason)
+        return _park(db, connection, webhook_id, user, recording_id, payload, reason)
 
     if fathom_import.find_import(db, project.id, recording_id) is not None:
         db.commit()
@@ -232,7 +232,8 @@ def _usable_default_project(db: Session, user, connection: FathomConnection) -> 
     return project if has_access(project_access_level(db, user, project), WRITE) else None
 
 
-def _park(db: Session, user, recording_id: str, payload: dict, reason: str) -> Outcome:
+def _park(db: Session, connection: FathomConnection, webhook_id: str, user, recording_id: str, payload: dict,
+          reason: str) -> Outcome:
     exists = (
         db.query(FathomUnassignedMeeting)
         .filter(FathomUnassignedMeeting.user_id == user.id, FathomUnassignedMeeting.recording_id == recording_id)
@@ -243,5 +244,10 @@ def _park(db: Session, user, recording_id: str, payload: dict, reason: str) -> O
             user_id=user.id, recording_id=recording_id, title=_title(payload), reason=reason,
             started_at=fathom_import._parse_time(payload.get("recording_start_time") or payload.get("scheduled_start_time")),
         ))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:  # another delivery parked the same recording concurrently: keep this claim only
+        db.rollback()
+        if _claim_event(db, connection, webhook_id):
+            db.commit()
     return Outcome("unassigned", reason)

@@ -107,6 +107,7 @@ describe('FathomUnassignedList (Story 13.9)', () => {
   it('assigns a meeting to a project (internal)', async () => {
     wrap(<FathomUnassignedList />)
     expect(await screen.findByText('Coordenação semanal')).toBeInTheDocument()
+    await screen.findByRole('option', { name: PROJECTS[0].name }) // projects load separately
     const assign = screen.getByRole('button', { name: 'Import: Coordenação semanal' })
     expect(assign).toBeDisabled()
     await userEvent.selectOptions(screen.getByLabelText('Project: Coordenação semanal'), 'p1')
@@ -124,6 +125,7 @@ describe('FathomUnassignedList (Story 13.9)', () => {
     service.assignFathomUnassigned.mockRejectedValue({ response: { status: 409 } })
     wrap(<FathomUnassignedList />)
     await screen.findByText('Coordenação semanal')
+    await screen.findByRole('option', { name: PROJECTS[0].name })
     await userEvent.selectOptions(screen.getByLabelText('Project: Coordenação semanal'), 'p1')
     await userEvent.click(screen.getByRole('button', { name: 'Import: Coordenação semanal' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('already imported')

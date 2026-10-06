@@ -315,6 +315,36 @@ class TestDelivery:
         assert deliver(client, conn.id, body=big).status_code == 413
         assert counts(db_session) == (0, 0, 0, 0)
 
+    def test_oversized_chunked_payload_is_refused_without_content_length(self, client, db_session, conn):
+        """Security review: a chunked body has no Content-Length — the cap must apply while streaming."""
+        chunk = b"x" * 65536
+        chunks = iter([chunk] * (fathom_webhook.MAX_BODY_BYTES // len(chunk) + 2))
+        response = client.post(f"/api/fathom/webhook/{conn.id}", content=chunks, headers={
+            "webhook-id": "msg_big", "webhook-timestamp": str(int(time.time())), "webhook-signature": "v1,AAAA"})
+        assert response.status_code == 413
+        assert counts(db_session) == (0, 0, 0, 0)
+
+    def test_body_reader_stops_at_the_cap_on_an_endless_stream(self):
+        import asyncio
+
+        pulled = {"n": 0}
+
+        class EndlessRequest:
+            async def stream(self):
+                while True:
+                    pulled["n"] += 1
+                    yield b"x" * 1024
+
+        assert asyncio.run(routes._read_capped_body(EndlessRequest(), 10_000)) is None
+        assert pulled["n"] == 10  # stopped right after crossing the cap, nothing more buffered
+
+    def test_chunked_payload_under_the_cap_is_accepted(self, client, db_session, conn):
+        raw = json.dumps(PAYLOAD).encode()
+        wid, ts = "msg_chunked", str(int(time.time()))
+        response = client.post(f"/api/fathom/webhook/{conn.id}", content=iter([raw[:10], raw[10:]]), headers={
+            "webhook-id": wid, "webhook-timestamp": ts, "webhook-signature": fathom_webhook.sign(SECRET, wid, ts, raw)})
+        assert response.status_code == 202 and response.json() == {"status": "imported"}
+
     def test_same_recording_with_a_new_webhook_id_is_not_imported_twice(self, client, db_session, conn):
         deliver(client, conn.id)
         again = deliver(client, conn.id)
@@ -394,6 +424,27 @@ class TestUnassigned:
         deliver(client, conn.id)
         deliver(client, conn.id)
         assert db_session.query(FathomUnassignedMeeting).count() == 1
+
+    def test_concurrent_park_of_the_same_recording_keeps_the_claim(self, client, db_session, conn, monkeypatch):
+        """Security review: two deliveries (different webhook-ids) racing on the unique (user, recording)
+        row must not 500 — the loser still records its delivery id and answers ``unassigned``."""
+        conn.auto_import_project_id = None
+        db_session.commit()
+        assert deliver(client, conn.id).json()["status"] == "unassigned"
+        from sqlalchemy.orm import Query
+        real_first = Query.first
+
+        def blind_first(self):  # the existence check misses the row the other delivery just committed
+            if self.column_descriptions and self.column_descriptions[0]["entity"] is FathomUnassignedMeeting:
+                return None
+            return real_first(self)
+
+        monkeypatch.setattr(Query, "first", blind_first)
+        response = deliver(client, conn.id, webhook_id="msg_racer")
+        assert response.status_code == 202 and response.json() == {"status": "unassigned"}
+        monkeypatch.undo()
+        assert db_session.query(FathomUnassignedMeeting).count() == 1
+        assert db_session.query(FathomWebhookEvent).filter_by(webhook_id="msg_racer").count() == 1
 
     def test_title_is_trimmed_and_capped(self, client, db_session, conn):
         conn.auto_import_project_id = None
