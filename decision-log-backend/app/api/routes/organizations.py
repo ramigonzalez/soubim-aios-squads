@@ -1,4 +1,4 @@
-"""Organization endpoints (Story 12.1), members and invitations (Story 12.5)."""
+"""Organization endpoints (Story 12.1), members and invitations (Story 12.5), project assignments (Story 12.7)."""
 
 from typing import Literal, Optional
 from uuid import UUID
@@ -15,17 +15,20 @@ from app.services import invitations as inv
 from app.services.access import is_platform_admin
 from app.services.auth_service import get_user_projects
 from app.services.organizations import (
+    assign_project,
     change_member_role,
     get_memberships,
     list_members,
+    list_project_assignments,
     remove_member,
     require_org_admin,
+    unassign_project,
 )
 from app.utils.security import create_access_token
 
 router = APIRouter()
 
-Role = Literal["owner", "admin", "member"]
+Role = Literal["owner", "admin", "reviewer", "member"]  # reviewer: Story 12.7
 
 
 @router.get("/organizations/me")
@@ -70,6 +73,34 @@ async def delete_member(
 ):
     require_org_admin(db, user, organization_id)
     remove_member(db, user, organization_id, user_id)
+
+
+# ─── Project assignments (Story 12.7) ─────────────────────────────────────────
+
+
+@router.get("/organizations/{organization_id}/project-assignments")
+async def get_project_assignments(organization_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Projects the organization owns or that are shared with it, and its members assigned to them."""
+    require_org_admin(db, user, organization_id)
+    return list_project_assignments(db, organization_id)
+
+
+@router.put("/organizations/{organization_id}/members/{user_id}/projects/{project_id}")
+async def put_project_assignment(
+    organization_id: UUID, user_id: UUID, project_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    """Assign a member of the organization to one of its (owned or shared) projects."""
+    require_org_admin(db, user, organization_id)
+    assign_project(db, organization_id, user_id, project_id)
+    return {"user_id": str(user_id), "project_id": str(project_id), "assigned": True}
+
+
+@router.delete("/organizations/{organization_id}/members/{user_id}/projects/{project_id}", status_code=204)
+async def delete_project_assignment(
+    organization_id: UUID, user_id: UUID, project_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    require_org_admin(db, user, organization_id)
+    unassign_project(db, organization_id, user_id, project_id)
 
 
 # ─── Invitations (admin side) ────────────────────────────────────────────────

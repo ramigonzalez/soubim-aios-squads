@@ -5,13 +5,20 @@ import {
   useCreateInvitation,
   useInvitations,
   useMembers,
+  useProjectAssignments,
   useRemoveMember,
   useRevokeInvitation,
+  useSetProjectAssignment,
   useUpdateMemberRole,
 } from '../hooks/useTeam'
 import { formatDate } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
-import type { OrganizationInvitationInfo, OrganizationRole } from '../types/organization'
+import type {
+  OrganizationInvitationInfo,
+  OrganizationMemberInfo,
+  OrganizationProjectAssignments,
+  OrganizationRole,
+} from '../types/organization'
 
 // the platform operator organization (seeded with this slug) may invite new companies
 const PLATFORM_SLUG = 'soubim'
@@ -22,6 +29,7 @@ function apiError(error: unknown, fallback: string): string {
 
 /**
  * Settings → Team (Story 12.5): members, roles and invitations of the active organization.
+ * Story 12.7: `reviewer` role, and which projects each member / reviewer is assigned to.
  * Owners and admins only (the API enforces it; non-admins just see a notice).
  */
 export default function TeamSettings() {
@@ -64,7 +72,7 @@ function RoleSelect({
 }) {
   const { t } = useTranslation('team')
   // only owners grant or change the owner role
-  const roles: OrganizationRole[] = isOwner ? ['owner', 'admin', 'member'] : ['admin', 'member']
+  const roles: OrganizationRole[] = isOwner ? ['owner', 'admin', 'reviewer', 'member'] : ['admin', 'reviewer', 'member']
   const options = roles.includes(value) ? roles : [value, ...roles]
   return (
     <select
@@ -235,6 +243,7 @@ function Members({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
   const { t } = useTranslation('team')
   const currentUserId = useAuthStore(s => s.user?.id)
   const { data: members = [], isLoading } = useMembers(orgId)
+  const { data: assignments } = useProjectAssignments(orgId)
   const update = useUpdateMemberRole(orgId)
   const remove = useRemoveMember(orgId)
   const error = update.error ?? remove.error
@@ -248,33 +257,109 @@ function Members({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
           {apiError(error, t('members.error'))}
         </p>
       )}
+      <p className="text-xs text-gray-500">{t('projects.hint')}</p>
       <ul className="divide-y divide-gray-100">
         {members.map(m => (
-          <li key={m.user_id} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <span className="min-w-0">
-              <span className="font-medium text-gray-900">{m.name}</span>{' '}
-              <span className="text-gray-500 break-all">{m.email}</span>
-            </span>
-            <span className="flex items-center gap-3">
-              <RoleSelect
-                value={m.role}
-                isOwner={isOwner}
-                label={`${t('members.role')} ${m.name}`}
-                onChange={role => update.mutate({ userId: m.user_id, role })}
-              />
-              <button
-                disabled={m.user_id === currentUserId || (m.role === 'owner' && !isOwner)}
-                onClick={() => {
-                  if (window.confirm(t('members.confirmRemove', { name: m.name }))) remove.mutate(m.user_id)
-                }}
-                className="text-red-600 hover:underline disabled:opacity-40 disabled:no-underline"
-              >
-                {t('members.remove')}
-              </button>
-            </span>
+          <li key={m.user_id} className="py-2 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="min-w-0">
+                <span className="font-medium text-gray-900">{m.name}</span>{' '}
+                <span className="text-gray-500 break-all">{m.email}</span>
+              </span>
+              <span className="flex items-center gap-3">
+                <RoleSelect
+                  value={m.role}
+                  isOwner={isOwner}
+                  label={`${t('members.role')} ${m.name}`}
+                  onChange={role => update.mutate({ userId: m.user_id, role })}
+                />
+                <button
+                  disabled={m.user_id === currentUserId || (m.role === 'owner' && !isOwner)}
+                  onClick={() => {
+                    if (window.confirm(t('members.confirmRemove', { name: m.name }))) remove.mutate(m.user_id)
+                  }}
+                  className="text-red-600 hover:underline disabled:opacity-40 disabled:no-underline"
+                >
+                  {t('members.remove')}
+                </button>
+              </span>
+            </div>
+            <MemberProjects orgId={orgId} member={m} assignments={assignments} />
           </li>
         ))}
       </ul>
     </section>
+  )
+}
+
+/**
+ * Story 12.7: projects of the organization (owned or shared with it) a member / reviewer is assigned to.
+ * Owners and admins reach every project of their organization, so there is nothing to assign.
+ */
+function MemberProjects({
+  orgId,
+  member,
+  assignments,
+}: {
+  orgId: string
+  member: OrganizationMemberInfo
+  assignments: OrganizationProjectAssignments | undefined
+}) {
+  const { t } = useTranslation('team')
+  const [open, setOpen] = useState(false)
+  const setAssignment = useSetProjectAssignment(orgId)
+
+  if (member.role === 'owner' || member.role === 'admin') {
+    return <p className="mt-1 text-xs text-gray-500">{t('projects.all')}</p>
+  }
+  const projects = assignments?.projects ?? []
+  const assigned = new Set(
+    (assignments?.assignments ?? []).filter(a => a.user_id === member.user_id).map(a => a.project_id)
+  )
+  const panelId = `member-projects-${member.user_id}`
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen(o => !o)}
+        className="text-xs font-medium text-blue-600 hover:underline"
+      >
+        {t('projects.toggle', { n: assigned.size, name: member.name })}
+      </button>
+      {open && (
+        <div id={panelId} className="mt-2 rounded-lg bg-gray-50 p-3 space-y-2">
+          {setAssignment.isError && (
+            <p role="alert" className="text-xs text-red-700">
+              {apiError(setAssignment.error, t('projects.error'))}
+            </p>
+          )}
+          {projects.length === 0 ? (
+            <p className="text-xs text-gray-500">{t('projects.empty')}</p>
+          ) : (
+            <ul className="space-y-1">
+              {projects.map(p => (
+                <li key={p.id}>
+                  <label className="flex items-center gap-2 text-sm text-gray-800">
+                    <input
+                      type="checkbox"
+                      checked={assigned.has(p.id)}
+                      disabled={setAssignment.isLoading}
+                      onChange={e =>
+                        setAssignment.mutate({ userId: member.user_id, projectId: p.id, assigned: e.target.checked })
+                      }
+                    />
+                    <span>{p.name}</span>
+                    {!p.owned && <span className="text-xs text-gray-500">({t('projects.shared')})</span>}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

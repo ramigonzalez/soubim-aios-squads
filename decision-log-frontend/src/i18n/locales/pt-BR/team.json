@@ -5,6 +5,7 @@
   "roles": {
     "owner": "Proprietário(a)",
     "admin": "Administrador(a)",
+    "reviewer": "Revisor(a)",
     "member": "Membro"
   },
   "members": {
@@ -16,6 +17,14 @@
     "remove": "Remover",
     "confirmRemove": "Remover {{name}} desta organização?",
     "error": "Não foi possível atualizar o membro."
+  },
+  "projects": {
+    "hint": "Membros e revisores só veem os projetos aos quais estão atribuídos. Revisores também aprovam itens e reuniões desses projetos.",
+    "all": "Acesso a todos os projetos da organização",
+    "toggle": "Projetos atribuídos: {{n}}",
+    "empty": "Nenhum projeto nesta organização.",
+    "shared": "compartilhado",
+    "error": "Não foi possível atualizar o acesso ao projeto."
   },
   "invite": {
     "title": "Convidar alguém",

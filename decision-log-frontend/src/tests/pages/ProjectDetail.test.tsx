@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { ProjectDetail } from '../../pages/ProjectDetail'
+import { useProjectItems } from '../../hooks/useProjectItems'
 
 // Mock hooks used by ProjectDetail
 vi.mock('../../hooks/useProjectItems', () => ({
@@ -326,5 +327,34 @@ describe('ProjectDetail Page', () => {
       renderProjectDetail()
       expect(screen.getByText('0 decisions found')).toBeInTheDocument()
     })
+  })
+})
+
+// Story 12.7: admin UI follows the project capabilities returned by the API, not the legacy users.role
+describe('ProjectDetail capabilities (Story 12.7)', () => {
+  const withCapabilities = (capabilities: { can_manage?: boolean; can_review?: boolean }) =>
+    vi.mocked(useProjectItems).mockReturnValue({
+      data: { items: [], total: 0, limit: 50, offset: 0, ...capabilities },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useProjectItems>)
+
+  beforeEach(() => {
+    window.location.hash = ''
+  })
+
+  it('shows Edit / Archive to users who can manage the project', () => {
+    withCapabilities({ can_manage: true, can_review: true })
+    renderProjectDetail()
+    expect(screen.getByRole('button', { name: /Edit/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Archive/ })).toBeInTheDocument()
+  })
+
+  it('hides them from reviewers and members, whatever their legacy users.role', () => {
+    withCapabilities({ can_manage: false, can_review: true })
+    renderProjectDetail()
+    expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Archive/ })).not.toBeInTheDocument()
   })
 })

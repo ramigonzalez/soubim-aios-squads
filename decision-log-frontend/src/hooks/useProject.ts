@@ -4,6 +4,7 @@
  */
 import { useQuery, UseQueryResult } from 'react-query'
 import api from '../services/api'
+import type { ProjectCapabilities } from '../types/organization'
 
 export interface ProjectStageDetail {
   id: string
@@ -14,7 +15,7 @@ export interface ProjectStageDetail {
   is_current: boolean
 }
 
-export interface ProjectDetail {
+export interface ProjectDetail extends ProjectCapabilities {
   id: string
   name: string
   description?: string | null

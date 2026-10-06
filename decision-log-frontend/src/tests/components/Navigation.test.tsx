@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Navigation } from '../../components/common/Navigation'
 import { useAuthStore } from '../../store/authStore'
+import api from '../../services/api'
 
 // Mock router
 vi.mock('react-router-dom', async () => {
@@ -130,6 +131,21 @@ describe('Navigation Component', () => {
     expect(innerDiv?.className).toContain('px-4')
     expect(innerDiv?.className).toContain('sm:px-6')
     expect(innerDiv?.className).toContain('lg:px-8')
+  })
+
+  // Story 12.7: the ingestion link follows organization roles, not the legacy users.role
+  it.each([
+    ['reviewer', true],
+    ['admin', true],
+    ['member', false],
+  ])('ingestion link for an organization %s: %s', async (role, shown) => {
+    vi.spyOn(api, 'get').mockImplementation(async (url: string) =>
+      url === '/organizations/me' ? { data: [{ id: 'o1', name: 'Acme', slug: 'acme', role }] } : { data: {} }
+    )
+    renderNavigation()
+    await screen.findByText('Acme')
+    if (shown) expect(await screen.findByRole('link', { name: /Ingestion/ })).toBeInTheDocument()
+    else expect(screen.queryByRole('link', { name: /Ingestion/ })).not.toBeInTheDocument()
   })
 
   it('hides user info on small screens', () => {

@@ -74,7 +74,7 @@ Today DecisionLog has no organization concept: one global `director` role, proje
 - [ ] Organization admins can invite users; users switch their active organization
 - [ ] Item review (approve / reject / edit) restricted by organization role
 
-### Stories (6)
+### Stories (7)
 
 | Story | Title | Effort | Priority | Phase |
 |-------|-------|--------|----------|-------|
@@ -84,6 +84,7 @@ Today DecisionLog has no organization concept: one global `director` role, proje
 | 12.4 | Meeting Visibility: Internal vs Shared | M | High | ✅ #20 |
 | 12.5 | Users, Invitations & Active Organization | M | High | ✅ #19 |
 | 12.6 | Item Review: Approve / Reject / Edit by Role | M | Medium | ✅ #25 |
+| 12.7 | Roles Follow-ups: Reviewer Role, Project Assignment, Admin UI Gating | M | High | Ready for Review |
 
 ### Agent Assignment
 
@@ -95,6 +96,7 @@ Today DecisionLog has no organization concept: one global `director` role, proje
 | 12.4 | @dev | @qa | @po |
 | 12.5 | @dev | @qa | @ux-design-expert |
 | 12.6 | @dev | @qa | @po |
+| 12.7 | @dev | @qa | @architect |
 
 ---
 

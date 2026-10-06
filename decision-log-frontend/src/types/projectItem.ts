@@ -3,7 +3,9 @@
  * Story 5.3: Frontend Types & Hooks Migration
  */
 
-export type ItemType = 'idea' | 'topic' | 'decision' | 'action_item' | 'information'
+import type { ProjectAccessLevel } from './organization'
+
+export type ItemType ='idea' | 'topic' | 'decision' | 'action_item' | 'information'
 export type SourceType = 'meeting' | 'email' | 'document' | 'manual_input'
 
 export type Discipline =
@@ -158,6 +160,8 @@ export interface ProjectItemsResponse {
   offset: number
   facets?: ProjectItemFacets
   can_review?: boolean  // Story 12.6: the user can approve / reject / edit items of this project
+  can_manage?: boolean  // Story 12.7: project settings, sharing, milestones (owning organization's owner/admin)
+  access_level?: ProjectAccessLevel  // Story 12.7
 }
 
 export interface ProjectItemFilters {

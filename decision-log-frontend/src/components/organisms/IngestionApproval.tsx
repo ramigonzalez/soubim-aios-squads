@@ -83,7 +83,8 @@ export default function IngestionApproval() {
     return Array.from(map, ([id, name]) => ({ id, name }))
   }, [data?.sources, historyData?.sources])
 
-  const allVisibleIds = sortedSources.map((s) => s.id)
+  // Story 12.7: only sources the user can review are selectable for bulk actions
+  const allVisibleIds = sortedSources.filter((s) => s.can_review).map((s) => s.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id))
 
   function handleSelectAll() {
@@ -132,13 +133,15 @@ export default function IngestionApproval() {
 
   function renderRow(source: Source) {
     const isSelected = selectedIds.has(source.id)
+    // Story 12.7: actions only where the API says the user can review this source's project
+    const canReview = !!source.can_review
     const rowProps = {
       source,
       selected: isSelected,
       onToggleSelect: toggleSelected,
-      onApprove: handleApproveSource,
-      onReject: handleRejectSource,
-      onRetry: handleRetrySource,
+      onApprove: canReview ? handleApproveSource : undefined,
+      onReject: canReview ? handleRejectSource : undefined,
+      onRetry: canReview ? handleRetrySource : undefined,
       isActionLoading: isSourceActionLoading,
     }
     switch (source.source_type) {
@@ -394,7 +397,7 @@ export default function IngestionApproval() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      {source.status === 'failed' && (
+                      {source.status === 'failed' && source.can_review && (
                         <button
                           onClick={() => handleRetrySource(source.id)}
                           disabled={retrySource.isLoading}
@@ -404,7 +407,7 @@ export default function IngestionApproval() {
                           <RefreshCw className="w-4 h-4" />
                         </button>
                       )}
-                      {source.status !== 'pending' && (
+                      {source.status !== 'pending' && source.can_manage && (
                         <button
                           onClick={() => setDeleteConfirmId(source.id)}
                           disabled={deleteSource.isLoading}

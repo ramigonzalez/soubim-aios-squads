@@ -25,7 +25,7 @@ from app.services.access import (
     WRITE,
     REVIEW_STATUSES,
     acting_organization_id,
-    can_review_items,
+    project_capabilities,
     has_access,
     item_visible,
     project_access_level,
@@ -251,7 +251,7 @@ async def list_project_items(
     owner_side = reaches_through_owner(db, user, project)
 
     return {
-        "can_review": can_review_items(db, user, project),
+        **project_capabilities(db, user, project),  # can_review (12.6), access_level + can_manage (12.7)
         "items": [_item_to_response(item, show_original=owner_side) for item in items],
         "total": total,
         "limit": limit,
@@ -284,7 +284,7 @@ async def get_project_item(
         )
 
     return {**_item_to_response(item, show_original=reaches_through_owner(db, user, project)),
-            "can_review": can_review_items(db, user, project)}
+            **project_capabilities(db, user, project)}
 
 
 @router.post("/projects/{project_id}/items", status_code=status.HTTP_201_CREATED)

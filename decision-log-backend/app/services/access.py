@@ -2,7 +2,7 @@
 
 One place answers "what can this user do on this project?" — every route goes through it.
 
-Access levels, weakest to strongest: ``none`` < ``read`` < ``write`` < ``admin``.
+Access levels, weakest to strongest: ``none`` < ``read`` < ``write`` < ``review`` < ``admin``.
 
 Rules (a project is reachable only through the organization that owns it):
 - ``owner`` / ``admin`` of the project's owning organization → ``admin`` (what the global
@@ -35,6 +35,14 @@ users who reach the project through its owning organization. Reviewing (approve 
 needs ``admin`` on the project, which only the owning organization's owner/admin have. Every item
 listing goes through ``visible_items_filter`` and ``item_visible``, so the review rule is applied
 with the visibility rule; public share links show approved items only.
+
+Story 12.7 — ``reviewer`` organization role, between ``member`` and ``admin``. Like a member it needs a
+project assignment (``project_members``). An assigned ``reviewer`` of the *owning* organization gets the
+``review`` level: everything ``write`` allows, plus item review (approve / reject / edit / restore / bulk,
+which now needs ``review`` instead of ``admin``) and approve / reject / retry of meetings in the ingestion
+queue. Project settings, sharing, visibility, Drive, share links, milestones, meeting deletion and
+member management stay ``admin``. A ``reviewer`` of a *shared* organization is treated like a member of
+that organization (the shared level when assigned): review stays with the owning organization.
 """
 
 from typing import Dict, Optional
@@ -53,11 +61,13 @@ from app.database.models import (
     ProjectOrganization,
     Source,
 )
-from app.services.organizations import DEFAULT_ORGANIZATION_SLUG, get_memberships
+from app.services.organizations import ASSIGNED_ROLES, DEFAULT_ORGANIZATION_SLUG, get_memberships
 
-NONE, READ, WRITE, ADMIN = "none", "read", "write", "admin"
-_RANK = {NONE: 0, READ: 1, WRITE: 2, ADMIN: 3}
+NONE, READ, WRITE, REVIEW, ADMIN = "none", "read", "write", "review", "admin"
+_RANK = {NONE: 0, READ: 1, WRITE: 2, REVIEW: 3, ADMIN: 4}
 ADMIN_ROLES = ("owner", "admin")
+# Story 12.7: ``ASSIGNED_ROLES`` (reviewer, member) reach a project only when assigned (imported above)
+REVIEWER = "reviewer"
 # Story 12.3: level an organization gets on a project shared with it
 SHARED_ACCESS_LEVELS = {"contributor": WRITE, "viewer": READ}
 # Story 12.4: meeting (source) visibility
@@ -93,9 +103,10 @@ def project_access_by_organization(db: Session, user, project: Project) -> Dict[
     """Level each of the user's organizations gives them on ``project`` (only organizations that grant
     access), keyed by organization id (str).
 
-    - owning organization: ``owner``/``admin`` → ``admin``; ``member`` assigned to the project → ``write``
+    - owning organization: ``owner``/``admin`` → ``admin``; assigned ``reviewer`` → ``review`` (12.7);
+      ``member`` assigned to the project → ``write``
     - Story 12.3 — organization the project is shared with: its ``owner``/``admin`` (or an assigned
-      ``member``) get the shared level (``contributor`` → ``write``, ``viewer`` → ``read``)
+      ``member`` / ``reviewer``, 12.7) get the shared level (``contributor`` → ``write``, ``viewer`` → ``read``)
 
     Story 12.4 uses the keys to decide which organizations' internal meetings the user sees.
     """
@@ -112,13 +123,15 @@ def project_access_by_organization(db: Session, user, project: Project) -> Dict[
         return assigned_cache[0]
 
     def grants(role) -> bool:
-        return role in ADMIN_ROLES or (role == "member" and assigned())
+        return role in ADMIN_ROLES or (role in ASSIGNED_ROLES and assigned())
 
     result: Dict[str, str] = {}
     owner = str(project.owner_organization_id)
     role = roles.get(owner)
     if role in ADMIN_ROLES:
         result[owner] = ADMIN
+    elif role == REVIEWER and assigned():
+        result[owner] = REVIEW  # Story 12.7
     elif role == "member" and assigned():
         result[owner] = WRITE
 
@@ -155,7 +168,7 @@ def accessible_projects_filter(user):
         OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
     )
     member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role == "member"
+        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
     )
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     shared = ProjectOrganization.access.in_(tuple(SHARED_ACCESS_LEVELS))
@@ -195,7 +208,7 @@ def _org_grants_access(user, org_col, project_col):
         OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
     )
     member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role == "member"
+        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
     )
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     owned_project = aliased(Project)
@@ -233,7 +246,7 @@ def review_visible_filter(user, include_rejected: bool = False):
         OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
     )
     member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role == "member"
+        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
     )
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     # projects the user reaches through the organization that owns them (not through a share)
@@ -290,8 +303,19 @@ def reaches_through_owner(db: Session, user, project: Project) -> bool:
 
 
 def can_review_items(db: Session, user, project: Project) -> bool:
-    """Story 12.6: approve / reject / edit items — admin on the project (owning organization's owner/admin)."""
-    return has_access(project_access_level(db, user, project), ADMIN)
+    """Story 12.6: approve / reject / edit items — Story 12.7: ``review`` on the project (owning
+    organization's owner/admin, or its assigned reviewer). Same rule for approve / reject / retry of meetings."""
+    return has_access(project_access_level(db, user, project), REVIEW)
+
+
+def project_capabilities(db: Session, user, project: Project) -> dict:
+    """Story 12.7: what the user can do on ``project``, so the frontend shows matching UI.
+
+    ``access_level``; ``can_review`` (items, ingestion approve / reject / retry); ``can_manage``
+    (project settings, sharing, milestones, share links, meeting deletion: owning organization's owner/admin).
+    """
+    level = project_access_level(db, user, project)
+    return {"access_level": level, "can_review": has_access(level, REVIEW), "can_manage": has_access(level, ADMIN)}
 
 
 def item_visible(db: Session, user, item: Optional[ProjectItem]) -> bool:
@@ -353,6 +377,8 @@ def acting_organization_id(db: Session, user, project: Project) -> Optional[UUID
 
 # ─── Route helpers (raise HTTP errors) ───────────────────────────────────────
 
+_REQUIRED_DETAIL = {ADMIN: "Organization admin access required", REVIEW: "Review access required"}
+
 
 def require_project_access(db: Session, user, project_id, required: str = READ) -> Project:
     """Load the project and check the user's level; 404 if missing, 403 if not allowed."""
@@ -365,7 +391,7 @@ def require_project_access(db: Session, user, project_id, required: str = READ) 
     if not has_access(level, required):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Organization admin access required" if required == ADMIN else "Write access required",
+            detail=_REQUIRED_DETAIL.get(required, "Write access required"),
         )
     return project
 
@@ -383,7 +409,7 @@ def require_source_access(db: Session, user, source_id, required: str = READ) ->
     if level == NONE:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     if not has_access(level, required):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_REQUIRED_DETAIL.get(required, "Write access required"))
     return source
 
 

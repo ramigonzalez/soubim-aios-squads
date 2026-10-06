@@ -131,7 +131,7 @@ class OrganizationMember(Base):
     organization = relationship("Organization", back_populates="members")
 
     __table_args__ = (
-        CheckConstraint("role IN ('owner', 'admin', 'member')", name="ck_organization_member_role"),
+        CheckConstraint("role IN ('owner', 'admin', 'reviewer', 'member')", name="ck_organization_member_role"),
         Index("idx_organization_members_org", "organization_id"),
     )
 
@@ -161,7 +161,7 @@ class OrganizationInvitation(Base):
     organization = relationship("Organization")
 
     __table_args__ = (
-        CheckConstraint("role IN ('owner', 'admin', 'member')", name="ck_organization_invitation_role"),
+        CheckConstraint("role IN ('owner', 'admin', 'reviewer', 'member')", name="ck_organization_invitation_role"),
         CheckConstraint(
             "organization_id IS NOT NULL OR organization_name IS NOT NULL", name="ck_organization_invitation_target"
         ),

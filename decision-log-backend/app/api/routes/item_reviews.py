@@ -1,6 +1,7 @@
 """Item review by role (Story 12.6): approve / reject / edit / restore, one item or in bulk.
 
-Only users with admin access on the project (the owning organization's owner/admin) can review.
+Only users with review access on the project can review: the owning organization's owner/admin, or its
+assigned reviewer (Story 12.7).
 Reviews belong to the item, and items belong to an extraction run (13.7): a new or re-activated run
 brings its own review state, nothing is carried over.
 """
@@ -15,7 +16,7 @@ from sqlalchemy.orm import Session
 from app.api.routes.project_items import _get_user, _item_to_response
 from app.database.models import ProjectItem
 from app.database.session import get_db
-from app.services.access import ADMIN, APPROVED, item_visible, require_project_access, visible_items_filter
+from app.services.access import APPROVED, REVIEW, item_visible, require_project_access, visible_items_filter
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import apply_edits, restore_original
 
@@ -59,7 +60,7 @@ def _mark(item: ProjectItem, user, review_status: str) -> None:
 async def bulk_review(project_id: str, body: BulkReviewBody, request: Request, db: Session = Depends(get_db)):
     """Approve or reject several items at once: by id, or every pending item of one meeting."""
     user = _get_user(request)
-    require_project_access(db, user, project_id, ADMIN)
+    require_project_access(db, user, project_id, REVIEW)
     if bool(body.item_ids) == bool(body.source_id):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Send item_ids or source_id")
 
@@ -83,7 +84,7 @@ async def bulk_review(project_id: str, body: BulkReviewBody, request: Request, d
 async def review_item(project_id: str, item_id: str, body: ReviewBody, request: Request, db: Session = Depends(get_db)):
     """Set an item's review status (approve / reject / back to pending)."""
     user = _get_user(request)
-    require_project_access(db, user, project_id, ADMIN)
+    require_project_access(db, user, project_id, REVIEW)
     item = _load_item(db, user, project_id, item_id)
     _mark(item, user, body.status)
     db.commit()
@@ -96,7 +97,7 @@ async def edit_item(project_id: str, item_id: str, body: ItemEditBody, request: 
     """Edit title / statement / why / owner / due date. The AI's values are kept in ``original``;
     an edited item is approved by the reviewer who edited it."""
     user = _get_user(request)
-    require_project_access(db, user, project_id, ADMIN)
+    require_project_access(db, user, project_id, REVIEW)
     item = _load_item(db, user, project_id, item_id)
     edits = body.model_dump(exclude_unset=True)
     if not edits:
@@ -112,7 +113,7 @@ async def edit_item(project_id: str, item_id: str, body: ItemEditBody, request: 
 async def restore_item(project_id: str, item_id: str, request: Request, db: Session = Depends(get_db)):
     """Put the AI's original values back (review status is unchanged)."""
     user = _get_user(request)
-    require_project_access(db, user, project_id, ADMIN)
+    require_project_access(db, user, project_id, REVIEW)
     item = _load_item(db, user, project_id, item_id)
     if not restore_original(item):
         raise HTTPException(status.HTTP_409_CONFLICT, detail="Item was not edited")

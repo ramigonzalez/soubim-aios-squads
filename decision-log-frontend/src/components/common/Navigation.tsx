@@ -16,7 +16,7 @@ export function Navigation() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, clearAuth } = useAuthStore()
-  const { isAdmin: isOrganizationAdmin } = useActiveOrganization()
+  const { isAdmin: isOrganizationAdmin, canReviewSomewhere } = useActiveOrganization()
 
   const handleLogout = () => {
     clearAuth()
@@ -67,8 +67,8 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Ingestion Link (admin only) */}
-          {user?.role === 'director' && <IngestionNavLink />}
+          {/* Ingestion Link — Story 12.7: organization owner/admin/reviewer (not the legacy users.role) */}
+          {canReviewSomewhere && <IngestionNavLink />}
 
           {/* Active organization + team management (Story 12.5; owner/admin of the active organization) */}
           <OrganizationSwitcher />
