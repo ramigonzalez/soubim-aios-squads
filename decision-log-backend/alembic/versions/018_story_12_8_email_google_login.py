@@ -1,7 +1,7 @@
 """Story 12.8: case-insensitive emails + Sign in with Google requests.
 
 Revision ID: 018_story_12_8
-Revises: 016_story_12_6
+Revises: 017_story_12_7
 Create Date: 2026-10-06
 
 Changes:
@@ -21,7 +21,7 @@ from alembic import op
 
 # revision identifiers
 revision = '018_story_12_8'
-down_revision = '016_story_12_6'
+down_revision = '017_story_12_7'
 branch_labels = None
 depends_on = None
 
