@@ -2,6 +2,7 @@
  * ProjectEdit page — edit an existing project.
  * Story 6.4: Project CRUD Completion
  * Story 6.5: Load stages/participants, orchestrate update
+ * Story 12.3: Organizations with access (sharing section)
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -14,6 +15,7 @@ import { useStages } from '../hooks/useStages'
 import { useParticipants } from '../hooks/useParticipants'
 import { StageRow } from '../components/organisms/StageScheduleBuilder'
 import { ParticipantRow } from '../components/organisms/ParticipantRoster'
+import ProjectSharing from '../components/organisms/ProjectSharing'
 import api from '../services/api'
 
 export default function ProjectEdit() {
@@ -129,6 +131,7 @@ export default function ProjectEdit() {
             onCancel={() => navigate(`/projects/${id}`)}
             isLoading={isSaving}
           />
+          <ProjectSharing projectId={project.id} />
         </div>
       </div>
     </div>

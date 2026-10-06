@@ -22,6 +22,7 @@ from sqlalchemy import (
     Text,
     TypeDecorator,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUID
 from sqlalchemy.orm import declarative_base, relationship
@@ -175,6 +176,34 @@ class ProjectMember(Base):
 
     __table_args__ = (
         Index("idx_project_members_user", "user_id"),
+    )
+
+
+class ProjectOrganization(Base):
+    """An organization with access to a project (Story 12.3).
+
+    The owning organization has an ``owner`` row (mirrors ``projects.owner_organization_id``,
+    which stays the source of truth for ownership). Other organizations are invited as
+    ``contributor`` (read + add meetings/items) or ``viewer`` (read only).
+    """
+
+    __tablename__ = "project_organizations"
+
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
+    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
+    access = Column(String(20), nullable=False)
+    invited_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    organization = relationship("Organization")
+
+    __table_args__ = (
+        CheckConstraint("access IN ('owner', 'contributor', 'viewer')", name="ck_project_organization_access"),
+        Index("idx_project_organizations_org", "organization_id"),
+        Index(
+            "uq_project_organizations_one_owner", "project_id", unique=True,
+            postgresql_where=text("access = 'owner'"), sqlite_where=text("access = 'owner'"),
+        ),
     )
 
 
