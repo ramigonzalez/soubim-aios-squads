@@ -16,6 +16,9 @@ const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
 const IntegrationsSettings = lazy(() => import('./pages/IntegrationsSettings'))
 const FathomMeetings = lazy(() => import('./pages/FathomMeetings'))
 
+const TeamSettings = lazy(() => import('./pages/TeamSettings'))
+const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
+
 const queryClient = new QueryClient()
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -108,6 +111,24 @@ function AppRoutes() {
                 <FathomMeetings />
               </Suspense>
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/team"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <TeamSettings />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invite/:token"
+          element={
+            <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+              <AcceptInvitation />
+            </Suspense>
           }
         />
         <Route path="/" element={<Navigate to="/projects" replace />} />

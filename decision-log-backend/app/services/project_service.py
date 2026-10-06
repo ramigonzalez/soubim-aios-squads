@@ -1,13 +1,14 @@
 """Project service for querying and filtering projects."""
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectItem, ProjectMember, User
 from app.services.access import NONE, accessible_projects_filter, project_access_level
+from app.services.organizations import active_organization_projects_filter
 
 # Backward compatibility alias
 Decision = ProjectItem
@@ -29,6 +30,7 @@ def get_projects(
     limit: int = 50,
     offset: int = 0,
     archived: bool = False,
+    active_organization_id: Optional[str] = None,
 ) -> Tuple[List[Dict], int]:
     """
     Get all projects accessible to user with pagination.
@@ -47,6 +49,9 @@ def get_projects(
 
     # Story 12.2: only projects of the user's organizations (see app/services/access.py)
     query = db.query(Project).filter(accessible_projects_filter(user))
+    # Story 12.5: with an active organization, only its projects and those shared with it
+    if active_organization_id:
+        query = query.filter(active_organization_projects_filter(active_organization_id))
 
     # Filter by archive status
     if not archived:

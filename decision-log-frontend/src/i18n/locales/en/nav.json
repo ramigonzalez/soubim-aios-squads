@@ -3,6 +3,8 @@
   "projects": "Projects",
   "ingestion": "Ingestion",
   "integrations": "Integrations",
+  "team": "Team",
+  "organization": "Organization",
   "logout": "Logout",
   "loading": "Loading...",
   "roles": {

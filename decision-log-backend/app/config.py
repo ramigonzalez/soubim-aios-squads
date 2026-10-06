@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     fathom_client_secret: Optional[str] = None
     fathom_redirect_uri: Optional[str] = None  # must equal the URL registered in the Fathom app
     token_encryption_key: Optional[str] = None  # Fernet key: Fernet.generate_key()
+    invitation_expire_days: int = 7  # Story 12.5: how long an invitation link works
     frontend_url: str = "http://localhost:5173"  # where the OAuth callback sends the browser back
 
     class Config:

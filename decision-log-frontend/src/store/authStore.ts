@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { User } from '../types/auth'
+import { useOrganizationStore } from './organizationStore'
 
 interface AuthStore {
   user: User | null
@@ -46,6 +47,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
     // Clear both token and user data
     localStorage.removeItem('access_token')
     localStorage.removeItem('auth_user')
+    // the active organization belongs to the session (another user may log in next)
+    useOrganizationStore.getState().setActiveOrganizationId(null)
     set({ user: null, token: null, isAuthenticated: false })
   },
 

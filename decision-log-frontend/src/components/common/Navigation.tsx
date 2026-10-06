@@ -4,6 +4,8 @@ import { useQuery } from 'react-query'
 import { useAuthStore } from '../../store/authStore'
 import { ingestionService } from '../../services/ingestionService'
 import { LogOut, Home, Settings } from 'lucide-react'
+import { OrganizationSwitcher } from '../molecules/OrganizationSwitcher'
+import { useActiveOrganization } from '../../hooks/useOrganizations'
 import { useTranslation } from 'react-i18next'
 
 /**
@@ -14,6 +16,7 @@ export function Navigation() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, clearAuth } = useAuthStore()
+  const { isAdmin: isOrganizationAdmin } = useActiveOrganization()
 
   const handleLogout = () => {
     clearAuth()
@@ -66,6 +69,14 @@ export function Navigation() {
 
           {/* Ingestion Link (admin only) */}
           {user?.role === 'director' && <IngestionNavLink />}
+
+          {/* Active organization + team management (Story 12.5; owner/admin of the active organization) */}
+          <OrganizationSwitcher />
+          {isOrganizationAdmin && (
+            <Link to="/settings/team" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">
+              {t('team')}
+            </Link>
+          )}
 
           {/* User Info & Logout */}
           <div className="flex items-center space-x-4">
