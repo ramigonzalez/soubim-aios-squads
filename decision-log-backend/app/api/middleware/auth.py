@@ -27,6 +27,7 @@ async def auth_middleware(request: Request, call_next):
         "/api/recordings/",  # Story 7.13: signed, expiring recording links (checked in the route)
         "/api/invitations/public/",  # Story 12.5: the invitation token identifies the invitee
         "/api/fathom/callback",  # Story 13.3: Fathom OAuth redirect (the signed state identifies the user)
+        "/api/fathom/webhook/",  # Story 13.9: authenticated by the Fathom signature (checked in the route)
         "/docs",
         "/openapi.json",
         "/redoc",

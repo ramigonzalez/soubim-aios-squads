@@ -307,7 +307,7 @@ class FathomClient:
             if response.status_code == 401 and attempt == 1:
                 self.refresh(used_access_enc)  # token revoked/expired early: refresh once and retry
                 continue
-            if response.status_code not in (200, 201, 202):
+            if response.status_code not in (200, 201, 202, 204):
                 raise FathomAPIError(response.status_code, _error_code(response), action)
             return response.json() if response.content else {}
         raise AssertionError("unreachable")
@@ -329,6 +329,27 @@ class FathomClient:
     def download_status(self, recording_id, download_id) -> Dict[str, Any]:
         """Status of a prepared download: processing | completed (``video.url``, signed ~24 h) | failed | expired."""
         return self._request("GET", f"/recordings/{_path_id(recording_id)}/downloads/{_path_id(download_id)}", action="download status")
+
+
+    # -- Story 13.9: webhooks (response shapes follow Fathom's public docs; NOT verified live)
+
+    def create_webhook(self, destination_url: str) -> Dict[str, Any]:
+        """Register a ``new_meeting`` webhook for the account's own recordings: ``{id, secret, ...}``.
+
+        Only the recording id is needed from the payload (the import job fetches the rest with the
+        user's token), so no transcript/summary/action items are requested.
+        """
+        return self._request("POST", "/webhooks", json={
+            "destination_url": destination_url,
+            "triggered_for": ["my_recordings"],
+            "include_transcript": False,
+            "include_summary": False,
+            "include_action_items": False,
+            "include_crm_matches": False,
+        }, action="webhook create")
+
+    def delete_webhook(self, webhook_id) -> None:
+        self._request("DELETE", f"/webhooks/{_path_id(webhook_id)}", action="webhook delete")
 
 
 def account_label_from(page: MeetingsPage) -> Optional[str]:

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { AlertTriangle, ArrowLeft, Search } from 'lucide-react'
 import { integrationsService } from '../services/integrationsService'
 import { FathomImportDialog, FATHOM_MEETINGS_KEY } from '../components/organisms/FathomImportDialog'
+import { FathomUnassignedList } from '../components/organisms/FathomUnassignedList'
 import IngestionStatusBadge from '../components/molecules/IngestionStatusBadge'
 import { FATHOM_STATUS_KEY } from './IntegrationsSettings'
 import { formatDateTime } from '../lib/utils'
@@ -82,6 +83,7 @@ export default function FathomMeetings() {
 
         {connected && !needsReconnect && (
           <>
+            <FathomUnassignedList />
             <div className="mt-6">
               <label className="relative block">
                 <span className="sr-only">{t('meetings.search')}</span>

@@ -1,5 +1,12 @@
 import api from './api'
-import type { FathomImport, FathomImportProject, FathomMeetingsPage, FathomStatus } from '../types/integrations'
+import type {
+  FathomAutoImport,
+  FathomImport,
+  FathomImportProject,
+  FathomMeetingsPage,
+  FathomStatus,
+  FathomUnassignedMeeting,
+} from '../types/integrations'
 import type { MeetingVisibility } from '../types/projectItem'
 
 export const integrationsService = {
@@ -41,4 +48,21 @@ export const integrationsService = {
 
   retryFathomImport: (importId: string): Promise<FathomImport> =>
     api.post(`/integrations/fathom/imports/${encodeURIComponent(importId)}/retry`).then(r => r.data),
+
+  /** Story 13.9: opt in/out of the Fathom webhook auto-import (off by default) */
+  setFathomAutoImport: (body: {
+    enabled: boolean
+    project_id: string | null
+    visibility: MeetingVisibility
+  }): Promise<FathomAutoImport> =>
+    api.put('/integrations/fathom/auto-import', body).then(r => r.data),
+
+  listFathomUnassigned: (): Promise<FathomUnassignedMeeting[]> =>
+    api.get('/integrations/fathom/unassigned').then(r => r.data),
+
+  assignFathomUnassigned: (id: string, body: { project_id: string; visibility: MeetingVisibility }): Promise<FathomImport> =>
+    api.post(`/integrations/fathom/unassigned/${encodeURIComponent(id)}/assign`, body).then(r => r.data),
+
+  discardFathomUnassigned: (id: string): Promise<void> =>
+    api.delete(`/integrations/fathom/unassigned/${encodeURIComponent(id)}`).then(() => undefined),
 }

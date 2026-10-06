@@ -27,6 +27,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUID
 from sqlalchemy import event
+from sqlalchemy.sql import false as sql_false
 from sqlalchemy.orm import Session, declarative_base, relationship
 
 try:
@@ -428,6 +429,14 @@ class FathomConnection(Base):
     account_label = Column(String(255))
     connected_at = Column(DateTime, nullable=False, default=func.now())
     revoked_at = Column(DateTime)
+    # Story 13.9: opt-in auto-import (off by default). The webhook is registered at Fathom with the
+    # user's token; its signing secret is stored encrypted. Meetings go to the default project
+    # (``internal`` unless chosen otherwise) or, without one, to the Unassigned list.
+    auto_import_enabled = Column(Boolean, nullable=False, default=False, server_default=sql_false())
+    auto_import_project_id = Column(GUID(), ForeignKey("projects.id", ondelete="SET NULL"))
+    auto_import_visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
+    webhook_id = Column(String(128))  # Fathom's id of the registered webhook
+    webhook_secret_enc = Column(Text)
 
     @property
     def needs_reconnect(self) -> bool:
@@ -499,6 +508,37 @@ class FathomImport(Base):
         Index("idx_fathom_imports_recording", "recording_id"),
         CheckConstraint("visibility IN ('internal', 'shared')", name="ck_fathom_import_visibility"),
     )
+
+
+class FathomWebhookEvent(Base):
+    """A Fathom webhook delivery already accepted (Story 13.9) — dedupes by ``webhook-id`` per connection
+    (Fathom retries failed deliveries with the same id). Old rows are pruned on insert."""
+
+    __tablename__ = "fathom_webhook_events"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    connection_id = Column(GUID(), ForeignKey("fathom_connections.id", ondelete="CASCADE"), nullable=False)
+    webhook_id = Column(String(128), nullable=False)
+    received_at = Column(DateTime, nullable=False, default=func.now())
+
+    __table_args__ = (UniqueConstraint("connection_id", "webhook_id", name="uq_fathom_webhook_event"),)
+
+
+class FathomUnassignedMeeting(Base):
+    """A recording pushed by the Fathom webhook with no project to land in (Story 13.9): the user
+    assigns it to a project (an import is then created) or discards it. Unique per (user, recording)."""
+
+    __tablename__ = "fathom_unassigned_meetings"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    recording_id = Column(String(128), nullable=False)
+    title = Column(String(255))
+    started_at = Column(DateTime)
+    reason = Column(String(40), nullable=False)  # no_default_project | project_unavailable
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    __table_args__ = (UniqueConstraint("user_id", "recording_id", name="uq_fathom_unassigned_user_recording"),)
 
 
 class ProjectParticipant(Base):

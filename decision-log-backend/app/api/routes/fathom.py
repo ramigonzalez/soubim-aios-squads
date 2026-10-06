@@ -16,25 +16,34 @@ Story 12.4: an import creates a meeting owned by the importer's organization on 
 by default (``shared`` only for admins of that organization). Imports of meetings the user cannot see
 (another organization's internal meeting) are never listed or returned.
 
+Story 13.9 (webhook auto-import, opt-in, off by default):
+- PUT    /api/integrations/fathom/auto-import             → enable/disable + default project + visibility
+- GET    /api/integrations/fathom/unassigned              → pushed recordings waiting for a project
+- POST   /api/integrations/fathom/unassigned/{id}/assign  → import into a project (same rules as 13.4)
+- DELETE /api/integrations/fathom/unassigned/{id}         → discard
+- POST   /api/fathom/webhook/{connection_id}              → Fathom's new_meeting (public, signature-verified)
+
 The callback path must match FATHOM_REDIRECT_URI and the redirect URL registered in the Fathom app.
 """
 
 import logging
+import time
 import uuid
 from typing import Literal, Optional
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
 from app.config import settings
-from app.database.models import FathomImport, Project, User
+from app.database.models import FathomConnection, FathomImport, FathomUnassignedMeeting, Project, User
 from app.database.session import get_db
 from app.integrations import fathom
-from app.services import fathom_connections, fathom_import, storage
+from app.services import fathom_connections, fathom_import, fathom_webhook, storage
 from app.services.access import (
     NONE,
     WRITE,
@@ -84,12 +93,23 @@ def _back_to_settings(result: str, reason: Optional[str] = None, nonce: Optional
     )
 
 
+def _auto_import_state(db: Session, conn: Optional[FathomConnection]) -> dict:
+    project = db.get(Project, conn.auto_import_project_id) if conn and conn.auto_import_project_id else None
+    return {
+        "enabled": bool(conn and conn.auto_import_enabled),
+        "project_id": str(project.id) if project else None,
+        "project_name": project.name if project else None,
+        "visibility": conn.auto_import_visibility if conn else "internal",
+    }
+
+
 @router.get("/integrations/fathom")
 async def fathom_status(db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Is the current user's Fathom account connected?"""
     configured = fathom.is_configured()
     conn = fathom_connections.get_connection(db, user) if configured else None
     return {
+        "auto_import": _auto_import_state(db, conn),
         "configured": configured,
         "connected": conn is not None,
         "needs_reconnect": bool(conn and conn.needs_reconnect),
@@ -107,7 +127,16 @@ async def fathom_connect(user=Depends(get_current_user)):
 
 @router.delete("/integrations/fathom", status_code=status.HTTP_204_NO_CONTENT)
 async def fathom_disconnect(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    """Disconnect: delete the stored tokens."""
+    """Disconnect: delete the stored tokens (and the Fathom webhook, best effort)."""
+    conn = fathom_connections.get_connection(db, user)
+    if conn is not None and conn.webhook_id and fathom.is_configured():
+        client = fathom.FathomClient(db, conn)
+        try:
+            fathom_webhook.unregister(db, conn, client)
+        except fathom.FathomReconnectRequired:
+            pass  # grant gone: the webhook cannot be deleted from here
+        finally:
+            client.close()
     if not fathom_connections.delete_connection(db, user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fathom is not connected")
 
@@ -169,6 +198,11 @@ def fathom_callback(
 
 
 # --------------------------------------------------------------------------- Story 13.4: browse & import
+
+
+class AssignRequest(BaseModel):
+    project_id: str = Field(..., min_length=1, max_length=64)
+    visibility: Literal["internal", "shared"] = "internal"
 
 
 class ImportRequest(BaseModel):
@@ -318,3 +352,155 @@ def fathom_retry_import(import_id: str, db: Session = Depends(get_db), user=Depe
     except fathom_import.ImportNotRetryable as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     return _format_import(imp, user)
+
+
+# --------------------------------------------------------------------------- Story 13.9: webhook auto-import
+
+
+class AutoImportRequest(BaseModel):
+    enabled: bool
+    project_id: Optional[str] = Field(None, max_length=64)  # default project; none → everything lands in Unassigned
+    visibility: Literal["internal", "shared"] = "internal"
+
+
+@router.put("/integrations/fathom/auto-import")
+def fathom_auto_import(body: AutoImportRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Opt in/out of the Fathom webhook. Enabling registers the webhook at Fathom (409 when not connected,
+    502 when Fathom fails); disabling deletes it and forgets its secret. Off by default."""
+    _require_configured()
+    conn = fathom_connections.get_connection(db, user)
+    if conn is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="not_connected")
+    if body.project_id:  # same checks as a manual import: write access, ``shared`` only for admins
+        project = require_project_access(db, user, body.project_id, WRITE)
+        if body.visibility == "shared" and not can_create_shared(db, user, project):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins of your organization can import a meeting as shared",
+            )
+    if body.enabled:
+        _usable_connection(db, user)
+        client = fathom.FathomClient(db, conn)
+        try:
+            fathom_webhook.register(db, conn, client)
+        except fathom.FathomReconnectRequired:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="needs_reconnect")
+        except fathom_webhook.WebhookRegistrationError as exc:
+            logger.warning("Fathom webhook registration failed for user %s: %s", user.id, exc)
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Could not register the webhook at Fathom, try again")
+        finally:
+            client.close()
+        conn.auto_import_enabled = True
+    else:
+        client = None if conn.needs_reconnect else fathom.FathomClient(db, conn)
+        try:
+            fathom_webhook.unregister(db, conn, client)
+        except fathom.FathomReconnectRequired:
+            conn.webhook_id = None
+            conn.webhook_secret_enc = None
+            conn.auto_import_enabled = False
+        finally:
+            if client is not None:
+                client.close()
+    conn.auto_import_project_id = uuid.UUID(body.project_id) if body.project_id else None
+    conn.auto_import_visibility = body.visibility
+    db.commit()
+    return _auto_import_state(db, conn)
+
+
+def _format_unassigned(row: FathomUnassignedMeeting) -> dict:
+    return {
+        "id": str(row.id),
+        "recording_id": row.recording_id,
+        "title": row.title,
+        "started_at": row.started_at.isoformat() + "Z" if row.started_at else None,
+        "reason": row.reason,
+        "received_at": row.created_at.isoformat() + "Z" if row.created_at else None,
+    }
+
+
+def _own_unassigned(db: Session, user, item_id: str) -> FathomUnassignedMeeting:
+    try:
+        row = db.get(FathomUnassignedMeeting, uuid.UUID(item_id))
+    except ValueError:
+        row = None
+    if row is None or str(row.user_id) != str(user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
+    return row
+
+
+@router.get("/integrations/fathom/unassigned")
+def fathom_unassigned(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """The current user's recordings pushed by the webhook that have no project yet (newest first)."""
+    rows = (
+        db.query(FathomUnassignedMeeting)
+        .filter(FathomUnassignedMeeting.user_id == user.id)
+        .order_by(FathomUnassignedMeeting.created_at.desc())
+        .all()
+    )
+    return [_format_unassigned(r) for r in rows]
+
+
+@router.post("/integrations/fathom/unassigned/{item_id}/assign", status_code=status.HTTP_202_ACCEPTED)
+def fathom_assign_unassigned(item_id: str, body: AssignRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Import an unassigned recording into a project (same rules and 403/409/503 answers as a manual import)."""
+    row = _own_unassigned(db, user, item_id)
+    result = fathom_start_import(
+        ImportRequest(recording_id=row.recording_id, project_id=body.project_id, visibility=body.visibility),
+        db=db, user=user,
+    )
+    db.delete(row)
+    db.commit()
+    return result
+
+
+@router.delete("/integrations/fathom/unassigned/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def fathom_discard_unassigned(item_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    row = _own_unassigned(db, user, item_id)
+    db.delete(row)
+    db.commit()
+
+
+async def _read_capped_body(request: Request, limit: int) -> Optional[bytes]:
+    """The raw body, read once as it streams in; None as soon as it exceeds ``limit`` (a chunked
+    request has no Content-Length, so the declared size alone does not bound memory)."""
+    chunks, size = [], 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > limit:
+            return None
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _handle_webhook(db: Session, conn_uuid: uuid.UUID, headers, body: bytes) -> dict:
+    """Signature check + processing (sync DB work, run in the threadpool)."""
+    conn = db.get(FathomConnection, conn_uuid)
+    secret = fathom_webhook.load_secret(conn)
+    webhook_id = headers.get("webhook-id")
+    if secret is None or not fathom_webhook.verify_signature(
+        secret, webhook_id, headers.get("webhook-timestamp"), headers.get("webhook-signature"), body, time.time(),
+    ):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook")
+    outcome = fathom_webhook.process(db, conn, webhook_id, body)
+    return {"status": outcome.status}
+
+
+@router.post("/fathom/webhook/{connection_id}", status_code=status.HTTP_202_ACCEPTED)
+async def fathom_webhook_receive(connection_id: str, request: Request, db: Session = Depends(get_db)):
+    """Fathom ``new_meeting`` webhook. Public: authenticated only by the signature (HMAC over the raw body
+    with the connection's secret). Every failure answers the same 401 (unknown / disabled connection, bad
+    or stale signature, malformed headers). Only enqueues — nothing is downloaded here."""
+    try:
+        conn_uuid = uuid.UUID(connection_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook")
+    too_large = HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > fathom_webhook.MAX_BODY_BYTES:
+        raise too_large
+    body = await _read_capped_body(request, fathom_webhook.MAX_BODY_BYTES)
+    if body is None:
+        raise too_large
+    # The session is synchronous: keep its queries/commits off the event loop.
+    return await run_in_threadpool(_handle_webhook, db, conn_uuid, request.headers, body)

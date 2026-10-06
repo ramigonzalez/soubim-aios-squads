@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { AlertTriangle, CheckCircle2, Plug } from 'lucide-react'
 import { integrationsService } from '../services/integrationsService'
 import { formatDate } from '../lib/utils'
+import { FathomAutoImportSettings } from '../components/organisms/FathomAutoImportSettings'
 
 export const FATHOM_STATUS_KEY = 'fathom-status'
 
@@ -149,6 +150,14 @@ export default function IntegrationsSettings() {
                   <DisconnectButton label={t('fathom.disconnect')} disabled={disconnect.isLoading} onClick={handleDisconnect} />
                 </div>
               </div>
+            )}
+
+            {/* Story 13.9: opt-in webhook auto-import */}
+            {status?.configured && connected && (
+              <FathomAutoImportSettings
+                settings={status.auto_import}
+                onSaved={() => queryClient.invalidateQueries(FATHOM_STATUS_KEY)}
+              />
             )}
 
             {(connect.isError || disconnect.isError) && (

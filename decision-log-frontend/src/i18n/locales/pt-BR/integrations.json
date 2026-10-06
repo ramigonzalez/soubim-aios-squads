@@ -26,7 +26,24 @@
       "load": "Não foi possível carregar o status da integração.",
       "action": "Algo deu errado. Tente novamente."
     },
-    "browse": "Ver reuniões do Fathom"
+    "browse": "Ver reuniões do Fathom",
+    "autoImport": {
+      "title": "Importação automática",
+      "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao DecisionLog como reuniões pendentes na Ingestão. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
+      "enable": "Importar novas reuniões do Fathom automaticamente",
+      "project": "Projeto padrão",
+      "noProject": "Sem projeto padrão (as reuniões aguardam na lista de não atribuídas)",
+      "visibility": "Visibilidade",
+      "save": "Salvar",
+      "saving": "Salvando...",
+      "saved": "Configuração de importação automática salva.",
+      "errors": {
+        "reconnect": "Reconecte sua conta do Fathom primeiro.",
+        "fathom": "O Fathom não conseguiu registrar o webhook. Tente novamente.",
+        "forbidden": "Você não pode usar este projeto ou esta visibilidade.",
+        "generic": "Não foi possível salvar. Tente novamente."
+      }
+    }
   },
   "meetings": {
     "title": "Reuniões do Fathom",
@@ -77,6 +94,18 @@
         "storage": "O armazenamento de gravações não está configurado neste servidor.",
         "generic": "Não foi possível importar. Tente novamente."
       }
+    }
+  },
+  "unassigned": {
+    "title": "Reuniões não atribuídas",
+    "description": "Estas reuniões chegaram do Fathom sem um projeto de destino. Escolha um projeto para importar cada uma, ou descarte.",
+    "project": "Projeto",
+    "assign": "Importar",
+    "discard": "Descartar",
+    "errors": {
+      "alreadyImported": "Esta reunião já foi importada nesse projeto.",
+      "storage": "O armazenamento de gravações não está configurado neste servidor.",
+      "generic": "Não foi possível concluir a ação. Tente novamente."
     }
   }
 }
