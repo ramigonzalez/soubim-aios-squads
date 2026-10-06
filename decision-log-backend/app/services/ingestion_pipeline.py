@@ -13,7 +13,7 @@ from app.database.session import SessionLocal
 logger = logging.getLogger(__name__)
 
 
-def process_approved_source(source_id: str) -> None:
+def process_approved_source(source_id: str, raise_errors: bool = False) -> None:
     """Process an approved source and extract project items.
 
     Dispatches to the appropriate extractor based on source_type:
@@ -23,6 +23,8 @@ def process_approved_source(source_id: str) -> None:
 
     Args:
         source_id: UUID string of the Source record to process.
+        raise_errors: re-raise failures instead of marking the source failed — the worker
+            (Story 13.2) decides between retrying and failing the source.
     """
     db = SessionLocal()
     try:
@@ -119,6 +121,8 @@ def process_approved_source(source_id: str) -> None:
     except Exception as e:
         logger.error(f"Error processing source {source_id}: {e}")
         db.rollback()
+        if raise_errors:
+            raise
         # Story 7.9: Set failed status so UI can show error + retry
         try:
             source = db.query(Source).filter(Source.id == source_id).first()

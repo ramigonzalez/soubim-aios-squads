@@ -1,6 +1,15 @@
 export type SourceType = 'meeting' | 'email' | 'document'
 export type IngestionStatus = 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
 
+/** Latest background job of a source (Story 13.2) — set while it is queued/processing or after it failed */
+export interface SourceJob {
+  status: 'queued' | 'running' | 'succeeded' | 'failed'
+  attempts: number
+  max_attempts: number
+  run_after: string | null
+  last_error: string | null
+}
+
 export interface BaseSource {
   id: string
   project_id: string
@@ -16,6 +25,7 @@ export interface BaseSource {
   rejected_at: string | null
   extraction_error: string | null
   extracted_item_count: number
+  job?: SourceJob | null
 }
 
 export interface MeetingSource extends BaseSource {

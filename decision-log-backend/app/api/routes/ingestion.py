@@ -10,14 +10,14 @@ Story 7.9: Unified workflow — included auto-set on approve/reject,
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
-from app.services.ingestion_pipeline import process_approved_source
+from app.services.jobs import enqueue, latest_job_for_source
 
 router = APIRouter()
 
@@ -44,7 +44,20 @@ def _require_admin(request: Request):
     return user
 
 
-def _format_source(source, project_name: str, item_count: int = 0, approved_by_name: str | None = None, rejected_by_name: str | None = None) -> dict:
+def _format_job(job) -> dict | None:
+    """Latest background job of a source (Story 13.2), for showing processing state."""
+    if job is None:
+        return None
+    return {
+        "status": job.status,
+        "attempts": job.attempts,
+        "max_attempts": job.max_attempts,
+        "run_after": job.run_after.isoformat() if job.run_after else None,
+        "last_error": job.last_error,
+    }
+
+
+def _format_source(source, project_name: str, item_count: int = 0, approved_by_name: str | None = None, rejected_by_name: str | None = None, job=None) -> dict:
     """Format a Source ORM object into the frontend API contract."""
     base = {
         "id": str(source.id),
@@ -61,6 +74,7 @@ def _format_source(source, project_name: str, item_count: int = 0, approved_by_n
         "rejected_at": source.rejected_at.isoformat() if source.rejected_at else None,
         "extraction_error": source.extraction_error,
         "extracted_item_count": item_count,
+        "job": _format_job(job),
     }
 
     if source.source_type == "meeting":
@@ -215,7 +229,8 @@ async def list_history(
         .outerjoin(item_count_sq, Source.id == item_count_sq.c.source_id)
         .outerjoin(ApprovedUser, Source.approved_by == ApprovedUser.c.id)
         .outerjoin(RejectedUser, Source.rejected_by == RejectedUser.c.id)
-        .filter(Source.ingestion_status.in_(["processed", "rejected", "failed"]))
+        # Story 13.2: "approved" = queued or being processed by the worker
+        .filter(Source.ingestion_status.in_(["approved", "processed", "rejected", "failed"]))
     )
 
     if project_id:
@@ -239,8 +254,9 @@ async def list_history(
 
     sources_list = []
     for source, project_name, item_count, approved_name, rejected_name in rows:
+        job = latest_job_for_source(db, source.id) if source.ingestion_status in ("approved", "failed") else None
         sources_list.append(
-            _format_source(source, project_name, item_count, approved_name, rejected_name)
+            _format_source(source, project_name, item_count, approved_name, rejected_name, job)
         )
 
     return {
@@ -254,7 +270,6 @@ async def update_source_status(
     source_id: str,
     update: IngestionUpdate,
     request: Request,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """
@@ -279,9 +294,9 @@ async def update_source_status(
         source.approved_by = user.id
         source.approved_at = datetime.utcnow()
         source.extraction_error = None
+        # Story 13.2: the worker runs the ETL pipeline
+        enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)
         db.commit()
-        # Trigger ETL pipeline in background
-        background_tasks.add_task(process_approved_source, str(source.id))
     elif update.ingestion_status == "rejected":
         source.included = False
         source.rejected_by = user.id
@@ -299,7 +314,6 @@ async def update_source_status(
 async def retry_source(
     source_id: str,
     request: Request,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """
@@ -325,9 +339,8 @@ async def retry_source(
     source.extraction_error = None
     source.approved_by = user.id
     source.approved_at = datetime.utcnow()
+    enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)  # Story 13.2
     db.commit()
-
-    background_tasks.add_task(process_approved_source, str(source.id))
 
     return {
         "id": str(source.id),
@@ -379,7 +392,6 @@ async def delete_source(
 async def batch_update_sources(
     batch: IngestionBatchAction,
     request: Request,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """
@@ -404,6 +416,7 @@ async def batch_update_sources(
             source.approved_by = user.id
             source.approved_at = datetime.utcnow()
             source.extraction_error = None
+            enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)  # Story 13.2
         elif new_status == "rejected":
             source.included = False
             source.rejected_by = user.id
@@ -412,11 +425,6 @@ async def batch_update_sources(
         updated_count += 1
 
     db.commit()
-
-    # Trigger ETL for approved sources
-    if new_status == "approved":
-        for sid in batch.source_ids:
-            background_tasks.add_task(process_approved_source, sid)
 
     return {
         "updated": updated_count,

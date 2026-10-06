@@ -358,7 +358,7 @@ export default function IngestionApproval() {
                     {getSourceTypeLabel(source.source_type)}
                   </td>
                   <td className="px-4 py-3">
-                    <IngestionStatusBadge status={source.status} />
+                    <IngestionStatusBadge status={source.status} job={source.job} />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {source.approved_by_name || source.rejected_by_name || '--'}
