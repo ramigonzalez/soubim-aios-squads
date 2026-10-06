@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.api.middleware.auth import get_current_user
 from app.database.models import ProjectItem, Source, Transcript
 from app.database.session import get_db
+from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     NONE,
     WRITE,
@@ -66,6 +67,7 @@ async def list_decisions(
         .filter(Decision.project_id == str(project_id))
         .filter(Decision.item_type == "decision")
         .filter(visible_items_filter(user))  # Story 12.4
+        .filter(active_items_filter())  # Story 13.7
     )
 
     # Apply V1 filters
@@ -149,6 +151,7 @@ async def list_decisions(
         db.query(Decision)
         .filter(Decision.project_id == str(project_id), Decision.item_type == "decision")
         .filter(visible_items_filter(user))
+        .filter(active_items_filter())
         .all()
     )
     disciplines_facet = {}

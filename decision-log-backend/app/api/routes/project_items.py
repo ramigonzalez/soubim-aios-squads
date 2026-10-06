@@ -17,6 +17,7 @@ from app.api.models.project_item import (
 )
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     ADMIN,
     READ,
@@ -89,7 +90,9 @@ def _item_to_response(item: ProjectItem) -> dict:
 
 def _compute_facets(db: Session, project_id: str, user) -> dict:
     """Compute facet counts for a project's items the user can see (Story 12.4)."""
-    items = db.query(ProjectItem).filter(ProjectItem.project_id == project_id, visible_items_filter(user)).all()
+    items = db.query(ProjectItem)
+        .filter(ProjectItem.project_id == project_id, visible_items_filter(user), active_items_filter())
+        .all()
 
     item_types: dict = {}
     source_types: dict = {}
@@ -137,7 +140,10 @@ async def list_project_items(
     _check_project_access(db, project_id, user)
 
     # Story 12.4: only items of meetings visible to the user's organization
-    query = db.query(ProjectItem).filter(ProjectItem.project_id == project_id, visible_items_filter(user))
+    # Story 13.7: and only the active extraction run of each meeting
+    query = db.query(ProjectItem).filter(
+        ProjectItem.project_id == project_id, visible_items_filter(user), active_items_filter()
+    )
 
     # Multi-value filter: ?item_type=decision,topic
     if item_type:

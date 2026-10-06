@@ -6,6 +6,7 @@ Story 10.2: Added document source handling via DocumentExtractor.
 """
 
 import logging
+from typing import Optional
 
 from app.database.models import ProjectItem, ProjectParticipant, Source
 from app.database.session import SessionLocal
@@ -13,7 +14,9 @@ from app.database.session import SessionLocal
 logger = logging.getLogger(__name__)
 
 
-def process_approved_source(source_id: str, raise_errors: bool = False) -> None:
+def process_approved_source(
+    source_id: str, raise_errors: bool = False, re_extract: bool = False, created_by: Optional[str] = None
+) -> None:
     """Process an approved source and extract project items.
 
     Dispatches to the appropriate extractor based on source_type:
@@ -31,7 +34,7 @@ def process_approved_source(source_id: str, raise_errors: bool = False) -> None:
         source = db.query(Source).filter(Source.id == source_id).first()
         if not source:
             return
-        if source.ingestion_status != "approved":
+        if source.ingestion_status != "approved" and not (re_extract and source.ingestion_status == "processed"):
             return
         # Story 7.9: Defense-in-depth — included must be True before processing
         if not source.included:
@@ -71,6 +74,7 @@ def process_approved_source(source_id: str, raise_errors: bool = False) -> None:
             # Meetings and manual input (Story 7.11): full meeting context, items keep every
             # extracted field (same mapping as the import script, Story 7.10), meeting summary stored
             from app.services.extraction_v2 import extract_meeting
+            from app.services.extraction_runs import create_run
             from app.services.item_import import build_project_item
 
             result = extract_meeting(
@@ -84,10 +88,18 @@ def process_approved_source(source_id: str, raise_errors: bool = False) -> None:
                     for p in participants
                 ],
             )
+            run = create_run(
+                db,
+                source,
+                result.items,
+                model=result.model,
+                meeting_summary=result.meeting_summary,
+                input_tokens=result.input_tokens,
+                output_tokens=result.output_tokens,
+                created_by=created_by,
+            )
             for item_data in result.items:
-                db.add(build_project_item(source, item_data))
-            if result.meeting_summary:
-                source.ai_summary = result.meeting_summary
+                db.add(build_project_item(source, item_data, run.id))
             extracted_items = []  # already stored
 
         # Store items from the email / document extractors

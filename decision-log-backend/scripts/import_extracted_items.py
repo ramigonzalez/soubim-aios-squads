@@ -4,7 +4,7 @@ Usage (from decision-log-backend/):
   PYTHONPATH=. venv/bin/python scripts/import_extracted_items.py SOURCE_ID ITEMS_JSON \
       [--approver EMAIL] [--replace] [--dry-run]
 
---replace   delete the source's existing items first
+--replace   keep the source's existing items as a previous version and make this import the active one (Story 13.7)
 --dry-run   validate and report, then roll back
 """
 import argparse
@@ -25,7 +25,8 @@ def main() -> int:
     parser.add_argument("source_id")
     parser.add_argument("items_json")
     parser.add_argument("--approver", help="email of the director recorded as approver")
-    parser.add_argument("--replace", action="store_true")
+    parser.add_argument("--replace", action="store_true", help="add as a new version when the source already has items")
+    parser.add_argument("--model", help="model that produced the extraction, recorded on the run")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -49,7 +50,8 @@ def main() -> int:
             approver_id = user.id
 
         created, skipped = import_items(
-            db, source, items, approver_id=approver_id, replace=args.replace, meeting_summary=meeting_summary
+            db, source, items, approver_id=approver_id, replace=args.replace,
+            meeting_summary=meeting_summary, model=args.model,
         )
         by_type = collections.Counter(i.item_type for i in created)
         print(f"{len(created)} items ({dict(by_type)}), {skipped} skipped by validation -> source '{source.title}'")

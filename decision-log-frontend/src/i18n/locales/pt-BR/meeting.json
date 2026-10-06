@@ -23,5 +23,25 @@
     "confirmInternal": "Apenas a sua organização verá esta reunião, seus itens e a gravação.",
     "confirm": "Confirmar",
     "error": "Não foi possível alterar a visibilidade."
+  },
+  "versions": {
+    "button": "Versões",
+    "heading": "Versões da extração",
+    "empty": "Nenhuma versão de extração ainda.",
+    "active": "Ativa",
+    "activate": "Usar esta versão",
+    "activating": "Trocando…",
+    "reExtract": "Extrair novamente",
+    "inProgress": "Extração em andamento…",
+    "jobFailed": "A última extração falhou: {{error}}",
+    "confirmActivate": "Mostrar a versão {{version}} em todo o projeto? Edições e revisões feitas na versão atual ficam com ela e não são transferidas.",
+    "version": "Versão {{version}}",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} itens",
+    "tokens": "{{input}} tokens de entrada / {{output}} de saída",
+    "unknownModel": "Importada",
+    "by": "por {{name}}",
+    "note": "Somente os itens da versão ativa aparecem no projeto. Edições e revisões pertencem à versão em que foram feitas.",
+    "error": "Não foi possível atualizar as versões."
   }
 }

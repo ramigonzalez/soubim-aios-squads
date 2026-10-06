@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectItem, ProjectMember, User
+from app.services.extraction_runs import active_items_filter
 from app.services.access import NONE, accessible_projects_filter, project_access_level, visible_items_filter
 from app.services.organizations import active_organization_projects_filter
 
@@ -69,7 +70,7 @@ def get_projects(
         # Count decisions and members
         decision_count = (
             db.query(func.count(Decision.id))
-            .filter(Decision.project_id == project.id, visible_items_filter(user))  # Story 12.4
+            .filter(Decision.project_id == project.id, visible_items_filter(user), active_items_filter())  # 12.4, 13.7
             .scalar()
         )
         member_count = (
@@ -79,7 +80,7 @@ def get_projects(
         )
         latest_decision = (
             db.query(func.max(Decision.created_at))
-            .filter(Decision.project_id == project.id, visible_items_filter(user))
+            .filter(Decision.project_id == project.id, visible_items_filter(user), active_items_filter())
             .scalar()
         )
 
@@ -145,7 +146,9 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
     ]
 
     # Get statistics
-    decisions = db.query(Decision).filter(Decision.project_id == project_id, visible_items_filter(user)).all()
+    decisions = db.query(Decision)
+        .filter(Decision.project_id == project_id, visible_items_filter(user), active_items_filter())
+        .all()
 
     total_decisions = len(decisions)
 

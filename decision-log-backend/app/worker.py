@@ -29,7 +29,12 @@ def handle_process_source(payload: dict) -> None:
     """Run the ingestion pipeline for an approved source (meeting, email, document)."""
     from app.services.ingestion_pipeline import process_approved_source
 
-    process_approved_source(payload["source_id"], raise_errors=True)
+    process_approved_source(
+        payload["source_id"],
+        raise_errors=True,
+        re_extract=bool(payload.get("re_extract")),  # Story 13.7
+        created_by=payload.get("created_by"),
+    )
 
 
 def handle_fathom_import(payload: dict) -> None:

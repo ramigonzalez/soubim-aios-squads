@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.services.extraction_runs import active_items_filter
 from app.database.models import SharedLink, Project, ProjectItem, ProjectStage
 from app.services.access import ADMIN, public_items_filter, require_project_access
 
@@ -245,6 +246,7 @@ async def view_shared_timeline(
             ProjectItem.project_id == link.project_id,
             ProjectItem.is_milestone.is_(True),
             public_items_filter(),  # Story 12.4: public links never show internal meetings' items
+            active_items_filter(),  # Story 13.7
         )
         .order_by(ProjectItem.created_at.asc())
         .all()
