@@ -1,9 +1,11 @@
 /**
  * Hook for the meeting viewer: transcript, summary and recording link of a Source.
  * Story 7.13: Meeting viewer
+ * Story 12.4: meeting visibility (internal / shared)
  */
-import { useQuery } from 'react-query'
+import { useMutation, useQuery, useQueryClient } from 'react-query'
 import api from '../services/api'
+import type { MeetingVisibility } from '../types/projectItem'
 
 export interface MeetingRecording {
   /** "file": stored recording streamed by the API (signed, expiring URL); "external": e.g. Fathom share link */
@@ -21,6 +23,10 @@ export interface Meeting {
   summary: string | null
   transcript: string | null
   recording: MeetingRecording | null
+  /** Story 12.4: internal (owner organization only) or shared (every organization on the project) */
+  visibility?: MeetingVisibility
+  /** Story 12.4: true for admins of the meeting's owner organization */
+  can_change_visibility?: boolean
 }
 
 /**
@@ -42,6 +48,26 @@ export function useMeeting(sourceId: string) {
       staleTime: 60 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: 1,
+    }
+  )
+}
+
+/**
+ * Story 12.4: share a meeting with every organization on the project, or make it internal again.
+ * Its items follow the meeting, so the project's item lists are refetched.
+ */
+export function useSetMeetingVisibility(sourceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation<{ id: string; visibility: MeetingVisibility }, Error, MeetingVisibility>(
+    async visibility => (await api.patch(`/sources/${sourceId}/visibility`, { visibility })).data,
+    {
+      onSuccess: data => {
+        queryClient.setQueryData<Meeting | undefined>(['meeting', sourceId], old =>
+          old ? { ...old, visibility: data.visibility } : old
+        )
+        void queryClient.invalidateQueries('projectItems')
+        void queryClient.invalidateQueries('milestones')
+      },
     }
   )
 }

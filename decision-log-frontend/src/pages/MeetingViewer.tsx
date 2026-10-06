@@ -10,6 +10,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, ArrowLeft, Calendar, Clock, ExternalLink } from 'lucide-react'
 import { useMeeting, recordingSrc } from '../hooks/useMeeting'
+import { MeetingVisibilityControl } from '../components/organisms/MeetingVisibilityControl'
 import { formatSeconds, parseTranscript, turnIndexAt } from '../lib/transcript'
 import { cn, formatDate } from '../lib/utils'
 
@@ -132,6 +133,13 @@ export function MeetingViewer() {
             <ExternalLink className="w-4 h-4" aria-hidden="true" />
             {t('openRecording')}
           </a>
+        )}
+        {meeting.visibility && (
+          <MeetingVisibilityControl
+            sourceId={meeting.id}
+            visibility={meeting.visibility}
+            canChange={!!meeting.can_change_visibility}
+          />
         )}
       </div>
 

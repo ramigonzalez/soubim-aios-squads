@@ -1,15 +1,17 @@
 """Meeting viewer endpoints (Story 7.13): meeting transcript + recording link, and recording streaming."""
 
 import mimetypes
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
 from app.database.session import get_db
-from app.services.access import require_source_access
+from app.services.access import can_change_visibility, require_source_access
 from app.services.recordings import (
     org_id_for_source,
     recording_file,
@@ -48,7 +50,34 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
         "summary": source.ai_summary,
         "transcript": source.raw_content,
         "recording": recording,
+        # Story 12.4
+        "visibility": source.visibility,
+        "can_change_visibility": can_change_visibility(db, user, source),
     }
+
+
+class VisibilityUpdate(BaseModel):
+    visibility: Literal["internal", "shared"]
+
+
+@router.patch("/sources/{source_id}/visibility")
+async def set_meeting_visibility(
+    source_id: UUID, body: VisibilityUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    """Story 12.4: share a meeting with every organization on the project, or make it internal again.
+
+    Only owner/admin of the meeting's owner organization (404 if the meeting is not visible, 403 otherwise).
+    Its items follow immediately (visibility is read from the source on every request).
+    """
+    source = require_source_access(db, user, source_id)
+    if not can_change_visibility(db, user, source):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins of the meeting's organization can change its visibility",
+        )
+    source.visibility = body.visibility
+    db.commit()
+    return {"id": str(source.id), "visibility": source.visibility, "can_change_visibility": True}
 
 
 @router.get("/recordings/{source_id}")

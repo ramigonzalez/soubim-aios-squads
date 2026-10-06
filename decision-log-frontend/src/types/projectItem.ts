@@ -80,7 +80,11 @@ export interface SourceInfo {
   type: SourceType
   occurred_at: string
   summary?: string | null  // Story 7.12: meeting summary
+  visibility?: MeetingVisibility | null  // Story 12.4
 }
+
+/** Story 12.4: who sees a meeting — its owner organization only, or every organization on the project */
+export type MeetingVisibility = 'internal' | 'shared'
 
 export interface ProjectItem {
   id: string

@@ -7,7 +7,8 @@ import { meetingLink } from '../../lib/transcript'
 import { SourceIcon } from '../atoms/SourceIcon'
 import { ProjectItemRow } from './ProjectItemRow'
 import { MeetingSummary } from './MeetingSummary'
-import type { ProjectItem, SourceType } from '../../types/projectItem'
+import { VisibilityBadge } from '../atoms/VisibilityBadge'
+import type { MeetingVisibility, ProjectItem, SourceType } from '../../types/projectItem'
 
 interface SourceGroupSource {
   id: string
@@ -17,6 +18,7 @@ interface SourceGroupSource {
   participants?: Array<{ name: string; role?: string }>
   ai_summary?: string
   meetingId?: string  // Story 7.13: V2 source id for the meeting viewer link
+  visibility?: MeetingVisibility | null  // Story 12.4: internal / shared badge
 }
 
 export interface SourceGroupAccordionProps {
@@ -99,6 +101,7 @@ export function SourceGroupAccordion({
         <span className="text-sm font-semibold text-gray-900 flex-1 min-w-0 truncate">
           {source.title}
         </span>
+        <VisibilityBadge visibility={source.visibility} />
         <span className="text-xs text-gray-400 whitespace-nowrap">
           {itemLabel}
         </span>

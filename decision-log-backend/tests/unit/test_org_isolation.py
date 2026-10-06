@@ -509,6 +509,8 @@ class TestProjectSharing:
         entry = _share(db_session, w.a_admin, a.project.id, "DIMAS", "viewer")  # slug lookup is case-insensitive
         assert entry["organization_id"] == str(w.b.org.id) and entry["access"] == "viewer"
         assert entry["invited_by"] == str(w.a_admin.id)
+        a.processed.visibility = "shared"  # Story 12.4: shared organizations only see shared meetings
+        db_session.commit()
 
         assert access.project_access_level(db_session, w.b_admin, a.project) == access.READ
         ids = {p["id"] for p in _list_projects(db_session, w.b_admin)["projects"]}
@@ -518,7 +520,6 @@ class TestProjectSharing:
         assert run(_list_items(db_session, w.b_admin, pid))["total"] == 1
         assert run(project_items.get_project_item(pid, str(a.item.id), r, db=db_session))["id"] == str(a.item.id)
         assert run(participants.list_participants(pid, r, db=db_session))
-        # Until Story 12.4 a shared organization sees every meeting of the project
         assert run(meetings.get_meeting(a.processed.id, db=db_session, user=w.b_admin))
 
         assert status_of(project_items.create_project_item(pid, _item_body(), r, db=db_session)) == 403
@@ -538,6 +539,9 @@ class TestProjectSharing:
         a, r = w.a, req(w.b_admin)
         pid = str(a.project.id)
         _share(db_session, w.a_admin, a.project.id, "dimas", "contributor")
+        # Story 12.4: shared meetings (internal ones are not found at all — TestMeetingVisibility)
+        a.processed.visibility = a.pending.visibility = "shared"
+        db_session.commit()
         assert access.project_access_level(db_session, w.b_admin, a.project) == access.WRITE
         created = run(project_items.create_project_item(pid, _item_body(), r, db=db_session))
         assert created["source_type"] == "manual_input"

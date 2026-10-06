@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Source
 from app.database.session import get_db
-from app.services.access import WRITE, require_project_access
+from app.services.access import WRITE, acting_organization_id, require_project_access, source_visible
 from app.services.summary_service import generate_ai_summary
 
 router = APIRouter()
@@ -42,7 +42,7 @@ async def receive_transcript(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     if not payload.get("project_id"):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="project_id is required")
-    require_project_access(db, user, payload["project_id"], WRITE)
+    project = require_project_access(db, user, payload["project_id"], WRITE)
 
     # Check for duplicate webhook (idempotency)
     webhook_id = payload.get("webhook_id")
@@ -50,7 +50,8 @@ async def receive_transcript(
         existing = db.query(Source).filter(Source.webhook_id == webhook_id).first()
         if existing:
             # Story 12.2 security review: never reveal a source of another project/organization
-            if str(existing.project_id) != str(payload["project_id"]):
+            # Story 12.4: nor an internal source of another organization on the same project
+            if str(existing.project_id) != str(payload["project_id"]) or not source_visible(db, user, existing):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="webhook_id already used")
             return {"status": "duplicate", "source_id": str(existing.id)}
 
@@ -68,6 +69,7 @@ async def receive_transcript(
     source = Source(
         id=uuid4(),
         project_id=payload["project_id"],
+        owner_organization_id=acting_organization_id(db, user, project),  # Story 12.4: internal by default
         source_type="meeting",
         title=payload.get("meeting_title", "Untitled Meeting"),
         occurred_at=occurred_at,

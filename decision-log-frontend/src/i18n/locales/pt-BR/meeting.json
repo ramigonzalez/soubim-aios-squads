@@ -13,5 +13,14 @@
     "turns_other": "{{count}} falas",
     "empty": "Nenhuma transcrição para esta reunião.",
     "uncertainSpeaker": "Falante incerto"
+  },
+  "visibility": {
+    "makeShared": "Compartilhar com o projeto",
+    "makeInternal": "Tornar interna",
+    "confirmTitle": "Confirmar visibilidade da reunião",
+    "confirmShared": "Todas as organizações do projeto passarão a ver esta reunião, seus itens e a gravação.",
+    "confirmInternal": "Apenas a sua organização verá esta reunião, seus itens e a gravação.",
+    "confirm": "Confirmar",
+    "error": "Não foi possível alterar a visibilidade."
   }
 }

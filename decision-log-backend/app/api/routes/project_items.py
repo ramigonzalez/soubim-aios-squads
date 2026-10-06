@@ -17,7 +17,17 @@ from app.api.models.project_item import (
 )
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
-from app.services.access import ADMIN, READ, WRITE, has_access, project_access_level, require_project_access
+from app.services.access import (
+    ADMIN,
+    READ,
+    WRITE,
+    acting_organization_id,
+    has_access,
+    item_visible,
+    project_access_level,
+    require_project_access,
+    visible_items_filter,
+)
 
 router = APIRouter()
 
@@ -48,6 +58,7 @@ def _item_to_response(item: ProjectItem) -> dict:
             type=item.source.source_type,
             occurred_at=item.source.occurred_at.isoformat() if item.source.occurred_at else None,
             summary=item.source.ai_summary,
+            visibility=item.source.visibility,
         ).model_dump()
 
     return {
@@ -76,9 +87,9 @@ def _item_to_response(item: ProjectItem) -> dict:
     }
 
 
-def _compute_facets(db: Session, project_id: str) -> dict:
-    """Compute facet counts for a project's items."""
-    items = db.query(ProjectItem).filter(ProjectItem.project_id == project_id).all()
+def _compute_facets(db: Session, project_id: str, user) -> dict:
+    """Compute facet counts for a project's items the user can see (Story 12.4)."""
+    items = db.query(ProjectItem).filter(ProjectItem.project_id == project_id, visible_items_filter(user)).all()
 
     item_types: dict = {}
     source_types: dict = {}
@@ -125,7 +136,8 @@ async def list_project_items(
     user = _get_user(request)
     _check_project_access(db, project_id, user)
 
-    query = db.query(ProjectItem).filter(ProjectItem.project_id == project_id)
+    # Story 12.4: only items of meetings visible to the user's organization
+    query = db.query(ProjectItem).filter(ProjectItem.project_id == project_id, visible_items_filter(user))
 
     # Multi-value filter: ?item_type=decision,topic
     if item_type:
@@ -189,7 +201,7 @@ async def list_project_items(
     items = query.limit(limit).offset(offset).all()
 
     # Compute facets
-    facets = _compute_facets(db, project_id)
+    facets = _compute_facets(db, project_id, user)
 
     return {
         "items": [_item_to_response(item) for item in items],
@@ -216,7 +228,7 @@ async def get_project_item(
         .filter(ProjectItem.id == item_id, ProjectItem.project_id == project_id)
         .first()
     )
-    if not item:
+    if not item_visible(db, user, item):  # Story 12.4: internal items of other organizations → 404
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project item {item_id} not found",
@@ -234,11 +246,13 @@ async def create_project_item(
 ):
     """Create a manual input project item."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user, WRITE)
+    project = _check_project_access(db, project_id, user, WRITE)
 
     item = ProjectItem(
         id=uuid.uuid4(),
         project_id=project_id,
+        # Story 12.4: a manual item is owned by the creator's organization and internal to it
+        owner_organization_id=acting_organization_id(db, user, project),
         item_type=body.item_type.value,
         source_type="manual_input",
         statement=body.statement,
@@ -281,7 +295,7 @@ async def update_project_item(
         .filter(ProjectItem.id == item_id, ProjectItem.project_id == project_id)
         .first()
     )
-    if not item:
+    if not item_visible(db, user, item):  # Story 12.4
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project item {item_id} not found",

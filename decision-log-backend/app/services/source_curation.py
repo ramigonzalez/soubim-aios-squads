@@ -98,6 +98,12 @@ class SourceCurationService:
             logger.warning(f"Project for source {source_id} has no drive_folder_id configured")
             return False
 
+        # Story 12.4: the Drive folder belongs to the project's owning organization — never copy
+        # another organization's internal meeting into it
+        if source.visibility != "shared" and str(source.owner_organization_id) != str(project.owner_organization_id):
+            logger.info(f"Source {source_id} is internal to another organization; not uploaded")
+            return False
+
         # Build filename from source metadata
         safe_title = (source.title or 'untitled').replace('/', '-')[:100]
         filename = f"[{source.source_type}] {safe_title}.txt"

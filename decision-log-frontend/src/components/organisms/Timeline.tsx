@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../i18n'
-import { ProjectItem, SourceType } from '../../types/projectItem'
+import { MeetingVisibility, ProjectItem, SourceType } from '../../types/projectItem'
 import { SourceGroupAccordion } from '../molecules/SourceGroupAccordion'
 import { timestampToSeconds } from '../../lib/transcript'
 import { ProjectItemRow } from '../molecules/ProjectItemRow'
@@ -35,6 +35,7 @@ interface DenseTimelineGroup {
       participants?: Array<{ name: string; role?: string }>
       ai_summary?: string
       meetingId?: string  // V2 source id — enables the meeting viewer link
+      visibility?: MeetingVisibility | null  // Story 12.4: internal / shared badge
     }
     items: ProjectItem[]
   }[]
@@ -78,6 +79,7 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
             participants: item.meeting_participants,
             ai_summary: item.source?.summary || undefined,
             meetingId: item.source?.id,
+            visibility: item.source?.visibility,
           },
           items: [],
         })
@@ -138,6 +140,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
             participants: item.meeting_participants,
             ai_summary: item.source?.summary || undefined,
             meetingId: item.source?.id,
+            visibility: item.source?.visibility,
           },
           items: [],
         })
