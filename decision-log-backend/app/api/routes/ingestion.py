@@ -24,6 +24,7 @@ from app.services.access import (
     project_access_level,
     require_source_access,
     source_visible,
+    visible_items_filter,
     visible_sources_filter,
 )
 from app.services.jobs import enqueue, latest_job_for_source
@@ -222,7 +223,7 @@ async def list_history(
             ProjectItem.source_id,
             func.count(ProjectItem.id).label("item_count"),
         )
-        .filter(active_items_filter())  # Story 13.7: count the active run only
+        .filter(active_items_filter(), visible_items_filter(user))  # 13.7: active run only; 12.6: reviewed items the user sees
         .group_by(ProjectItem.source_id)
         .subquery()
     )

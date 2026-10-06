@@ -77,8 +77,10 @@ export function ProjectDetail() {
   useFilterUrlSync()
 
   // Hooks must be called unconditionally (rules-of-hooks)
-  const { data, isLoading, error, refetch } = useProjectItems({ projectId: projectId || '' })
+  const [showRejected, setShowRejected] = useState(false)  // Story 12.6
+  const { data, isLoading, error, refetch } = useProjectItems({ projectId: projectId || '', includeRejected: showRejected })
   const decisions = data?.items || []
+  const canReview = !!data?.can_review  // Story 12.6: owning organization's admins
 
   // Apply all filters client-side (must be before early return — rules-of-hooks)
   const filteredDecisions = useMemo(() => {
@@ -433,6 +435,18 @@ export function ProjectDetail() {
           />
         )}
 
+        {/* Story 12.6: reviewers can list rejected items (hidden by default) */}
+        {view === 'history' && canReview && (
+          <label className="mb-2 inline-flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={showRejected}
+              onChange={(e) => setShowRejected(e.target.checked)}
+            />
+            {t('item:review.showRejected')}
+          </label>
+        )}
+
         {/* Main Content — full-width, no sidebar */}
         <main>
           {view === 'milestones' ? (
@@ -453,6 +467,7 @@ export function ProjectDetail() {
               onRetry={() => refetch()}
               onToggleMilestone={handleToggleMilestone}
               isAdmin={isAdmin}
+              canReview={canReview}
             />
           ) : (
             <ExecutiveDigest digest={mockDigest} />
@@ -465,6 +480,7 @@ export function ProjectDetail() {
           onClose={() => setSelectedId(null)}
           onToggleMilestone={handleToggleMilestone}
           isAdmin={isAdmin}
+          canReview={canReview}
         />
 
         {/* Share Dialog (Story 8.4) */}

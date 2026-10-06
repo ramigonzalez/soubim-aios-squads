@@ -11,12 +11,15 @@ interface UseProjectItemsOptions {
   projectId: string
   limit?: number
   offset?: number
+  /** Story 12.6: also list rejected items (reviewers only; others never get them) */
+  includeRejected?: boolean
 }
 
 export function useProjectItems({
   projectId,
   limit = 50,
   offset = 0,
+  includeRejected = false,
 }: UseProjectItemsOptions) {
   const {
     disciplines,
@@ -31,13 +34,17 @@ export function useProjectItems({
     [
       'projectItems',
       projectId,
-      { disciplines, dateFrom, dateTo, searchQuery, itemTypes, sourceTypes, limit, offset },
+      { disciplines, dateFrom, dateTo, searchQuery, itemTypes, sourceTypes, limit, offset, includeRejected },
     ],
     async () => {
       const params = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       })
+
+      if (includeRejected) {
+        params.append('include_rejected', 'true')
+      }
 
       if (itemTypes.length > 0) {
         params.append('item_type', itemTypes.join(','))

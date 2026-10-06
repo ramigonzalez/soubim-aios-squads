@@ -47,6 +47,7 @@ def build_project_item(source: Source, item: Dict[str, Any], run_id: Optional[An
         project_id=source.project_id,
         source_id=source.id,
         extraction_run_id=run_id,
+        review_status="pending",  # Story 12.6: extracted items wait for review
         source_type=source.source_type,
         item_type=item_type,
         statement=item["statement"],

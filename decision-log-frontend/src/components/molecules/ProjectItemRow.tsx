@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { cn, getItemTypeLabel } from '../../lib/utils'
 import { dateLocale } from '../../i18n'
 import { ItemTypeBadge } from '../atoms/ItemTypeBadge'
+import { ReviewStatusBadge } from '../atoms/ReviewStatusBadge'
 import { DisciplineCircles } from '../atoms/DisciplineCircles'
 import { MilestoneStarToggle } from './MilestoneStarToggle'
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
@@ -77,6 +78,8 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
       )}>
         {item.title || item.statement}
       </span>
+      {/* Story 12.6: pending / rejected / edited */}
+      <ReviewStatusBadge status={item.review_status} edited={item.is_edited} />
       {/* Owner badge for action items */}
       {isActionItem && item.owner && (
         <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-0.5 flex-shrink-0">

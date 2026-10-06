@@ -17,6 +17,7 @@ interface TimelineProps {
   onRetry?: () => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean
+  canReview?: boolean  // Story 12.6
 }
 
 /**
@@ -285,6 +286,7 @@ export function Timeline({
   onRetry,
   onToggleMilestone,
   isAdmin,
+  canReview,
 }: TimelineProps) {
   const { t, i18n: i18nInstance } = useTranslation('history')
   const language = i18nInstance.language
@@ -336,6 +338,7 @@ export function Timeline({
                 onItemClick={onSelectDecision}
                 onToggleMilestone={onToggleMilestone}
                 isAdmin={isAdmin}
+                canReview={canReview}
               />
             ))}
 

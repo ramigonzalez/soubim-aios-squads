@@ -11,7 +11,7 @@ from app.api.middleware.auth import get_current_user
 from app.config import settings
 from app.database.models import ExtractionRun, ProjectItem, User
 from app.database.session import get_db
-from app.services.access import ADMIN, has_access, project_access_level, require_source_access
+from app.services.access import ADMIN, has_access, project_access_level, require_source_access, visible_items_filter
 from app.services.extraction_runs import activate_run
 from app.services.jobs import enqueue, latest_job_for_source
 
@@ -47,7 +47,11 @@ def _runs_payload(db: Session, source, user) -> dict:
     counts: dict = {}
     for run_id, item_type, n in (
         db.query(ProjectItem.extraction_run_id, ProjectItem.item_type, func.count(ProjectItem.id))
-        .filter(ProjectItem.source_id == source.id, ProjectItem.extraction_run_id.isnot(None))
+        .filter(
+            ProjectItem.source_id == source.id,
+            ProjectItem.extraction_run_id.isnot(None),
+            visible_items_filter(user, include_rejected=True),  # Story 12.6: no counts of items the user cannot see
+        )
         .group_by(ProjectItem.extraction_run_id, ProjectItem.item_type)
     ):
         counts.setdefault(str(run_id), {})[item_type] = n

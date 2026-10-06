@@ -86,6 +86,18 @@ export interface SourceInfo {
 /** Story 12.4: who sees a meeting — its owner organization only, or every organization on the project */
 export type MeetingVisibility = 'internal' | 'shared'
 
+/** Story 12.6: review status of an item */
+export type ReviewStatus = 'pending' | 'approved' | 'rejected'
+
+/** Story 12.6: the AI's values, kept the first time a reviewer edits an item */
+export interface ItemOriginal {
+  title?: string | null
+  statement?: string | null
+  why?: string | null
+  owner?: string | null
+  due_date?: string | null
+}
+
 export interface ProjectItem {
   id: string
   project_id: string
@@ -114,6 +126,13 @@ export interface ProjectItem {
   anomaly_flags?: unknown[] | null
   source_excerpt?: string | null
   source?: SourceInfo | null
+  // Story 12.6: review (absent = approved)
+  review_status?: ReviewStatus
+  reviewed_by?: string | null
+  reviewed_by_name?: string | null
+  reviewed_at?: string | null
+  is_edited?: boolean
+  original?: ItemOriginal | null  // only sent to the owning organization
   // V1 backward compat fields (may be present in API responses)
   decision_statement?: string
   discipline?: string
@@ -138,6 +157,7 @@ export interface ProjectItemsResponse {
   limit: number
   offset: number
   facets?: ProjectItemFacets
+  can_review?: boolean  // Story 12.6: the user can approve / reject / edit items of this project
 }
 
 export interface ProjectItemFilters {

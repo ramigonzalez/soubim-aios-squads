@@ -108,5 +108,41 @@
   "milestone": {
     "remove": "Desmarcar como marco",
     "mark": "Marcar como marco"
+  },
+  "review": {
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    },
+    "pendingHint": "Ainda não revisado - visível apenas para a sua organização",
+    "rejectedHint": "Rejeitado - oculto do Histórico por padrão",
+    "edited": "Editado",
+    "editedHint": "Editado por um revisor; o original da IA foi mantido",
+    "heading": "Revisão",
+    "reviewedBy": "{{status}} por {{name}}",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "backToPending": "Voltar para pendente",
+    "edit": "Editar",
+    "save": "Salvar e aprovar",
+    "saving": "Salvando...",
+    "cancel": "Cancelar",
+    "error": "Não foi possível atualizar o item. Tente novamente.",
+    "fields": {
+      "title": "Título",
+      "statement": "Enunciado",
+      "why": "Por quê",
+      "owner": "Responsável",
+      "dueDate": "Prazo"
+    },
+    "showOriginal": "Ver original da IA",
+    "hideOriginal": "Ocultar original da IA",
+    "restore": "Restaurar original",
+    "originalHeading": "Extraído pela IA",
+    "empty": "(vazio)",
+    "approvePending": "Aprovar pendentes ({{count}})",
+    "approvePendingAria": "Aprovar os {{count}} itens pendentes de {{title}}",
+    "showRejected": "Mostrar itens rejeitados"
   }
 }

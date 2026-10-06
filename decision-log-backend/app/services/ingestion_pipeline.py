@@ -109,6 +109,7 @@ def process_approved_source(
                     project_id=source.project_id,
                     source_id=source.id,
                     source_type=source.source_type,
+                    review_status="pending",  # Story 12.6
                     item_type=item_data.get("item_type", "information"),
                     statement=item_data.get("statement", ""),
                     decision_statement=item_data.get("statement", ""),

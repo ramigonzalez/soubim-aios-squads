@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, FileText, PlayCircle } from 'lucide-react'
+import { Check, ChevronDown, FileText, PlayCircle } from 'lucide-react'
+import { useBulkReview } from '../../hooks/useItemReview'
 import { cn } from '../../lib/utils'
 import { meetingLink } from '../../lib/transcript'
 import { SourceIcon } from '../atoms/SourceIcon'
@@ -27,6 +28,28 @@ export interface SourceGroupAccordionProps {
   onItemClick: (id: string) => void
   onToggleMilestone?: (id: string) => void
   isAdmin?: boolean
+  canReview?: boolean  // Story 12.6: show "approve pending"
+}
+
+/** Story 12.6: approve every pending item of a meeting (its own component: the mutation hook needs React Query) */
+function ApprovePendingButton({ projectId, sourceId, title, count }: { projectId: string; sourceId: string; title: string; count: number }) {
+  const { t } = useTranslation('item')
+  const bulkReview = useBulkReview(projectId)
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        bulkReview.mutate({ sourceId, status: 'approved' })
+      }}
+      disabled={bulkReview.isLoading}
+      className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
+      aria-label={t('review.approvePendingAria', { count, title })}
+    >
+      <Check className="w-3.5 h-3.5" aria-hidden="true" />
+      {t('review.approvePending', { count })}
+    </button>
+  )
 }
 
 /**
@@ -57,10 +80,13 @@ export function SourceGroupAccordion({
   onItemClick,
   onToggleMilestone,
   isAdmin,
+  canReview,
 }: SourceGroupAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(items.length <= 5)
   const [showSummary, setShowSummary] = useState(false)
   const { t } = useTranslation('history')
+  const projectId = items[0]?.project_id ?? ''
+  const pendingCount = items.filter((i) => i.review_status === 'pending').length
 
   const borderColor = getSourceBorderColor(source.type)
   const itemCount = items.length
@@ -128,6 +154,10 @@ export function SourceGroupAccordion({
               aria-hidden="true"
             />
           </button>
+        )}
+        {/* Story 12.6: approve every pending item of this meeting */}
+        {canReview && pendingCount > 0 && source.type !== 'manual_input' && (
+          <ApprovePendingButton projectId={projectId} sourceId={source.id} title={source.title} count={pendingCount} />
         )}
         {source.meetingId && (
           <Link

@@ -210,6 +210,7 @@ class TestOnlyActiveRunIsListed:
                           expires_at=datetime.utcnow() + timedelta(days=1))
         db_session.add(link)
         two_versions.visibility = "shared"  # Story 12.4: public links show shared meetings only
+        db_session.query(ProjectItem).update({"review_status": "approved"})  # Story 12.6: and approved items
         db_session.commit()
         data = run(shared_links.view_shared_timeline("tok", db=db_session))
         assert sorted(m["statement"] for m in data["milestones"]) == ["B"]
@@ -358,6 +359,9 @@ def _two_runs(db, source):
     db.query(ProjectItem).filter(ProjectItem.source_id == source.id).delete()
     import_items(db, source, output("OLD")["items"])
     import_items(db, source, output("NEW")["items"], replace=True)
+    # Story 12.6: extracted items start pending; these tests are about versions and visibility
+    db.flush()
+    db.query(ProjectItem).filter(ProjectItem.source_id == source.id).update({"review_status": "approved"})
     db.commit()
     return runs_of(db, source)
 
