@@ -26,6 +26,10 @@ export interface BaseSource {
   extraction_error: string | null
   extracted_item_count: number
   job?: SourceJob | null
+  /** Story 12.7: the user may approve / reject / retry this source (owning organization's owner/admin/reviewer) */
+  can_review?: boolean
+  /** Story 12.7: the user may delete this source (owning organization's owner/admin) */
+  can_manage?: boolean
 }
 
 export interface MeetingSource extends BaseSource {

@@ -1,10 +1,11 @@
-/** React Query hooks for members and invitations of an organization (Story 12.5). */
+/** React Query hooks for members and invitations of an organization (Story 12.5), project assignments (12.7). */
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import api from '../services/api'
 import type {
   InvitationPreview,
   OrganizationInvitationInfo,
   OrganizationMemberInfo,
+  OrganizationProjectAssignments,
   OrganizationRole,
 } from '../types/organization'
 import type { TokenResponse } from '../types/auth'
@@ -33,6 +34,33 @@ export function useRemoveMember(orgId: string) {
   return useMutation<unknown, Error, string>(userId => api.delete(`/organizations/${orgId}/members/${userId}`), {
     onSuccess: () => queryClient.invalidateQueries(membersKey(orgId)),
   })
+}
+
+// ─── Project assignments (Story 12.7) ────────────────────────────────────────
+
+const assignmentsKey = (orgId: string) => ['projectAssignments', orgId]
+
+/** Projects the organization owns or that are shared with it, and which of its members are assigned. */
+export function useProjectAssignments(orgId: string | undefined) {
+  return useQuery<OrganizationProjectAssignments, Error>(
+    assignmentsKey(orgId ?? ''),
+    async () => {
+      const data = (await api.get<OrganizationProjectAssignments>(`/organizations/${orgId}/project-assignments`)).data
+      return { projects: data?.projects ?? [], assignments: data?.assignments ?? [] }
+    },
+    { enabled: !!orgId, retry: false }
+  )
+}
+
+export function useSetProjectAssignment(orgId: string) {
+  const queryClient = useQueryClient()
+  return useMutation<unknown, Error, { userId: string; projectId: string; assigned: boolean }>(
+    ({ userId, projectId, assigned }) => {
+      const url = `/organizations/${orgId}/members/${userId}/projects/${projectId}`
+      return assigned ? api.put(url) : api.delete(url)
+    },
+    { onSuccess: () => queryClient.invalidateQueries(assignmentsKey(orgId)) }
+  )
 }
 
 export function useInvitations(orgId: string | undefined) {

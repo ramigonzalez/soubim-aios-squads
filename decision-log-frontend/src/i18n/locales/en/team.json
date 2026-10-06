@@ -5,6 +5,7 @@
   "roles": {
     "owner": "Owner",
     "admin": "Admin",
+    "reviewer": "Reviewer",
     "member": "Member"
   },
   "members": {
@@ -17,8 +18,16 @@
     "confirmRemove": "Remove {{name}} from this organization?",
     "error": "Could not update the member."
   },
+  "projects": {
+    "hint": "Members and reviewers only see the projects they are assigned to. Reviewers also approve items and meetings of those projects.",
+    "all": "Access to every project of the organization",
+    "toggle": "Assigned projects: {{n}}",
+    "empty": "No projects in this organization.",
+    "shared": "shared",
+    "error": "Could not update project access."
+  },
   "invite": {
-    "title": "Invite someone",
+    "title":"Invite someone",
     "email": "Email",
     "role": "Role",
     "companyToggle": "Invite a company that is not on DecisionLog yet",

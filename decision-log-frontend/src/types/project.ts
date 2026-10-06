@@ -12,7 +12,10 @@ export interface ProjectStats {
   decisions_by_meeting_type: Record<string, number>
 }
 
-export interface Project {
+import type { ProjectCapabilities } from './organization'
+
+/** Story 12.7: list and detail responses carry the user's capabilities on the project. */
+export interface Project extends ProjectCapabilities {
   id: string
   name: string
   description?: string

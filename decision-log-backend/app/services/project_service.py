@@ -3,12 +3,19 @@
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.models import Project, ProjectItem, ProjectMember, User
+from app.database.models import OrganizationMember, Project, ProjectItem, ProjectMember, User
 from app.services.extraction_runs import active_items_filter
-from app.services.access import NONE, accessible_projects_filter, project_access_level, visible_items_filter
+from app.services.access import (
+    NONE,
+    accessible_projects_filter,
+    project_access_by_organization,
+    project_access_level,
+    project_capabilities,
+    visible_items_filter,
+)
 from app.services.organizations import active_organization_projects_filter
 
 # Backward compatibility alias
@@ -75,7 +82,7 @@ def get_projects(
         )
         member_count = (
             db.query(func.count(ProjectMember.user_id))
-            .filter(ProjectMember.project_id == project.id)
+            .filter(ProjectMember.project_id == project.id, _visible_members_filter(db, user, project))
             .scalar()
         )
         latest_decision = (
@@ -93,10 +100,22 @@ def get_projects(
                 "member_count": member_count or 0,
                 "decision_count": decision_count or 0,
                 "latest_decision": latest_decision.isoformat() if latest_decision else None,
+                **project_capabilities(db, user, project),  # Story 12.7
             }
         )
 
     return result, total_count
+
+
+def _visible_members_filter(db: Session, user, project: Project):
+    """12.7 security review: ``ProjectMember`` condition — assigned users who belong to an organization
+    through which the viewer reaches the project. A shared organization does not see the owning
+    organization's (or another shared organization's) assigned users' names / emails, and vice versa;
+    each organization lists its own people (the Team page manages them)."""
+    orgs = list(project_access_by_organization(db, user, project))
+    return ProjectMember.user_id.in_(
+        select(OrganizationMember.user_id).where(OrganizationMember.organization_id.in_(orgs))
+    )
 
 
 def get_project(db: Session, project_id: str, user_id: str) -> Dict:
@@ -131,7 +150,7 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
     members = (
         db.query(ProjectMember, User)
         .join(User, ProjectMember.user_id == User.id)
-        .filter(ProjectMember.project_id == project_id)
+        .filter(ProjectMember.project_id == project_id, _visible_members_filter(db, user, project))
         .all()
     )
 
@@ -192,6 +211,7 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
         "created_at": project.created_at.isoformat(),
         "archived_at": project.archived_at.isoformat() if project.archived_at else None,
         "members": member_list,
+        **project_capabilities(db, user, project),  # Story 12.7
         "stats": {
             "total_decisions": total_decisions,
             "decisions_last_week": decisions_last_week,

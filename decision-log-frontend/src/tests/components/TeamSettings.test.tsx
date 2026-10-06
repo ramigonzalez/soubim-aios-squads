@@ -13,10 +13,20 @@ const MEMBERS = [
   { user_id: 'u2', name: 'Bia Member', email: 'bia@x.com', role: 'member', joined_at: '2026-01-02T00:00:00Z' },
 ]
 
+// Story 12.7: projects of the organization (owned + shared with it) and who is assigned
+const ASSIGNMENTS = {
+  projects: [
+    { id: 'p1', name: 'Torre Norte', owned: true },
+    { id: 'p2', name: 'Partner Tower', owned: false },
+  ],
+  assignments: [{ user_id: 'u2', project_id: 'p1' }],
+}
+
 function setup(role: 'owner' | 'admin' | 'member', slug = 'acme') {
   vi.spyOn(api, 'get').mockImplementation(async (url: string) => {
     if (url === '/organizations/me') return { data: [{ id: 'org-1', name: 'Acme', slug, role }] }
     if (url.endsWith('/members')) return { data: { members: MEMBERS } }
+    if (url.endsWith('/project-assignments')) return { data: ASSIGNMENTS }
     if (url.endsWith('/invitations')) return { data: { invitations: [] } }
     return { data: {} }
   })
@@ -65,6 +75,33 @@ describe('TeamSettings (Story 12.5)', () => {
     await screen.findByText('Bia Member')
     const roleSelect = screen.getByLabelText('Role')
     expect(roleSelect.querySelector('option[value="owner"]')).toBeNull()
+  })
+
+  it('reviewer is a role admins can invite and grant (Story 12.7)', async () => {
+    setup('admin')
+    await screen.findByText('Bia Member')
+    expect(screen.getByLabelText('Role').querySelector('option[value="reviewer"]')).not.toBeNull()
+    expect(screen.getByLabelText('Role Bia Member').querySelector('option[value="reviewer"]')).not.toBeNull()
+  })
+
+  it('assigns and unassigns a member to projects of the organization (Story 12.7)', async () => {
+    const put = vi.spyOn(api, 'put').mockResolvedValue({ data: {} })
+    const del = vi.spyOn(api, 'delete').mockResolvedValue({ data: {} })
+    setup('admin')
+    // owners/admins reach every project: nothing to assign
+    expect(await screen.findByText('Access to every project of the organization')).toBeInTheDocument()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Assigned projects: 1' }))
+    const assigned = screen.getByRole('checkbox', { name: 'Torre Norte' })
+    const shared = screen.getByRole('checkbox', { name: /Partner Tower/ })
+    expect(assigned).toBeChecked()
+    expect(shared).not.toBeChecked()
+    expect(screen.getByText('(shared)')).toBeInTheDocument()
+
+    await userEvent.click(shared)
+    expect(put).toHaveBeenCalledWith('/organizations/org-1/members/u2/projects/p2')
+    await userEvent.click(assigned)
+    expect(del).toHaveBeenCalledWith('/organizations/org-1/members/u2/projects/p1')
   })
 
   it('only the platform organization can invite a new company', async () => {

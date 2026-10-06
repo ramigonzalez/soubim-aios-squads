@@ -1,4 +1,22 @@
-export type OrganizationRole = 'owner' | 'admin' | 'member'
+/** Story 12.7: reviewer = member + review (items, ingestion approve / reject / retry) on assigned projects */
+export type OrganizationRole = 'owner' | 'admin' | 'reviewer' | 'member'
+
+/** Story 12.7: projects the organization owns or that are shared with it, and its members assigned to them. */
+export interface OrganizationProjectAssignments {
+  projects: Array<{ id: string; name: string; owned: boolean }>
+  assignments: Array<{ user_id: string; project_id: string }>
+}
+
+/** Story 12.7: what the current user can do on a project (from the API, never guessed in the client). */
+export type ProjectAccessLevel = 'none' | 'read' | 'write' | 'review' | 'admin'
+
+export interface ProjectCapabilities {
+  access_level?: ProjectAccessLevel
+  /** approve / reject / edit items, approve / reject / retry meetings */
+  can_review?: boolean
+  /** project settings, sharing, milestones, share links, meeting deletion */
+  can_manage?: boolean
+}
 
 /** An organization the current user belongs to (GET /organizations/me). */
 export interface MyOrganization {

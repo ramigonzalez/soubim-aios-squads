@@ -85,7 +85,7 @@ export default function MeetingSourceRow({
         )}
       </td>
       <td className="px-4 py-3">
-        {isPending && (
+        {isPending && onApprove && onReject && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => onApprove?.(source.id)}
@@ -107,7 +107,7 @@ export default function MeetingSourceRow({
             </button>
           </div>
         )}
-        {isFailed && (
+        {isFailed && onRetry && (
           <button
             onClick={() => onRetry?.(source.id)}
             disabled={isActionLoading}

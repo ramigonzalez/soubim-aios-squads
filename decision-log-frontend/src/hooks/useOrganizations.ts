@@ -9,7 +9,7 @@ import { useQuery, useQueryClient } from 'react-query'
 import api from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import { useOrganizationStore } from '../store/organizationStore'
-import type { MyOrganization } from '../types/organization'
+import type { MyOrganization, OrganizationRole } from '../types/organization'
 
 export const ORGANIZATIONS_KEY = 'organizations'
 
@@ -51,5 +51,13 @@ export function useActiveOrganization() {
     isLoading,
     /** owner/admin of the active organization */
     isAdmin: active?.role === 'owner' || active?.role === 'admin',
+    /**
+     * Story 12.7: owner/admin/reviewer in some organization — may review meetings of (some) projects, so the
+     * ingestion queue is shown. Which sources they can act on comes per source from the API (`can_review`).
+     */
+    canReviewSomewhere: organizations.some(o => REVIEW_ROLES.includes(o.role)),
   }
 }
+
+/** Story 12.7: organization roles that can review (on projects their organization owns; reviewers when assigned). */
+export const REVIEW_ROLES: OrganizationRole[] = ['owner', 'admin', 'reviewer']

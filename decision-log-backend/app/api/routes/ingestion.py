@@ -20,6 +20,7 @@ from app.database.session import get_db
 from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     ADMIN,
+    REVIEW,
     has_access,
     project_access_level,
     require_source_access,
@@ -47,6 +48,27 @@ def _require_source_admin(request: Request, db: Session, source_id: str):
     """Story 12.2: organization admin of the source's project (404 if the source is not visible)."""
     user = _get_user(request)
     return user, require_source_access(db, user, source_id, ADMIN)
+
+
+def _require_source_reviewer(request: Request, db: Session, source_id: str):
+    """Story 12.7: approve / reject / retry need ``review`` on the source's project (owning organization's
+    owner/admin or assigned reviewer); 404 if the source is not visible."""
+    user = _get_user(request)
+    return user, require_source_access(db, user, source_id, REVIEW)
+
+
+def _capabilities(db: Session, user):
+    """Story 12.7: per-project ``can_review`` / ``can_manage`` for source rows (one access check per project)."""
+    cache: dict = {}
+
+    def of(source) -> dict:
+        key = str(source.project_id)
+        if key not in cache:
+            level = project_access_level(db, user, source.project)
+            cache[key] = {"can_review": has_access(level, REVIEW), "can_manage": has_access(level, ADMIN)}
+        return cache[key]
+
+    return of
 
 
 def _visible_sources(user):
@@ -187,9 +209,10 @@ async def list_sources(
     )
 
     # Format response to match frontend TypeScript contract
+    capabilities = _capabilities(db, user)
     sources_list = []
     for source, project_name in rows:
-        sources_list.append(_format_source(source, project_name))
+        sources_list.append({**_format_source(source, project_name), **capabilities(source)})
 
     return {
         "sources": sources_list,
@@ -268,12 +291,14 @@ async def list_history(
     query = query.order_by(Source.updated_at.desc()).limit(limit).offset(offset)
     rows = query.all()
 
+    capabilities = _capabilities(db, user)
     sources_list = []
     for source, project_name, item_count, approved_name, rejected_name in rows:
         job = latest_job_for_source(db, source.id) if source.ingestion_status in ("approved", "failed") else None
-        sources_list.append(
-            _format_source(source, project_name, item_count, approved_name, rejected_name, job)
-        )
+        sources_list.append({
+            **_format_source(source, project_name, item_count, approved_name, rejected_name, job),
+            **capabilities(source),  # Story 12.7
+        })
 
     return {
         "sources": sources_list,
@@ -293,8 +318,9 @@ async def update_source_status(
 
     Story 7.9: Auto-sets `included` flag — approve sets True, reject sets False.
     No standalone included toggle anymore.
+    Story 12.7: owning organization's owner/admin or assigned reviewer.
     """
-    user, source = _require_source_admin(request, db, source_id)
+    user, source = _require_source_reviewer(request, db, source_id)
 
     source.ingestion_status = update.ingestion_status
 
@@ -327,8 +353,9 @@ async def retry_source(
 ):
     """
     Story 7.9: Retry a failed source — resets to approved and re-triggers pipeline.
+    Story 12.7: owning organization's owner/admin or assigned reviewer.
     """
-    user, source = _require_source_admin(request, db, source_id)
+    user, source = _require_source_reviewer(request, db, source_id)
 
     if source.ingestion_status != "failed":
         raise HTTPException(
@@ -399,6 +426,7 @@ async def batch_update_sources(
 
     Story 7.9: Auto-sets included flag per source.
     Story 12.2: sources the user does not administer are skipped (like missing ones).
+    Story 12.7: ``review`` on the source's project is enough (assigned reviewers).
     """
     user = _get_user(request)
 
@@ -407,7 +435,7 @@ async def batch_update_sources(
 
     for sid in batch.source_ids:
         source = db.query(Source).filter(Source.id == sid).first()
-        if not source_visible(db, user, source) or not has_access(project_access_level(db, user, source.project), ADMIN):
+        if not source_visible(db, user, source) or not has_access(project_access_level(db, user, source.project), REVIEW):
             continue
 
         source.ingestion_status = new_status

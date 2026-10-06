@@ -12,7 +12,6 @@ import { DocumentUploadButton } from '../components/molecules/DocumentUploadButt
 import { ShareDialog } from '../components/molecules/ShareDialog'
 import { useFilterStore } from '../store/filterStore'
 import { useFilterUrlSync } from '../hooks/useFilterUrlSync'
-import { useAuthStore } from '../store/authStore'
 import { useArchiveProject } from '../hooks/useProjectMutation'
 import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown, Pencil, Archive } from 'lucide-react'
 import { cn } from '../lib/utils'
@@ -56,9 +55,7 @@ export function ProjectDetail() {
   const [isExporting, setIsExporting] = useState(false)
   const milestoneTimelineRef = useRef<HTMLDivElement>(null)
 
-  // Auth & milestone toggle (Story 8.2)
-  const { user } = useAuthStore()
-  const isAdmin = user?.role === 'director'
+  // Milestone toggle (Story 8.2)
   const toggleMilestoneMutation = useToggleMilestone(projectId || '')
   const archiveProjectMutation = useArchiveProject()
 
@@ -80,7 +77,9 @@ export function ProjectDetail() {
   const [showRejected, setShowRejected] = useState(false)  // Story 12.6
   const { data, isLoading, error, refetch } = useProjectItems({ projectId: projectId || '', includeRejected: showRejected })
   const decisions = data?.items || []
-  const canReview = !!data?.can_review  // Story 12.6: owning organization's admins
+  // Story 12.7: capabilities from the API (organization roles), not the legacy users.role
+  const canReview = !!data?.can_review  // owning organization's owner/admin or assigned reviewer
+  const isAdmin = !!data?.can_manage  // owning organization's owner/admin: edit, archive, share, milestones
 
   // Apply all filters client-side (must be before early return — rules-of-hooks)
   const filteredDecisions = useMemo(() => {

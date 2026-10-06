@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -38,6 +38,12 @@ vi.mock('../../services/ingestionService', () => ({
   },
 }))
 
+// Story 12.7: the ingestion page is gated on organization roles (owner/admin/reviewer)
+const organizationsState = { canReviewSomewhere: true, isLoading: false }
+vi.mock('../../hooks/useOrganizations', () => ({
+  useActiveOrganization: () => organizationsState,
+}))
+
 import { useIngestion, useIngestionHistory, useFilteredSources } from '../../hooks/useIngestion'
 import { useBatchAction, useApproveSource, useRejectSource, useRetrySource, useDeleteSource } from '../../hooks/useIngestionMutation'
 
@@ -58,6 +64,8 @@ const baseFields = {
   rejected_at: null as string | null,
   extraction_error: null as string | null,
   extracted_item_count: 0,
+  can_review: true,  // Story 12.7: per-source capabilities from the API
+  can_manage: true,
 }
 
 // --- Test data ---
@@ -232,8 +240,9 @@ function renderIngestionApproval() {
   )
 }
 
-function renderIngestionPage(role: 'director' | 'architect' | 'client' = 'director') {
+function renderIngestionPage(canReviewSomewhere = true, role: 'director' | 'architect' | 'client' = 'client') {
   const queryClient = createQueryClient()
+  organizationsState.canReviewSomewhere = canReviewSomewhere
   // Set auth store
   useAuthStore.setState({
     user: { id: 'u1', email: 'test@test.com', name: 'Test User', role },
@@ -287,17 +296,38 @@ describe('IngestionApproval', () => {
   })
 
   describe('Admin access control', () => {
-    it('non-admin user is redirected away from /ingestion', () => {
+    it('user without an owner/admin/reviewer organization role is redirected away from /ingestion', () => {
       setupMocks()
-      renderIngestionPage('architect')
+      renderIngestionPage(false, 'director')  // the legacy users.role no longer grants anything (12.7)
       // Should not render the IngestionApproval content
       expect(screen.queryByText('Ingestion Approval')).not.toBeInTheDocument()
     })
 
-    it('admin user (director) can access /ingestion', () => {
+    it('organization owner/admin/reviewer can access /ingestion (Story 12.7)', () => {
       setupMocks()
-      renderIngestionPage('director')
+      renderIngestionPage(true, 'client')
       expect(screen.getByText('Ingestion Approval')).toBeInTheDocument()
+    })
+
+    it('hides approve / reject / retry / delete on sources the user cannot review or manage (Story 12.7)', () => {
+      const readOnly = { can_review: false, can_manage: false }
+      setupMocks({
+        data: { sources: [{ ...meetingSource, ...readOnly }], total: 1, pending_count: 1 },
+        filteredSources: [{ ...meetingSource, ...readOnly }],
+      })
+      renderIngestionApproval()
+      expect(screen.queryByTitle('Approve')).not.toBeInTheDocument()
+      expect(screen.queryByTitle('Reject')).not.toBeInTheDocument()
+
+      cleanup()
+      useIngestionStore.setState({ activeTab: 'history' })
+      setupMocks({
+        historyData: { sources: [{ ...failedMeetingSource, can_review: true, can_manage: false }], total: 1 },
+        filteredSources: [{ ...failedMeetingSource, can_review: true, can_manage: false }],
+      })
+      renderIngestionApproval()
+      expect(screen.getByTitle('Retry')).toBeInTheDocument()  // reviewer
+      expect(screen.queryByTitle('Delete source and extracted items')).not.toBeInTheDocument()  // admin only
     })
   })
 
