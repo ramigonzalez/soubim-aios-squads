@@ -1,0 +1,30 @@
+{
+  "title": "Integrações",
+  "subtitle": "Conecte suas contas para importar reuniões no DecisionLog.",
+  "fathom": {
+    "name": "Fathom",
+    "description": "Importe as gravações e transcrições das suas reuniões do Fathom.",
+    "connect": "Conectar ao Fathom",
+    "reconnect": "Reconectar",
+    "disconnect": "Desconectar",
+    "connecting": "Abrindo o Fathom...",
+    "connected": "Conectado",
+    "connectedAs": "Conectado como {{account}}",
+    "connectedSince": "Conectado em {{date}}",
+    "notConnected": "Não conectado",
+    "needsReconnect": "A conexão expirou. Reconecte sua conta do Fathom.",
+    "notConfigured": "A integração com o Fathom ainda não está disponível neste servidor.",
+    "confirmDisconnect": "Desconectar sua conta do Fathom? As reuniões já importadas continuam no DecisionLog.",
+    "result": {
+      "connected": "Conta do Fathom conectada.",
+      "error": "Não foi possível conectar ao Fathom. Tente novamente.",
+      "confirming": "Finalizando a conexão com o Fathom...",
+      "otherUser": "Esta conexão com o Fathom foi iniciada por outra conta do DecisionLog e foi descartada. Clique em \"Conectar ao Fathom\" você mesmo para conectar.",
+      "expired": "O pedido de conexão com o Fathom expirou. Conecte novamente."
+    },
+    "errors": {
+      "load": "Não foi possível carregar o status da integração.",
+      "action": "Algo deu errado. Tente novamente."
+    }
+  }
+}

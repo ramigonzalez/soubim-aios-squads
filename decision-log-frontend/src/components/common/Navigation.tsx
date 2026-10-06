@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useAuthStore } from '../../store/authStore'
 import { ingestionService } from '../../services/ingestionService'
-import { LogOut, Home } from 'lucide-react'
+import { LogOut, Home, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 /**
@@ -76,6 +76,16 @@ export function Navigation() {
                 <p className="text-xs text-gray-500">{t(`roles.${user.role}`, { defaultValue: user.role })}</p>
               </div>
             )}
+
+            {/* Settings → Integrations (Story 13.3) */}
+            <Link
+              to="/settings/integrations"
+              className="p-2 text-gray-600 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors"
+              title={t('integrations')}
+              aria-label={t('integrations')}
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
 
             {/* Logout Button */}
             <button

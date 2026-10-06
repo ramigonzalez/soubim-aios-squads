@@ -1,0 +1,30 @@
+{
+  "title": "Integrations",
+  "subtitle": "Connect your accounts to import meetings into DecisionLog.",
+  "fathom": {
+    "name": "Fathom",
+    "description": "Import recordings and transcripts of your Fathom meetings.",
+    "connect": "Connect to Fathom",
+    "reconnect": "Reconnect",
+    "disconnect": "Disconnect",
+    "connecting": "Opening Fathom...",
+    "connected": "Connected",
+    "connectedAs": "Connected as {{account}}",
+    "connectedSince": "Connected on {{date}}",
+    "notConnected": "Not connected",
+    "needsReconnect": "The connection expired. Reconnect your Fathom account.",
+    "notConfigured": "The Fathom integration is not available on this server yet.",
+    "confirmDisconnect": "Disconnect your Fathom account? Meetings already imported stay in DecisionLog.",
+    "result": {
+      "connected": "Fathom account connected.",
+      "error": "Could not connect to Fathom. Please try again.",
+      "confirming": "Finishing the Fathom connection...",
+      "otherUser": "This Fathom connection was started from another DecisionLog account, so it was discarded. Click \"Connect to Fathom\" yourself to connect.",
+      "expired": "The Fathom connection request expired. Please connect again."
+    },
+    "errors": {
+      "load": "Could not load the integration status.",
+      "action": "Something went wrong. Please try again."
+    }
+  }
+}
