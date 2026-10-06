@@ -53,6 +53,7 @@
     "accepting": "Entrando...",
     "wrongAccount": "Você está conectado como {{current}}, mas este convite é para {{email}}. Saia e entre com o e-mail convidado.",
     "logout": "Sair",
-    "error": "Não foi possível aceitar o convite."
+    "error": "Não foi possível aceitar o convite.",
+    "rateLimited": "Muitas requisições. Aguarde um minuto e tente novamente."
   }
 }

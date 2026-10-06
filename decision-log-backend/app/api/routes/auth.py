@@ -15,7 +15,7 @@ from app.services.auth_service import (
 )
 from app.database.session import get_db
 from app.api.middleware.auth import get_current_user
-from app.api.middleware.rate_limit import login_rate_limit
+from app.api.middleware.rate_limit import enforce_login_email_limit
 from app.database.models import User
 
 router = APIRouter()
@@ -25,14 +25,13 @@ router = APIRouter()
 async def login(
     request: LoginRequest,
     db: Session = Depends(get_db),
-    _: None = Depends(login_rate_limit),
 ):
     """
     Authenticate user with email and password.
 
     Returns JWT token and user information.
 
-    🛡️ RATE LIMITED: 5 attempts per 15 minutes per email/IP.
+    RATE LIMITED (Story 13.11): per IP (middleware) and per email, see RATE_LIMIT_LOGIN_* settings.
 
     Args:
         request: LoginRequest with email and password
@@ -45,6 +44,7 @@ async def login(
         401: If email not found or password incorrect
         429: If rate limit exceeded (too many login attempts)
     """
+    await enforce_login_email_limit(request.email)  # Story 13.11 (per-IP limit is in the middleware)
     try:
         # Authenticate user
         user = authenticate_user(db, request.email, request.password)

@@ -89,6 +89,22 @@ class Settings(BaseSettings):
     invitation_expire_days: int = 7  # Story 12.5: how long an invitation link works
     frontend_url: str = "http://localhost:5173"  # where the OAuth callback sends the browser back
 
+    # --- Rate limiting (Story 13.11) ---
+    rate_limit_enabled: bool = True
+    # Empty = in-memory (per instance). Set e.g. redis://... so limits are shared across instances.
+    rate_limit_storage_uri: Optional[str] = None
+    # Trust X-Forwarded-For only behind a proxy you control (Railway); take the entry N hops from the right.
+    trusted_proxy: bool = False
+    trusted_proxy_hops: int = 1
+    rate_limit_login_ip: str = "30/minute"
+    rate_limit_login_email_minute: str = "5/minute"
+    rate_limit_login_email_hour: str = "20/hour"
+    rate_limit_invitation: str = "10/minute"
+    rate_limit_oauth_callback: str = "20/minute"
+    rate_limit_webhook: str = "120/minute"
+    rate_limit_public_link: str = "60/minute"
+    rate_limit_default: str = "600/minute"
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"

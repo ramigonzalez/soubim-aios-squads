@@ -100,6 +100,8 @@ _POSTGRES_AVAILABLE = bool(_DB_URL)
 
 # Point the app at the throwaway database before any app module reads settings.
 os.environ["DATABASE_URL"] = _DB_URL or SQLITE_MEMORY_URL
+# Story 13.11: the suite must not hit rate limits; tests/unit/test_rate_limit.py switches them on explicitly.
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 from app.database.models import Base  # noqa: E402  (must follow the DATABASE_URL override)
 

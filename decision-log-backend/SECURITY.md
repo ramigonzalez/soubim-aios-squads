@@ -54,27 +54,13 @@ python -m app.database.seed
 
 ## Rate Limiting
 
-✅ **IMPLEMENTED:** Login Rate Limiting (Phase 1)
+✅ **IMPLEMENTED (Story 13.11):** `slowapi` / `limits`, one middleware, configurable (`RATE_LIMIT_*`).
 
-**Implementation:** In-memory rate limiting for `/auth/login` endpoint.
+**Location:** `app/api/middleware/rate_limit.py`. Limits table and multi-instance setup: `docs/stories/13.11-rate-limiting.md` and `docs/development/DEPLOYMENT_RAILWAY.md`.
 
-**Location:** `app/api/middleware/rate_limit.py`
-
-**Protection:**
-- ✅ Login endpoint: **5 attempts per 15 minutes per IP**
-- ✅ Returns HTTP 429 (Too Many Requests) when limit exceeded
-- ✅ Includes `Retry-After` header for client guidance
-- ✅ Sliding window algorithm prevents burst attacks
-
-**Current Limitations:**
-- ⚠️ In-memory only (doesn't persist across restarts)
-- ⚠️ Single-instance only (won't work with load balancing)
-
-**Recommendation for Phase 2:**
-- Migrate to Redis-backed rate limiting for distributed deployments
-- Add email-based rate limiting (track by email in addition to IP)
-- Implement CAPTCHA after 3 failed attempts
-- Add global API rate limiting (100 req/min per IP)
+- Login: per IP and per email; public invitation, OAuth callback, webhook, shared/recording routes: per IP (webhooks per connection); rest of the API: per user.
+- 429 with `Retry-After`; shared storage via `RATE_LIMIT_STORAGE_URI` (Redis); `X-Forwarded-For` trusted only with `TRUSTED_PROXY=true`.
+- Open: CAPTCHA after repeated failures.
 
 **Testing:**
 ```bash
@@ -154,7 +140,7 @@ done
 | Logout doesn't invalidate JWT | Medium | Documented | Phase 2 | - |
 | Demo mode always enabled | **HIGH** | ✅ **FIXED** | Phase 1 | 2026-02-08 |
 | No rate limiting (login) | High | ✅ **FIXED** | Phase 1 | 2026-02-08 |
-| Rate limiting (global API) | Medium | Backlog | Phase 2 | - |
+| Rate limiting (global API) | Medium | ✅ **FIXED** (Story 13.11) | - | 2026-10 |
 | No refresh token rotation | Medium | Backlog | Phase 2 | - |
 | No 2FA support | Low | Backlog | Phase 3 | - |
 

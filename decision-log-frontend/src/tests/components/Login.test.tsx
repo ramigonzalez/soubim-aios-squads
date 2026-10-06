@@ -215,6 +215,24 @@ describe('Login Component', () => {
     })
   })
 
+  it('shows the localized rate-limit message on 429 (Story 13.11)', async () => {
+    const mockApi = apiModule.default as any
+    mockApi.post.mockRejectedValue({
+      response: { status: 429, data: { detail: 'Too many login attempts. Please try again later.' } },
+    })
+
+    renderLogin()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText(/email/i), 'test@example.com')
+    await user.type(screen.getByLabelText(/password/i), 'password')
+    await user.click(screen.getByRole('button', { name: /login/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/too many attempts/i)).toBeInTheDocument()
+    })
+  })
+
   it('displays generic error on network failure', async () => {
     const mockApi = apiModule.default as any
     mockApi.post.mockRejectedValue({

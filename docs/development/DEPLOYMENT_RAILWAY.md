@@ -57,11 +57,33 @@ Set on **both** `api` and `worker` unless noted.
 - Runtime: `ENVIRONMENT=production`, `DEBUG=false`, `DEMO_MODE=false` (or unset), `WORKER_POLL_SECONDS` (worker only)
 - `CORS_ORIGINS` (API): see below
 - Optional: `SENTRY_DSN`
+- Rate limiting (13.11), API only: `RATE_LIMIT_STORAGE_URI`, `TRUSTED_PROXY=true`, optionally `RATE_LIMIT_ENABLED`, `RATE_LIMIT_*` (see the section below).
 - `PORT` is injected by Railway; do not set it.
 
 `ENVIRONMENT=production` matters: only `development`/`test` run `create_all` and seed demo users at startup (they would create `test@example.com` / `password`). In production the schema comes only from Alembic.
 
 `DEBUG=false` matters too: with `DEBUG=true` a failed DB init at startup is swallowed instead of crashing the deploy.
+
+### Rate limiting (Story 13.11)
+
+The API limits requests with `slowapi` (counters in the `limits` package). Defaults (per minute unless noted; each is a variable, e.g. `RATE_LIMIT_LOGIN_IP=30/minute`):
+
+| Scope | Key | Variable | Default |
+|-------|-----|----------|---------|
+| `POST /api/auth/login` | IP | `RATE_LIMIT_LOGIN_IP` | 30/minute |
+| `POST /api/auth/login` | email | `RATE_LIMIT_LOGIN_EMAIL_MINUTE`, `RATE_LIMIT_LOGIN_EMAIL_HOUR` | 5/minute and 20/hour |
+| `/api/invitations/public/*` | IP | `RATE_LIMIT_INVITATION` | 10/minute |
+| `/api/fathom/callback` | IP | `RATE_LIMIT_OAUTH_CALLBACK` | 20/minute |
+| Webhooks (`/api/fathom/webhook/{id}`, `/api/webhooks/*`) | connection id / IP | `RATE_LIMIT_WEBHOOK` | 120/minute |
+| `/api/shared/*`, `/api/recordings/*` | IP | `RATE_LIMIT_PUBLIC_LINK` | 60/minute |
+| Rest of `/api/*` | user id (valid JWT), else IP | `RATE_LIMIT_DEFAULT` | 600/minute |
+| `/api/health`, `/docs`, `/openapi.json` | exempt | | |
+
+Over the limit: `429`, `Retry-After` header, JSON `detail`.
+
+- **More than one API instance (or any redeploy that must not reset counters):** add a Redis service and set `RATE_LIMIT_STORAGE_URI=redis://...` on the API. Without it counters live in each instance's memory, so the effective limit is `limit x instances`, and they reset on restart. If Redis is unreachable the limiter fails open (requests pass, error logged).
+- **`TRUSTED_PROXY=true`** on Railway: the API then reads the client IP from `X-Forwarded-For`, taking the entry `TRUSTED_PROXY_HOPS` (default 1) from the right, i.e. the one Railway's edge appended; anything the client put on the left is ignored. Leave it unset anywhere the API is reachable without the proxy, otherwise clients could pick their own IP. Without it every request would share Railway's proxy IP, so set it before relying on per-IP limits.
+- `RATE_LIMIT_ENABLED=false` turns everything off (tests, local debugging).
 
 ### CORS
 
