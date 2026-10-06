@@ -1,7 +1,7 @@
 """Story 13.9: Fathom webhook (auto-import).
 
 Revision ID: 015_story_13_9
-Revises: 013_story_12_4
+Revises: 014_story_13_7
 Create Date: 2026-10-06
 
 Changes:
@@ -17,7 +17,7 @@ from alembic import op
 
 # revision identifiers
 revision = '015_story_13_9'
-down_revision = '013_story_12_4'
+down_revision = '014_story_13_7'
 branch_labels = None
 depends_on = None
 
