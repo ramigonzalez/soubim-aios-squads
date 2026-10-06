@@ -1,7 +1,7 @@
 """Story 12.4: meeting visibility (internal / shared).
 
-Revision ID: 011_story_12_4
-Revises: 010_story_12_3
+Revision ID: 013_story_12_4
+Revises: 012_story_12_5
 Create Date: 2026-10-06
 
 Changes:
@@ -9,8 +9,11 @@ Changes:
 - sources.visibility 'internal' | 'shared' (NOT NULL, default 'internal') + check constraint
 - project_items.owner_organization_id (organizations, RESTRICT, nullable) + index — owner of
   source-less items (manual input); items with a source follow the source
+- fathom_imports.owner_organization_id (NOT NULL after backfill) + visibility (Story 13.4 integration):
+  the organization and visibility the import job gives the Source it creates
 - Data backfill: every source → its project's owning organization, 'internal' (story AC);
-  every source-less item → its project's owning organization
+  every source-less item → its project's owning organization; every Fathom import → its Source's
+  owner (or the project's owning organization while still in flight), 'internal'
 """
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -18,8 +21,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '011_story_12_4'
-down_revision = '010_story_12_3'
+revision = '013_story_12_4'
+down_revision = '012_story_12_5'
 branch_labels = None
 depends_on = None
 
@@ -62,8 +65,37 @@ def upgrade() -> None:
     )
     op.create_index('idx_project_items_owner_org', 'project_items', ['owner_organization_id'])
 
+    # Story 13.4 integration: Fathom imports carry the owner/visibility of the Source to create
+    op.add_column('fathom_imports', sa.Column('owner_organization_id', postgresql.UUID(as_uuid=True), nullable=True))
+    op.add_column(
+        'fathom_imports',
+        sa.Column('visibility', sa.String(20), nullable=False, server_default='internal'),
+    )
+    op.create_foreign_key(
+        'fk_fathom_imports_owner_organization', 'fathom_imports', 'organizations',
+        ['owner_organization_id'], ['id'], ondelete='RESTRICT',
+    )
+    op.create_check_constraint('ck_fathom_import_visibility', 'fathom_imports', "visibility IN ('internal', 'shared')")
+    op.execute(
+        """
+        UPDATE fathom_imports f
+        SET owner_organization_id = COALESCE(
+            (SELECT s.owner_organization_id FROM sources s WHERE s.id = f.source_id),
+            p.owner_organization_id
+        )
+        FROM projects p
+        WHERE f.project_id = p.id AND f.owner_organization_id IS NULL
+        """
+    )
+    op.alter_column('fathom_imports', 'owner_organization_id', nullable=False)
+
 
 def downgrade() -> None:
+    op.drop_constraint('ck_fathom_import_visibility', 'fathom_imports', type_='check')
+    op.drop_constraint('fk_fathom_imports_owner_organization', 'fathom_imports', type_='foreignkey')
+    op.drop_column('fathom_imports', 'visibility')
+    op.drop_column('fathom_imports', 'owner_organization_id')
+
     op.drop_index('idx_project_items_owner_org', table_name='project_items')
     op.drop_constraint('fk_project_items_owner_organization', 'project_items', type_='foreignkey')
     op.drop_column('project_items', 'owner_organization_id')

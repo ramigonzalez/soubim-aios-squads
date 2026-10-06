@@ -1,5 +1,6 @@
 import api from './api'
 import type { FathomImport, FathomImportProject, FathomMeetingsPage, FathomStatus } from '../types/integrations'
+import type { MeetingVisibility } from '../types/projectItem'
 
 export const integrationsService = {
   getFathomStatus: (): Promise<FathomStatus> =>
@@ -31,7 +32,11 @@ export const integrationsService = {
   getFathomImportProjects: (): Promise<FathomImportProject[]> =>
     api.get('/integrations/fathom/projects').then(r => r.data),
 
-  importFathomMeeting: (body: { recording_id: string; project_id: string }): Promise<FathomImport> =>
+  importFathomMeeting: (body: {
+    recording_id: string
+    project_id: string
+    visibility: MeetingVisibility
+  }): Promise<FathomImport> =>
     api.post('/integrations/fathom/imports', body).then(r => r.data),
 
   retryFathomImport: (importId: string): Promise<FathomImport> =>

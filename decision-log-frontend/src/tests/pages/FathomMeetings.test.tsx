@@ -80,8 +80,8 @@ describe('FathomMeetings (Story 13.4)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     service.getFathomImportProjects.mockResolvedValue([
-      { id: 'p1', name: 'D/SEASON' },
-      { id: 'p2', name: 'Casa Verde' },
+      { id: 'p1', name: 'D/SEASON', can_share: true },
+      { id: 'p2', name: 'Casa Verde', can_share: false },
     ])
   })
 
@@ -158,9 +158,40 @@ describe('FathomMeetings (Story 13.4)', () => {
     await userEvent.selectOptions(select, 'p2')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
 
-    await waitFor(() => expect(service.importFathomMeeting).toHaveBeenCalledWith({ recording_id: '123', project_id: 'p2' }))
+    await waitFor(() => expect(service.importFathomMeeting).toHaveBeenCalledWith({ recording_id: '123', project_id: 'p2', visibility: 'internal' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await waitFor(() => expect(service.listFathomMeetings).toHaveBeenCalledTimes(2)) // refreshed
+  })
+
+  it('imports as shared when chosen (Story 12.4); internal is the default', async () => {
+    service.listFathomMeetings.mockResolvedValue({ items: [meeting()], next_cursor: null })
+    service.importFathomMeeting.mockResolvedValue(anImport({ state: 'queued', visibility: 'shared' }))
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.selectOptions(await within(dialog).findByRole('combobox'), 'p1')
+    const internal = within(dialog).getByRole('radio', { name: /Internal/ })
+    const shared = within(dialog).getByRole('radio', { name: /Shared/ })
+    expect(internal).toBeChecked()
+    await userEvent.click(shared)
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
+    await waitFor(() =>
+      expect(service.importFathomMeeting).toHaveBeenCalledWith({ recording_id: '123', project_id: 'p1', visibility: 'shared' })
+    )
+  })
+
+  it('shared is disabled where the user is not an admin of their organization', async () => {
+    service.listFathomMeetings.mockResolvedValue({ items: [meeting()], next_cursor: null })
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
+    const dialog = await screen.findByRole('dialog')
+    const select = await within(dialog).findByRole('combobox')
+    await userEvent.selectOptions(select, 'p1')
+    await userEvent.click(within(dialog).getByRole('radio', { name: /Shared/ }))
+    await userEvent.selectOptions(select, 'p2')
+    expect(within(dialog).getByRole('radio', { name: /Shared/ })).toBeDisabled()
+    expect(within(dialog).getByRole('radio', { name: /Internal/ })).toBeChecked()
+    expect(within(dialog).getByText('Only admins of your organization can import a meeting as shared.')).toBeInTheDocument()
   })
 
   it('shows why an import was refused', async () => {

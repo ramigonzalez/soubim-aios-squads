@@ -1,4 +1,5 @@
 import type { IngestionStatus, SourceJob } from './ingestion'
+import type { MeetingVisibility } from './projectItem'
 
 /** Fathom connection status (Story 13.3) — GET /api/integrations/fathom */
 export interface FathomStatus {
@@ -21,6 +22,8 @@ export interface FathomImport {
   project_name: string
   /** imported: meeting created (see source_status); queued/running: with the worker; failed: see error */
   state: 'imported' | 'queued' | 'running' | 'failed'
+  /** Story 12.4: visibility of the (future) meeting */
+  visibility?: MeetingVisibility
   source_id: string | null
   source_status: IngestionStatus | null
   job: SourceJob | null
@@ -51,4 +54,6 @@ export interface FathomMeetingsPage {
 export interface FathomImportProject {
   id: string
   name: string
+  /** Story 12.4: the user may import as shared (admin of the organization they act for) */
+  can_share?: boolean
 }

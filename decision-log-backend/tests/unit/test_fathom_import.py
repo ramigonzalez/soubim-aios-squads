@@ -9,6 +9,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -629,3 +630,120 @@ class TestConcurrentRefresh:
             check.commit()
         finally:
             check.close()
+
+
+# --------------------------------------------------------------------------- Story 12.4: visibility
+
+
+@pytest.fixture
+def partner(db_session: Session, project):
+    """DIMAS: the project is shared with it as contributor; an admin with a Fathom connection."""
+    from app.database.models import ProjectOrganization
+
+    dimas = make_org(db_session, "DIMAS", "dimas-test")
+    admin = User(email="admin@dimas.com", password_hash="x", name="DIMAS admin", role="client")
+    db_session.add(admin)
+    make_org_member(db_session, admin, "admin", dimas)
+    db_session.add(ProjectOrganization(project_id=project.id, organization_id=dimas.id, access="contributor"))
+    db_session.commit()
+    make_connection(db_session, admin)
+    return SimpleNamespace(org=dimas, admin=admin)
+
+
+def start_as(db: Session, user, project, visibility):
+    return routes.fathom_start_import(
+        body=routes.ImportRequest(recording_id=REC, project_id=str(project.id), visibility=visibility),
+        db=db, user=user,
+    )
+
+
+def marks(db: Session, user):
+    items = routes.fathom_meetings(cursor=None, db=db, user=user)["items"]
+    return next(m for m in items if m["recording_id"] == REC)["imports"]
+
+
+class TestImportVisibility:
+    def test_default_import_is_internal_to_the_importers_organization(
+        self, db_session, org, user, project, conn, fake, fake_s3, factory, video,
+    ):
+        happy_fathom(fake)
+        body = start(db_session, user, project)
+        assert body["visibility"] == "internal"
+        run_job(db_session, factory)
+        source = db_session.query(Source).one()
+        assert (source.owner_organization_id, source.visibility) == (org.id, "internal")
+
+    def test_admin_can_import_as_shared(self, db_session, org, user, project, conn, fake, fake_s3, factory, video):
+        happy_fathom(fake)
+        start_as(db_session, user, project, "shared")
+        run_job(db_session, factory)
+        source = db_session.query(Source).one()
+        assert (source.owner_organization_id, source.visibility) == (org.id, "shared")
+
+    def test_only_admins_can_import_as_shared(self, db_session, org, user, project, fake, fake_s3):
+        member = User(email="m2@soubim.com", password_hash="x", name="Member", role="architect")
+        db_session.add(member)
+        make_org_member(db_session, member, "member", org)
+        assign_to_project(db_session, member, project)
+        db_session.commit()
+        make_connection(db_session, member)
+
+        assert routes.fathom_import_projects(db=db_session, user=member) == [
+            {"id": str(project.id), "name": "D/SEASON", "can_share": False}]
+        assert routes.fathom_import_projects(db=db_session, user=user)[0]["can_share"] is True
+        with pytest.raises(HTTPException) as exc:
+            start_as(db_session, member, project, "shared")
+        assert exc.value.status_code == 403
+        assert db_session.query(FathomImport).count() == 0
+        assert start_as(db_session, member, project, "internal")["visibility"] == "internal"
+
+    def test_visibility_is_validated(self):
+        with pytest.raises(ValidationError):
+            routes.ImportRequest(recording_id=REC, project_id="p", visibility="public")
+
+    def test_partner_import_is_owned_by_the_partner_and_hidden_from_the_owner(
+        self, db_session, user, project, conn, partner, fake, fake_s3, factory, video,
+    ):
+        happy_fathom(fake)
+        body = start(db_session, partner.admin, project)  # same recording, in both Fathom accounts
+
+        # in flight: souBIM (project owner) neither sees the import nor its id/status
+        assert marks(db_session, user) == []
+        assert [m["id"] for m in marks(db_session, partner.admin)] == [body["id"]]
+        with pytest.raises(HTTPException) as exc:
+            start(db_session, user, project)
+        assert exc.value.status_code == 409
+        assert exc.value.detail == {"code": "already_imported", "import": None}
+        with pytest.raises(HTTPException) as exc:
+            routes.fathom_retry_import(import_id=body["id"], db=db_session, user=user)
+        assert exc.value.status_code == 404
+
+        run_job(db_session, factory)
+        source = db_session.query(Source).one()
+        assert (source.owner_organization_id, source.visibility) == (partner.org.id, "internal")
+        assert marks(db_session, user) == []  # imported: still DIMAS-internal
+        with pytest.raises(HTTPException) as exc:
+            start(db_session, user, project)
+        assert exc.value.detail["import"] is None
+
+        # DIMAS shares the meeting → souBIM sees the import (and the meeting)
+        source.visibility = "shared"
+        db_session.commit()
+        assert [(m["source_id"], m["visibility"]) for m in marks(db_session, user)] == [(body["id"], "shared")]
+
+    def test_owners_internal_import_is_hidden_from_the_partner(
+        self, db_session, user, project, conn, partner, fake, fake_s3,
+    ):
+        api(fake, "GET", "/meetings", page([MEETING]))
+        body = start(db_session, user, project)
+        assert marks(db_session, partner.admin) == []
+        with pytest.raises(HTTPException) as exc:
+            start(db_session, partner.admin, project)
+        assert exc.value.detail == {"code": "already_imported", "import": None}
+        with pytest.raises(HTTPException) as exc:
+            routes.fathom_retry_import(import_id=body["id"], db=db_session, user=partner.admin)
+        assert exc.value.status_code == 404
+        # a shared in-flight import is visible
+        db_session.query(FathomImport).update({"visibility": "shared"})
+        db_session.commit()
+        assert [m["id"] for m in marks(db_session, partner.admin)] == [body["id"]]

@@ -482,6 +482,11 @@ class FathomImport(Base):
     source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), unique=True)
     job_id = Column(GUID(), ForeignKey("jobs.id", ondelete="SET NULL"))
     download_id = Column(String(128))  # Fathom download being prepared; reused across retries
+    # Story 12.4: owner organization / visibility given to the Source the job creates (the importer's
+    # organization on the project; 'internal' unless the importer chose 'shared'). Default owner on
+    # flush: the project's owning organization.
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
+    visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
 
@@ -492,6 +497,7 @@ class FathomImport(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "recording_id", name="uq_fathom_imports_project_recording"),
         Index("idx_fathom_imports_recording", "recording_id"),
+        CheckConstraint("visibility IN ('internal', 'shared')", name="ck_fathom_import_visibility"),
     )
 
 
@@ -637,14 +643,14 @@ class DecisionRelationship(Base):
 
 @event.listens_for(Session, "before_flush")
 def _default_owner_organization(session, flush_context, instances):
-    """Story 12.4: new sources (and source-less items) without an owner belong to the project's
+    """Story 12.4: new sources, Fathom imports and source-less items without an owner belong to the project's
     owning organization — platform ingestion (Gmail, Drive, seed) creates them this way. Routes acting
     for a user of a shared organization set the owner explicitly."""
     new = list(session.new)
     pending_projects = {str(o.id): o for o in new if isinstance(o, Project) and o.id is not None}
     with session.no_autoflush:
         for obj in new:
-            if isinstance(obj, Source):
+            if isinstance(obj, (Source, FathomImport)):
                 needs_owner = obj.owner_organization_id is None
             elif isinstance(obj, ProjectItem):
                 needs_owner = obj.owner_organization_id is None and obj.source_id is None and obj.source is None

@@ -267,6 +267,24 @@ def can_change_visibility(db: Session, user, source: Source) -> bool:
     return organization_roles(db, user).get(owner) in ADMIN_ROLES
 
 
+def can_create_shared(db: Session, user, project: Project) -> bool:
+    """Can the user create a meeting on ``project`` that is ``shared`` from the start (Fathom import)?
+
+    Same rule as ``can_change_visibility``: owner/admin of the organization they act for on the project.
+    """
+    org = acting_organization_id(db, user, project)
+    return org is not None and organization_roles(db, user).get(str(org)) in ADMIN_ROLES
+
+
+def owned_object_visible(db: Session, user, project: Project, owner_organization_id, visibility: str) -> bool:
+    """Visibility rule for an object that is not a Source yet but will become one (e.g. an in-flight
+    Fathom import): same as ``source_visible`` for the given owner organization and visibility."""
+    orgs = project_access_by_organization(db, user, project)
+    if not orgs:
+        return False
+    return visibility == SHARED or (owner_organization_id is not None and str(owner_organization_id) in orgs)
+
+
 def acting_organization_id(db: Session, user, project: Project) -> Optional[UUID]:
     """Organization a user acts for on ``project`` — owner of the meetings/items they create there.
 
