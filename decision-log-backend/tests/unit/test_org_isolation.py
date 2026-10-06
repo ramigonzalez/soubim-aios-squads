@@ -25,6 +25,7 @@ from app.api.routes import (
     meetings,
     participants,
     project_items,
+    project_organizations,
     projects,
     shared_links,
     source_curation,
@@ -35,6 +36,7 @@ from app.database.models import (
     Organization,
     Project,
     ProjectItem,
+    ProjectOrganization,
     ProjectParticipant,
     ProjectStage,
     SharedLink,
@@ -467,3 +469,179 @@ class TestSharedPlatformChannels:
         own = {"project_id": str(world.a.project.id), "webhook_id": "wh-a", "transcript": "x"}
         result = run(webhooks.receive_transcript(own, r, background_tasks=None, db=db_session))
         assert result == {"status": "duplicate", "source_id": str(world.a.pending.id)}
+
+
+# ─── Story 12.3: projects shared between organizations ───────────────────────
+
+
+def _share(db, user, project_id, slug, access_level="viewer"):
+    body = project_organizations.ShareCreate(organization_slug=slug, access=access_level)
+    return run(project_organizations.share_project(project_id, body, req(user), db=db))
+
+
+def _shares(db, user, project_id):
+    return run(project_organizations.list_project_organizations(project_id, req(user), db=db))["organizations"]
+
+
+@pytest.fixture
+def shared(db_session: Session, world) -> SimpleNamespace:
+    """World + a DIMAS member and a third organization; project A not shared yet."""
+    third = make_org(db_session, "Third", "third")
+    third_admin = _user(db_session, "admin@third.com", role="director")
+    make_org_member(db_session, third_admin, "admin", org=third)
+    b_member = _user(db_session, "member@dimas.com")
+    make_org_member(db_session, b_member, "member", org=world.b.org)
+    db_session.commit()
+    return SimpleNamespace(world=world, third=third, third_admin=third_admin, b_member=b_member)
+
+
+class TestProjectSharing:
+    def test_unshared_project_stays_invisible(self, db_session, shared):
+        w = shared.world
+        assert access.project_access_level(db_session, w.b_admin, w.a.project) == access.NONE
+        assert status_of(project_organizations.list_project_organizations(w.a.project.id, req(w.b_admin),
+                                                                          db=db_session)) == 403
+
+    def test_viewer_reads_but_cannot_write(self, db_session, shared, recordings_dir):
+        w = shared.world
+        a, r = w.a, req(w.b_admin)
+        pid = str(a.project.id)
+        entry = _share(db_session, w.a_admin, a.project.id, "DIMAS", "viewer")  # slug lookup is case-insensitive
+        assert entry["organization_id"] == str(w.b.org.id) and entry["access"] == "viewer"
+        assert entry["invited_by"] == str(w.a_admin.id)
+
+        assert access.project_access_level(db_session, w.b_admin, a.project) == access.READ
+        ids = {p["id"] for p in _list_projects(db_session, w.b_admin)["projects"]}
+        assert ids == {str(a.project.id), str(w.b.project.id)}
+        assert set(get_user_projects(db_session, str(w.b_admin.id))) == {a.project.id, w.b.project.id}
+        assert run(projects.get_project_detail(a.project.id, r, db=db_session))["id"] == pid
+        assert run(_list_items(db_session, w.b_admin, pid))["total"] == 1
+        assert run(project_items.get_project_item(pid, str(a.item.id), r, db=db_session))["id"] == str(a.item.id)
+        assert run(participants.list_participants(pid, r, db=db_session))
+        # Until Story 12.4 a shared organization sees every meeting of the project
+        assert run(meetings.get_meeting(a.processed.id, db=db_session, user=w.b_admin))
+
+        assert status_of(project_items.create_project_item(pid, _item_body(), r, db=db_session)) == 403
+        assert status_of(project_items.update_project_item(pid, str(a.item.id), ProjectItemUpdate(statement="x"), r,
+                                                           db=db_session)) == 403
+        assert status_of(participants.add_participant(pid, ParticipantCreate(name="X", discipline="mep"), r,
+                                                      db=db_session)) == 403
+        assert status_of(documents.upload_document(pid, r, file=SimpleNamespace(filename="a.pdf"), title=None,
+                                                   db=db_session)) == 403
+        payload = {"project_id": pid, "webhook_id": "wh-shared", "transcript": "x"}
+        assert status_of(webhooks.receive_transcript(payload, r, background_tasks=None, db=db_session)) == 403
+        db_session.refresh(a.item)
+        assert a.item.statement == "Decision A"
+
+    def test_contributor_adds_items_but_no_admin_actions(self, db_session, shared):
+        w = shared.world
+        a, r = w.a, req(w.b_admin)
+        pid = str(a.project.id)
+        _share(db_session, w.a_admin, a.project.id, "dimas", "contributor")
+        assert access.project_access_level(db_session, w.b_admin, a.project) == access.WRITE
+        created = run(project_items.create_project_item(pid, _item_body(), r, db=db_session))
+        assert created["source_type"] == "manual_input"
+
+        assert status_of(project_items.update_project_item(pid, str(a.item.id), ProjectItemUpdate(is_milestone=False),
+                                                           r, db=db_session)) == 403
+        assert status_of(projects.update_project(a.project.id, projects.ProjectUpdate(name="x"), r,
+                                                 db=db_session)) == 403
+        assert status_of(projects.archive_project(a.project.id, r, db=db_session)) == 403
+        assert status_of(shared_links.create_share_link(pid, shared_links.CreateShareLinkRequest(), r,
+                                                        db=db_session)) == 403
+        assert status_of(ingestion.update_source_status(str(a.pending.id), IngestionUpdate(ingestion_status="approved"),
+                                                        r, db=db_session)) == 403
+        db_session.expire_all()
+        assert db_session.get(Source, a.pending.id).ingestion_status == "pending"
+
+    def test_shared_organization_cannot_reshare_or_manage_shares(self, db_session, shared):
+        w = shared.world
+        a = w.a
+        _share(db_session, w.a_admin, a.project.id, "dimas", "contributor")
+        r = req(w.b_admin)
+        assert status_of(project_organizations.list_project_organizations(a.project.id, r, db=db_session)) == 403
+        body = project_organizations.ShareCreate(organization_slug="third", access="viewer")
+        assert status_of(project_organizations.share_project(a.project.id, body, r, db=db_session)) == 403
+        assert status_of(project_organizations.update_project_share(
+            a.project.id, w.b.org.id, project_organizations.ShareUpdate(access="viewer"), r, db=db_session)) == 403
+        assert status_of(project_organizations.unshare_project(a.project.id, w.b.org.id, r, db=db_session)) == 403
+        # nor can a member (non-admin) of the owner organization
+        assert status_of(project_organizations.list_project_organizations(a.project.id, req(w.a_member),
+                                                                          db=db_session)) == 403
+        assert access.project_access_level(db_session, shared.third_admin, a.project) == access.NONE
+        assert [s["slug"] for s in _shares(db_session, w.a_admin, a.project.id)] == ["soubim", "dimas"]
+
+    def test_third_organization_still_sees_nothing(self, db_session, shared):
+        w = shared.world
+        _share(db_session, w.a_admin, w.a.project.id, "dimas", "contributor")
+        t = shared.third_admin
+        assert _list_projects(db_session, t)["projects"] == []
+        assert status_of(projects.get_project_detail(w.a.project.id, req(t), db=db_session)) == 403
+        assert status_of(meetings.get_meeting(w.a.processed.id, db=db_session, user=t)) == 404
+        assert _list_sources(db_session, t)["sources"] == []
+
+    def test_members_of_shared_organization_need_assignment(self, db_session, shared):
+        w = shared.world
+        _share(db_session, w.a_admin, w.a.project.id, "dimas", "contributor")
+        m = shared.b_member
+        assert access.project_access_level(db_session, m, w.a.project) == access.NONE
+        assert _list_projects(db_session, m)["projects"] == []
+        assign_to_project(db_session, m, w.a.project)
+        db_session.commit()
+        assert access.project_access_level(db_session, m, w.a.project) == access.WRITE
+        assert {p["id"] for p in _list_projects(db_session, m)["projects"]} == {str(w.a.project.id)}
+
+    def test_change_and_remove_share(self, db_session, shared):
+        w = shared.world
+        a, admin = w.a, req(w.a_admin)
+        _share(db_session, w.a_admin, a.project.id, "dimas", "contributor")
+        updated = run(project_organizations.update_project_share(
+            a.project.id, w.b.org.id, project_organizations.ShareUpdate(access="viewer"), admin, db=db_session))
+        assert updated["access"] == "viewer"
+        assert access.project_access_level(db_session, w.b_admin, a.project) == access.READ
+
+        run(project_organizations.unshare_project(a.project.id, w.b.org.id, admin, db=db_session))
+        assert access.project_access_level(db_session, w.b_admin, a.project) == access.NONE
+        assert {p["id"] for p in _list_projects(db_session, w.b_admin)["projects"]} == {str(w.b.project.id)}
+        assert status_of(_list_items(db_session, w.b_admin, a.project.id)) == 403
+        assert status_of(meetings.get_meeting(a.processed.id, db=db_session, user=w.b_admin)) == 404
+        assert [s["slug"] for s in _shares(db_session, w.a_admin, a.project.id)] == ["soubim"]
+
+    def test_invalid_shares_rejected(self, db_session, shared):
+        w = shared.world
+        a, admin = w.a, req(w.a_admin)
+        assert status_of(project_organizations.share_project(
+            a.project.id, project_organizations.ShareCreate(organization_slug="soubim"), admin, db=db_session)) == 400
+        assert status_of(project_organizations.share_project(
+            a.project.id, project_organizations.ShareCreate(organization_slug="nope"), admin, db=db_session)) == 404
+        assert status_of(project_organizations.share_project(
+            a.project.id, project_organizations.ShareCreate(), admin, db=db_session)) == 422
+        _share(db_session, w.a_admin, a.project.id, "dimas")
+        assert status_of(project_organizations.share_project(
+            a.project.id, project_organizations.ShareCreate(organization_id=w.b.org.id), admin, db=db_session)) == 409
+        assert status_of(project_organizations.unshare_project(a.project.id, w.a.org.id, admin, db=db_session)) == 400
+        assert status_of(project_organizations.update_project_share(
+            a.project.id, shared.third.id, project_organizations.ShareUpdate(access="viewer"), admin,
+            db=db_session)) == 404
+        with pytest.raises(ValueError):
+            project_organizations.ShareCreate(organization_slug="third", access="owner")
+        with pytest.raises(ValueError):
+            project_organizations.ShareUpdate(access="admin")
+
+    def test_new_project_records_owner_row(self, db_session, shared):
+        w = shared.world
+        created = run(projects.create_project(projects.ProjectCreate(name="Torre"), req(w.b_admin), db=db_session))
+        rows = db_session.query(ProjectOrganization).filter(
+            ProjectOrganization.project_id == created["id"]).all()
+        assert [(r.organization_id, r.access) for r in rows] == [(w.b.org.id, "owner")]
+        listed = _shares(db_session, w.b_admin, created["id"])
+        assert listed == [{"organization_id": str(w.b.org.id), "name": "DIMAS", "slug": "dimas", "access": "owner",
+                           "invited_by": None, "created_at": None}]
+
+    def test_owner_row_never_grants_access(self, db_session, shared):
+        """A stray 'owner' row for another organization does not make it an owner (ownership = column)."""
+        w = shared.world
+        db_session.add(ProjectOrganization(project_id=w.a.project.id, organization_id=shared.third.id, access="owner"))
+        db_session.commit()
+        assert access.project_access_level(db_session, shared.third_admin, w.a.project) == access.NONE
+        assert _list_projects(db_session, shared.third_admin)["projects"] == []

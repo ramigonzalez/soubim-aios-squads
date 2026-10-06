@@ -11,6 +11,7 @@ from uuid import UUID
 from app.database.session import get_db
 from app.services.access import ADMIN, admin_organization, is_platform_admin, require_project_access
 from app.database.models import Project, ProjectMember
+from app.services.project_sharing import add_owner_row
 from app.services.project_service import (
     get_projects,
     get_project,
@@ -254,6 +255,7 @@ async def create_project(
     )
     db.add(project)
     db.flush()
+    add_owner_row(db, project, invited_by=user.id)  # Story 12.3
 
     # Add creator as project member
     member = ProjectMember(

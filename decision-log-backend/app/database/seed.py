@@ -27,6 +27,7 @@ from app.database.models import (
 )
 from app.database.session import SessionLocal
 from app.services.organizations import ensure_default_organization
+from app.services.project_sharing import add_owner_row
 from app.utils.security import hash_password
 
 
@@ -122,6 +123,8 @@ def seed_database():
         )
         db.add(project2)
         db.flush()
+        add_owner_row(db, project1)  # Story 12.3
+        add_owner_row(db, project2)
         print("  ✓ Created project: Commercial Plaza Beta")
 
         # Add project members

@@ -10,10 +10,15 @@ Rules (a project is reachable only through the organization that owns it):
   share links).
 - ``member`` of the owning organization who is assigned to the project (``project_members``)
   → ``write`` (read everything, add manual items, edit items, participants, stages).
+- Story 12.3 — the project is shared with another organization (``project_organizations``
+  row ``contributor`` → ``write``, ``viewer`` → ``read``): that organization's ``owner`` /
+  ``admin`` get the shared level; its ``member``s get it only when assigned to the project
+  (same rule as the owning organization). A shared organization never gets ``admin``, so it
+  cannot edit the project or manage its shares (no re-sharing).
 - Anyone else → ``none``. Projects without an owning organization are never accessible.
 
-Story 12.3 (projects shared with other organizations) adds one more condition in
-``project_access_level`` and ``accessible_project_ids`` — nothing else needs to change.
+Ownership is ``projects.owner_organization_id``; the ``owner`` row in ``project_organizations``
+mirrors it and never grants access by itself.
 ``users.role`` is not used for authorization anymore.
 """
 
@@ -23,12 +28,21 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from app.database.models import Organization, OrganizationMember, Project, ProjectMember, Source
+from app.database.models import (
+    Organization,
+    OrganizationMember,
+    Project,
+    ProjectMember,
+    ProjectOrganization,
+    Source,
+)
 from app.services.organizations import DEFAULT_ORGANIZATION_SLUG, get_memberships
 
 NONE, READ, WRITE, ADMIN = "none", "read", "write", "admin"
 _RANK = {NONE: 0, READ: 1, WRITE: 2, ADMIN: 3}
 ADMIN_ROLES = ("owner", "admin")
+# Story 12.3: level an organization gets on a project shared with it
+SHARED_ACCESS_LEVELS = {"contributor": WRITE, "viewer": READ}
 
 
 def _user_id(user) -> str:
@@ -56,13 +70,39 @@ def project_access_level(db: Session, user, project: Project) -> str:
     """Access level of ``user`` on ``project``: none / read / write / admin."""
     if project is None or project.owner_organization_id is None:
         return NONE
-    role = organization_roles(db, user).get(str(project.owner_organization_id))
+    roles = organization_roles(db, user)
+    role = roles.get(str(project.owner_organization_id))
     if role in ADMIN_ROLES:
         return ADMIN
     if role == "member" and _is_assigned(db, user, project.id):
         return WRITE
-    # Story 12.3: projects shared with one of the user's organizations add a level here.
-    return NONE
+    return _shared_access_level(db, user, project, roles)
+
+
+def _shared_access_level(db: Session, user, project: Project, roles: Dict[str, str]) -> str:
+    """Story 12.3: best level granted by shares of ``project`` with the user's organizations."""
+    if not roles:
+        return NONE
+    shares = db.query(ProjectOrganization.organization_id, ProjectOrganization.access).filter(
+        ProjectOrganization.project_id == str(project.id),
+        ProjectOrganization.organization_id.in_(list(roles)),
+        ProjectOrganization.access.in_(tuple(SHARED_ACCESS_LEVELS)),
+    )
+    level = NONE
+    assigned = None
+    for org_id, access in shares:
+        role = roles.get(str(org_id))
+        if role not in ADMIN_ROLES:
+            if role != "member":
+                continue
+            if assigned is None:
+                assigned = _is_assigned(db, user, project.id)
+            if not assigned:
+                continue
+        shared = SHARED_ACCESS_LEVELS[access]
+        if _RANK[shared] > _RANK[level]:
+            level = shared
+    return level
 
 
 def has_access(level: str, required: str) -> bool:
@@ -79,10 +119,19 @@ def accessible_projects_filter(user):
         OrganizationMember.user_id == uid, OrganizationMember.role == "member"
     )
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
+    shared = ProjectOrganization.access.in_(tuple(SHARED_ACCESS_LEVELS))
+    shared_with_admin_orgs = select(ProjectOrganization.project_id).where(
+        shared, ProjectOrganization.organization_id.in_(admin_orgs)
+    )
+    shared_with_member_orgs = select(ProjectOrganization.project_id).where(
+        shared, ProjectOrganization.organization_id.in_(member_orgs)
+    )
     return or_(
         Project.owner_organization_id.in_(admin_orgs),
         and_(Project.owner_organization_id.in_(member_orgs), Project.id.in_(assigned)),
-        # Story 12.3: or Project.id in (projects shared with one of the user's organizations)
+        # Story 12.3: projects shared with one of the user's organizations
+        Project.id.in_(shared_with_admin_orgs),
+        and_(Project.id.in_(shared_with_member_orgs), Project.id.in_(assigned)),
     )
 
 

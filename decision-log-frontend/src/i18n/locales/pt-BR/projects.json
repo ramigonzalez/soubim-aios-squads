@@ -71,6 +71,28 @@
     "loadError": "Não foi possível carregar o projeto.",
     "error": "Não foi possível atualizar o projeto. Tente novamente."
   },
+  "sharing": {
+    "title": "Organizações com acesso",
+    "description": "Compartilhe este projeto com outra organização. Colaboradores podem adicionar reuniões e itens; leitores apenas visualizam.",
+    "access": {
+      "owner": "Proprietária",
+      "contributor": "Colaborador",
+      "viewer": "Leitor"
+    },
+    "accessFor": "Acesso de {{name}}",
+    "accessLabel": "Nível de acesso",
+    "slugLabel": "Identificador da organização",
+    "slugPlaceholder": "Identificador da organização (ex.: dimas)",
+    "invite": "Convidar",
+    "remove": "Remover {{name}}",
+    "removeConfirm": "Remover {{name}} deste projeto? Os membros perdem o acesso imediatamente.",
+    "errors": {
+      "notFound": "Nenhuma organização com este identificador.",
+      "alreadyShared": "Esta organização já tem acesso.",
+      "owner": "Este projeto já pertence a esta organização.",
+      "generic": "Não foi possível atualizar o acesso. Tente novamente."
+    }
+  },
   "form": {
     "details": "Dados do projeto",
     "name": {

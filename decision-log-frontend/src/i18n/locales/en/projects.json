@@ -71,6 +71,28 @@
     "loadError": "Failed to load project.",
     "error": "Failed to update project. Please try again."
   },
+  "sharing": {
+    "title": "Organizations with access",
+    "description": "Share this project with another organization. Contributors can add meetings and items; viewers can only read.",
+    "access": {
+      "owner": "Owner",
+      "contributor": "Contributor",
+      "viewer": "Viewer"
+    },
+    "accessFor": "Access for {{name}}",
+    "accessLabel": "Access level",
+    "slugLabel": "Organization identifier",
+    "slugPlaceholder": "Organization identifier (e.g. dimas)",
+    "invite": "Invite",
+    "remove": "Remove {{name}}",
+    "removeConfirm": "Remove {{name}} from this project? Its members lose access immediately.",
+    "errors": {
+      "notFound": "No organization with this identifier.",
+      "alreadyShared": "This organization already has access.",
+      "owner": "This project already belongs to this organization.",
+      "generic": "Could not update access. Please try again."
+    }
+  },
   "form": {
     "details": "Project Details",
     "name": {
