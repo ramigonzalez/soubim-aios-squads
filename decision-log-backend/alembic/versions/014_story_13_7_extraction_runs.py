@@ -1,7 +1,7 @@
 """Story 13.7: extraction versions.
 
-Revision ID: 012_story_13_7
-Revises: 011_story_13_4
+Revision ID: 014_story_13_7
+Revises: 013_story_12_4
 Create Date: 2026-10-06
 
 Changes:
@@ -17,8 +17,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '012_story_13_7'
-down_revision = '011_story_13_4'
+revision = '014_story_13_7'
+down_revision = '013_story_12_4'
 branch_labels = None
 depends_on = None
 

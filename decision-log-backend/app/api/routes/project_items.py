@@ -90,9 +90,11 @@ def _item_to_response(item: ProjectItem) -> dict:
 
 def _compute_facets(db: Session, project_id: str, user) -> dict:
     """Compute facet counts for a project's items the user can see (Story 12.4)."""
-    items = db.query(ProjectItem)
+    items = (
+        db.query(ProjectItem)
         .filter(ProjectItem.project_id == project_id, visible_items_filter(user), active_items_filter())
         .all()
+    )
 
     item_types: dict = {}
     source_types: dict = {}

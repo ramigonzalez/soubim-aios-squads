@@ -209,9 +209,10 @@ class TestOnlyActiveRunIsListed:
         link = SharedLink(project_id=two_versions.project_id, share_token="tok", created_by=admin.id,
                           expires_at=datetime.utcnow() + timedelta(days=1))
         db_session.add(link)
+        two_versions.visibility = "shared"  # Story 12.4: public links show shared meetings only
         db_session.commit()
         data = run(shared_links.view_shared_timeline("tok", db=db_session))
-        assert sorted(m["statement"] for m in data["milestones"]) == ["B", "Manual"]
+        assert sorted(m["statement"] for m in data["milestones"]) == ["B"]
 
     def test_manual_items_are_unaffected_by_rollback(self, db_session, two_versions, admin):
         v1 = runs_of(db_session, two_versions)[0]
@@ -310,7 +311,7 @@ class TestBackfill:
     def test_existing_items_become_version_1_active(self, db_session, meeting, monkeypatch):
         if db_session.get_bind().dialect.name != "postgresql":
             pytest.skip("backfill SQL is PostgreSQL")
-        path = Path(__file__).parents[2] / "alembic" / "versions" / "012_story_13_7_extraction_runs.py"
+        path = Path(__file__).parents[2] / "alembic" / "versions" / "014_story_13_7_extraction_runs.py"
         monkeypatch.setitem(sys.modules, "alembic", SimpleNamespace(op=None))  # the repo's alembic/ shadows the package
         spec = importlib.util.spec_from_file_location("mig012", path)
         mig = importlib.util.module_from_spec(spec)
@@ -344,3 +345,66 @@ class TestBackfill:
                 assert item.extraction_run_id is None
             else:
                 assert item.extraction_run_id == by_source[item.source_id].id
+
+
+# ─── Isolation (Stories 12.4 + 13.7): visibility AND active run apply together ─────────────────────────────
+
+from tests.unit.test_meeting_visibility import _set_visibility, vis  # noqa: E402,F401 — fixture
+from tests.unit.test_org_isolation import _list_items, shared, status_of, world  # noqa: E402,F401 — fixtures
+
+
+def _two_runs(db, source):
+    """Version 1 (inactive) + version 2 (active) of ``source`` — replaces the world's single item."""
+    db.query(ProjectItem).filter(ProjectItem.source_id == source.id).delete()
+    import_items(db, source, output("OLD")["items"])
+    import_items(db, source, output("NEW")["items"], replace=True)
+    db.commit()
+    return runs_of(db, source)
+
+
+def _statements(db, user, project_id):
+    return sorted(i["statement"] for i in run(_list_items(db, user, project_id))["items"])
+
+
+class TestVersionsRespectVisibility:
+    def test_internal_meeting_versions_are_not_found_for_the_shared_organization(self, db_session, vis):
+        a = vis.a
+        v1, _ = _two_runs(db_session, a.processed)
+        for user in (vis.w.b_admin, vis.b_member):
+            assert status_of(runs_routes.list_extraction_runs(a.processed.id, db=db_session, user=user)) == 404
+            assert status_of(runs_routes.activate_extraction_run(a.processed.id, v1.id, db=db_session, user=user)) == 404
+            assert status_of(runs_routes.re_extract_source(a.processed.id, db=db_session, user=user)) == 404
+        assert [r.is_active for r in runs_of(db_session, a.processed)] == [False, True]
+
+    def test_owner_organization_admin_manages_its_internal_meeting(self, db_session, vis):
+        a = vis.a
+        v1, _ = _two_runs(db_session, a.processed)
+        data = run(runs_routes.list_extraction_runs(a.processed.id, db=db_session, user=vis.w.a_admin))
+        assert data["can_manage"] is True
+        run(runs_routes.activate_extraction_run(a.processed.id, v1.id, db=db_session, user=vis.w.a_admin))
+        assert "OLD" in _statements(db_session, vis.w.a_admin, a.project.id)
+
+    def test_shared_meeting_versions_are_readable_but_not_manageable_by_the_other_organization(self, db_session, vis):
+        a = vis.a
+        v1, _ = _two_runs(db_session, a.processed)
+        _set_visibility(db_session, vis.w.a_admin, a.processed.id, "shared")
+        for user in (vis.w.b_admin, vis.b_member):
+            data = run(runs_routes.list_extraction_runs(a.processed.id, db=db_session, user=user))
+            assert data["can_manage"] is False and [r["version"] for r in data["runs"]] == [2, 1]
+            assert status_of(runs_routes.activate_extraction_run(a.processed.id, v1.id, db=db_session, user=user)) == 403
+            assert status_of(runs_routes.re_extract_source(a.processed.id, db=db_session, user=user)) == 403
+        assert [r.is_active for r in runs_of(db_session, a.processed)] == [False, True]
+
+    def test_both_filters_apply_on_listings(self, db_session, vis):
+        a = vis.a
+        v1, _ = _two_runs(db_session, a.processed)
+        # internal: the other organization sees none of the meeting's versions
+        assert not {"OLD", "NEW"} & set(_statements(db_session, vis.w.b_admin, a.project.id))
+        # shared: it sees the active version only
+        _set_visibility(db_session, vis.w.a_admin, a.processed.id, "shared")
+        statements = _statements(db_session, vis.w.b_admin, a.project.id)
+        assert "NEW" in statements and "OLD" not in statements
+        # rollback by the owner changes what the other organization sees, atomically
+        run(runs_routes.activate_extraction_run(a.processed.id, v1.id, db=db_session, user=vis.w.a_admin))
+        statements = _statements(db_session, vis.w.b_admin, a.project.id)
+        assert "OLD" in statements and "NEW" not in statements

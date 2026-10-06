@@ -146,9 +146,11 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
     ]
 
     # Get statistics
-    decisions = db.query(Decision)
+    decisions = (
+        db.query(Decision)
         .filter(Decision.project_id == project_id, visible_items_filter(user), active_items_filter())
         .all()
+    )
 
     total_decisions = len(decisions)
 
