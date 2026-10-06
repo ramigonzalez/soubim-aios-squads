@@ -1,9 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from 'react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import i18n from '../../i18n'
 import { MeetingViewer } from '../../pages/MeetingViewer'
 import type { Meeting } from '../../hooks/useMeeting'
+
+vi.mock('../../services/api', () => ({
+  default: { get: vi.fn(), patch: vi.fn(), defaults: { baseURL: 'http://localhost:8000/api' } },
+}))
+
+import api from '../../services/api'
+
+const mockedApi = vi.mocked(api)
 
 const useMeetingMock = vi.fn()
 vi.mock('../../hooks/useMeeting', async () => {
@@ -41,12 +51,15 @@ function makeMeeting(overrides: Partial<Meeting> = {}): Meeting {
 }
 
 function renderAt(url: string) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MemoryRouter initialEntries={[url]}>
-      <Routes>
-        <Route path="/meetings/:sourceId" element={<MeetingViewer />} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[url]}>
+        <Routes>
+          <Route path="/meetings/:sourceId" element={<MeetingViewer />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 
@@ -129,5 +142,91 @@ describe('MeetingViewer (Story 7.13)', () => {
     renderAt('/meetings/missing')
     expect(screen.getByText('Meeting not available')).toBeInTheDocument()
     expect(screen.getByText('Source not found')).toBeInTheDocument()
+  })
+})
+
+describe('MeetingViewer visibility (Story 12.4)', () => {
+  beforeEach(() => {
+    useMeetingMock.mockReset()
+    mockedApi.patch.mockReset()
+    Element.prototype.scrollTo = vi.fn()
+  })
+
+  it('shows the badge without a switch for users who cannot change it', () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({ visibility: 'shared', can_change_visibility: false }),
+      isLoading: false,
+      error: null,
+    })
+    renderAt('/meetings/src-1')
+    expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Shared')
+    expect(screen.queryByRole('button', { name: /make internal|share with the project/i })).not.toBeInTheDocument()
+  })
+
+  it('shares an internal meeting only after confirmation', async () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({ visibility: 'internal', can_change_visibility: true }),
+      isLoading: false,
+      error: null,
+    })
+    mockedApi.patch.mockResolvedValue({ data: { id: 'src-1', visibility: 'shared' } })
+    const user = userEvent.setup()
+    renderAt('/meetings/src-1')
+
+    expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Internal')
+    await user.click(screen.getByRole('button', { name: 'Share with the project' }))
+    expect(mockedApi.patch).not.toHaveBeenCalled()
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Every organization on the project will see this meeting')
+
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(mockedApi.patch).toHaveBeenCalledWith('/sources/src-1/visibility', { visibility: 'shared' }))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+  })
+
+  it('cancelling the confirmation changes nothing', async () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({ visibility: 'shared', can_change_visibility: true }),
+      isLoading: false,
+      error: null,
+    })
+    const user = userEvent.setup()
+    renderAt('/meetings/src-1')
+
+    await user.click(screen.getByRole('button', { name: 'Make internal' }))
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Only your organization will see this meeting')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(mockedApi.patch).not.toHaveBeenCalled()
+  })
+
+  it('shows an error when the change fails', async () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({ visibility: 'internal', can_change_visibility: true }),
+      isLoading: false,
+      error: null,
+    })
+    mockedApi.patch.mockRejectedValue(new Error('403'))
+    const user = userEvent.setup()
+    renderAt('/meetings/src-1')
+
+    await user.click(screen.getByRole('button', { name: 'Share with the project' }))
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not change the visibility.')
+  })
+
+  it('renders the Portuguese labels', async () => {
+    await i18n.changeLanguage('pt-BR')
+    try {
+      useMeetingMock.mockReturnValue({
+        data: makeMeeting({ visibility: 'internal', can_change_visibility: true }),
+        isLoading: false,
+        error: null,
+      })
+      renderAt('/meetings/src-1')
+      expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Interna')
+      expect(screen.getByRole('button', { name: 'Compartilhar com o projeto' })).toBeInTheDocument()
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 })

@@ -17,7 +17,14 @@ from sqlalchemy.orm import Session
 from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
-from app.services.access import ADMIN, accessible_project_ids, has_access, project_access_level, require_source_access
+from app.services.access import (
+    ADMIN,
+    has_access,
+    project_access_level,
+    require_source_access,
+    source_visible,
+    visible_sources_filter,
+)
 from app.services.jobs import enqueue, latest_job_for_source
 
 router = APIRouter()
@@ -41,8 +48,9 @@ def _require_source_admin(request: Request, db: Session, source_id: str):
 
 
 def _visible_sources(user):
-    """Story 12.2: condition limiting sources to projects the user can access."""
-    return Source.project_id.in_(accessible_project_ids(user))
+    """Story 12.2: sources of projects the user can access; Story 12.4: minus other organizations'
+    internal sources."""
+    return visible_sources_filter(user)
 
 
 def _format_job(job) -> dict | None:
@@ -75,6 +83,7 @@ def _format_source(source, project_name: str, item_count: int = 0, approved_by_n
         "rejected_at": source.rejected_at.isoformat() if source.rejected_at else None,
         "extraction_error": source.extraction_error,
         "extracted_item_count": item_count,
+        "visibility": source.visibility,  # Story 12.4
         "job": _format_job(job),
     }
 
@@ -390,7 +399,7 @@ async def batch_update_sources(
 
     for sid in batch.source_ids:
         source = db.query(Source).filter(Source.id == sid).first()
-        if not source or not has_access(project_access_level(db, user, source.project), ADMIN):
+        if not source_visible(db, user, source) or not has_access(project_access_level(db, user, source.project), ADMIN):
             continue
 
         source.ingestion_status = new_status

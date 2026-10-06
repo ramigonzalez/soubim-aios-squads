@@ -234,4 +234,20 @@ describe('SourceGroupAccordion', () => {
     )
     expect(screen.getByRole('region', { name: /Design Coordination Meeting, 2 items/ })).toBeInTheDocument()
   })
+
+  it('shows the meeting visibility badge (Story 12.4)', () => {
+    const { rerender } = render(
+      <SourceGroupAccordion source={{ ...makeSource(), visibility: 'internal' }} items={[makeItem()]} onItemClick={mockOnItemClick} />
+    )
+    expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Internal')
+    rerender(
+      <SourceGroupAccordion source={{ ...makeSource(), visibility: 'shared' }} items={[makeItem()]} onItemClick={mockOnItemClick} />
+    )
+    expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Shared')
+  })
+
+  it('shows no visibility badge when the source has none', () => {
+    render(<SourceGroupAccordion source={makeSource()} items={[makeItem()]} onItemClick={mockOnItemClick} />)
+    expect(screen.queryByTestId('visibility-badge')).not.toBeInTheDocument()
+  })
 })

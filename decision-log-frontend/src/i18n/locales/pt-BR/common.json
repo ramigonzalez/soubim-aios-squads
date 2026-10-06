@@ -9,5 +9,11 @@
   "delete": "Excluir",
   "back": "Voltar",
   "items_one": "{{count}} item",
-  "items_other": "{{count}} itens"
+  "items_other": "{{count}} itens",
+  "visibility": {
+    "internal": "Interna",
+    "shared": "Compartilhada",
+    "internalHint": "Visível só para a organização dona da reunião",
+    "sharedHint": "Visível para todas as organizações do projeto"
+  }
 }

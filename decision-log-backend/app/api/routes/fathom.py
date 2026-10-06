@@ -12,12 +12,16 @@ Story 13.4 (browse & import):
 - POST   /api/integrations/fathom/imports             → import a recording into a project (enqueues a job)
 - POST   /api/integrations/fathom/imports/{id}/retry  → retry a failed import (importer only)
 
+Story 12.4: an import creates a meeting owned by the importer's organization on the project, ``internal``
+by default (``shared`` only for admins of that organization). Imports of meetings the user cannot see
+(another organization's internal meeting) are never listed or returned.
+
 The callback path must match FATHOM_REDIRECT_URI and the redirect URL registered in the Fathom app.
 """
 
 import logging
 import uuid
-from typing import Optional
+from typing import Literal, Optional
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -36,6 +40,7 @@ from app.services.access import (
     WRITE,
     accessible_project_ids,
     accessible_projects_filter,
+    can_create_shared,
     has_access,
     project_access_level,
     require_project_access,
@@ -169,6 +174,7 @@ def fathom_callback(
 class ImportRequest(BaseModel):
     recording_id: str = Field(..., min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
     project_id: str = Field(..., min_length=1, max_length=64)
+    visibility: Literal["internal", "shared"] = "internal"  # Story 12.4
 
 
 def _usable_connection(db: Session, user):
@@ -190,6 +196,7 @@ def _format_import(imp: FathomImport, user) -> dict:
         "project_id": str(imp.project_id),
         "project_name": imp.project.name if imp.project else "",
         "state": state,
+        "visibility": imp.source.visibility if imp.source else imp.visibility,  # Story 12.4
         "source_id": str(imp.source_id) if imp.source_id else None,
         "source_status": imp.source.ingestion_status if imp.source else None,
         "job": {
@@ -236,6 +243,8 @@ def fathom_meetings(
     ) if ids else []
     by_recording: dict = {}
     for imp in imports:
+        if not fathom_import.import_visible(db, user, imp):  # Story 12.4: another organization's internal meeting
+            continue
         by_recording.setdefault(imp.recording_id, []).append(_format_import(imp, user))
     for meeting in meetings:
         meeting["imports"] = by_recording.get(meeting["recording_id"], [])
@@ -244,7 +253,10 @@ def fathom_meetings(
 
 @router.get("/integrations/fathom/projects")
 def fathom_import_projects(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    """Projects the user can import meetings into (write access or more), not archived."""
+    """Projects the user can import meetings into (write access or more), not archived.
+
+    ``can_share`` (Story 12.4): the user may import as ``shared`` (admin of the organization they act for).
+    """
     projects = (
         db.query(Project)
         .filter(accessible_projects_filter(user), Project.archived_at.is_(None))
@@ -252,7 +264,7 @@ def fathom_import_projects(db: Session = Depends(get_db), user=Depends(get_curre
         .all()
     )
     return [
-        {"id": str(p.id), "name": p.name}
+        {"id": str(p.id), "name": p.name, "can_share": can_create_shared(db, user, p)}
         for p in projects
         if has_access(project_access_level(db, user, p), WRITE)
     ]
@@ -267,14 +279,21 @@ def fathom_start_import(body: ImportRequest, db: Session = Depends(get_db), user
     """
     _usable_connection(db, user)
     project = require_project_access(db, user, body.project_id, WRITE)
+    if body.visibility == "shared" and not can_create_shared(db, user, project):  # Story 12.4
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins of your organization can import a meeting as shared",
+        )
     if not storage.is_enabled():
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Recording storage is not configured")
     try:
-        imp = fathom_import.start_import(db, user, project, body.recording_id)
+        imp = fathom_import.start_import(db, user, project, body.recording_id, body.visibility)
     except fathom_import.ImportExists as exc:
+        # Story 12.4: never reveal another organization's internal import (source id, status, errors)
+        visible = exc.existing is not None and fathom_import.import_visible(db, user, exc.existing)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "already_imported", "import": _format_import(exc.existing, user)},
+            detail={"code": "already_imported", "import": _format_import(exc.existing, user) if visible else None},
         )
     return _format_import(imp, user)
 
@@ -287,7 +306,8 @@ def fathom_retry_import(import_id: str, db: Session = Depends(get_db), user=Depe
         imp = db.get(FathomImport, uuid.UUID(import_id))
     except ValueError:
         imp = None
-    if imp is None or project_access_level(db, user, imp.project) == NONE:
+    # Story 12.4: an import of a meeting the user cannot see is not found either
+    if imp is None or project_access_level(db, user, imp.project) == NONE or not fathom_import.import_visible(db, user, imp):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Import not found")
     require_project_access(db, user, imp.project_id, WRITE)
     if str(imp.user_id) != str(user.id):

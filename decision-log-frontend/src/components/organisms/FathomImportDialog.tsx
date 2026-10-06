@@ -2,8 +2,9 @@
  * FathomImportDialog — pick the target project for a Fathom recording (Story 13.4).
  *
  * Lists the projects the user can import into (write access). Projects that already have
- * this recording are disabled (the backend refuses duplicates too). Visibility (internal /
- * shared) is not offered yet: it arrives with Story 12.4.
+ * this recording are disabled (the backend refuses duplicates too). Story 12.4: visibility of the
+ * imported meeting — internal (default) or shared; shared only where the user is an admin of the
+ * organization they act for (`can_share`).
  */
 
 import { useState } from 'react'
@@ -13,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { integrationsService } from '../../services/integrationsService'
 import type { FathomMeeting } from '../../types/integrations'
+import type { MeetingVisibility } from '../../types/projectItem'
 
 export const FATHOM_MEETINGS_KEY = 'fathom-meetings'
 const IMPORT_PROJECTS_KEY = 'fathom-import-projects'
@@ -33,6 +35,7 @@ export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps
   const { t } = useTranslation('integrations')
   const queryClient = useQueryClient()
   const [projectId, setProjectId] = useState('')
+  const [visibility, setVisibility] = useState<MeetingVisibility>('internal')
 
   const { data: projects, isLoading } = useQuery(IMPORT_PROJECTS_KEY, integrationsService.getFathomImportProjects, {
     enabled: !!meeting,
@@ -48,16 +51,27 @@ export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps
 
   const close = () => {
     setProjectId('')
+    setVisibility('internal')
     importMutation.reset()
     onClose()
   }
 
   const importedInto = new Set((meeting?.imports ?? []).map(i => i.project_id))
+  const canShare = !!projects?.find(p => p.id === projectId)?.can_share
+
+  const selectProject = (id: string) => {
+    setProjectId(id)
+    if (!projects?.find(p => p.id === id)?.can_share) setVisibility('internal')
+  }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (!meeting || !projectId) return
-    importMutation.mutate({ recording_id: meeting.recording_id, project_id: projectId })
+    importMutation.mutate({
+      recording_id: meeting.recording_id,
+      project_id: projectId,
+      visibility: canShare ? visibility : 'internal',
+    })
   }
 
   return (
@@ -86,7 +100,7 @@ export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps
                 <span className="font-medium text-gray-700">{t('meetings.dialog.project')}</span>
                 <select
                   value={projectId}
-                  onChange={e => setProjectId(e.target.value)}
+                  onChange={e => selectProject(e.target.value)}
                   className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
                   <option value="">{t('meetings.dialog.selectProject')}</option>
@@ -97,6 +111,36 @@ export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps
                   ))}
                 </select>
               </label>
+            )}
+
+            {projects && projects.length > 0 && (
+              <fieldset className="text-sm">
+                <legend className="font-medium text-gray-700">{t('meetings.dialog.visibility')}</legend>
+                <label className="mt-1 flex items-center gap-2 text-gray-700">
+                  <input
+                    type="radio"
+                    name="fathom-import-visibility"
+                    value="internal"
+                    checked={visibility === 'internal'}
+                    onChange={() => setVisibility('internal')}
+                  />
+                  {t('meetings.dialog.visibilityInternal')}
+                </label>
+                <label className={`mt-1 flex items-center gap-2 ${projectId && !canShare ? 'text-gray-400' : 'text-gray-700'}`}>
+                  <input
+                    type="radio"
+                    name="fathom-import-visibility"
+                    value="shared"
+                    checked={visibility === 'shared'}
+                    disabled={!canShare}
+                    onChange={() => setVisibility('shared')}
+                  />
+                  {t('meetings.dialog.visibilityShared')}
+                </label>
+                {projectId && !canShare && (
+                  <p className="mt-1 text-xs text-gray-500">{t('meetings.dialog.sharedAdminOnly')}</p>
+                )}
+              </fieldset>
             )}
 
             {importMutation.isError && (

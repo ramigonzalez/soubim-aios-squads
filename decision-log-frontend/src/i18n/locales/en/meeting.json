@@ -13,5 +13,14 @@
     "turns_other": "{{count}} turns",
     "empty": "No transcript for this meeting.",
     "uncertainSpeaker": "Uncertain speaker"
+  },
+  "visibility": {
+    "makeShared": "Share with the project",
+    "makeInternal": "Make internal",
+    "confirmTitle": "Confirm meeting visibility",
+    "confirmShared": "Every organization on the project will see this meeting, its items and the recording.",
+    "confirmInternal": "Only your organization will see this meeting, its items and the recording.",
+    "confirm": "Confirm",
+    "error": "Could not change the visibility."
   }
 }

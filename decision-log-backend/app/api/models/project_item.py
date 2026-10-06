@@ -79,6 +79,7 @@ class SourceInfo(BaseModel):
     type: str
     occurred_at: Optional[str] = None
     summary: Optional[str] = None  # Story 7.12: meeting summary (Source.ai_summary)
+    visibility: Optional[str] = None  # Story 12.4: 'internal' | 'shared'
 
 
 class ProjectItemResponse(BaseModel):

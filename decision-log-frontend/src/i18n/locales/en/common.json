@@ -9,5 +9,11 @@
   "delete": "Delete",
   "back": "Back",
   "items_one": "{{count}} item",
-  "items_other": "{{count}} items"
+  "items_other": "{{count}} items",
+  "visibility": {
+    "internal": "Internal",
+    "shared": "Shared",
+    "internalHint": "Visible only to the meeting's organization",
+    "sharedHint": "Visible to every organization on the project"
+  }
 }

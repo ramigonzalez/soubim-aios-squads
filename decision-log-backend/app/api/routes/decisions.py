@@ -14,7 +14,15 @@ from sqlalchemy.orm import Session
 from app.api.middleware.auth import get_current_user
 from app.database.models import ProjectItem, Source, Transcript
 from app.database.session import get_db
-from app.services.access import NONE, WRITE, has_access, project_access_level, require_project_access
+from app.services.access import (
+    NONE,
+    WRITE,
+    has_access,
+    item_visible,
+    project_access_level,
+    require_project_access,
+    visible_items_filter,
+)
 
 # Backward compatibility alias for route internals
 Decision = ProjectItem
@@ -57,6 +65,7 @@ async def list_decisions(
         .outerjoin(Transcript, Decision.transcript_id == Transcript.id)
         .filter(Decision.project_id == str(project_id))
         .filter(Decision.item_type == "decision")
+        .filter(visible_items_filter(user))  # Story 12.4
     )
 
     # Apply V1 filters
@@ -139,6 +148,7 @@ async def list_decisions(
     all_decisions = (
         db.query(Decision)
         .filter(Decision.project_id == str(project_id), Decision.item_type == "decision")
+        .filter(visible_items_filter(user))
         .all()
     )
     disciplines_facet = {}
@@ -179,7 +189,8 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db), user=De
     )
 
     # Story 12.2: a decision of a project the user cannot see is reported as not found
-    if not row or project_access_level(db, user, row[0].project) == NONE:
+    # Story 12.4: an internal item of another organization is not found either
+    if not row or not item_visible(db, user, row[0]):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Decision {decision_id} not found",
@@ -230,7 +241,7 @@ async def update_decision(
     TODO: Implement actual database update
     """
     decision = db.query(Decision).filter(Decision.id == str(decision_id)).first()
-    level = project_access_level(db, user, decision.project) if decision else NONE
+    level = project_access_level(db, user, decision.project) if item_visible(db, user, decision) else NONE
     if level == NONE:  # Story 12.2: other organizations' decisions are not found
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Decision {decision_id} not found")
     if not has_access(level, WRITE):

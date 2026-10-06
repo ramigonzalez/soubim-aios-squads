@@ -26,7 +26,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUID
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import event
+from sqlalchemy.orm import Session, declarative_base, relationship
 
 try:
     from pgvector.sqlalchemy import Vector as VECTOR
@@ -305,6 +306,11 @@ class Source(Base):
 
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    # Story 12.4: organization that owns the meeting (default: the project's owning organization,
+    # set on flush) and who sees it — 'internal' (owner organization only) or 'shared' (every
+    # organization with access to the project). Items of the source follow it.
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
+    visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
     source_type = Column(String(50), nullable=False)
     title = Column(String(500))
     occurred_at = Column(DateTime, nullable=False)
@@ -366,6 +372,8 @@ class Source(Base):
         Index("idx_sources_type", "source_type"),
         Index("idx_sources_occurred", "occurred_at"),
         Index("idx_sources_drive_file", "drive_file_id"),
+        CheckConstraint("visibility IN ('internal', 'shared')", name="ck_source_visibility"),
+        Index("idx_sources_owner_org", "owner_organization_id"),
     )
 
 
@@ -474,6 +482,11 @@ class FathomImport(Base):
     source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), unique=True)
     job_id = Column(GUID(), ForeignKey("jobs.id", ondelete="SET NULL"))
     download_id = Column(String(128))  # Fathom download being prepared; reused across retries
+    # Story 12.4: owner organization / visibility given to the Source the job creates (the importer's
+    # organization on the project; 'internal' unless the importer chose 'shared'). Default owner on
+    # flush: the project's owning organization.
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
+    visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
 
@@ -484,6 +497,7 @@ class FathomImport(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "recording_id", name="uq_fathom_imports_project_recording"),
         Index("idx_fathom_imports_recording", "recording_id"),
+        CheckConstraint("visibility IN ('internal', 'shared')", name="ck_fathom_import_visibility"),
     )
 
 
@@ -518,6 +532,9 @@ class ProjectItem(Base):
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     transcript_id = Column(GUID(), ForeignKey("transcripts.id", ondelete="CASCADE"))  # Legacy FK preserved
     source_id = Column(GUID(), ForeignKey("sources.id"))  # V2: link to Source
+    # Story 12.4: owner of a source-less item (manual input) — internal to that organization.
+    # Items with a source follow the source's owner/visibility; this column is not used for them.
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"))
 
     # V2 taxonomy fields
     item_type = Column(String(50), nullable=False, default="decision")
@@ -579,6 +596,7 @@ class ProjectItem(Base):
         Index("idx_project_items_type", "item_type"),
         Index("idx_project_items_source_type", "source_type"),
         Index("idx_project_items_source", "source_id"),
+        Index("idx_project_items_owner_org", "owner_organization_id"),
     )
 
 
@@ -621,3 +639,27 @@ class DecisionRelationship(Base):
         Index("idx_relationships_from", "from_decision_id"),
         Index("idx_relationships_to", "to_decision_id"),
     )
+
+
+@event.listens_for(Session, "before_flush")
+def _default_owner_organization(session, flush_context, instances):
+    """Story 12.4: new sources, Fathom imports and source-less items without an owner belong to the project's
+    owning organization — platform ingestion (Gmail, Drive, seed) creates them this way. Routes acting
+    for a user of a shared organization set the owner explicitly."""
+    new = list(session.new)
+    pending_projects = {str(o.id): o for o in new if isinstance(o, Project) and o.id is not None}
+    with session.no_autoflush:
+        for obj in new:
+            if isinstance(obj, (Source, FathomImport)):
+                needs_owner = obj.owner_organization_id is None
+            elif isinstance(obj, ProjectItem):
+                needs_owner = obj.owner_organization_id is None and obj.source_id is None and obj.source is None
+            else:
+                continue
+            if not needs_owner:
+                continue
+            project = obj.project
+            if project is None and obj.project_id is not None:
+                project = pending_projects.get(str(obj.project_id)) or session.get(Project, obj.project_id)
+            if project is not None:
+                obj.owner_organization_id = project.owner_organization_id

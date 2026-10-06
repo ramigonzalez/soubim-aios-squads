@@ -31,6 +31,7 @@ from app.database.models import FathomConnection, FathomImport, Project, Source
 from app.database.session import SessionLocal
 from app.integrations import fathom
 from app.services import jobs, storage
+from app.services.access import INTERNAL, VISIBILITIES, acting_organization_id, owned_object_visible, source_visible
 
 logger = logging.getLogger(__name__)
 
@@ -60,15 +61,24 @@ class ImportNotRetryable(Exception):
 # --------------------------------------------------------------------------- API side
 
 
-def start_import(db: Session, user, project: Project, recording_id: str) -> FathomImport:
-    """Record the import and enqueue its job. Commits. Raises ImportExists for a duplicate."""
+def start_import(db: Session, user, project: Project, recording_id: str, visibility: str = INTERNAL) -> FathomImport:
+    """Record the import and enqueue its job. Commits. Raises ImportExists for a duplicate.
+
+    Story 12.4: the meeting will be owned by the importer's organization on the project and get
+    ``visibility`` (``internal`` by default; the route checks who may pick ``shared``).
+    """
     recording_id = str(recording_id)
     if not fathom.is_valid_id(recording_id):
         raise ValueError("invalid recording id")
+    if visibility not in VISIBILITIES:
+        raise ValueError("invalid visibility")
     existing = find_import(db, project.id, recording_id)
     if existing is not None:
         raise ImportExists(existing)
-    imp = FathomImport(id=uuid.uuid4(), project_id=project.id, recording_id=recording_id, user_id=user.id)
+    imp = FathomImport(
+        id=uuid.uuid4(), project_id=project.id, recording_id=recording_id, user_id=user.id,
+        owner_organization_id=acting_organization_id(db, user, project), visibility=visibility,
+    )
     db.add(imp)
     try:
         db.flush()
@@ -107,6 +117,16 @@ def find_import(db: Session, project_id, recording_id: str) -> Optional[FathomIm
         .filter(FathomImport.project_id == project_id, FathomImport.recording_id == str(recording_id))
         .first()
     )
+
+
+def import_visible(db: Session, user, imp: Optional[FathomImport]) -> bool:
+    """Story 12.4: can ``user`` see this import? Once imported, exactly when they can see the meeting
+    (its visibility may have changed since); before, by the import's owner organization/visibility."""
+    if imp is None:
+        return False
+    if imp.source is not None:
+        return source_visible(db, user, imp.source)
+    return owned_object_visible(db, user, imp.project, imp.owner_organization_id, imp.visibility)
 
 
 def import_state(imp: FathomImport) -> str:
@@ -278,6 +298,9 @@ def _run(db: Session, import_id: uuid.UUID) -> None:
         participants=summary["invitees"] or ([summary["recorded_by"]] if summary["recorded_by"] else []),
         raw_content=format_transcript(meeting.get("transcript")),
         recording_url=summary["share_url"],
+        # Story 12.4: owner/visibility chosen at import (None owner → project owner on flush)
+        owner_organization_id=imp.owner_organization_id,
+        visibility=imp.visibility or INTERNAL,
         ingestion_status="pending",
         included=False,
         source_label=SOURCE_LABEL,
