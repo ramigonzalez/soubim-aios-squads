@@ -12,7 +12,8 @@
     "turns_one": "{{count}} turn",
     "turns_other": "{{count}} turns",
     "empty": "No transcript for this meeting.",
-    "uncertainSpeaker": "Uncertain speaker"
+    "uncertainSpeaker": "Uncertain speaker",
+    "plainNote": "This transcript has no timestamps, so it is shown as plain text."
   },
   "visibility": {
     "makeShared": "Share with the project",

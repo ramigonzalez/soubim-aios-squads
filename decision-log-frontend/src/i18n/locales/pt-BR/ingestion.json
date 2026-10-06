@@ -106,5 +106,50 @@
     "queued": "Na fila",
     "running": "Processando",
     "retrying": "Nova tentativa ({{attempt}}/{{max}})"
+  },
+  "addMeeting": {
+    "button": "Adicionar reunião",
+    "title": "Adicionar reunião",
+    "close": "Fechar",
+    "description": "Envie a gravação e/ou a transcrição de uma reunião feita fora do Fathom. Ela aparece como pendente para aprovação.",
+    "loadingProjects": "Carregando projetos…",
+    "noProjects": "Você não tem projetos onde possa adicionar reuniões.",
+    "project": "Projeto",
+    "selectProject": "Selecione um projeto",
+    "meetingTitle": "Título",
+    "date": "Data e hora",
+    "participants": "Participantes",
+    "participantsHint": "Nomes separados por vírgula (opcional)",
+    "video": "Vídeo (.mp4, .webm, .mov, .m4v)",
+    "transcript": "Transcrição (.txt)",
+    "transcriptHint": "Linhas \"M:SS - Nome\" seguidas da fala recuada, ou texto simples (exibido sem marcações de tempo).",
+    "needFile": "Escolha um vídeo, uma transcrição ou ambos.",
+    "videoOnlyNote": "Sem transcrição, a extração não tem texto para trabalhar até que uma seja adicionada.",
+    "progress": "Progresso do envio",
+    "uploading": "Enviando vídeo… {{percent}}%",
+    "saving": "Salvando reunião…",
+    "cancel": "Cancelar",
+    "submit": "Adicionar reunião",
+    "retry": "Tentar novamente",
+    "fileErrors": {
+      "video": {
+        "extension": "Tipo de vídeo não suportado. Use .mp4, .webm, .mov ou .m4v.",
+        "tooLarge": "O vídeo é maior que o limite de 2 GB.",
+        "empty": "O arquivo de vídeo está vazio."
+      },
+      "transcript": {
+        "extension": "A transcrição deve ser um arquivo .txt.",
+        "tooLarge": "A transcrição é maior que 2 MB.",
+        "empty": "O arquivo de transcrição está vazio."
+      }
+    },
+    "errors": {
+      "generic": "O envio falhou. Tente novamente.",
+      "storage": "O armazenamento de vídeos não está configurado no servidor.",
+      "tooLarge": "O arquivo excede o limite de tamanho.",
+      "extension": "Tipo de arquivo não suportado.",
+      "missing": "O vídeo não chegou ao armazenamento. Tente novamente.",
+      "forbidden": "Você não pode adicionar reuniões neste projeto."
+    }
   }
 }
