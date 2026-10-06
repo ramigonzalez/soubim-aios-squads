@@ -136,10 +136,24 @@ def _member_or_404(db: Session, organization_id, user_id) -> OrganizationMember:
     return member
 
 
+def _lock_owners(db: Session, organization_id) -> None:
+    """Serialize owner changes of one organization (last-owner protection under concurrency).
+
+    ``SELECT ... FOR UPDATE`` on the owner rows: two owners demoting / removing each other at the
+    same time wait for each other, and the second one re-reads roles after the first commits.
+    Must run before reading the actor's and the target's roles. No-op on SQLite.
+    """
+    db.query(OrganizationMember.user_id).filter(
+        OrganizationMember.organization_id == str(organization_id), OrganizationMember.role == "owner"
+    ).with_for_update().all()
+
+
 def change_member_role(db: Session, actor: User, organization_id, user_id, role: str) -> OrganizationMember:
     if role not in ROLES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid role")
+    _lock_owners(db, organization_id)
     member = _member_or_404(db, organization_id, user_id)
+    db.refresh(member)
     actor_role = get_role(db, actor, organization_id)
     if not (can_manage_role(actor_role, role) and can_manage_role(actor_role, member.role)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only an owner can change owner roles")
@@ -151,7 +165,9 @@ def change_member_role(db: Session, actor: User, organization_id, user_id, role:
 
 
 def remove_member(db: Session, actor: User, organization_id, user_id) -> None:
+    _lock_owners(db, organization_id)
     member = _member_or_404(db, organization_id, user_id)
+    db.refresh(member)
     actor_role = get_role(db, actor, organization_id)
     if not can_manage_role(actor_role, member.role):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only an owner can remove an owner")

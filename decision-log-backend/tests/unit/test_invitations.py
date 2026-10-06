@@ -4,10 +4,14 @@ Needs PostgreSQL (``pg_session``): the app's own session (middleware + routes) a
 session must see the same data.
 """
 
+import threading
+import time
 from datetime import datetime, timedelta
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import sessionmaker
 
 from app.database.models import (
     OrganizationInvitation,
@@ -17,7 +21,8 @@ from app.database.models import (
     ProjectOrganization,
     User,
 )
-from app.services import email_sender, invitations
+from app.database.models import Organization
+from app.services import email_sender, invitations, organizations
 from app.utils.security import create_access_token, hash_password
 from tests.org_helpers import make_org
 
@@ -357,3 +362,153 @@ def test_log_sender_never_logs_the_link_outside_dev(monkeypatch, caplog):
     with caplog.at_level("INFO"):
         email_sender.LogEmailSender().send("a@b.com", "s", link)
     assert "SECRET" in caplog.text
+
+
+# ─── Security review (Story 12.5) ────────────────────────────────────────────
+
+
+def _race(monkeypatch, db, mutate):
+    """Run ``mutate(invitation_id)`` in another transaction right after the accept endpoint has
+    looked the token up (simulates a concurrent accept / revoke between check and use)."""
+    real = invitations.find_by_token
+    other = sessionmaker(bind=db.get_bind())
+
+    def find_then_race(session, token):
+        invitation = real(session, token)
+        s = other()
+        try:
+            mutate(s, invitation.id)
+            s.commit()
+        finally:
+            s.close()
+        return invitation
+
+    monkeypatch.setattr(invitations, "find_by_token", find_then_race)
+
+
+def _set(field):
+    def mutate(s, invitation_id):
+        s.query(OrganizationInvitation).filter_by(id=invitation_id).update({field: datetime.utcnow()})
+
+    return mutate
+
+
+class TestSecurityReview:
+    def test_revoked_between_check_and_use_new_user(self, client, world, sent, monkeypatch):
+        token = token_of(invite(client, world["admin"], world["acme"], "new@example.com"))
+        _race(monkeypatch, world["db"], _set("revoked_at"))
+        r = client.post("/api/invitations/public/accept", json={"token": token, "name": "N", "password": PASSWORD})
+        assert r.status_code == 410
+        world["db"].expire_all()
+        assert world["db"].query(User).filter(User.email == "new@example.com").first() is None
+
+    def test_accepted_concurrently_existing_user(self, client, world, sent, monkeypatch):
+        token = token_of(invite(client, world["admin"], world["acme"], "outsider@other.com"))
+        _race(monkeypatch, world["db"], _set("accepted_at"))
+        r = client.post("/api/invitations/accept", json={"token": token}, headers=auth(world["outsider"]))
+        assert r.status_code == 410
+        world["db"].expire_all()
+        assert world["db"].query(OrganizationMember).filter_by(
+            user_id=world["outsider"].id, organization_id=world["acme"].id
+        ).count() == 0
+
+    def test_new_company_double_accept_creates_one_organization(self, client, world, sent, monkeypatch):
+        platform = make_org(world["db"], "souBIM", "soubim")
+        boss = make_user(world["db"], "boss@soubim.com", "Boss")
+        join(world["db"], boss, platform, "owner")
+        r = client.post(
+            "/api/invitations", json={"email": "outsider@other.com", "organization_name": "Dup Co"}, headers=auth(boss)
+        )
+        token = token_of(r)
+        _race(monkeypatch, world["db"], _set("accepted_at"))
+        assert client.post("/api/invitations/accept", json={"token": token}, headers=auth(world["outsider"])).status_code == 410
+        world["db"].expire_all()
+        assert world["db"].query(Organization).filter(Organization.name == "Dup Co").count() == 0
+
+    def test_soft_deleted_account_email_is_409_not_500(self, client, world, sent):
+        gone = make_user(world["db"], "gone@example.com", "Gone")
+        gone.deleted_at = datetime.utcnow()
+        world["db"].commit()
+        token = token_of(invite(client, world["admin"], world["acme"], "gone@example.com"))
+        r = client.post("/api/invitations/public/accept", json={"token": token, "name": "N", "password": PASSWORD})
+        assert r.status_code == 409
+
+    def test_oversized_inputs_are_422_not_500(self, client, world, sent):
+        token = token_of(invite(client, world["admin"], world["acme"], "new@example.com"))
+        url = "/api/invitations/public/accept"
+        assert client.post(url, json={"token": token, "name": "N", "password": "é" * 40}).status_code == 422
+        assert client.post(url, json={"token": token, "name": "N" * 300, "password": PASSWORD}).status_code == 422
+        # the invitation is still usable after rejected attempts
+        assert client.post(url, json={"token": token, "name": "N", "password": PASSWORD}).status_code == 200
+
+        platform = make_org(world["db"], "souBIM", "soubim")
+        boss = make_user(world["db"], "boss@soubim.com", "Boss")
+        join(world["db"], boss, platform, "owner")
+        r = client.post(
+            "/api/invitations", json={"email": "a@b.com", "organization_name": "X" * 300}, headers=auth(boss)
+        )
+        assert r.status_code == 422
+
+    def test_client_cannot_choose_the_email_or_role(self, client, world, sent):
+        token = token_of(invite(client, world["admin"], world["acme"], "new@example.com", "member"))
+        r = client.post(
+            "/api/invitations/public/accept",
+            json={"token": token, "name": "N", "password": PASSWORD, "email": "evil@x.com", "role": "owner"},
+        )
+        assert r.status_code == 200
+        assert r.json()["user"]["email"] == "new@example.com"
+        user = world["db"].query(User).filter(User.email == "new@example.com").one()
+        assert user.role == "client"
+        assert world["db"].query(OrganizationMember).filter_by(user_id=user.id).one().role == "member"
+
+    def test_cross_org_admin_cannot_manage_other_org(self, client, world, sent):
+        # outsider is owner of "other": acme ids must not be reachable through it
+        h = auth(world["outsider"])
+        acme = world["acme"].id
+        assert client.get(f"/api/organizations/{acme}/invitations", headers=h).status_code == 404
+        member_url = f"/api/organizations/{acme}/members/{world['member'].id}"
+        assert client.patch(member_url, json={"role": "admin"}, headers=h).status_code == 404
+        assert client.delete(member_url, headers=h).status_code == 404
+        # nor an acme member through the other org's path
+        other_url = f"/api/organizations/{world['other'].id}/members/{world['member'].id}"
+        assert client.delete(other_url, headers=h).status_code == 404
+        r = invite(client, world["admin"], world["acme"], "x@example.com")
+        assert client.delete(f"/api/invitations/{r.json()['id']}", headers=h).status_code == 404
+
+    def test_concurrent_owners_cannot_demote_each_other(self, world, monkeypatch):
+        db, org = world["db"], world["acme"]
+        db.query(OrganizationMember).filter_by(user_id=world["admin"].id, organization_id=org.id).update({"role": "owner"})
+        db.commit()
+        org_id, a, b = org.id, world["owner"].id, world["admin"].id
+        Session = sessionmaker(bind=db.get_bind())
+
+        real_count = organizations._owner_count
+
+        def slow_count(session, organization_id):  # both would read "2 owners" without the lock
+            n = real_count(session, organization_id)
+            time.sleep(0.5)
+            return n
+
+        monkeypatch.setattr(organizations, "_owner_count", slow_count)
+        results = []
+
+        def demote(actor_id, target_id, delay):
+            time.sleep(delay)
+            s = Session()
+            try:
+                organizations.change_member_role(s, s.get(User, actor_id), org_id, target_id, "admin")
+                results.append(200)
+            except HTTPException as exc:
+                s.rollback()
+                results.append(exc.status_code)
+            finally:
+                s.close()
+
+        threads = [threading.Thread(target=demote, args=(a, b, 0)), threading.Thread(target=demote, args=(b, a, 0.1))]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(10)
+        assert sorted(results) == [200, 403]
+        db.expire_all()
+        assert db.query(OrganizationMember).filter_by(organization_id=org_id, role="owner").count() == 1

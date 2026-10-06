@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { safeRedirect } from '../lib/safeRedirect'
 
 export function Login() {
   const { t } = useTranslation('auth')
@@ -13,8 +14,7 @@ export function Login() {
 
   const navigate = useNavigate()
   // Story 12.5: come back to the invitation page after logging in (same-site paths only)
-  const redirect = useSearchParams()[0].get('redirect')
-  const destination = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/projects'
+  const destination = safeRedirect(useSearchParams()[0].get('redirect'))
   const setAuth = useAuthStore((state) => state.setAuth)
 
   const handleSubmit = async (e: React.FormEvent) => {

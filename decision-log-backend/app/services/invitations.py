@@ -15,6 +15,7 @@ from typing import Optional, Tuple
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -102,6 +103,8 @@ def create_invitation(
         name = (organization_name or "").strip()
         if not name:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Organization name required")
+        if len(name) > 255:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Organization name is too long")
         role = "owner"  # the first person of a new company owns it
         target = func.lower(OrganizationInvitation.organization_name) == name.lower()
         org_name = name
@@ -163,8 +166,30 @@ def account_exists(db: Session, email: str) -> bool:
     return found.first() is not None
 
 
+def _claim(db: Session, invitation: OrganizationInvitation) -> None:
+    """Mark the invitation used atomically (single use under concurrency).
+
+    Conditional UPDATE: only one transaction can move a pending invitation to accepted; a
+    concurrent accept / revoke that got there first leaves 0 rows here → 410, and everything
+    done in this transaction so far is rolled back.
+    """
+    claimed = (
+        db.query(OrganizationInvitation)
+        .filter(
+            OrganizationInvitation.id == invitation.id,
+            OrganizationInvitation.accepted_at.is_(None),
+            OrganizationInvitation.revoked_at.is_(None),
+            OrganizationInvitation.expires_at > now(),
+        )
+        .update({OrganizationInvitation.accepted_at: now()}, synchronize_session=False)
+    )
+    if claimed != 1:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation no longer valid")
+
+
 def _join(db: Session, invitation: OrganizationInvitation, user: User) -> Organization:
-    """Create the membership (and the organization of a new company); mark the invitation used."""
+    """Create the membership (and the organization of a new company); the invitation must be claimed."""
     org = invitation.organization
     if org is None:
         org = Organization(name=invitation.organization_name, slug=_unique_slug(db, invitation.organization_name))
@@ -177,8 +202,8 @@ def _join(db: Session, invitation: OrganizationInvitation, user: User) -> Organi
     )
     if existing is None:
         db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=invitation.role))
-    invitation.accepted_at = now()
     db.commit()
+    db.refresh(invitation)
     return org
 
 
@@ -186,22 +211,43 @@ def accept_as_existing_user(db: Session, token: str, user: User) -> Organization
     invitation = find_by_token(db, token)
     if normalize_email(user.email) != normalize_email(invitation.email):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This invitation was sent to another email")
+    _claim(db, invitation)
     return _join(db, invitation, user)
+
+
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_BYTES = 72  # bcrypt input limit (bcrypt 5 raises above it)
+
+
+def _email_taken(db: Session, email: str) -> bool:
+    """Any account with this email, soft-deleted included (``users.email`` is unique)."""
+    return db.query(User.id).filter(func.lower(User.email) == normalize_email(email)).first() is not None
 
 
 def accept_as_new_user(db: Session, token: str, name: str, password: str) -> Tuple[User, Organization]:
     invitation = find_by_token(db, token)
-    if account_exists(db, invitation.email):
+    if _email_taken(db, invitation.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists: log in to accept")
-    if len(password) < 8:
+    if len(password) < PASSWORD_MIN_LENGTH:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Password must have at least 8 characters"
         )
-    if not name.strip():
+    if len(password.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Password is too long")
+    name = name.strip()
+    if not name:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Name required")
+    if len(name) > 255:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Name is too long")
+    password_hash = hash_password(password)  # slow: before taking the invitation
+    _claim(db, invitation)
     # users.role is legacy (not used for authorization since 12.2); invitees get the least privileged value
-    user = User(email=invitation.email, password_hash=hash_password(password), name=name.strip(), role="client")
+    user = User(email=invitation.email, password_hash=password_hash, name=name, role="client")
     db.add(user)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:  # the email was registered concurrently (another invitation)
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists: log in to accept")
     org = _join(db, invitation, user)
     return user, org
