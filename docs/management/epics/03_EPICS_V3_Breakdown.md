@@ -3,7 +3,7 @@
 **Document Version:** 3.0-draft
 **Date Created:** 2026-10-05
 **Last Updated:** 2026-10-05
-**Status:** Draft — Pending Review (Rami + Youval: tenancy model, infra spend, storage provider)
+**Status:** E12 + E13 implemented and merged (2026-10-06); open decisions and live tests in each story's `Assumptions & gaps` — E14 not started
 **Product Owner:** Rami (with Youval)
 **For:** DecisionLog V3 — multi-company access and recording ingestion
 **Source:** Pilot with the first real meeting (souBIM + DIMAS, D/SEASON, 2026-09-04) and the spikes listed in [Proven by spikes](#proven-by-spikes)
@@ -78,12 +78,12 @@ Today DecisionLog has no organization concept: one global `director` role, proje
 
 | Story | Title | Effort | Priority | Phase |
 |-------|-------|--------|----------|-------|
-| 12.1 | Organizations & Memberships | M | Critical | A |
-| 12.2 | Organization-Scoped Authorization | L | Critical | A |
-| 12.3 | Project Sharing Between Organizations | M | High | A |
-| 12.4 | Meeting Visibility: Internal vs Shared | M | High | A |
-| 12.5 | Users, Invitations & Active Organization | M | High | A |
-| 12.6 | Item Review: Approve / Reject / Edit by Role | M | Medium | C |
+| 12.1 | Organizations & Memberships | M | Critical | ✅ |
+| 12.2 | Organization-Scoped Authorization | L | Critical | ✅ #15 |
+| 12.3 | Project Sharing Between Organizations | M | High | ✅ #17 |
+| 12.4 | Meeting Visibility: Internal vs Shared | M | High | ✅ #20 |
+| 12.5 | Users, Invitations & Active Organization | M | High | ✅ #19 |
+| 12.6 | Item Review: Approve / Reject / Edit by Role | M | Medium | ✅ #25 |
 
 ### Agent Assignment
 
@@ -133,15 +133,15 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 
 | Story | Title | Effort | Priority | Phase |
 |-------|-------|--------|----------|-------|
-| 13.1 | Recording Storage (S3-Compatible) | M | High | B |
-| 13.2 | Background Worker & Jobs Table | L | High | B |
-| 13.3 | Connect to Fathom (OAuth) | M | High | B |
-| 13.4 | Browse & Import Fathom Meetings | L | High | B |
-| 13.5 | Manual Upload: .mp4 and .txt | M | High | B |
-| 13.6 | Extraction as a Worker Job | M | High | B |
-| 13.7 | Extraction Versions & Rollback | M | Medium | B |
-| 13.8 | Deploy API + Worker + Postgres on Railway | M | High | B |
-| 13.9 | Fathom Webhook (Push) | M | Low | C |
+| 13.1 | Recording Storage (S3-Compatible) | M | High | ✅ #14 |
+| 13.2 | Background Worker & Jobs Table | L | High | ✅ #12 |
+| 13.3 | Connect to Fathom (OAuth) | M | High | ✅ #16 |
+| 13.4 | Browse & Import Fathom Meetings | L | High | ✅ #18 |
+| 13.5 | Manual Upload: .mp4 and .txt | M | High | ✅ #21 |
+| 13.6 | Extraction as a Worker Job | M | High | ✅ #24 |
+| 13.7 | Extraction Versions & Rollback | M | Medium | ✅ #22 |
+| 13.8 | Deploy API + Worker + Postgres on Railway | M | High | ✅ config #13 (live deploy pending) |
+| 13.9 | Fathom Webhook (Push) | M | Low | ✅ #23 |
 | 13.10 | CI Checks (GitHub Actions) | S | High | ✅ |
 
 ### Agent Assignment
