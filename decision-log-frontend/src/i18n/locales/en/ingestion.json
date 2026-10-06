@@ -106,5 +106,54 @@
     "queued": "Queued",
     "running": "Processing",
     "retrying": "Retrying ({{attempt}}/{{max}})"
+  },
+  "addMeeting": {
+    "button": "Add meeting",
+    "title": "Add meeting",
+    "close": "Close",
+    "description": "Upload a recording and/or a transcript of a meeting held outside Fathom. It appears as pending for approval.",
+    "loadingProjects": "Loading projects…",
+    "noProjects": "You have no projects you can add meetings to.",
+    "project": "Project",
+    "selectProject": "Select a project",
+    "meetingTitle": "Title",
+    "date": "Date and time",
+    "participants": "Participants",
+    "participantsHint": "Names separated by commas (optional)",
+    "video": "Video (.mp4, .webm, .mov, .m4v)",
+    "transcript": "Transcript (.txt)",
+    "transcriptHint": "\"M:SS - Name\" lines followed by indented speech, or plain text (shown without timestamps).",
+    "needFile": "Choose a video, a transcript, or both.",
+    "videoOnlyNote": "Without a transcript, extraction has no text to work on until one is added.",
+    "progress": "Upload progress",
+    "uploading": "Uploading video… {{percent}}%",
+    "saving": "Saving meeting…",
+    "cancel": "Cancel",
+    "submit": "Add meeting",
+    "retry": "Try again",
+    "fileErrors": {
+      "video": {
+        "extension": "Unsupported video type. Use .mp4, .webm, .mov or .m4v.",
+        "tooLarge": "The video is larger than the 2 GB limit.",
+        "empty": "The video file is empty."
+      },
+      "transcript": {
+        "extension": "The transcript must be a .txt file.",
+        "tooLarge": "The transcript is larger than 2 MB.",
+        "empty": "The transcript file is empty."
+      }
+    },
+    "errors": {
+      "generic": "The upload failed. Try again.",
+      "storage": "Video storage is not configured on the server.",
+      "tooLarge": "The file exceeds the size limit.",
+      "extension": "Unsupported file type.",
+      "missing": "The video did not reach storage. Try again.",
+      "forbidden": "You cannot add meetings to this project, or only admins can share them."
+    },
+    "visibility": "Visibility",
+    "visibilityInternal": "Internal — only your organization sees it",
+    "visibilityShared": "Shared — every organization on the project sees it",
+    "sharedAdminOnly": "Only an owner or admin of your organization can share a meeting."
   }
 }

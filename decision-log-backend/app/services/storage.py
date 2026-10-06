@@ -154,6 +154,18 @@ def presigned_get(key: str, expires: int) -> str:
     )
 
 
+def presigned_put(key: str, content_type: str, expires: int) -> str:
+    """Expiring signed PUT link: the browser uploads straight to the bucket (Story 13.5).
+
+    The Content-Type is part of the signature, so the browser must send exactly this header.
+    """
+    return get_client().generate_presigned_url(
+        "put_object",
+        Params={"Bucket": settings.s3_bucket, "Key": key, "ContentType": content_type},
+        ExpiresIn=expires,
+    )
+
+
 def recording_prefix(org_id: Optional[str], source_id: str) -> str:
     return f"org/{org_id or 'unknown'}/sources/{source_id}/recording."
 

@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { AlertCircle, Inbox, RefreshCw, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { AlertCircle, Inbox, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { dateLocale } from '../../i18n'
 import { getSourceTypeLabel } from '../../lib/utils'
@@ -12,6 +12,7 @@ import MeetingSourceRow from '../molecules/MeetingSourceRow'
 import EmailSourceRow from '../molecules/EmailSourceRow'
 import DocumentSourceRow from '../molecules/DocumentSourceRow'
 import BulkActionBar from './BulkActionBar'
+import { AddMeetingDialog } from './AddMeetingDialog'
 import type { Source } from '../../types/ingestion'
 
 function SkeletonRows() {
@@ -46,6 +47,7 @@ function getSourceLabel(source: Source): string {
 
 export default function IngestionApproval() {
   const { t } = useTranslation('ingestion')
+  const [addMeetingOpen, setAddMeetingOpen] = useState(false)
   const { data, isLoading, error, refetch } = useIngestion()
   const { data: historyData, isLoading: historyLoading, error: historyError, refetch: historyRefetch } = useIngestionHistory()
   const batchAction = useBatchAction()
@@ -161,15 +163,26 @@ export default function IngestionApproval() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        {data && (
-          <p className="mt-1 text-sm text-gray-500">
-            {t('header.pending', { count: data.pending_count })} &middot;{' '}
-            {t('header.total', { count: data.total })}
-          </p>
-        )}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          {data && (
+            <p className="mt-1 text-sm text-gray-500">
+              {t('header.pending', { count: data.pending_count })} &middot;{' '}
+              {t('header.total', { count: data.total })}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setAddMeetingOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {t('addMeeting.button')}
+        </button>
       </div>
+      {addMeetingOpen && <AddMeetingDialog open onClose={() => setAddMeetingOpen(false)} />}
 
       {/* Tabs */}
       <div className="border-b border-gray-200">

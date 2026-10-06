@@ -12,7 +12,8 @@
     "turns_one": "{{count}} fala",
     "turns_other": "{{count}} falas",
     "empty": "Nenhuma transcrição para esta reunião.",
-    "uncertainSpeaker": "Falante incerto"
+    "uncertainSpeaker": "Falante incerto",
+    "plainNote": "Esta transcrição não tem marcações de tempo, por isso é exibida como texto simples."
   },
   "visibility": {
     "makeShared": "Compartilhar com o projeto",

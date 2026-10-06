@@ -34,6 +34,8 @@ export function MeetingViewer() {
   const manualScrollUntil = useRef(0)
 
   const hasVideo = meeting?.recording?.type === 'file'
+  // Story 13.5: text without "M:SS - Name" turns (e.g. an uploaded .txt) is shown as is, without turn links
+  const plainText = turns.length === 0 && !!meeting?.transcript?.trim()
 
   const scrollToTurn = useCallback((index: number, smooth = true) => {
     const el = turnRefs.current[index]
@@ -166,9 +168,15 @@ export function MeetingViewer() {
         {/* Transcript */}
         <section className="rounded-lg border border-gray-200 bg-white flex flex-col min-h-0">
           <h2 className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
-            {t('transcript.heading')} <span className="font-normal text-gray-400">· {t('transcript.turns', { count: turns.length })}</span>
+            {t('transcript.heading')}
+            {!plainText && <span className="font-normal text-gray-400"> · {t('transcript.turns', { count: turns.length })}</span>}
           </h2>
-          {turns.length === 0 ? (
+          {plainText ? (
+            <div className="overflow-y-auto max-h-[70vh] p-4" data-testid="transcript-plain">
+              <p className="mb-3 text-xs text-gray-500">{t('transcript.plainNote')}</p>
+              <p className="whitespace-pre-wrap text-sm text-gray-800">{meeting?.transcript?.trim()}</p>
+            </div>
+          ) : turns.length === 0 ? (
             <p className="px-4 py-6 text-sm text-gray-500">{t('transcript.empty')}</p>
           ) : (
             <div

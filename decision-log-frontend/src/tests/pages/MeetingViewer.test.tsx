@@ -143,6 +143,26 @@ describe('MeetingViewer (Story 7.13)', () => {
     expect(screen.getByText('Meeting not available')).toBeInTheDocument()
     expect(screen.getByText('Source not found')).toBeInTheDocument()
   })
+
+  it('shows a transcript without "M:SS - Name" turns as plain text (Story 13.5)', () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({ transcript: 'Decidimos usar soleira de granito.\nPróxima reunião na sexta.' }),
+      isLoading: false,
+      error: null,
+    })
+    renderAt('/meetings/src-1')
+
+    expect(screen.getByTestId('transcript-plain')).toHaveTextContent('Decidimos usar soleira de granito.')
+    expect(screen.getByText(/no timestamps/)).toBeInTheDocument()
+    expect(screen.queryByTestId('transcript-list')).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0)
+  })
+
+  it('keeps the empty message when there is no transcript at all', () => {
+    useMeetingMock.mockReturnValue({ data: makeMeeting({ transcript: null }), isLoading: false, error: null })
+    renderAt('/meetings/src-1')
+    expect(screen.getByText('No transcript for this meeting.')).toBeInTheDocument()
+  })
 })
 
 describe('MeetingViewer visibility (Story 12.4)', () => {
