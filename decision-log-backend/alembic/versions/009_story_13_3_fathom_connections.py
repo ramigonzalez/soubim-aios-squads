@@ -1,7 +1,7 @@
 """Story 13.3: Fathom OAuth connections.
 
-Revision ID: 008_story_13_3
-Revises: 007_story_13_2
+Revision ID: 009_story_13_3
+Revises: 008_story_12_2
 Create Date: 2026-10-06
 
 Changes:
@@ -15,8 +15,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '008_story_13_3'
-down_revision = '007_story_13_2'
+revision = '009_story_13_3'
+down_revision = '008_story_12_2'
 branch_labels = None
 depends_on = None
 
