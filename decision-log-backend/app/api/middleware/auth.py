@@ -28,6 +28,8 @@ async def auth_middleware(request: Request, call_next):
         "/api/invitations/public/",  # Story 12.5: the invitation token identifies the invitee
         "/api/fathom/callback",  # Story 13.3: Fathom OAuth redirect (the signed state identifies the user)
         "/api/fathom/webhook/",  # Story 13.9: authenticated by the Fathom signature (checked in the route)
+        "/api/auth/providers",  # Story 12.8: which login methods are enabled
+        "/api/auth/google/",  # Story 12.8: start / callback / exchange (signed state, one-time code)
         "/docs",
         "/openapi.json",
         "/redoc",

@@ -28,7 +28,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PGUID
 from sqlalchemy import event
 from sqlalchemy.sql import false as sql_false
-from sqlalchemy.orm import Session, declarative_base, relationship
+from sqlalchemy.orm import Session, declarative_base, relationship, validates
 
 try:
     from pgvector.sqlalchemy import Vector as VECTOR
@@ -92,13 +92,25 @@ class User(Base):
     created_at = Column(DateTime, nullable=False, default=func.now())
     last_login_at = Column(DateTime)
     deleted_at = Column(DateTime)
+    # Story 12.8: Google account id (ID token ``sub``) bound on the first Google sign-in; later
+    # Google sign-ins must present the same ``sub`` (never overwritten silently). Unique: one
+    # Google account signs in to one DecisionLog account.
+    google_sub = Column(String(255))
 
     __table_args__ = (
         CheckConstraint("role IN ('director', 'architect', 'client')", name="ck_user_role"),
         Index("idx_users_email", "email"),
+        # Story 12.8: one account per email, case-insensitively (migration 018)
+        Index("uq_users_email_lower", func.lower(email), unique=True),
+        UniqueConstraint("google_sub", name="uq_users_google_sub"),
         Index("idx_users_role", "role"),
         Index("idx_users_deleted", "deleted_at"),
     )
+
+    @validates("email")
+    def _normalize_email(self, key, value):
+        """Story 12.8: emails are stored stripped and lowercased (login compares case-insensitively)."""
+        return value.strip().lower() if isinstance(value, str) else value
 
 
 class Organization(Base):
@@ -441,6 +453,40 @@ class FathomConnection(Base):
     @property
     def needs_reconnect(self) -> bool:
         return self.revoked_at is not None
+
+
+class GoogleLoginRequest(Base):
+    """One "Sign in with Google" attempt (Story 12.8), from start to the one-time login code.
+
+    - ``state_nonce``: inside the signed OAuth ``state``; the callback claims the row once (single use).
+    - ``oidc_nonce``: sent to Google, must come back in the ID token (replay protection).
+    - ``code_verifier``: PKCE secret, wiped after the code exchange.
+    - ``browser_key_hash``: SHA-256 of a secret kept by the browser that started the flow; the
+      frontend must present it to redeem the login code (login-CSRF protection, like 13.3's confirm).
+    - ``email`` / ``name`` / ``google_sub``: verified claims from the ID token, set by the callback.
+    - ``login_code_hash``: SHA-256 of the one-time code handed to the frontend (never a JWT in a URL).
+    - ``invitation_id``: set when started from an invitation page (accept with Google).
+    Rows live minutes and are deleted opportunistically once expired.
+    """
+
+    __tablename__ = "google_login_requests"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    state_nonce = Column(String(64), nullable=False, unique=True)
+    oidc_nonce = Column(String(64), nullable=False)
+    code_verifier = Column(String(128))
+    browser_key_hash = Column(String(64), nullable=False)
+    invitation_id = Column(GUID(), ForeignKey("organization_invitations.id", ondelete="CASCADE"))
+    email = Column(String(255))
+    name = Column(String(255))
+    google_sub = Column(String(255))  # verified ``sub`` of the ID token, set by the callback
+    login_code_hash = Column(String(64), unique=True)
+    callback_at = Column(DateTime)
+    consumed_at = Column(DateTime)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    __table_args__ = (Index("idx_google_login_requests_expires", "expires_at"),)
 
 
 class FathomPendingConnection(Base):

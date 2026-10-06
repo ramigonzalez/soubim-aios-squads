@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import { safeRedirect } from '../lib/safeRedirect'
+import { GoogleSignInButton } from '../components/organisms/GoogleSignInButton'
 
 export function Login() {
   const { t } = useTranslation('auth')
@@ -112,6 +113,11 @@ export function Login() {
               )}
             </button>
           </form>
+
+          {/* Story 12.8: Sign in with Google (hidden when the server has it disabled) */}
+          <div className="mt-5">
+            <GoogleSignInButton redirect={destination} />
+          </div>
 
           {/* Demo Info */}
           <div className="mt-6 pt-6 border-t border-slate-100">

@@ -6,6 +6,7 @@ import { invitationService } from '../hooks/useTeam'
 import { ORGANIZATIONS_KEY } from '../hooks/useOrganizations'
 import { useAuthStore } from '../store/authStore'
 import { useOrganizationStore } from '../store/organizationStore'
+import { GoogleSignInButton } from '../components/organisms/GoogleSignInButton'
 
 function statusOf(error: unknown): number | undefined {
   return (error as { response?: { status?: number } })?.response?.status
@@ -143,6 +144,11 @@ export default function AcceptInvitation() {
             {t('accept.login')}
           </Link>
         </div>
+      )}
+
+      {/* Story 12.8: accept with the Google account of the invited email (new or existing user) */}
+      {!(inv.account_exists && isAuthenticated) && (
+        <GoogleSignInButton labelKey="google.continue" invitationToken={token} />
       )}
 
       {error && (
