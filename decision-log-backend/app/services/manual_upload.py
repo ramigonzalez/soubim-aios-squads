@@ -15,6 +15,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -171,6 +172,14 @@ def complete(
         source_label=SOURCE_LABEL,
     )
     db.add(source)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        # Two concurrent completes with the same token both passed the duplicate check above;
+        # the primary key lets exactly one win, the other gets the same 409 as a late retry.
+        db.rollback()
+        if source_id:
+            raise UploadError(409, "This upload was already completed") from exc
+        raise
     db.refresh(source)
     return source

@@ -4,6 +4,7 @@ Creates Source records with ingestion_status='pending' and schedules
 AI summary generation as a background task.
 """
 
+import hmac
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
@@ -19,6 +20,35 @@ from app.services.summary_service import generate_ai_summary
 
 router = APIRouter()
 
+# Tactiq documents no signature scheme (Story 7.19): the only option is a static shared secret that
+# the sender (Tactiq via Zapier "Webhooks by Zapier" custom Headers) puts in a header.
+SECRET_HEADER = "X-Tactiq-Secret"
+_PLACEHOLDER_SECRETS = {"", "whsec_your-webhook-secret"}
+
+
+def _is_production() -> bool:
+    return settings.environment.lower() in ("production", "prod")
+
+
+def verify_tactiq_secret(provided: Optional[str]) -> None:
+    """Check the shared secret header (constant-time). Never logs or echoes either value.
+
+    - header present: must match, in every environment (a wrong secret is always a 401);
+    - header absent: rejected in production, accepted elsewhere (dev/test keep working);
+    - production with no real secret configured: refuse everything (503) instead of fail open.
+    """
+    if not isinstance(provided, str):  # unset header (direct calls get FastAPI's Header default object)
+        provided = None
+    configured = settings.tactiq_webhook_secret or ""
+    if _is_production() and configured in _PLACEHOLDER_SECRETS:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Webhook secret is not configured")
+    if provided is None:
+        if _is_production():
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret")
+        return
+    if not hmac.compare_digest(provided.encode("utf-8"), configured.encode("utf-8")):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret")
+
 
 @router.post("/transcript", status_code=status.HTTP_202_ACCEPTED)
 async def receive_transcript(
@@ -26,7 +56,7 @@ async def receive_transcript(
     request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    x_tactiq_signature: Optional[str] = Header(None),
+    x_tactiq_secret: Optional[str] = Header(None),
 ):
     """
     Receive transcripts from Tactiq webhook.
@@ -36,7 +66,9 @@ async def receive_transcript(
 
     Duplicate webhooks are detected via webhook_id for idempotency.
     Story 12.2: the caller needs write access to the payload's project.
+    Story 7.19: the shared secret in X-Tactiq-Secret is checked first (required in production).
     """
+    verify_tactiq_secret(x_tactiq_secret)
     user = getattr(request.state, "user", None)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")

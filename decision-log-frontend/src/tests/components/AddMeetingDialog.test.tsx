@@ -128,4 +128,16 @@ describe('AddMeetingDialog (Story 13.5)', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled()
     expect(svc.complete).not.toHaveBeenCalled()
   })
+
+  it('counts decoded characters: a Windows-1252 file under 2 MiB can still exceed the server limit', async () => {
+    const user = userEvent.setup()
+    renderDialog()
+    await fillCommon(user)
+    // 2,050,000 bytes (< 2 MiB) of 0xE9: invalid UTF-8, so decoded as Windows-1252 -> 2,050,000 characters
+    const bytes = new Uint8Array(2_050_000).fill(0xe9)
+    await user.upload(screen.getByLabelText(/Transcript/), new File([bytes], 'ata.txt', { type: 'text/plain' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('longer than 2,000,000 characters')
+    expect(screen.getByRole('button', { name: 'Add meeting' })).toBeDisabled()
+    expect(svc.complete).not.toHaveBeenCalled()
+  })
 })

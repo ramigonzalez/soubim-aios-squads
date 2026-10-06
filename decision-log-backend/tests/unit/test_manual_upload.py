@@ -162,6 +162,29 @@ class TestComplete:
             complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
         assert code(exc) == 409
 
+    def test_concurrent_complete_losing_the_race_is_409_not_500(self, db_session, user, project, fake_s3, monkeypatch):
+        up = presign(db_session, user, project)
+        key = f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"
+        fake_s3.objects[key] = b"x"
+        real_head = storage.head
+
+        def head_then_rival_inserts(k):
+            meta = real_head(k)
+            # the other request commits the Source after our duplicate check, before our insert
+            db_session.add(Source(
+                id=up["source_id"], project_id=project.id, source_type="meeting", title="rival",
+                occurred_at=datetime(2026, 1, 1), ingestion_status="pending",
+                owner_organization_id=project.owner_organization_id,
+            ))
+            db_session.commit()
+            return meta
+
+        monkeypatch.setattr(storage, "head", head_then_rival_inserts)
+        with pytest.raises(HTTPException) as exc:
+            complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
+        assert code(exc) == 409
+        assert db_session.query(Source).filter(Source.id == up["source_id"]).count() == 1
+
     def test_video_without_transcript_is_allowed(self, db_session, user, project, fake_s3):
         up = presign(db_session, user, project)
         fake_s3.objects[f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"] = b"x"
