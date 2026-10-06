@@ -139,7 +139,7 @@
       },
       "transcript": {
         "extension": "The transcript must be a .txt file.",
-        "tooLarge": "The transcript is larger than 2 MB.",
+        "tooLarge": "The transcript is longer than 2,000,000 characters.",
         "empty": "The transcript file is empty."
       }
     },

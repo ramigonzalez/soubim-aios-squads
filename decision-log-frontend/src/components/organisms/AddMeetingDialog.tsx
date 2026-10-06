@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { uploadService } from '../../services/uploadService'
-import { decodeText, titleFromFileName, transcriptProblem, videoProblem } from '../../lib/upload'
+import { decodeText, titleFromFileName, transcriptProblem, transcriptTextProblem, videoProblem } from '../../lib/upload'
 import type { FileProblem } from '../../lib/upload'
 import type { MeetingVisibility } from '../../types/projectItem'
 
@@ -115,10 +115,11 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
       return setFileError({ field: 'transcript', problem })
     }
     const text = decodeText(await file.arrayBuffer())
-    if (!text.trim()) {
+    const textProblem = transcriptTextProblem(text)
+    if (textProblem) {
       setTranscriptFile(null)
       setTranscriptText(null)
-      return setFileError({ field: 'transcript', problem: 'empty' })
+      return setFileError({ field: 'transcript', problem: textProblem })
     }
     setTranscriptFile(file)
     setTranscriptText(text)
