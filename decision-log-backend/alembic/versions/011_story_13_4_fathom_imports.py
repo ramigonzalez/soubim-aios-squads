@@ -1,7 +1,7 @@
 """Story 13.4: Fathom imports.
 
-Revision ID: 010_story_13_4
-Revises: 009_story_13_3
+Revision ID: 011_story_13_4
+Revises: 010_story_12_3
 Create Date: 2026-10-06
 
 Changes:
@@ -14,8 +14,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '010_story_13_4'
-down_revision = '009_story_13_3'
+revision = '011_story_13_4'
+down_revision = '010_story_12_3'
 branch_labels = None
 depends_on = None
 
