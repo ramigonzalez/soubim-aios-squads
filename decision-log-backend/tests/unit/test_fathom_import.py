@@ -117,8 +117,18 @@ def api(fake: FakeFathom, method: str, path: str, *responses):
     fake.api_responses[(method, API + path)] = list(responses)
 
 
+def without_transcript(meeting):
+    """What Fathom's /meetings returns to OAuth users: no transcript (verified live 2026-10-06)."""
+    return {k: v for k, v in meeting.items() if k != "transcript"}
+
+
+def transcript_route(fake: FakeFathom):
+    api(fake, "GET", f"/recordings/{REC}/transcript", httpx.Response(200, json={"transcript": MEETING["transcript"]}))
+
+
 def happy_fathom(fake: FakeFathom, download_status=None):
-    api(fake, "GET", "/meetings", page([OTHER_MEETING, MEETING]))
+    api(fake, "GET", "/meetings", page([without_transcript(OTHER_MEETING), without_transcript(MEETING)]))
+    transcript_route(fake)
     api(fake, "POST", f"/recordings/{REC}/download", httpx.Response(202, json={"download_id": "dl-1", "status": "processing"}))
     api(fake, "GET", f"/recordings/{REC}/downloads/dl-1", *(download_status or [
         httpx.Response(200, json={"download_id": "dl-1", "status": "processing"}),
@@ -350,8 +360,9 @@ class TestImportJob:
         assert db_session.query(Job).filter(Job.type == "fathom_import").one().status == "succeeded"
         assert db_session.query(Job).filter(Job.type == "thumbnail").count() == 1  # Story 13.12
         assert imp.download_id is None
-        # the list was read with transcripts; download requested once, polled until completed
-        assert requests_to(fake, "GET", "/meetings")[0].url.params["include_transcript"] == "true"
+        # the list is read WITHOUT transcripts (OAuth users get 400); the transcript comes from /recordings
+        assert "include_transcript" not in requests_to(fake, "GET", "/meetings")[0].url.params
+        assert len(requests_to(fake, "GET", f"/recordings/{REC}/transcript")) == 1
         assert len(requests_to(fake, "POST", f"/recordings/{REC}/download")) == 1
         assert len(requests_to(fake, "GET", f"/recordings/{REC}/downloads/dl-1")) == 2
         # nothing is extracted automatically: no process_source job
@@ -392,7 +403,8 @@ class TestImportJob:
     def test_no_media_fails_at_once_and_can_be_retried_by_the_importer(
         self, db_session, user, project, conn, fake, fake_s3, factory, video,
     ):
-        api(fake, "GET", "/meetings", page([MEETING]))
+        api(fake, "GET", "/meetings", page([without_transcript(MEETING)]))
+        transcript_route(fake)
         api(fake, "POST", f"/recordings/{REC}/download", httpx.Response(422, json={"error": "no_media"}))
         body = start(db_session, user, project)
 
@@ -416,7 +428,8 @@ class TestImportJob:
         assert db_session.query(Job).filter(Job.status == "succeeded").count() == 1
 
     def test_retry_rules(self, db_session, org, user, project, conn, fake, fake_s3, factory, video):
-        api(fake, "GET", "/meetings", page([MEETING]))
+        api(fake, "GET", "/meetings", page([without_transcript(MEETING)]))
+        transcript_route(fake)
         api(fake, "POST", f"/recordings/{REC}/download", httpx.Response(422, json={"error": "no_media"}))
         body = start(db_session, user, project)
 

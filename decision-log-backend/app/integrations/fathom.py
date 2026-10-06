@@ -322,6 +322,17 @@ class FathomClient:
         body = self._request("GET", "/meetings", params=params, action="list meetings")
         return MeetingsPage(items=body.get("items") or [], next_cursor=body.get("next_cursor"))
 
+    def get_transcript(self, recording_id) -> list:
+        """Transcript segments of a recording (GET /recordings/{id}/transcript).
+
+        OAuth users may not ask /meetings for transcripts (400 "OAuth users are not allowed to
+        include summary or transcript in this request. Please use /recordings endpoint instead.",
+        verified live 2026-10-06). Segments: ``{speaker: {display_name, ...}, text, timestamp}``.
+        """
+        body = self._request("GET", f"/recordings/{_path_id(recording_id)}/transcript", action="transcript")
+        segments = body.get("transcript") if isinstance(body, dict) else None
+        return segments if isinstance(segments, list) else []
+
     def request_download(self, recording_id) -> Dict[str, Any]:
         """Ask Fathom to prepare a recording download: ``{download_id, status}``."""
         return self._request("POST", f"/recordings/{_path_id(recording_id)}/download", json={}, action="download request")
