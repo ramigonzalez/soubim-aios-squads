@@ -51,9 +51,9 @@ Set on **both** `api` and `worker` unless noted.
 - Auth: `JWT_SECRET_KEY` (>= 32 random chars: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`), `JWT_ALGORITHM`, `JWT_EXPIRATION_MINUTES`
 - LLM: `ANTHROPIC_API_KEY` (**the rotated one**), `LLM_MODEL`, `EXTRACTION_MAX_TOKENS`, `EXTRACTION_EFFORT`
 - Webhooks: `TACTIQ_WEBHOOK_SECRET` (currently required by `Settings`)
-- Fathom (once 13.3 lands): `FATHOM_CLIENT_ID`, `FATHOM_CLIENT_SECRET`, `FATHOM_REDIRECT_URI`
+- Fathom (13.3): `FATHOM_CLIENT_ID`, `FATHOM_CLIENT_SECRET`, `FATHOM_REDIRECT_URI` (both: the worker refreshes tokens for 13.4 imports); `FRONTEND_URL` (API: the frontend origin the OAuth callback redirects back to)
 - Storage (once 13.1 decides the provider): `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`
-- Token encryption key for stored Fathom tokens: variable name to be defined by the story that adds encryption (not in the code yet)
+- `TOKEN_ENCRYPTION_KEY` (both): Fernet key encrypting stored Fathom tokens (`python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). Keep it stable: a new key makes stored tokens unreadable and every user must reconnect.
 - Runtime: `ENVIRONMENT=production`, `DEBUG=false`, `DEMO_MODE=false` (or unset), `WORKER_POLL_SECONDS` (worker only)
 - `CORS_ORIGINS` (API): see below
 - Optional: `SENTRY_DSN`
@@ -76,7 +76,7 @@ Add the Vercel preview domain only if you want previews to call production.
 ## 5. Domain and Fathom redirect URL
 
 1. API service -> Networking -> Generate Domain (`https://<name>.up.railway.app`) or add a custom domain (e.g. `api.<yourdomain>`; add the CNAME Railway shows). The custom domain purchase is out of scope for this story.
-2. In the Fathom developer app settings, replace the localhost redirect with `https://<api-domain>/<callback path from 13.3>` and set `FATHOM_REDIRECT_URI` to the identical string. They must match exactly.
+2. In the Fathom developer app settings, replace the localhost redirect with `https://<api-domain>/api/fathom/callback` and set `FATHOM_REDIRECT_URI` to the identical string. They must match exactly.
 3. The Fathom webhook URL (13.4) is also `https://<api-domain>/...`.
 4. Point the frontend's API base URL (Vercel env) at `https://<api-domain>`.
 

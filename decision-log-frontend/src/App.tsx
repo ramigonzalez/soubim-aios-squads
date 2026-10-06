@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 
 const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
 const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
+const IntegrationsSettings = lazy(() => import('./pages/IntegrationsSettings'))
 
 const queryClient = new QueryClient()
 
@@ -85,6 +86,16 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <MeetingViewer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/integrations"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <IntegrationsSettings />
+              </Suspense>
             </ProtectedRoute>
           }
         />

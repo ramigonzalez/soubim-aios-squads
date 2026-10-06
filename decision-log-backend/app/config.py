@@ -73,6 +73,15 @@ class Settings(BaseSettings):
         """Return True if S3-compatible storage is fully configured."""
         return all([self.s3_endpoint, self.s3_access_key_id, self.s3_secret_access_key, self.s3_bucket])
 
+    # --- Fathom OAuth (Story 13.3) ---
+    # The integration is enabled only when the OAuth app credentials, the redirect URI and a
+    # valid Fernet key (encrypts stored tokens) are all set.
+    fathom_client_id: Optional[str] = None
+    fathom_client_secret: Optional[str] = None
+    fathom_redirect_uri: Optional[str] = None  # must equal the URL registered in the Fathom app
+    token_encryption_key: Optional[str] = None  # Fernet key: Fernet.generate_key()
+    frontend_url: str = "http://localhost:5173"  # where the OAuth callback sends the browser back
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"

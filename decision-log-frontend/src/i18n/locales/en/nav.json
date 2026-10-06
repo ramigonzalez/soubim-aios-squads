@@ -2,6 +2,7 @@
   "home": "Home",
   "projects": "Projects",
   "ingestion": "Ingestion",
+  "integrations": "Integrations",
   "logout": "Logout",
   "loading": "Loading...",
   "roles": {

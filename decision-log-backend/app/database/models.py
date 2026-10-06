@@ -336,6 +336,32 @@ class Job(Base):
     )
 
 
+class FathomConnection(Base):
+    """A user's connected Fathom account (Story 13.3).
+
+    Tokens are Fernet-encrypted at rest (app/utils/crypto.py). One connection per user:
+    reconnecting replaces it, disconnecting deletes it. ``revoked_at`` is set when Fathom
+    rejects the refresh token — the user must reconnect.
+    """
+
+    __tablename__ = "fathom_connections"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="SET NULL"))
+    access_token_enc = Column(Text, nullable=False)
+    refresh_token_enc = Column(Text)
+    expires_at = Column(DateTime)
+    scope = Column(String(255))
+    account_label = Column(String(255))
+    connected_at = Column(DateTime, nullable=False, default=func.now())
+    revoked_at = Column(DateTime)
+
+    @property
+    def needs_reconnect(self) -> bool:
+        return self.revoked_at is not None
+
+
 class ProjectParticipant(Base):
     """Project participant model (V2) — distinct from ProjectMember (auth users)."""
 

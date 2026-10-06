@@ -24,6 +24,7 @@ async def auth_middleware(request: Request, call_next):
         "/api/health",
         "/api/shared/",
         "/api/recordings/",  # Story 7.13: signed, expiring recording links (checked in the route)
+        "/api/fathom/callback",  # Story 13.3: Fathom OAuth redirect (the signed state identifies the user)
         "/docs",
         "/openapi.json",
         "/redoc",
