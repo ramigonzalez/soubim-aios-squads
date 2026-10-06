@@ -29,6 +29,8 @@ const preview = (over = {}) => ({
 describe('AcceptInvitation (Story 12.5)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    // Story 12.8: Google sign-in disabled unless a test enables it
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { password: true, google: false } })
     localStorage.clear()
     useAuthStore.getState().clearAuth()
     useOrganizationStore.setState({ activeOrganizationId: null })
@@ -92,5 +94,21 @@ describe('AcceptInvitation (Story 12.5)', () => {
     vi.spyOn(api, 'post').mockRejectedValue({ response: { status } })
     renderPage()
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
+  })
+
+  it('offers "Continue with Google" when the server has it enabled (Story 12.8)', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { password: true, google: true } })
+    vi.spyOn(api, 'post').mockResolvedValue(preview())
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'Continue with Google' })).toBeInTheDocument()
+  })
+
+  it('no Google button once logged in with an existing account (Story 12.8)', async () => {
+    useAuthStore.getState().setAuth({ id: 'u', email: 'new@x.com', name: 'N', role: 'client' }, 'jwt')
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { password: true, google: true } })
+    vi.spyOn(api, 'post').mockResolvedValue(preview({ account_exists: true }))
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'Accept invitation' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
   })
 })

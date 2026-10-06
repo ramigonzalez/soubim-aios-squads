@@ -8,6 +8,11 @@ from typing import Optional, Dict
 from app.config import settings
 
 
+def normalize_email(email: str) -> str:
+    """Canonical form of an email (Story 12.8): stripped and lowercased everywhere it is stored or compared."""
+    return (email or "").strip().lower()
+
+
 def hash_password(password: str) -> str:
     """Hash password using bcrypt."""
     salt = bcrypt.gensalt(rounds=12)

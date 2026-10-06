@@ -89,6 +89,7 @@ def _fathom_webhook_key(request: Request) -> str:
 _PUBLIC_RULES: List[Tuple[str, Rule]] = [
     ("/api/invitations/public/", Rule("invitation", lambda: settings.rate_limit_invitation, _ip_key)),
     ("/api/fathom/callback", Rule("oauth_callback", lambda: settings.rate_limit_oauth_callback, _ip_key)),
+    ("/api/auth/google/", Rule("oauth_callback", lambda: settings.rate_limit_oauth_callback, _ip_key)),  # Story 12.8
     ("/api/fathom/webhook/", Rule("webhook_fathom", lambda: settings.rate_limit_webhook, _fathom_webhook_key)),
     ("/api/webhooks/", Rule("webhook", lambda: settings.rate_limit_webhook, _ip_key)),
     ("/api/shared/", Rule("public_link", lambda: settings.rate_limit_public_link, _ip_key)),

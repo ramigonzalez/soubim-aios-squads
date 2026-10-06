@@ -10,6 +10,8 @@ import { useAuthStore } from '../../store/authStore'
 vi.mock('../../services/api', () => ({
   default: {
     post: vi.fn(),
+    // Story 12.8: providers call of the Google button (disabled here)
+    get: vi.fn().mockResolvedValue({ data: { password: true, google: false } }),
   },
 }))
 

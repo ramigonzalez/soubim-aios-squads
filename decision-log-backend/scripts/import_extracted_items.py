@@ -43,7 +43,7 @@ def main() -> int:
             return 1
         approver_id = None
         if args.approver:
-            user = db.query(User).filter(User.email == args.approver).first()
+            user = db.query(User).filter(User.email == args.approver.strip().lower()).first()  # Story 12.8
             if user is None:
                 print(f"Approver {args.approver} not found", file=sys.stderr)
                 return 1

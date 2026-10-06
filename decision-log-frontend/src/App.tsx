@@ -18,6 +18,7 @@ const FathomMeetings = lazy(() => import('./pages/FathomMeetings'))
 
 const TeamSettings = lazy(() => import('./pages/TeamSettings'))
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
+const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
 
 const queryClient = new QueryClient()
 
@@ -128,6 +129,14 @@ function AppRoutes() {
           element={
             <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
               <AcceptInvitation />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/auth/google/callback"
+          element={
+            <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+              <GoogleCallback />
             </Suspense>
           }
         />

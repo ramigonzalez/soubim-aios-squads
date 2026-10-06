@@ -22,15 +22,11 @@ from app.config import settings
 from app.database.models import Organization, OrganizationInvitation, OrganizationMember, User
 from app.services.email_sender import EmailSender, get_email_sender
 from app.services.organizations import ROLES, can_manage_role, get_role
-from app.utils.security import hash_password
+from app.utils.security import hash_password, normalize_email  # noqa: F401  (normalize_email re-exported)
 
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
-
-
-def normalize_email(email: str) -> str:
-    return email.strip().lower()
 
 
 def invite_url(token: str) -> str:
@@ -208,7 +204,11 @@ def _join(db: Session, invitation: OrganizationInvitation, user: User) -> Organi
 
 
 def accept_as_existing_user(db: Session, token: str, user: User) -> Organization:
-    invitation = find_by_token(db, token)
+    return accept_for_user(db, find_by_token(db, token), user)
+
+
+def accept_for_user(db: Session, invitation: OrganizationInvitation, user: User) -> Organization:
+    """Accept a pending invitation for an existing user with the invited email. Commits."""
     if normalize_email(user.email) != normalize_email(invitation.email):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This invitation was sent to another email")
     _claim(db, invitation)
@@ -240,6 +240,17 @@ def accept_as_new_user(db: Session, token: str, name: str, password: str) -> Tup
     if len(name) > 255:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Name is too long")
     password_hash = hash_password(password)  # slow: before taking the invitation
+    return create_invited_user(db, invitation, name, password_hash)
+
+
+def create_invited_user(
+    db: Session, invitation: OrganizationInvitation, name: str, password_hash: str
+) -> Tuple[User, Organization]:
+    """Claim the invitation, create the invitee's account and membership. Commits.
+
+    The caller has checked that no account uses the invited email and validated ``name``
+    (password accept above; Google sign-in, Story 12.8, with an unusable random password).
+    """
     _claim(db, invitation)
     # users.role is legacy (not used for authorization since 12.2); invitees get the least privileged value
     user = User(email=invitation.email, password_hash=password_hash, name=name, role="client")
