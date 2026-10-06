@@ -76,9 +76,13 @@ def start_import(db: Session, user, project: Project, recording_id: str, visibil
     existing = find_import(db, project.id, recording_id)
     if existing is not None:
         raise ImportExists(existing)
+    from app.services import fathom_previews  # local: fathom_previews imports this module
+
     imp = FathomImport(
         id=uuid.uuid4(), project_id=project.id, recording_id=recording_id, user_id=user.id,
         owner_organization_id=acting_organization_id(db, user, project), visibility=visibility,
+        # Story 13.15: a recent preview download is still valid, so the job skips requesting a new one
+        download_id=fathom_previews.reusable_download_id(db, user.id, recording_id),
     )
     db.add(imp)
     try:
@@ -274,7 +278,7 @@ def _run(db: Session, import_id: uuid.UUID) -> None:
     client = fathom.FathomClient(db, conn)
     try:
         meeting = _find_meeting(client, imp.recording_id)
-        video_url = _wait_for_download(db, client, imp)
+        video_url = wait_for_download(db, client, imp)
     except fathom.FathomReconnectRequired:
         raise _permanent("Fathom connection needs to be reconnected (Settings → Integrations)")
     except fathom.FathomAPIError as exc:
@@ -354,8 +358,11 @@ def _video_url(status: Dict[str, Any]) -> Optional[str]:
     return video if isinstance(video, str) and video.startswith("https://") else None
 
 
-def _wait_for_download(db: Session, client: fathom.FathomClient, imp: FathomImport) -> str:
-    """Signed video URL of a completed Fathom download (requests one if needed, then polls)."""
+def wait_for_download(db: Session, client: fathom.FathomClient, imp) -> str:
+    """Signed video URL of a completed Fathom download (requests one if needed, then polls).
+
+    ``imp`` only needs ``recording_id`` and ``download_id`` (Story 13.15 reuses this for previews).
+    """
     status: Optional[Dict[str, Any]] = None
     if imp.download_id:
         try:

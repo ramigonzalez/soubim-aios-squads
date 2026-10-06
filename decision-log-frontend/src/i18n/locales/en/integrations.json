@@ -73,6 +73,15 @@
     "errors": {
       "load": "Could not load your Fathom meetings."
     },
+    "preview": {
+      "generate": "Generate preview",
+      "generating": "Generating preview… (~1 min)",
+      "retry": "Try again",
+      "alt": "Preview of {{title}}",
+      "failed": "The preview could not be generated.",
+      "limit": "You already have 3 previews being generated. Wait for one to finish.",
+      "error": "Could not generate the preview. Try again."
+    },
     "imports": {
       "imported": "Imported into {{project}}",
       "importing": "Importing into {{project}}",

@@ -12,6 +12,10 @@ Story 13.4 (browse & import):
 - POST   /api/integrations/fathom/imports             → import a recording into a project (enqueues a job)
 - POST   /api/integrations/fathom/imports/{id}/retry  → retry a failed import (importer only)
 
+Story 13.15 (on-demand previews of meetings not imported yet, private to the user):
+- POST   /api/integrations/fathom/meetings/{recording_id}/preview → create / re-queue a preview job (idempotent)
+- GET    /api/integrations/fathom/previews?recording_ids=a,b       → status + url of the user's own previews
+
 Story 12.4: an import creates a meeting owned by the importer's organization on the project, ``internal``
 by default (``shared`` only for admins of that organization). Imports of meetings the user cannot see
 (another organization's internal meeting) are never listed or returned.
@@ -43,7 +47,7 @@ from app.config import settings
 from app.database.models import FathomConnection, FathomImport, FathomUnassignedMeeting, Project, User
 from app.database.session import get_db
 from app.integrations import fathom
-from app.services import fathom_connections, fathom_import, fathom_webhook, storage, thumbnails
+from app.services import fathom_connections, fathom_import, fathom_previews, fathom_webhook, storage, thumbnails
 from app.services.access import (
     NONE,
     WRITE,
@@ -282,9 +286,50 @@ def fathom_meetings(
         if not fathom_import.import_visible(db, user, imp):  # Story 12.4: another organization's internal meeting
             continue
         by_recording.setdefault(imp.recording_id, []).append(_format_import(imp, user))
+    previews = fathom_previews.previews_for(db, user.id, ids)  # Story 13.15: only the caller's own previews
     for meeting in meetings:
         meeting["imports"] = by_recording.get(meeting["recording_id"], [])
+        meeting["preview"] = previews.get(meeting["recording_id"])
     return {"items": meetings, "next_cursor": page.next_cursor}
+
+
+MAX_PREVIEW_STATUS_IDS = 50
+
+
+@router.post("/integrations/fathom/meetings/{recording_id}/preview", status_code=status.HTTP_202_ACCEPTED)
+def fathom_request_preview(recording_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Generate a preview image of a Fathom meeting that is not imported yet (Story 13.15).
+
+    Idempotent: a ready preview is returned as is, one in progress returns its status, a failed one is
+    re-queued. 429 when the user already has 3 previews being generated, 503 without recording storage.
+    """
+    if not fathom.is_valid_id(recording_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid recording id")
+    _usable_connection(db, user)
+    if not storage.is_enabled():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Recording storage is not configured")
+    try:
+        preview = fathom_previews.request_preview(db, user, recording_id)
+    except fathom_previews.PreviewCapReached:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"You already have {fathom_previews.MAX_ACTIVE} previews being generated. Wait for one to finish.",
+        )
+    return fathom_previews.format_preview(preview)
+
+
+@router.get("/integrations/fathom/previews")
+def fathom_preview_status(
+    recording_ids: str = Query(..., max_length=MAX_PREVIEW_STATUS_IDS * 130),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Status (and image url when ready) of the current user's own previews, by comma-separated recording
+    ids. Database only (no Fathom call), so the page can poll it cheaply while previews are generating."""
+    ids = [i for i in recording_ids.split(",") if i]
+    if len(ids) > MAX_PREVIEW_STATUS_IDS or not all(fathom.is_valid_id(i) for i in ids):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid recording ids")
+    return fathom_previews.previews_for(db, user.id, ids)
 
 
 @router.get("/integrations/fathom/projects")

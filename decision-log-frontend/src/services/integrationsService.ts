@@ -3,6 +3,7 @@ import type {
   FathomAutoImport,
   FathomImport,
   FathomImportProject,
+  FathomPreview,
   FathomMeetingsPage,
   FathomStatus,
   FathomUnassignedMeeting,
@@ -35,6 +36,14 @@ export const integrationsService = {
   /** One page of the user's own Fathom meetings (Story 13.4); pass the previous page's next_cursor. */
   listFathomMeetings: (cursor?: string | null): Promise<FathomMeetingsPage> =>
     api.get('/integrations/fathom/meetings', { params: cursor ? { cursor } : {} }).then(r => r.data),
+
+  /** Story 13.15: ask for a preview image of a meeting that is not imported (idempotent; 429 at 3 in progress) */
+  requestFathomPreview: (recordingId: string): Promise<FathomPreview> =>
+    api.post(`/integrations/fathom/meetings/${encodeURIComponent(recordingId)}/preview`).then(r => r.data),
+
+  /** Story 13.15: status of the user's own previews (database only, cheap to poll) */
+  getFathomPreviews: (recordingIds: string[]): Promise<Record<string, FathomPreview>> =>
+    api.get('/integrations/fathom/previews', { params: { recording_ids: recordingIds.join(',') } }).then(r => r.data),
 
   getFathomImportProjects: (): Promise<FathomImportProject[]> =>
     api.get('/integrations/fathom/projects').then(r => r.data),

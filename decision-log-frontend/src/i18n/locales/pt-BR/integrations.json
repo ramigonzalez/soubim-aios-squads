@@ -73,6 +73,15 @@
     "errors": {
       "load": "Não foi possível carregar suas reuniões do Fathom."
     },
+    "preview": {
+      "generate": "Gerar prévia",
+      "generating": "Gerando prévia… (~1 min)",
+      "retry": "Tentar novamente",
+      "alt": "Prévia de {{title}}",
+      "failed": "Não foi possível gerar a prévia.",
+      "limit": "Você já tem 3 prévias sendo geradas. Aguarde uma terminar.",
+      "error": "Não foi possível gerar a prévia. Tente novamente."
+    },
     "imports": {
       "imported": "Importada em {{project}}",
       "importing": "Importando para {{project}}",
