@@ -11,7 +11,13 @@ from app.api.middleware.auth import get_current_user
 from app.api.routes.project_items import _check_project_access
 from app.database.models import Source
 from app.database.session import get_db
-from app.services.recordings import recording_file, signed_recording_path, verify_signature
+from app.services.recordings import (
+    org_id_for_source,
+    recording_file,
+    signed_recording_path,
+    storage_recording_url,
+    verify_signature,
+)
 
 router = APIRouter()
 
@@ -25,7 +31,10 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
     _check_project_access(db, str(source.project_id), user)
 
     recording = None
-    if recording_file(str(source.id)):
+    storage_url = storage_recording_url(org_id_for_source(db, source), str(source.id))
+    if storage_url:  # Story 13.1: presigned storage link (Range works natively)
+        recording = {"type": "file", "url": storage_url}
+    elif recording_file(str(source.id)):
         recording = {"type": "file", "url": f"/api{signed_recording_path(str(source.id))}"}
     elif source.recording_url:
         recording = {"type": "external", "url": source.recording_url}

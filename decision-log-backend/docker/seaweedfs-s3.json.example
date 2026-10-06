@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "decisionlog",
+      "credentials": [
+        {
+          "accessKey": "REPLACE_WITH_ACCESS_KEY",
+          "secretKey": "REPLACE_WITH_LONG_RANDOM_SECRET"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

@@ -59,6 +59,20 @@ class Settings(BaseSettings):
     curation_sync_enabled: bool = False
     curation_sync_interval_hours: int = 24
 
+    # --- Recording storage, S3-compatible (Story 13.1) ---
+    # Storage is "enabled" only when endpoint, credentials and bucket are all set.
+    # SeaweedFS in dev, Cloudflare R2 / Backblaze B2 in production (same code).
+    s3_endpoint: Optional[str] = None
+    s3_region: str = "us-east-1"
+    s3_access_key_id: Optional[str] = None
+    s3_secret_access_key: Optional[str] = None
+    s3_bucket: Optional[str] = None
+    recording_max_bytes: int = 2 * 1024**3  # 2 GB per recording
+
+    def is_storage_configured(self) -> bool:
+        """Return True if S3-compatible storage is fully configured."""
+        return all([self.s3_endpoint, self.s3_access_key_id, self.s3_secret_access_key, self.s3_bucket])
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"
