@@ -15,6 +15,8 @@ vi.mock('../../services/integrationsService', () => ({
     connectFathom: vi.fn(),
     confirmFathom: vi.fn(),
     disconnectFathom: vi.fn(),
+    getFathomImportProjects: vi.fn().mockResolvedValue([]),
+    setFathomAutoImport: vi.fn(),
   },
 }))
 

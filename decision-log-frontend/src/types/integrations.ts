@@ -8,6 +8,26 @@ export interface FathomStatus {
   needs_reconnect: boolean
   account_label: string | null
   connected_at: string | null
+  /** Story 13.9 */
+  auto_import?: FathomAutoImport
+}
+
+/** Webhook auto-import settings (Story 13.9) — off by default */
+export interface FathomAutoImport {
+  enabled: boolean
+  project_id: string | null
+  project_name: string | null
+  visibility: MeetingVisibility
+}
+
+/** A recording pushed by the Fathom webhook that waits for a project (Story 13.9) */
+export interface FathomUnassignedMeeting {
+  id: string
+  recording_id: string
+  title: string | null
+  started_at: string | null
+  reason: 'no_default_project' | 'project_unavailable'
+  received_at: string | null
 }
 
 export interface FathomPerson {
