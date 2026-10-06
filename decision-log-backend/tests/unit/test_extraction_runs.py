@@ -408,3 +408,25 @@ class TestVersionsRespectVisibility:
         run(runs_routes.activate_extraction_run(a.processed.id, v1.id, db=db_session, user=vis.w.a_admin))
         statements = _statements(db_session, vis.w.b_admin, a.project.id)
         assert "OLD" in statements and "NEW" not in statements
+
+
+class TestEstimatedCost:
+    """Story 13.6: estimated cost per run from list prices."""
+
+    def test_opus_cost(self):
+        from app.api.routes.extraction_runs import _calculate_extraction_cost
+
+        # 1M input * $4 + 1M output * $20
+        assert _calculate_extraction_cost("claude-opus-5-5", 1_000_000, 1_000_000) == 24.0
+
+    def test_sonnet_cost(self):
+        from app.api.routes.extraction_runs import _calculate_extraction_cost
+
+        assert _calculate_extraction_cost("claude-sonnet-5-5", 100_000, 10_000) == 0.3
+
+    def test_unknown_model_or_missing_tokens(self):
+        from app.api.routes.extraction_runs import _calculate_extraction_cost
+
+        assert _calculate_extraction_cost("other-model", 10, 10) is None
+        assert _calculate_extraction_cost("claude-opus-5-5", None, 10) is None
+        assert _calculate_extraction_cost(None, 10, 10) is None

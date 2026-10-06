@@ -1,7 +1,7 @@
 """Application configuration using Pydantic Settings."""
 
 from pydantic_settings import BaseSettings
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 
 class Settings(BaseSettings):
@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     llm_model: str = "claude-opus-5-5"
     extraction_max_tokens: int = 64000  # streamed; a 98-min meeting needed ~11k output tokens
     extraction_effort: str = "high"
+    # Story 13.6: list prices in USD per million tokens (Claude API docs, 2026-10); estimate only —
+    # ignores cache and batch discounts. Override with MODEL_PRICING (JSON) when prices change.
+    model_pricing: Dict[str, Dict[str, float]] = {
+        "claude-opus-5-5": {"input": 4.00, "output": 20.00},
+        "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
+    }
 
     # Tactiq Webhook
     tactiq_webhook_secret: str
