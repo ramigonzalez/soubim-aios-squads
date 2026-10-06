@@ -8,6 +8,8 @@ import api from './api'
 export interface UploadProject {
   id: string
   name: string
+  /** Story 12.4: the user may upload as shared (admin of the organization they act for) */
+  can_share: boolean
 }
 
 export interface PresignedUpload {
@@ -30,6 +32,7 @@ export interface CompleteUploadBody {
   source_id?: string | null
   video_extension?: string | null
   upload_token?: string | null
+  visibility?: 'internal' | 'shared'
 }
 
 export const uploadService = {

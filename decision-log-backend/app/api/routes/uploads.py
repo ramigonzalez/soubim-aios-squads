@@ -7,7 +7,7 @@
 """
 
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -37,6 +37,7 @@ class CompleteRequest(BaseModel):
     source_id: Optional[str] = Field(None, max_length=64)
     video_extension: Optional[str] = Field(None, max_length=8)
     upload_token: Optional[str] = Field(None, max_length=200)
+    visibility: Literal["internal", "shared"] = "internal"  # Story 12.4
 
 
 @router.get("/uploads/projects")
@@ -69,9 +70,15 @@ def complete_upload(body: CompleteRequest, db: Session = Depends(get_db), user=D
             transcript=body.transcript,
             source_id=body.source_id,
             video_ext=body.video_extension,
-            user_id=str(user.id),
+            user=user,
+            visibility=body.visibility,
             upload_token=body.upload_token,
         )
     except manual_upload.UploadError as exc:
         raise HTTPException(status_code=exc.status, detail=exc.detail)
-    return {"id": str(source.id), "project_id": str(source.project_id), "title": source.title}
+    return {
+        "id": str(source.id),
+        "project_id": str(source.project_id),
+        "title": source.title,
+        "visibility": source.visibility,
+    }

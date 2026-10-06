@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Project, Source
 from app.services import recordings, storage
+from app.services.access import INTERNAL, VISIBILITIES, acting_organization_id, can_create_shared
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +117,16 @@ def complete(
     transcript: Optional[str],
     source_id: Optional[str],
     video_ext: Optional[str],
-    user_id: str,
+    user,
     upload_token: Optional[str] = None,
+    visibility: str = INTERNAL,
 ) -> Source:
     """Create the pending Source; verify the uploaded video first when there is one."""
+    user_id = str(user.id)
+    if visibility not in VISIBILITIES:
+        raise UploadError(422, "Invalid visibility")
+    if visibility != INTERNAL and not can_create_shared(db, user, project):  # Story 12.4, same rule as the Fathom import
+        raise UploadError(403, "Only an owner or admin of your organization can share a meeting")
     transcript = (transcript or "").strip() or None
     if transcript and len(transcript) > MAX_TRANSCRIPT_CHARS:
         raise UploadError(413, "The transcript is too large")
@@ -153,6 +160,8 @@ def complete(
         id=new_id,
         project_id=project.id,
         source_type="meeting",
+        owner_organization_id=acting_organization_id(db, user, project),
+        visibility=visibility,
         title=title.strip(),
         occurred_at=occurred_at,
         participants=[p.strip() for p in participants if p and p.strip()][:MAX_PARTICIPANTS],

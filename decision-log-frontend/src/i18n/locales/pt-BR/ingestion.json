@@ -149,7 +149,11 @@
       "tooLarge": "O arquivo excede o limite de tamanho.",
       "extension": "Tipo de arquivo não suportado.",
       "missing": "O vídeo não chegou ao armazenamento. Tente novamente.",
-      "forbidden": "Você não pode adicionar reuniões neste projeto."
-    }
+      "forbidden": "Você não pode adicionar reuniões neste projeto, ou só admins podem compartilhá-las."
+    },
+    "visibility": "Visibilidade",
+    "visibilityInternal": "Interna — só a sua organização vê",
+    "visibilityShared": "Compartilhada — todas as organizações do projeto veem",
+    "sharedAdminOnly": "Só o proprietário ou admin da sua organização pode compartilhar uma reunião."
   }
 }

@@ -14,6 +14,7 @@ import { X } from 'lucide-react'
 import { uploadService } from '../../services/uploadService'
 import { decodeText, titleFromFileName, transcriptProblem, videoProblem } from '../../lib/upload'
 import type { FileProblem } from '../../lib/upload'
+import type { MeetingVisibility } from '../../types/projectItem'
 
 interface AddMeetingDialogProps {
   open: boolean
@@ -45,6 +46,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
   const [title, setTitle] = useState('')
   const [occurredAt, setOccurredAt] = useState(localNow)
   const [participants, setParticipants] = useState('')
+  const [visibility, setVisibility] = useState<MeetingVisibility>('internal')
   const [video, setVideo] = useState<File | null>(null)
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null)
   const [transcriptText, setTranscriptText] = useState<string | null>(null)
@@ -59,6 +61,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
     staleTime: 60_000,
   })
 
+  const canShare = !!projects?.find(p => p.id === projectId)?.can_share
   const busy = stage === 'uploading' || stage === 'saving'
   const canSubmit = !!projectId && title.trim() !== '' && (!!video || !!transcriptFile) && !busy
 
@@ -67,6 +70,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
     setTitle('')
     setOccurredAt(localNow())
     setParticipants('')
+    setVisibility('internal')
     setVideo(null)
     setTranscriptFile(null)
     setTranscriptText(null)
@@ -149,6 +153,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
         source_id: sourceId,
         video_extension: extension,
         upload_token: token,
+        visibility: canShare ? visibility : 'internal',
       })
       queryClient.invalidateQueries('ingestion')
       queryClient.invalidateQueries('ingestion-history')
@@ -183,7 +188,10 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
             {projects && projects.length > 0 && (
               <label className="block text-sm">
                 <span className="font-medium text-gray-700">{t('addMeeting.project')}</span>
-                <select value={projectId} onChange={e => setProjectId(e.target.value)} disabled={busy} className={field}>
+                <select value={projectId} onChange={e => {
+                    setProjectId(e.target.value)
+                    if (!projects?.find(p => p.id === e.target.value)?.can_share) setVisibility('internal')
+                  }} disabled={busy} className={field}>
                   <option value="">{t('addMeeting.selectProject')}</option>
                   {projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -206,6 +214,33 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
               <span className="font-medium text-gray-700">{t('addMeeting.participants')}</span>
               <input value={participants} onChange={e => setParticipants(e.target.value)} disabled={busy} placeholder={t('addMeeting.participantsHint')} className={field} />
             </label>
+
+            <fieldset className="text-sm">
+              <legend className="font-medium text-gray-700">{t('addMeeting.visibility')}</legend>
+              <label className="mt-1 flex items-center gap-2 text-gray-700">
+                <input
+                  type="radio"
+                  name="add-meeting-visibility"
+                  value="internal"
+                  checked={visibility === 'internal'}
+                  disabled={busy}
+                  onChange={() => setVisibility('internal')}
+                />
+                {t('addMeeting.visibilityInternal')}
+              </label>
+              <label className={`mt-1 flex items-center gap-2 ${projectId && !canShare ? 'text-gray-400' : 'text-gray-700'}`}>
+                <input
+                  type="radio"
+                  name="add-meeting-visibility"
+                  value="shared"
+                  checked={visibility === 'shared'}
+                  disabled={!canShare || busy}
+                  onChange={() => setVisibility('shared')}
+                />
+                {t('addMeeting.visibilityShared')}
+              </label>
+              {projectId && !canShare && <p className="mt-1 text-xs text-gray-500">{t('addMeeting.sharedAdminOnly')}</p>}
+            </fieldset>
 
             <label className="block text-sm">
               <span className="font-medium text-gray-700">{t('addMeeting.video')}</span>

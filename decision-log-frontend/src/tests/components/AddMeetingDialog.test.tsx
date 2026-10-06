@@ -40,7 +40,7 @@ async function fillCommon(user: ReturnType<typeof userEvent.setup>) {
 describe('AddMeetingDialog (Story 13.5)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    svc.getProjects.mockResolvedValue([{ id: 'p1', name: 'Obra X' }])
+    svc.getProjects.mockResolvedValue([{ id: 'p1', name: 'Obra X', can_share: true }])
     svc.complete.mockResolvedValue({ id: 'src-9', project_id: 'p1', title: 'Visita' })
   })
 
@@ -83,6 +83,29 @@ describe('AddMeetingDialog (Story 13.5)', () => {
     expect(svc.presign).toHaveBeenCalledWith({ project_id: 'p1', filename: 'obra.mp4', size: 3 })
     expect(svc.complete.mock.calls[0][0]).toMatchObject({ source_id: 'src-9', video_extension: '.mp4', upload_token: 'tok-1', transcript: null })
     await waitFor(() => expect(onClose).toHaveBeenCalled())
+  })
+
+  it('sends the chosen visibility', async () => {
+    const user = userEvent.setup()
+    renderDialog()
+    await fillCommon(user)
+    expect(screen.getByLabelText(/^Internal/)).toBeChecked()
+    await user.click(screen.getByLabelText(/^Shared/))
+    await user.upload(screen.getByLabelText(/Transcript/), new File(['texto'], 'ata.txt', { type: 'text/plain' }))
+    const submit = screen.getByRole('button', { name: 'Add meeting' })
+    await waitFor(() => expect(submit).toBeEnabled())
+    await user.click(submit)
+    await waitFor(() => expect(svc.complete).toHaveBeenCalled())
+    expect(svc.complete.mock.calls[0][0]).toMatchObject({ visibility: 'shared' })
+  })
+
+  it('disables shared, with a hint, for projects the user cannot share on', async () => {
+    const user = userEvent.setup()
+    svc.getProjects.mockResolvedValue([{ id: 'p1', name: 'Obra X', can_share: false }])
+    renderDialog()
+    await fillCommon(user)
+    expect(screen.getByLabelText(/^Shared/)).toBeDisabled()
+    expect(screen.getByText(/Only an owner or admin/)).toBeInTheDocument()
   })
 
   it('rejects an unsupported video before uploading', async () => {

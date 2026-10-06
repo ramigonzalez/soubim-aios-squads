@@ -149,7 +149,11 @@
       "tooLarge": "The file exceeds the size limit.",
       "extension": "Unsupported file type.",
       "missing": "The video did not reach storage. Try again.",
-      "forbidden": "You cannot add meetings to this project."
-    }
+      "forbidden": "You cannot add meetings to this project, or only admins can share them."
+    },
+    "visibility": "Visibility",
+    "visibilityInternal": "Internal — only your organization sees it",
+    "visibilityShared": "Shared — every organization on the project sees it",
+    "sharedAdminOnly": "Only an owner or admin of your organization can share a meeting."
   }
 }

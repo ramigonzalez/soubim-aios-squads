@@ -11,6 +11,7 @@ from app.api.routes import uploads as routes
 from app.config import settings
 from app.database.models import Project, Source, User
 from app.services import manual_upload, storage
+from app.services.access import source_visible
 from tests.org_helpers import assign_to_project, make_org, make_org_member
 from tests.unit.test_recording_storage import FakeS3, fake_s3  # noqa: F401 (fixture)
 
@@ -248,7 +249,60 @@ class TestUploadToken:
 
 
 def test_upload_projects_lists_writable_projects(db_session, user, project):
-    assert [p["name"] for p in routes.upload_projects(db=db_session, user=user)] == ["D/SEASON"]
+    assert routes.upload_projects(db=db_session, user=user) == [
+        {"id": str(project.id), "name": "D/SEASON", "can_share": True}]
+
+
+class TestVisibility:
+    def _member(self, db, org, project):
+        m = User(email="m@soubim.com", password_hash="x", name="M", role="architect")
+        db.add(m)
+        make_org_member(db, m, "member", org)
+        assign_to_project(db, m, project)
+        db.commit()
+        return m
+
+    def test_default_is_internal_and_owned_by_the_uploaders_org(self, db_session, org, user, project):
+        body = complete(db_session, user, project, transcript=TRANSCRIPT)
+        src = db_session.get(Source, __import__("uuid").UUID(body["id"]))
+        assert (src.owner_organization_id, src.visibility, body["visibility"]) == (org.id, "internal", "internal")
+
+    def test_admin_can_upload_shared(self, db_session, org, user, project):
+        body = complete(db_session, user, project, transcript=TRANSCRIPT, visibility="shared")
+        src = db_session.get(Source, __import__("uuid").UUID(body["id"]))
+        assert (src.owner_organization_id, src.visibility) == (org.id, "shared")
+
+    def test_non_admin_cannot_upload_shared(self, db_session, org, user, project):
+        member = self._member(db_session, org, project)
+        assert routes.upload_projects(db=db_session, user=member)[0]["can_share"] is False
+        with pytest.raises(HTTPException) as exc:
+            complete(db_session, member, project, transcript=TRANSCRIPT, visibility="shared")
+        assert code(exc) == 403
+        assert db_session.query(Source).count() == 0
+        assert complete(db_session, member, project, transcript=TRANSCRIPT)["visibility"] == "internal"
+
+    def test_visibility_is_validated(self):
+        with pytest.raises(ValidationError):
+            routes.CompleteRequest(project_id="p", title="t", occurred_at=NOW, visibility="public")
+
+    def test_partner_internal_upload_is_hidden_from_the_owner_until_shared(self, db_session, user, project):
+        from app.database.models import ProjectOrganization
+
+        dimas = make_org(db_session, "DIMAS", "dimas-test")
+        admin = User(email="admin@dimas.com", password_hash="x", name="DIMAS admin", role="client")
+        db_session.add(admin)
+        make_org_member(db_session, admin, "admin", dimas)
+        db_session.add(ProjectOrganization(project_id=project.id, organization_id=dimas.id, access="contributor"))
+        db_session.commit()
+
+        body = complete(db_session, admin, project, transcript=TRANSCRIPT)
+        src = db_session.get(Source, __import__("uuid").UUID(body["id"]))
+        assert (src.owner_organization_id, src.visibility) == (dimas.id, "internal")
+        assert source_visible(db_session, admin, src) is True
+        assert source_visible(db_session, user, src) is False  # souBIM does not see DIMAS-internal
+        shared = complete(db_session, admin, project, transcript=TRANSCRIPT, visibility="shared")
+        src2 = db_session.get(Source, __import__("uuid").UUID(shared["id"]))
+        assert source_visible(db_session, user, src2) is True
 
 
 def test_presigned_put_signs_the_content_type(monkeypatch):
