@@ -148,6 +148,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.8 | Deploy API + Worker + Postgres on Railway | M | High | ✅ config #13 (live deploy pending) |
 | 13.9 | Fathom Webhook (Push) | M | Low | ✅ #23 |
 | 13.10 | CI Checks (GitHub Actions) | S | High | ✅ |
+| 13.12 | Meeting Thumbnails (generated from the stored video) | M | Medium | ✅ |
 | 13.13 | Fathom Import per Organization | M | Medium | Draft |
 | 13.14 | Extraction Model Choice Explained to Users, Plus Eval | M | Medium | Draft |
 

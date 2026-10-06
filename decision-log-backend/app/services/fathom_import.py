@@ -22,6 +22,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy.exc import IntegrityError
@@ -30,7 +31,7 @@ from sqlalchemy.orm import Session
 from app.database.models import FathomConnection, FathomImport, Project, Source
 from app.database.session import SessionLocal
 from app.integrations import fathom
-from app.services import jobs, storage
+from app.services import jobs, storage, thumbnails
 from app.services.access import INTERNAL, VISIBILITIES, acting_organization_id, owned_object_visible, source_visible
 
 logger = logging.getLogger(__name__)
@@ -208,6 +209,18 @@ def _person(entry) -> Optional[Dict[str, Optional[str]]]:
     return {"name": name or email, "email": email}
 
 
+def meeting_platform(meeting_url) -> Optional[str]:
+    """``meet`` | ``zoom`` | ``teams`` from the video-call link, or None when unknown (Story 13.12)."""
+    if not isinstance(meeting_url, str):
+        return None
+    host = (urlparse(meeting_url.strip()).hostname or "").lower()
+    for platform, domains in (("meet", ("meet.google.com",)), ("zoom", ("zoom.us", "zoom.com")),
+                              ("teams", ("teams.microsoft.com", "teams.live.com"))):
+        if any(host == d or host.endswith("." + d) for d in domains):
+            return platform
+    return None
+
+
 def meeting_summary(item: Dict[str, Any]) -> Dict[str, Any]:
     """The fields of a Fathom list item that the browse page shows (no transcript)."""
     started = _parse_time(item.get("recording_start_time")) or _parse_time(item.get("scheduled_start_time")) \
@@ -224,6 +237,7 @@ def meeting_summary(item: Dict[str, Any]) -> Dict[str, Any]:
         "invitees": invitees,
         "recorded_by": recorder,
         "share_url": item.get("share_url") if isinstance(item.get("share_url"), str) else None,
+        "platform": meeting_platform(item.get("meeting_url")),  # Story 13.12
     }
 
 
@@ -311,6 +325,7 @@ def _run(db: Session, import_id: uuid.UUID) -> None:
     imp.download_id = None
     db.commit()
     logger.info("Fathom import %s done: source %s, %s bytes stored", imp.id, source.id, size)
+    thumbnails.enqueue(db, source)  # Story 13.12: never fails the import
 
 
 def _find_meeting(client: fathom.FathomClient, recording_id: str) -> Dict[str, Any]:

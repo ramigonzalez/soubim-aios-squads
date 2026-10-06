@@ -55,6 +55,12 @@
     "noMatch": "No loaded meeting matches the search.",
     "loadMore": "Load more",
     "loadingMore": "Loading...",
+    "thumbnailAlt": "Thumbnail of {{title}}",
+    "platform": {
+      "meet": "Google Meet",
+      "zoom": "Zoom",
+      "teams": "Microsoft Teams"
+    },
     "untitled": "Untitled meeting",
     "duration": "{{count}} min",
     "invitees_one": "{{count}} invitee",

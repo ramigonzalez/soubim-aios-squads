@@ -6,6 +6,7 @@ import { useBulkReview } from '../../hooks/useItemReview'
 import { cn } from '../../lib/utils'
 import { meetingLink } from '../../lib/transcript'
 import { SourceIcon } from '../atoms/SourceIcon'
+import { MeetingThumbnail } from '../atoms/MeetingThumbnail'
 import { ProjectItemRow } from './ProjectItemRow'
 import { MeetingSummary } from './MeetingSummary'
 import { VisibilityBadge } from '../atoms/VisibilityBadge'
@@ -20,6 +21,7 @@ interface SourceGroupSource {
   ai_summary?: string
   meetingId?: string  // Story 7.13: V2 source id for the meeting viewer link
   visibility?: MeetingVisibility | null  // Story 12.4: internal / shared badge
+  thumbnail_url?: string | null  // Story 13.12
 }
 
 export interface SourceGroupAccordionProps {
@@ -123,7 +125,15 @@ export function SourceGroupAccordion({
           }
         }}
       >
-        <SourceIcon type={source.type} size="md" />
+        {source.thumbnail_url ? (
+          <MeetingThumbnail
+            src={source.thumbnail_url}
+            alt={t('sourceGroup.thumbnailAlt', { title: source.title })}
+            className="w-16 shrink-0"
+          />
+        ) : (
+          <SourceIcon type={source.type} size="md" />
+        )}
         <span className="text-sm font-semibold text-gray-900 flex-1 min-w-0 truncate">
           {source.title}
         </span>

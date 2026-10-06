@@ -46,6 +46,8 @@ export interface FathomImport {
   visibility?: MeetingVisibility
   source_id: string | null
   source_status: IngestionStatus | null
+  /** Story 13.12: presigned thumbnail of the imported meeting, null until generated */
+  thumbnail_url?: string | null
   job: SourceJob | null
   error: string | null
   /** Only the importer can retry (the recording is in their Fathom account) */
@@ -62,6 +64,8 @@ export interface FathomMeeting {
   invitees: FathomPerson[]
   recorded_by: FathomPerson | null
   share_url: string | null
+  /** Story 13.12: video-call platform from the meeting link; null when unknown */
+  platform?: 'meet' | 'zoom' | 'teams' | null
   imports: FathomImport[]
 }
 

@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, Search } from 'lucide-react'
 import { integrationsService } from '../services/integrationsService'
 import { FathomImportDialog, FATHOM_MEETINGS_KEY } from '../components/organisms/FathomImportDialog'
 import { FathomUnassignedList } from '../components/organisms/FathomUnassignedList'
+import { MeetingThumbnail } from '../components/atoms/MeetingThumbnail'
 import IngestionStatusBadge from '../components/molecules/IngestionStatusBadge'
 import { FATHOM_STATUS_KEY } from './IntegrationsSettings'
 import { formatDateTime } from '../lib/utils'
@@ -140,9 +141,19 @@ function MeetingRow({ meeting, onImport }: { meeting: FathomMeeting; onImport: (
   const { t } = useTranslation('integrations')
   const invitees = meeting.invitees
   const extra = invitees.length - SHOWN_INVITEES
+  // Story 13.12: the thumbnail of an imported copy (the API only sends it for meetings the user may see)
+  const thumbnail = meeting.imports.find(i => i.state === 'imported' && i.thumbnail_url)?.thumbnail_url
   return (
-    <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
+    <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
+      <MeetingThumbnail
+        src={thumbnail}
+        alt={t('meetings.thumbnailAlt', { title: meeting.title || t('meetings.untitled') })}
+        className="w-full sm:w-40 shrink-0"
+      >
+        {meeting.platform && <span className="font-medium">{t(`meetings.platform.${meeting.platform}`)}</span>}
+        {meeting.duration_minutes != null && <span>{t('meetings.duration', { count: meeting.duration_minutes })}</span>}
+      </MeetingThumbnail>
+      <div className="min-w-0 flex-1">
         <p className="font-medium text-gray-900">{meeting.title || t('meetings.untitled')}</p>
         <p className="mt-0.5 text-sm text-gray-600">
           {[

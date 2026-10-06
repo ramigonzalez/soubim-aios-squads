@@ -55,6 +55,12 @@
     "noMatch": "Nenhuma reunião carregada corresponde à busca.",
     "loadMore": "Carregar mais",
     "loadingMore": "Carregando...",
+    "thumbnailAlt": "Miniatura de {{title}}",
+    "platform": {
+      "meet": "Google Meet",
+      "zoom": "Zoom",
+      "teams": "Microsoft Teams"
+    },
     "untitled": "Reunião sem título",
     "duration": "{{count}} min",
     "invitees_one": "{{count}} convidado",

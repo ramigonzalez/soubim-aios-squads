@@ -18,6 +18,7 @@
     "showSummary": "Mostrar resumo da reunião",
     "hideSummary": "Ocultar resumo da reunião",
     "meeting": "Reunião",
+    "thumbnailAlt": "Miniatura de {{title}}",
     "openMeeting": "Abrir reunião {{title}}"
   },
   "itemRow": {

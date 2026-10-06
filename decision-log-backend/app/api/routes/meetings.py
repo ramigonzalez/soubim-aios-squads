@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.middleware.auth import get_current_user
 from app.database.session import get_db
 from app.services.access import can_change_visibility, require_source_access
+from app.services.thumbnails import thumbnail_url
 from app.services.recordings import (
     org_id_for_source,
     recording_file,
@@ -50,6 +51,7 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
         "summary": source.ai_summary,
         "transcript": source.raw_content,
         "recording": recording,
+        "thumbnail_url": thumbnail_url(source),  # Story 13.12: only after the access + visibility check above
         # Story 12.4
         "visibility": source.visibility,
         "can_change_visibility": can_change_visibility(db, user, source),

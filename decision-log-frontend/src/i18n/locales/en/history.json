@@ -18,6 +18,7 @@
     "showSummary": "Show meeting summary",
     "hideSummary": "Hide meeting summary",
     "meeting": "Meeting",
+    "thumbnailAlt": "Thumbnail of {{title}}",
     "openMeeting": "Open meeting {{title}}"
   },
   "itemRow": {

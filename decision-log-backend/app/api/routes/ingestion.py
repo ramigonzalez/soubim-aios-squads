@@ -29,6 +29,7 @@ from app.services.access import (
     visible_sources_filter,
 )
 from app.services.jobs import enqueue, latest_job_for_source
+from app.services.thumbnails import thumbnail_url
 
 router = APIRouter()
 
@@ -108,6 +109,7 @@ def _format_source(source, project_name: str, item_count: int = 0, approved_by_n
         "extraction_error": source.extraction_error,
         "extracted_item_count": item_count,
         "visibility": source.visibility,  # Story 12.4
+        "thumbnail_url": thumbnail_url(source),  # Story 13.12 (both lists are visibility-filtered)
         "job": _format_job(job),
     }
 

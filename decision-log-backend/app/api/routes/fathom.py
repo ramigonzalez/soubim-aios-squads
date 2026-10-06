@@ -43,7 +43,7 @@ from app.config import settings
 from app.database.models import FathomConnection, FathomImport, FathomUnassignedMeeting, Project, User
 from app.database.session import get_db
 from app.integrations import fathom
-from app.services import fathom_connections, fathom_import, fathom_webhook, storage
+from app.services import fathom_connections, fathom_import, fathom_webhook, storage, thumbnails
 from app.services.access import (
     NONE,
     WRITE,
@@ -232,6 +232,8 @@ def _format_import(imp: FathomImport, user) -> dict:
         "state": state,
         "visibility": imp.source.visibility if imp.source else imp.visibility,  # Story 12.4
         "source_id": str(imp.source_id) if imp.source_id else None,
+        # Story 13.12: callers only format imports the user may see (import_visible)
+        "thumbnail_url": thumbnails.thumbnail_url(imp.source) if imp.source else None,
         "source_status": imp.source.ingestion_status if imp.source else None,
         "job": {
             "status": job.status,

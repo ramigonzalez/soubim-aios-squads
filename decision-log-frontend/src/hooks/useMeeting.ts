@@ -23,6 +23,8 @@ export interface Meeting {
   summary: string | null
   transcript: string | null
   recording: MeetingRecording | null
+  /** Story 13.12: presigned thumbnail, used as the video poster */
+  thumbnail_url?: string | null
   /** Story 12.4: internal (owner organization only) or shared (every organization on the project) */
   visibility?: MeetingVisibility
   /** Story 12.4: true for admins of the meeting's owner organization */
