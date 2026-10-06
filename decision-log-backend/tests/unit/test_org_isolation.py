@@ -421,3 +421,49 @@ class TestAdminRole:
         assert access.project_access_level(db_session, world.a_admin, b) == access.NONE
         assert access.project_access_level(db_session, world.b_admin, b) == access.ADMIN  # owner
         assert access.project_access_level(db_session, world.nobody, a) == access.NONE
+
+
+class TestSharedPlatformChannels:
+    """Security review: the Gmail inbox, the Drive service account and webhook ids are shared by
+    every organization — none of them may route or reveal another organization's data."""
+
+    def test_email_matching_only_considers_platform_projects(self, db_session, world):
+        from app.services.email_matcher import EmailMatcherService
+
+        matcher = EmailMatcherService()
+        # Organization B named its project after words that appear in souBIM's email subjects
+        assert matcher.match_project(db_session, [], "Re: Project B weekly", "x@y.com") is None
+        assert matcher.match_project(db_session, ["project/project-b"], "Hi", "x@y.com") is None
+        assert matcher.match_project(db_session, [], "Re: Project A weekly", "x@y.com") == str(world.a.project.id)
+
+    def test_drive_folder_only_set_by_platform_admins(self, db_session, world):
+        b = world.b
+        r = req(world.b_admin)
+        assert status_of(projects.update_project(b.project.id, projects.ProjectUpdate(drive_folder_id="soubim-folder"),
+                                                 r, db=db_session)) == 403
+        assert status_of(projects.create_project(projects.ProjectCreate(name="X", drive_folder_id="soubim-folder"),
+                                                 r, db=db_session)) == 403
+        db_session.refresh(b.project)
+        assert b.project.drive_folder_id is None
+        # Re-sending the current value (the edit form sends every field) is fine
+        run(projects.update_project(b.project.id, projects.ProjectUpdate(name="B2", drive_folder_id=None), r,
+                                    db=db_session))
+        # Platform admins configure folders as before
+        run(projects.update_project(world.a.project.id, projects.ProjectUpdate(drive_folder_id="folder-a"),
+                                    req(world.a_admin), db=db_session))
+        db_session.refresh(world.a.project)
+        assert world.a.project.drive_folder_id == "folder-a"
+
+    def test_webhook_id_of_other_organization_is_not_revealed(self, db_session, world):
+        world.b.pending.webhook_id = "wh-b"
+        world.a.pending.webhook_id = "wh-a"
+        db_session.commit()
+        r = req(world.a_admin)
+        payload = {"project_id": str(world.a.project.id), "webhook_id": "wh-b", "transcript": "x"}
+        with pytest.raises(HTTPException) as exc:
+            run(webhooks.receive_transcript(payload, r, background_tasks=None, db=db_session))
+        assert exc.value.status_code == 409
+        assert str(world.b.pending.id) not in str(exc.value.detail)
+        own = {"project_id": str(world.a.project.id), "webhook_id": "wh-a", "transcript": "x"}
+        result = run(webhooks.receive_transcript(own, r, background_tasks=None, db=db_session))
+        assert result == {"status": "duplicate", "source_id": str(world.a.pending.id)}

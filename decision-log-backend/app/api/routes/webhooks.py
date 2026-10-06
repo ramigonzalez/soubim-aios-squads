@@ -49,6 +49,9 @@ async def receive_transcript(
     if webhook_id:
         existing = db.query(Source).filter(Source.webhook_id == webhook_id).first()
         if existing:
+            # Story 12.2 security review: never reveal a source of another project/organization
+            if str(existing.project_id) != str(payload["project_id"]):
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="webhook_id already used")
             return {"status": "duplicate", "source_id": str(existing.id)}
 
     # Parse occurred_at from meeting_date
