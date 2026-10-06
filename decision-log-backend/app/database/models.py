@@ -305,6 +305,37 @@ class Source(Base):
     )
 
 
+class Job(Base):
+    """Background job picked up by the worker process (Story 13.2).
+
+    The web API inserts jobs; `python -m app.worker` claims them with
+    SELECT … FOR UPDATE SKIP LOCKED, so several workers never run the same job.
+    """
+
+    __tablename__ = "jobs"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    type = Column(String(50), nullable=False)
+    payload = Column(JSONType, nullable=False, default=dict)
+    status = Column(String(20), nullable=False, default="queued")
+    attempts = Column(Integer, nullable=False, default=0)
+    max_attempts = Column(Integer, nullable=False, default=3)
+    run_after = Column(DateTime, nullable=False, default=func.now())
+    locked_by = Column(String(100))
+    locked_at = Column(DateTime)
+    last_error = Column(Text)
+    source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"))
+    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="SET NULL"))
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed')", name="ck_job_status"),
+        Index("idx_jobs_claim", "status", "run_after"),
+        Index("idx_jobs_source", "source_id"),
+    )
+
+
 class ProjectParticipant(Base):
     """Project participant model (V2) — distinct from ProjectMember (auth users)."""
 

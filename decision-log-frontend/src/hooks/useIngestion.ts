@@ -11,6 +11,9 @@ export function useIngestion() {
 export function useIngestionHistory() {
   return useQuery('ingestion-history', ingestionService.getHistory, {
     staleTime: 30_000,
+    // Story 13.2: poll while a source is still with the worker, so its status updates by itself
+    refetchInterval: (data) =>
+      (data as { sources?: { status: string }[] } | undefined)?.sources?.some(s => s.status === 'approved') ? 5_000 : false,
   })
 }
 

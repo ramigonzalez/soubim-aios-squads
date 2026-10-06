@@ -101,5 +101,10 @@
     "failed": "Failed",
     "errorGeneric": "Upload failed",
     "errorNetwork": "Upload failed — network error"
+  },
+  "processing": {
+    "queued": "Queued",
+    "running": "Processing",
+    "retrying": "Retrying ({{attempt}}/{{max}})"
   }
 }

@@ -101,5 +101,10 @@
     "failed": "Falhou",
     "errorGeneric": "Falha no envio",
     "errorNetwork": "Falha no envio — erro de rede"
+  },
+  "processing": {
+    "queued": "Na fila",
+    "running": "Processando",
+    "retrying": "Nova tentativa ({{attempt}}/{{max}})"
   }
 }

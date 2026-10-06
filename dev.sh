@@ -37,6 +37,9 @@ cleanup() {
     if [ ! -z "$BACKEND_PID" ]; then
         kill $BACKEND_PID 2>/dev/null || true
     fi
+    if [ ! -z "$WORKER_PID" ]; then
+        kill $WORKER_PID 2>/dev/null || true  # SIGTERM: worker finishes its current job first
+    fi
     if [ ! -z "$FRONTEND_PID" ]; then
         kill $FRONTEND_PID 2>/dev/null || true
     fi
@@ -110,6 +113,11 @@ export ENV_FILE=".env.development"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 echo "✅ Backend started (PID: $BACKEND_PID)"
+
+# Story 13.2: background worker (processes approved sources from the jobs table)
+python -m app.worker &
+WORKER_PID=$!
+echo "✅ Worker started (PID: $WORKER_PID)"
 if [ "$DB_MODE" = "postgres" ]; then
     echo "   Database: PostgreSQL (Docker) on localhost:5432"
 else
