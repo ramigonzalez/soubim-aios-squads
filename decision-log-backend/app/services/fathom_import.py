@@ -329,17 +329,18 @@ def _run(db: Session, import_id: uuid.UUID) -> None:
 
 
 def _find_meeting(client: fathom.FathomClient, recording_id: str) -> Dict[str, Any]:
-    """The meeting (with transcript) from the importer's own Fathom list.
+    """The meeting from the importer's own Fathom list, with its transcript.
 
     Only recordings the importer's Fathom account can see are found — a recording id of
-    somebody else's account fails here.
+    somebody else's account fails here. The transcript comes from /recordings/{id}/transcript:
+    OAuth users may not include it in /meetings.
     """
     cursor = None
     for _ in range(MAX_SCAN_PAGES):
-        page = client.list_meetings(cursor=cursor, include_transcript=True)
+        page = client.list_meetings(cursor=cursor)
         for item in page.items:
             if str(item.get("recording_id")) == recording_id:
-                return item
+                return {**item, "transcript": client.get_transcript(recording_id)}
         cursor = page.next_cursor
         if not cursor:
             break
