@@ -1,7 +1,7 @@
 """Story 12.5: organization invitations.
 
-Revision ID: 011_story_12_5
-Revises: 010_story_12_3
+Revision ID: 012_story_12_5
+Revises: 011_story_13_4
 Create Date: 2026-10-06
 
 Changes:
@@ -15,8 +15,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '011_story_12_5'
-down_revision = '010_story_12_3'
+revision = '012_story_12_5'
+down_revision = '011_story_13_4'
 branch_labels = None
 depends_on = None
 
