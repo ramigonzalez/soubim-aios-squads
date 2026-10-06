@@ -131,15 +131,20 @@ class TestImportItems:
         with pytest.raises(ValueError, match="already has 1 items"):
             import_items(db_session, meeting_source, [ACTION])
 
-    def test_replace_swaps_existing_items(self, db_session: Session, meeting_source: Source):
+    def test_replace_adds_a_new_active_version_keeping_the_old_one(self, db_session: Session, meeting_source: Source):
         import_items(db_session, meeting_source, [DECISION])
         db_session.commit()
 
         import_items(db_session, meeting_source, [ACTION, TOPIC], replace=True)
         db_session.commit()
 
-        types = sorted(i.item_type for i in db_session.query(ProjectItem).all())
-        assert types == ["action_item", "topic"]
+        from app.database.models import ExtractionRun
+        from app.services.extraction_runs import active_items_filter
+
+        active = db_session.query(ProjectItem).filter(active_items_filter()).all()
+        assert sorted(i.item_type for i in active) == ["action_item", "topic"]
+        assert db_session.query(ProjectItem).count() == 3  # the first version is kept
+        assert [r.is_active for r in db_session.query(ExtractionRun).order_by(ExtractionRun.version)] == [False, True]
 
     def test_rejects_non_meeting_sources(self, db_session: Session, meeting_source: Source):
         meeting_source.source_type = "email"

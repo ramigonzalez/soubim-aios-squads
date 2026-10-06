@@ -535,6 +535,9 @@ class ProjectItem(Base):
     # Story 12.4: owner of a source-less item (manual input) — internal to that organization.
     # Items with a source follow the source's owner/visibility; this column is not used for them.
     owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"))
+    # Story 13.7: extraction run that produced the item; NULL = not produced by a versioned
+    # extraction (manual items, email/document items) and always shown
+    extraction_run_id = Column(GUID(), ForeignKey("extraction_runs.id", ondelete="CASCADE"))
 
     # V2 taxonomy fields
     item_type = Column(String(50), nullable=False, default="decision")
@@ -597,6 +600,43 @@ class ProjectItem(Base):
         Index("idx_project_items_source_type", "source_type"),
         Index("idx_project_items_source", "source_id"),
         Index("idx_project_items_owner_org", "owner_organization_id"),
+        Index("idx_project_items_run", "extraction_run_id"),
+    )
+
+
+class ExtractionRun(Base):
+    """One extraction of a meeting source (Story 13.7).
+
+    Every extraction (worker job, re-extract, import script) is kept as a version of the
+    source; its items carry ``extraction_run_id``. Exactly one run per source is active
+    (partial unique index) and only the active run's items are listed. Switching the active
+    run is a rollback; edits/reviews live on the run's items and are not carried over.
+    """
+
+    __tablename__ = "extraction_runs"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    version = Column(Integer, nullable=False)  # 1, 2, ... per source
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    model = Column(String(100))
+    prompt_version = Column(String(64))  # hash of the prompt file used
+    status = Column(String(20), nullable=False, default="completed", server_default="completed")
+    input_tokens = Column(Integer)
+    output_tokens = Column(Integer)
+    meeting_summary = Column(Text)  # restored to Source.ai_summary when the run is activated
+    raw_output = Column(JSONType)  # validated items as extracted: {"items": [...]}
+    is_active = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+
+    source = relationship("Source")
+
+    __table_args__ = (
+        UniqueConstraint("source_id", "version", name="uq_extraction_runs_source_version"),
+        Index(
+            "uq_extraction_runs_one_active", "source_id", unique=True,
+            postgresql_where=text("is_active"), sqlite_where=text("is_active"),
+        ),
     )
 
 

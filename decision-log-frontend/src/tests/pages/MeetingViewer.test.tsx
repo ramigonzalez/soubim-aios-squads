@@ -14,6 +14,7 @@ vi.mock('../../services/api', () => ({
 import api from '../../services/api'
 
 const mockedApi = vi.mocked(api)
+vi.mock('../../components/organisms/ExtractionVersions', () => ({ default: () => null }))
 
 const useMeetingMock = vi.fn()
 vi.mock('../../hooks/useMeeting', async () => {

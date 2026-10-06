@@ -23,5 +23,25 @@
     "confirmInternal": "Only your organization will see this meeting, its items and the recording.",
     "confirm": "Confirm",
     "error": "Could not change the visibility."
+  },
+  "versions": {
+    "button": "Versions",
+    "heading": "Extraction versions",
+    "empty": "No extraction versions yet.",
+    "active": "Active",
+    "activate": "Use this version",
+    "activating": "Switching…",
+    "reExtract": "Extract again",
+    "inProgress": "Extraction in progress…",
+    "jobFailed": "The last extraction failed: {{error}}",
+    "confirmActivate": "Show version {{version}} everywhere? Edits and reviews made on the current version stay with it and are not carried over.",
+    "version": "Version {{version}}",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "tokens": "{{input}} in / {{output}} out tokens",
+    "unknownModel": "Imported",
+    "by": "by {{name}}",
+    "note": "Only the active version's items are shown in the project. Edits and reviews belong to the version they were made on.",
+    "error": "Could not update the versions."
   }
 }

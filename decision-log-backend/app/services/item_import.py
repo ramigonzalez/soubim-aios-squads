@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from app.database.models import ProjectItem, Source
+from app.services.extraction_runs import create_run
 from app.services.extraction_v2 import _validate_item
 
 logger = logging.getLogger(__name__)
@@ -37,14 +38,15 @@ def _parse_due_date(value: Optional[str]) -> Optional[datetime]:
         return None
 
 
-def build_project_item(source: Source, item: Dict[str, Any]) -> ProjectItem:
-    """Map one validated item dict to a ProjectItem linked to ``source``."""
+def build_project_item(source: Source, item: Dict[str, Any], run_id: Optional[Any] = None) -> ProjectItem:
+    """Map one validated item dict to a ProjectItem linked to ``source`` (and to its extraction run)."""
     item_type = item["item_type"]
     disciplines = item["affected_disciplines"]
     why = item.get("why") if item_type == "decision" else item.get(_CONTEXT_FIELD.get(item_type, ""))
     return ProjectItem(
         project_id=source.project_id,
         source_id=source.id,
+        extraction_run_id=run_id,
         source_type=source.source_type,
         item_type=item_type,
         statement=item["statement"],
@@ -73,8 +75,12 @@ def import_items(
     approver_id: Optional[Any] = None,
     replace: bool = False,
     meeting_summary: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> Tuple[List[ProjectItem], int]:
-    """Validate ``items`` and store them as ProjectItems for ``source``; mark it processed.
+    """Validate ``items`` and store them as a new extraction run of ``source``; mark it processed.
+
+    Story 13.7: ``replace`` no longer deletes anything — the items become a new active run and
+    the previous run stays available as a version.
 
     ``meeting_summary`` (the prompt's top-level summary) is stored as the Source's ai_summary.
 
@@ -85,13 +91,11 @@ def import_items(
     if source.source_type not in IMPORTABLE_SOURCE_TYPES:
         raise ValueError(f"Source type '{source.source_type}' is not importable")
 
-    existing = db.query(ProjectItem).filter(ProjectItem.source_id == source.id)
-    if existing.count():
-        if not replace:
-            raise ValueError(f"Source {source.id} already has {existing.count()} items (use replace)")
-        existing.delete(synchronize_session=False)
+    existing = db.query(ProjectItem).filter(ProjectItem.source_id == source.id).count()
+    if existing and not replace:
+        raise ValueError(f"Source {source.id} already has {existing} items (use replace to add a new version)")
 
-    created, skipped = [], 0
+    validated_items, skipped = [], 0
     for raw in items:
         validated = _validate_item(raw) if isinstance(raw, dict) else None
         if validated is None:
@@ -99,12 +103,15 @@ def import_items(
             continue
         # _validate_item keeps only known fields; restore is_done from the input.
         validated["is_done"] = bool(raw.get("is_done", False))
-        item = build_project_item(source, validated)
-        db.add(item)
-        created.append(item)
+        validated_items.append(validated)
 
-    if meeting_summary and meeting_summary.strip():
-        source.ai_summary = meeting_summary.strip()
+    summary = meeting_summary.strip() if meeting_summary and meeting_summary.strip() else None
+    run = create_run(
+        db, source, validated_items, model=model, meeting_summary=summary, created_by=approver_id
+    )
+    created = [build_project_item(source, v, run.id) for v in validated_items]
+    db.add_all(created)
+
     source.included = True
     source.ingestion_status = "processed"
     source.extraction_error = None

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, ArrowLeft, Calendar, Clock, ExternalLink } from 'lucide-react'
+import ExtractionVersions from '../components/organisms/ExtractionVersions'
 import { useMeeting, recordingSrc } from '../hooks/useMeeting'
 import { MeetingVisibilityControl } from '../components/organisms/MeetingVisibilityControl'
 import { formatSeconds, parseTranscript, turnIndexAt } from '../lib/transcript'
@@ -144,6 +145,9 @@ export function MeetingViewer() {
           />
         )}
       </div>
+      {(meeting.source_type === 'meeting' || meeting.source_type === 'manual_input') && (
+        <ExtractionVersions sourceId={meeting.id} />
+      )}
 
       <div className={cn('mt-6 grid gap-6', hasVideo && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]')}>
         {/* Recording */}

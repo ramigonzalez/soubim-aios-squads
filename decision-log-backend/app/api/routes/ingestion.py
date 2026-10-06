@@ -15,8 +15,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
-from app.database.models import Project, ProjectItem, Source, User
+from app.database.models import ExtractionRun, Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     ADMIN,
     has_access,
@@ -221,6 +222,7 @@ async def list_history(
             ProjectItem.source_id,
             func.count(ProjectItem.id).label("item_count"),
         )
+        .filter(active_items_filter())  # Story 13.7: count the active run only
         .group_by(ProjectItem.source_id)
         .subquery()
     )
@@ -368,7 +370,12 @@ async def delete_source(
         )
 
     # Delete all extracted ProjectItems (embeddings are a column on ProjectItem, deleted automatically)
-    deleted_items = db.query(ProjectItem).filter(ProjectItem.source_id == source_id).delete()
+    deleted_items = db.query(ProjectItem).filter(ProjectItem.source_id == source_id, active_items_filter()).delete(
+        synchronize_session=False
+    )
+    # Story 13.7: other versions' items go with their runs
+    db.query(ProjectItem).filter(ProjectItem.source_id == source_id).delete(synchronize_session=False)
+    db.query(ExtractionRun).filter(ExtractionRun.source_id == source_id).delete(synchronize_session=False)
 
     # Delete the source itself
     db.delete(source)
