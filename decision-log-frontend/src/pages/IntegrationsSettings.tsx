@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
@@ -7,15 +8,47 @@ import { formatDate } from '../lib/utils'
 
 export const FATHOM_STATUS_KEY = 'fathom-status'
 
+/** Error reason for a rejected confirm (403: started by another user, 410: expired). */
+function confirmErrorReason(error: unknown): string {
+  const status = (error as { response?: { status?: number } })?.response?.status
+  if (status === 403) return 'other_user'
+  if (status === 410) return 'expired'
+  return 'confirm_failed'
+}
+
 /**
  * Settings → Integrations (Story 13.3): connect / disconnect the user's own Fathom account.
  * Browsing and importing Fathom meetings comes in Story 13.4.
  */
 export default function IntegrationsSettings() {
   const { t } = useTranslation('integrations')
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const result = params.get('fathom') // set by the backend OAuth callback
+  const reason = params.get('reason')
+  const nonce = params.get('nonce')
   const queryClient = useQueryClient()
+
+  // Two-step connect: the callback parked the tokens; claim them with this user's JWT.
+  // The backend accepts only the user who started the flow (login-CSRF protection).
+  const confirm = useMutation(integrationsService.confirmFathom, {
+    onSuccess: data => {
+      queryClient.setQueryData(FATHOM_STATUS_KEY, data)
+      setParams({ fathom: 'connected' }, { replace: true })
+    },
+    onError: error => {
+      setParams({ fathom: 'error', reason: confirmErrorReason(error) }, { replace: true })
+      queryClient.invalidateQueries(FATHOM_STATUS_KEY)
+    },
+  })
+  const confirmedNonce = useRef<string | null>(null)
+  const confirmMutate = confirm.mutate
+  useEffect(() => {
+    // once per nonce (StrictMode runs effects twice; the nonce is single use)
+    if (result === 'pending' && nonce && confirmedNonce.current !== nonce) {
+      confirmedNonce.current = nonce
+      confirmMutate(nonce)
+    }
+  }, [result, nonce, confirmMutate])
 
   const { data: status, isLoading, isError } = useQuery(FATHOM_STATUS_KEY, integrationsService.getFathomStatus)
   const connect = useMutation(integrationsService.connectFathom)
@@ -35,6 +68,11 @@ export default function IntegrationsSettings() {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
 
+        {result === 'pending' && (
+          <div role="status" className="mt-6 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            {t('fathom.result.confirming')}
+          </div>
+        )}
         {result === 'connected' && (
           <div role="status" className="mt-6 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
             {t('fathom.result.connected')}
@@ -42,7 +80,11 @@ export default function IntegrationsSettings() {
         )}
         {result === 'error' && (
           <div role="alert" className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
-            {t('fathom.result.error')}
+            {reason === 'other_user'
+              ? t('fathom.result.otherUser')
+              : reason === 'expired'
+                ? t('fathom.result.expired')
+                : t('fathom.result.error')}
           </div>
         )}
 

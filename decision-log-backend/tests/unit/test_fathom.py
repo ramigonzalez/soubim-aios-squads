@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session
 
 from app.api.routes import fathom as routes
 from app.config import settings
-from app.database.models import FathomConnection, Organization, OrganizationMember, User
+from app.database.models import FathomConnection, FathomPendingConnection, Organization, OrganizationMember, User
 from app.integrations import fathom
 from app.services import fathom_connections
-from app.services.fathom_connections import InvalidState, sign_state, verify_state
+from app.services.fathom_connections import InvalidState, parse_state, sign_state, verify_state
 from app.utils.crypto import decrypt_token, encrypt_token
 
 # Shapes recorded by the spike (data/tools/fathom/oauth_test.py), values made up.
@@ -109,6 +109,28 @@ def run(coro):
     return asyncio.run(coro)
 
 
+@pytest.fixture
+def other_user(db_session: Session) -> User:
+    u = User(email="attacker@example.com", password_hash="x", name="Mallory", role="director")
+    db_session.add(u)
+    db_session.commit()
+    return u
+
+
+def callback(db: Session, user: User, code="the-code", state=None):
+    return routes.fathom_callback(code=code, state=state or sign_state(user.id), error=None, db=db)
+
+
+def pending_nonce(response) -> str:
+    query = parse_qs(urlparse(response.headers["location"]).query)
+    assert query["fathom"] == ["pending"]
+    return query["nonce"][0]
+
+
+def confirm(db: Session, user: User, nonce: str):
+    return run(routes.fathom_confirm(body=routes.ConfirmRequest(nonce=nonce), db=db, user=user))
+
+
 # --------------------------------------------------------------------------- configuration
 
 
@@ -194,6 +216,16 @@ class TestOAuth:
         assert form["client_id"] == ["client-id"] and form["client_secret"] == ["client-secret"]
         assert form["redirect_uri"] == ["https://example.ngrok.app/api/fathom/callback"]
         assert fake.requests[0].headers["content-type"] == "application/x-www-form-urlencoded"
+
+    @pytest.mark.parametrize("response", [
+        httpx.Response(200, content=b"<html>oops</html>"),
+        httpx.Response(200, json={"token_type": "Bearer"}),
+        httpx.Response(200, json={"access_token": "a", "expires_in": "soon"}),
+    ])
+    def test_malformed_token_response_raises_fathom_error(self, fake, response):
+        fake.token_responses = [response]
+        with pytest.raises(fathom.FathomAPIError):
+            fathom.exchange_code("the-code", fake.client())
 
     def test_exchange_failure_raises_without_leaking(self, fake):
         fake.token_responses = [httpx.Response(400, json={"error": "invalid_grant", "error_description": "bad code"})]
@@ -288,6 +320,34 @@ class TestFathomClient:
         db_session.refresh(conn)
         assert not conn.needs_reconnect
 
+    def test_repeated_401_does_not_loop(self, db_session, user, fake):
+        conn = make_connection(db_session, user)
+        fake.token_responses = [httpx.Response(200, json=REFRESHED)]
+        fake.api_responses[("GET", "/external/v1/meetings")] = [httpx.Response(401, json={"error": "unauthorized"})]
+        with pytest.raises(fathom.FathomAPIError) as exc:
+            fathom.FathomClient(db_session, conn, fake.client()).list_meetings()
+        assert exc.value.status_code == 401
+        assert len(fake.token_requests()) == 1
+        assert len([r for r in fake.requests if r.url.path.endswith("/meetings")]) == 2
+
+    @pytest.mark.parametrize("bad", ["../meetings", "1/../../x", "1?x=y", "1#f", "", "a b"])
+    def test_ids_in_url_paths_are_validated(self, db_session, user, fake, bad):
+        conn = make_connection(db_session, user)
+        client = fathom.FathomClient(db_session, conn, fake.client())
+        with pytest.raises(fathom.FathomError):
+            client.request_download(bad)
+        with pytest.raises(fathom.FathomError):
+            client.download_status(1, bad)
+        assert fake.requests == []
+
+    def test_unreadable_tokens_mark_needs_reconnect(self, db_session, user, fake, monkeypatch):
+        conn = make_connection(db_session, user)
+        monkeypatch.setattr(settings, "token_encryption_key", Fernet.generate_key().decode())  # key rotated
+        with pytest.raises(fathom.FathomReconnectRequired):
+            fathom.FathomClient(db_session, conn, fake.client()).list_meetings()
+        db_session.refresh(conn)
+        assert conn.needs_reconnect and fake.requests == []
+
     def test_401_triggers_one_refresh_and_retry(self, db_session, user, fake):
         conn = make_connection(db_session, user)
         fake.token_responses = [httpx.Response(200, json=REFRESHED)]
@@ -307,37 +367,136 @@ class TestRoutes:
         state = parse_qs(url.query)["state"][0]
         assert verify_state(state, expected_user_id=user.id) == user.id
 
-    def test_callback_stores_encrypted_tokens(self, db_session, user, fake):
-        fake.api_responses[("GET", "/external/v1/meetings")] = [httpx.Response(200, json=MEETINGS_PAGE)]
-        response = routes.fathom_callback(code="the-code", state=sign_state(user.id), error=None, db=db_session)
+    def test_callback_parks_tokens_as_pending_and_never_connects(self, db_session, user, fake):
+        response = callback(db_session, user)
 
         assert response.status_code == 302
-        assert response.headers["location"] == "http://front.test/settings/integrations?fathom=connected"
+        location = urlparse(response.headers["location"])
+        assert f"{location.scheme}://{location.netloc}{location.path}" == "http://front.test/settings/integrations"
+        assert set(parse_qs(location.query)) == {"fathom", "nonce"}  # no token, code or state in the URL
+        assert "acc-1" not in response.headers["location"] and "the-code" not in response.headers["location"]
+        assert response.headers["cache-control"] == "no-store"
+        assert response.headers["referrer-policy"] == "no-referrer"
+
+        assert db_session.query(FathomConnection).count() == 0
+        pending = db_session.query(FathomPendingConnection).one()
+        assert pending.user_id == user.id and pending.nonce == pending_nonce(response)
+        assert "acc-1" not in pending.access_token_enc and decrypt_token(pending.access_token_enc) == "acc-1"
+        assert decrypt_token(pending.refresh_token_enc) == "ref-1"
+        assert pending.expires_at > fathom.utcnow() + timedelta(minutes=9)
+        assert run(routes.fathom_status(db=db_session, user=user))["connected"] is False
+
+    def test_confirm_moves_tokens_to_the_connection(self, db_session, user, fake):
+        fake.api_responses[("GET", "/external/v1/meetings")] = [httpx.Response(200, json=MEETINGS_PAGE)]
+        status = confirm(db_session, user, pending_nonce(callback(db_session, user)))
+
+        assert status["connected"] and not status["needs_reconnect"]
+        assert status["account_label"] == "rami@example.com" and status["connected_at"]
+        assert "acc-1" not in json.dumps(status)
         conn = db_session.query(FathomConnection).one()
         assert conn.user_id == user.id
         assert conn.organization_id == db_session.query(Organization).one().id
         assert conn.access_token_enc != "acc-1" and "acc-1" not in conn.access_token_enc
-        assert conn.refresh_token_enc != "ref-1"
         assert decrypt_token(conn.access_token_enc) == "acc-1"
         assert decrypt_token(conn.refresh_token_enc) == "ref-1"
-        assert conn.scope == "public_api" and conn.account_label == "rami@example.com"
+        assert conn.scope == "public_api" and conn.expires_at > fathom.utcnow() + timedelta(hours=23)
+        pending = db_session.query(FathomPendingConnection).one()  # kept only to burn the state
+        assert pending.consumed_at is not None
+        assert pending.access_token_enc is None and pending.refresh_token_enc is None
 
-        status = run(routes.fathom_status(db=db_session, user=user))
-        assert status["connected"] and not status["needs_reconnect"]
-        assert status["account_label"] == "rami@example.com" and status["connected_at"]
-        assert "acc-1" not in json.dumps(status)
-
-    def test_callback_without_meetings_still_connects(self, db_session, user, fake):
+    def test_confirm_without_meetings_still_connects(self, db_session, user, fake):
         # meetings endpoint answers 404 in the fake: the label is best effort
-        response = routes.fathom_callback(code="c", state=sign_state(user.id), error=None, db=db_session)
-        assert response.headers["location"].endswith("fathom=connected")
-        assert db_session.query(FathomConnection).one().account_label is None
+        status = confirm(db_session, user, pending_nonce(callback(db_session, user)))
+        assert status["connected"] and status["account_label"] is None
+
+    def test_attacker_state_confirmed_by_victim_is_rejected(self, db_session, user, other_user, fake):
+        """Login CSRF: the attacker (other_user) starts the flow and sends the consent link to the
+        victim (user), who approves it. The victim's browser lands on the confirm step, logged in
+        as the victim: rejected, and nobody ends up connected."""
+        attacker_state = sign_state(other_user.id)
+        nonce = pending_nonce(callback(db_session, other_user, state=attacker_state))
+
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, user, nonce)
+        assert exc.value.status_code == 403
+        assert db_session.query(FathomConnection).count() == 0
+        pending = db_session.query(FathomPendingConnection).one()
+        assert pending.access_token_enc is None and pending.consumed_at is not None  # victim tokens discarded
+
+        # the attacker cannot claim them afterwards either
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, other_user, nonce)
+        assert exc.value.status_code == 404
+        assert db_session.query(FathomConnection).count() == 0
+        for who in (user, other_user):
+            assert run(routes.fathom_status(db=db_session, user=who))["connected"] is False
+
+    def test_confirm_expired_pending_route_returns_410(self, db_session, user, fake, monkeypatch):
+        nonce = pending_nonce(callback(db_session, user))
+        pending = db_session.query(FathomPendingConnection).one()
+        pending.expires_at = fathom.utcnow() - timedelta(seconds=1)
+        db_session.commit()
+        monkeypatch.setattr(fathom_connections, "cleanup_expired_pending", lambda db, now=None: 0)
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, user, nonce)
+        assert exc.value.status_code == 410
+        assert db_session.query(FathomConnection).count() == 0
+        assert db_session.query(FathomPendingConnection).count() == 0
+
+    def test_confirm_after_expiry_cleanup_is_404(self, db_session, user, fake):
+        nonce = pending_nonce(callback(db_session, user))
+        db_session.query(FathomPendingConnection).update({"expires_at": fathom.utcnow() - timedelta(seconds=1)})
+        db_session.commit()
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, user, nonce)
+        assert exc.value.status_code in (404, 410)
+        assert db_session.query(FathomPendingConnection).count() == 0
+        assert db_session.query(FathomConnection).count() == 0
+
+    def test_expired_pending_cleaned_up_on_callback(self, db_session, user, fake):
+        callback(db_session, user)
+        db_session.query(FathomPendingConnection).update({"expires_at": fathom.utcnow() - timedelta(minutes=1)})
+        db_session.commit()
+        callback(db_session, user)  # new flow, new state
+        assert db_session.query(FathomPendingConnection).count() == 1
+
+    def test_confirm_nonce_is_single_use(self, db_session, user, fake):
+        nonce = pending_nonce(callback(db_session, user))
+        confirm(db_session, user, nonce)
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, user, nonce)
+        assert exc.value.status_code == 404
+
+    @pytest.mark.parametrize("nonce", ["unknown", "x" * 64])
+    def test_confirm_unknown_nonce(self, db_session, user, fake, nonce):
+        with pytest.raises(HTTPException) as exc:
+            confirm(db_session, user, nonce)
+        assert exc.value.status_code == 404
+
+    def test_state_is_single_use(self, db_session, user, fake):
+        state = sign_state(user.id)
+        callback(db_session, user, state=state)
+        replay = callback(db_session, user, code="another-code", state=state)
+        assert "reason=invalid_state" in replay.headers["location"]
+        assert len(fake.token_requests()) == 1  # the replay never reached Fathom
+        assert db_session.query(FathomPendingConnection).count() == 1
+
+    def test_state_single_use_after_confirm(self, db_session, user, fake):
+        state = sign_state(user.id)
+        confirm(db_session, user, pending_nonce(callback(db_session, user, state=state)))
+        replay = callback(db_session, user, code="another-code", state=state)
+        assert "reason=invalid_state" in replay.headers["location"]
+
+    def test_parse_state_returns_nonce(self, configured):
+        uid = uuid.uuid4()
+        data = parse_state(sign_state(uid))
+        assert data.user_id == uid and 16 <= len(data.nonce) <= 64
 
     def test_reconnect_replaces_connection_and_clears_revoked(self, db_session, user, fake):
         conn = make_connection(db_session, user)
         conn.revoked_at = fathom.utcnow()
         db_session.commit()
-        routes.fathom_callback(code="c", state=sign_state(user.id), error=None, db=db_session)
+        confirm(db_session, user, pending_nonce(callback(db_session, user)))
         conn = db_session.query(FathomConnection).one()
         assert conn.revoked_at is None
 
@@ -350,6 +509,7 @@ class TestRoutes:
         response = routes.fathom_callback(db=db_session, **{"error": None, **kwargs})
         assert response.headers["location"] == f"http://front.test/settings/integrations?fathom=error&reason={reason}"
         assert db_session.query(FathomConnection).count() == 0
+        assert db_session.query(FathomPendingConnection).count() == 0
         assert fake.token_requests() == []
 
     def test_callback_expired_state(self, db_session, user, fake):
@@ -362,6 +522,7 @@ class TestRoutes:
         response = routes.fathom_callback(code="c", state=sign_state(user.id), error=None, db=db_session)
         assert "reason=exchange_failed" in response.headers["location"]
         assert db_session.query(FathomConnection).count() == 0
+        assert db_session.query(FathomPendingConnection).count() == 0
 
     def test_disconnect_deletes_tokens(self, db_session, user, configured):
         make_connection(db_session, user)
@@ -393,6 +554,7 @@ class TestAuthMiddleware:
         ("GET", "/api/integrations/fathom/connect"),
         ("GET", "/api/integrations/fathom"),
         ("DELETE", "/api/integrations/fathom"),
+        ("POST", "/api/integrations/fathom/confirm"),
     ])
     def test_other_routes_require_auth(self, client, method, path):
         assert client.request(method, path).status_code == 401

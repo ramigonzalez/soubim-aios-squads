@@ -12,6 +12,7 @@ Tokens, codes and secrets are never logged: errors carry the HTTP status and Fat
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -22,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.models import FathomConnection
-from app.utils.crypto import decrypt_token, encrypt_token, is_key_valid
+from app.utils.crypto import TokenEncryptionError, decrypt_token, encrypt_token, is_key_valid
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ API_BASE = "https://api.fathom.ai/external/v1"
 SCOPE = "public_api"
 REFRESH_MARGIN = timedelta(seconds=60)  # refresh this long before the access token expires
 TIMEOUT_SECONDS = 30.0
+_PATH_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")  # recording / download ids placed in URL paths
 
 
 class FathomError(Exception):
@@ -79,6 +81,14 @@ def new_http_client() -> httpx.Client:
     return httpx.Client(timeout=TIMEOUT_SECONDS, headers={"Accept": "application/json", "User-Agent": "DecisionLog/1.0"})
 
 
+def _path_id(value) -> str:
+    """An id safe to put in a URL path segment (no ``/``, ``..``, ``?`` or ``#``)."""
+    text = str(value)
+    if not _PATH_ID.match(text):
+        raise FathomError("invalid Fathom id")
+    return text
+
+
 def _error_code(response: httpx.Response) -> Optional[str]:
     try:
         body = response.json()
@@ -123,15 +133,21 @@ def _post_token(form: Dict[str, str], http: Optional[httpx.Client], action: str)
             client.close()
     if response.status_code != 200:
         raise FathomAPIError(response.status_code, _error_code(response), action)
-    body = response.json()
-    if not body.get("access_token"):
+    try:
+        body = response.json()
+    except ValueError:
+        raise FathomAPIError(response.status_code, "invalid JSON", action)
+    if not isinstance(body, dict) or not isinstance(body.get("access_token"), str) or not body["access_token"]:
         raise FathomAPIError(response.status_code, "missing access_token", action)
-    expires_in = body.get("expires_in")
+    try:
+        expires_in = int(body["expires_in"]) if body.get("expires_in") else None
+    except (TypeError, ValueError):
+        raise FathomAPIError(response.status_code, "invalid expires_in", action)
     return TokenSet(
         access_token=body["access_token"],
-        refresh_token=body.get("refresh_token"),
-        expires_at=utcnow() + timedelta(seconds=int(expires_in)) if expires_in else None,
-        scope=body.get("scope"),
+        refresh_token=body.get("refresh_token") if isinstance(body.get("refresh_token"), str) else None,
+        expires_at=utcnow() + timedelta(seconds=expires_in) if expires_in else None,
+        scope=body.get("scope") if isinstance(body.get("scope"), str) else None,
     )
 
 
@@ -198,7 +214,12 @@ class FathomClient:
         if not conn.refresh_token_enc:
             self._mark_reconnect()
         try:
-            tokens = refresh_tokens(decrypt_token(conn.refresh_token_enc), self.http)
+            refresh_token = decrypt_token(conn.refresh_token_enc)
+        except TokenEncryptionError:  # key changed: the stored grant is unusable
+            logger.warning("Fathom refresh token unreadable for connection %s", conn.id)
+            self._mark_reconnect()
+        try:
+            tokens = refresh_tokens(refresh_token, self.http)
         except FathomAPIError as exc:
             if exc.status_code in (400, 401, 403):  # invalid_grant & co: the grant is gone
                 logger.warning("Fathom refresh rejected for connection %s: HTTP %s", conn.id, exc.status_code)
@@ -219,7 +240,11 @@ class FathomClient:
             raise FathomReconnectRequired("Fathom connection needs to be reconnected")
         if conn.expires_at is not None and utcnow() >= conn.expires_at - REFRESH_MARGIN:
             self.refresh()
-        return decrypt_token(conn.access_token_enc)
+        try:
+            return decrypt_token(conn.access_token_enc)
+        except TokenEncryptionError:  # key changed: the user must reconnect
+            logger.warning("Fathom access token unreadable for connection %s", conn.id)
+            self._mark_reconnect()
 
     # -- requests
 
@@ -250,11 +275,11 @@ class FathomClient:
 
     def request_download(self, recording_id) -> Dict[str, Any]:
         """Ask Fathom to prepare a recording download: ``{download_id, status}``."""
-        return self._request("POST", f"/recordings/{recording_id}/download", json={}, action="download request")
+        return self._request("POST", f"/recordings/{_path_id(recording_id)}/download", json={}, action="download request")
 
     def download_status(self, recording_id, download_id) -> Dict[str, Any]:
         """Status of a prepared download: processing | completed (``video.url``, signed ~24 h) | failed | expired."""
-        return self._request("GET", f"/recordings/{recording_id}/downloads/{download_id}", action="download status")
+        return self._request("GET", f"/recordings/{_path_id(recording_id)}/downloads/{_path_id(download_id)}", action="download status")
 
 
 def account_label_from(page: MeetingsPage) -> Optional[str]:

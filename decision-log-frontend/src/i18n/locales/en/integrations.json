@@ -17,7 +17,10 @@
     "confirmDisconnect": "Disconnect your Fathom account? Meetings already imported stay in DecisionLog.",
     "result": {
       "connected": "Fathom account connected.",
-      "error": "Could not connect to Fathom. Please try again."
+      "error": "Could not connect to Fathom. Please try again.",
+      "confirming": "Finishing the Fathom connection...",
+      "otherUser": "This Fathom connection was started from another DecisionLog account, so it was discarded. Click \"Connect to Fathom\" yourself to connect.",
+      "expired": "The Fathom connection request expired. Please connect again."
     },
     "errors": {
       "load": "Could not load the integration status.",

@@ -17,7 +17,10 @@
     "confirmDisconnect": "Desconectar sua conta do Fathom? As reuniões já importadas continuam no DecisionLog.",
     "result": {
       "connected": "Conta do Fathom conectada.",
-      "error": "Não foi possível conectar ao Fathom. Tente novamente."
+      "error": "Não foi possível conectar ao Fathom. Tente novamente.",
+      "confirming": "Finalizando a conexão com o Fathom...",
+      "otherUser": "Esta conexão com o Fathom foi iniciada por outra conta do DecisionLog e foi descartada. Clique em \"Conectar ao Fathom\" você mesmo para conectar.",
+      "expired": "O pedido de conexão com o Fathom expirou. Conecte novamente."
     },
     "errors": {
       "load": "Não foi possível carregar o status da integração.",

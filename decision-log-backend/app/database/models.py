@@ -362,6 +362,34 @@ class FathomConnection(Base):
         return self.revoked_at is not None
 
 
+class FathomPendingConnection(Base):
+    """Tokens from a Fathom callback waiting for the logged-in user to confirm (Story 13.3).
+
+    The public callback cannot see who is logged in (the API and the frontend are on different
+    origins), so it parks the tokens here and the frontend confirms with the user's JWT. Only the
+    user named in the OAuth state can confirm — this stops an attacker from attaching a victim's
+    Fathom account to the attacker's DecisionLog user (login CSRF).
+
+    ``nonce`` is the opaque id sent to the frontend; ``state_nonce`` makes each OAuth state
+    single use. After confirm (or a rejected confirm) the tokens are wiped and ``consumed_at`` set;
+    the row then only burns the state until ``expires_at`` and is deleted opportunistically.
+    """
+
+    __tablename__ = "fathom_pending_connections"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    nonce = Column(String(64), nullable=False, unique=True)
+    state_nonce = Column(String(64), nullable=False, unique=True)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # from the OAuth state
+    access_token_enc = Column(Text)
+    refresh_token_enc = Column(Text)
+    token_expires_at = Column(DateTime)
+    scope = Column(String(255))
+    expires_at = Column(DateTime, nullable=False)
+    consumed_at = Column(DateTime)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+
 class ProjectParticipant(Base):
     """Project participant model (V2) — distinct from ProjectMember (auth users)."""
 
