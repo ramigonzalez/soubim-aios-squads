@@ -11,6 +11,7 @@ from app.config import settings
 from app.database.models import Project, ProjectItem, ProjectParticipant, Source
 from app.services import extraction_v2, ingestion_pipeline
 from app.services.extraction_v2 import ExtractionError, extract_meeting, run_meeting_extraction
+from tests.org_helpers import default_org_id
 
 TRANSCRIPT = """souBIM + DIMAS | D/SEASON - Quinzenal
 
@@ -147,7 +148,7 @@ class TestPrompt:
 
 @pytest.fixture
 def approved_meeting(db_session: Session) -> Source:
-    project = Project(name="D/SEASON")
+    project = Project(owner_organization_id=default_org_id(db_session), name="D/SEASON")
     db_session.add(project)
     db_session.flush()
     db_session.add(ProjectParticipant(project_id=project.id, name="Debora Rezende Gagliotti",

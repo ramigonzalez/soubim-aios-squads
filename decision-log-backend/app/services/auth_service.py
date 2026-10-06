@@ -77,20 +77,15 @@ def get_user_projects(db: Session, user_id: str) -> list:
     Returns:
         List of project IDs
     """
-    from app.database.models import ProjectMember
-    from sqlalchemy import distinct
+    from app.database.models import Project
+    from app.services.access import accessible_projects_filter
 
-    # Get user first
     user = get_user_by_id(db, user_id)
 
-    # Director sees all projects
-    if user.role == "director":
-        from app.database.models import Project
-        projects = db.query(distinct(Project.id)).filter(Project.archived_at.is_(None)).all()
-        return [p[0] for p in projects]
-
-    # Architect/client see only assigned projects
-    projects = db.query(distinct(ProjectMember.project_id)).filter(
-        ProjectMember.user_id == user_id
-    ).all()
+    # Story 12.2: projects of the user's organizations (see app/services/access.py)
+    projects = (
+        db.query(Project.id)
+        .filter(Project.archived_at.is_(None), accessible_projects_filter(user))
+        .all()
+    )
     return [p[0] for p in projects]

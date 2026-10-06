@@ -16,6 +16,7 @@ from app.database.models import (
     Source, ProjectParticipant, Base,
 )
 from app.utils.security import hash_password, verify_password
+from tests.org_helpers import default_org_id
 from tests.conftest import assert_test_database
 
 
@@ -134,7 +135,7 @@ class TestProjectTable:
 
     def test_project_soft_archive(self, db_session):
         """Verify soft archive functionality."""
-        project = Project(
+        project = Project(owner_organization_id=default_org_id(db_session),
             name="Test Project",
             description="A test project",
         )
@@ -183,7 +184,7 @@ class TestProjectMembersTable:
             name="Test User",
             role="director",
         )
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
 
         db_session.add_all([user, project])
         db_session.commit()
@@ -211,7 +212,7 @@ class TestTranscriptTable:
 
     def test_transcript_jsonb_participants(self, db_session):
         """Verify JSONB participants column works."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -271,7 +272,7 @@ class TestProjectItemsTable:
 
     def test_project_item_confidence_constraint(self, db_session):
         """Verify confidence CHECK constraint (0-1)."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -292,7 +293,7 @@ class TestProjectItemsTable:
 
     def test_project_item_v2_defaults(self, db_session):
         """Verify V2 columns have correct defaults."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -320,7 +321,7 @@ class TestProjectItemsTable:
 
     def test_project_item_with_v2_fields(self, db_session):
         """Verify V2 fields can be set explicitly."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -351,7 +352,7 @@ class TestProjectItemsTable:
 
     def test_decision_vector_embedding(self, db_session):
         """Verify pgvector embedding column (384-dim)."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -400,7 +401,7 @@ class TestSourcesTable:
 
     def test_source_creation(self, db_session):
         """Verify source records can be created."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -424,7 +425,7 @@ class TestSourcesTable:
 
     def test_source_project_item_relationship(self, db_session):
         """Verify source → project_items relationship works."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -472,7 +473,7 @@ class TestProjectParticipantsTable:
 
     def test_participant_creation(self, db_session):
         """Verify participant records can be created."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -502,7 +503,7 @@ class TestDecisionRelationshipsTable:
 
     def test_decision_relationship_creation(self, db_session):
         """Verify decision relationships can be created."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -632,7 +633,7 @@ class TestForeignKeyConstraints:
             name="Test User",
             role="director",
         )
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add_all([user, project])
         db_session.commit()
 
@@ -652,7 +653,7 @@ class TestForeignKeyConstraints:
 
     def test_cascade_delete_project_items(self, db_session):
         """Verify deleting project deletes project items."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -676,7 +677,7 @@ class TestForeignKeyConstraints:
 
     def test_cascade_delete_sources(self, db_session):
         """Verify deleting project deletes sources."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -698,7 +699,7 @@ class TestForeignKeyConstraints:
 
     def test_cascade_delete_participants(self, db_session):
         """Verify deleting project deletes participants."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 

@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.models.project import StageCreate, StageResponse, StageTemplateResponse, StageUpdate
-from app.database.models import Project, ProjectMember, ProjectStage, StageTemplate
+from app.database.models import Project, ProjectStage, StageTemplate
+from app.services.access import READ, WRITE, require_project_access
 from app.database.session import get_db
 
 router = APIRouter()
@@ -21,19 +22,9 @@ def _get_user(request: Request):
     return user
 
 
-def _check_project_access(db: Session, project_id: str, user) -> Project:
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    if user.role != "director":
-        is_member = (
-            db.query(ProjectMember)
-            .filter(ProjectMember.project_id == project_id, ProjectMember.user_id == str(user.id))
-            .first()
-        )
-        if not is_member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return project
+def _check_project_access(db: Session, project_id: str, user, required: str = READ) -> Project:
+    """Organization-scoped access check (Story 12.2)."""
+    return require_project_access(db, user, project_id, required)
 
 
 def validate_stage_schedule(stages: List[StageCreate]):
@@ -91,7 +82,7 @@ async def set_stages(
 ):
     """Set stage schedule (replaces all existing stages)."""
     user = _get_user(request)
-    project = _check_project_access(db, project_id, user)
+    project = _check_project_access(db, project_id, user, WRITE)
 
     # Validate schedule
     validate_stage_schedule(stages)
@@ -133,7 +124,7 @@ async def update_stage(
 ):
     """Update a single stage."""
     user = _get_user(request)
-    project = _check_project_access(db, project_id, user)
+    project = _check_project_access(db, project_id, user, WRITE)
 
     stage = (
         db.query(ProjectStage)

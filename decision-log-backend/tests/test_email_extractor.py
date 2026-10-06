@@ -25,6 +25,7 @@ from app.database.models import (
     Source,
 )
 from app.services.email_extractor import EmailExtractor, strip_quoted_replies
+from tests.org_helpers import default_org_id
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Fixtures
@@ -40,7 +41,7 @@ def _read_fixture(name: str) -> str:
 @pytest.fixture
 def sample_project(db_session: Session) -> Project:
     """Create a sample project for tests."""
-    project = Project(name="Test Office Tower")
+    project = Project(owner_organization_id=default_org_id(db_session), name="Test Office Tower")
     db_session.add(project)
     db_session.commit()
     db_session.refresh(project)

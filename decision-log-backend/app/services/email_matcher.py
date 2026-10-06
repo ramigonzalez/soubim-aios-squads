@@ -10,9 +10,11 @@ import logging
 import re
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.database.models import Project
+from app.database.models import Organization, Project
+from app.services.organizations import DEFAULT_ORGANIZATION_SLUG
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,15 @@ class EmailMatcherService:
             Project UUID string if matched, None if no match found
         """
         # Fetch all active projects for matching
-        projects = db.query(Project).filter(Project.archived_at.is_(None)).all()
+        # Story 12.2: the polled mailbox belongs to the platform organization (souBIM), so only
+        # its projects are candidates — another organization could otherwise name a project after
+        # a common subject word and receive souBIM's emails.
+        platform_org = select(Organization.id).where(Organization.slug == DEFAULT_ORGANIZATION_SLUG)
+        projects = (
+            db.query(Project)
+            .filter(Project.archived_at.is_(None), Project.owner_organization_id.in_(platform_org))
+            .all()
+        )
 
         if not projects:
             logger.warning("EmailMatcher: No active projects found for matching")

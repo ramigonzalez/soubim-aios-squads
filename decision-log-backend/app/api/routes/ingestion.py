@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.access import ADMIN, accessible_project_ids, has_access, project_access_level, require_source_access
 from app.services.jobs import enqueue, latest_job_for_source
 
 router = APIRouter()
@@ -33,15 +34,15 @@ def _get_user(request: Request):
     return user
 
 
-def _require_admin(request: Request):
-    """Require admin/director role for access."""
+def _require_source_admin(request: Request, db: Session, source_id: str):
+    """Story 12.2: organization admin of the source's project (404 if the source is not visible)."""
     user = _get_user(request)
-    if user.role != "director":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-    return user
+    return user, require_source_access(db, user, source_id, ADMIN)
+
+
+def _visible_sources(user):
+    """Story 12.2: condition limiting sources to projects the user can access."""
+    return Source.project_id.in_(accessible_project_ids(user))
 
 
 def _format_job(job) -> dict | None:
@@ -129,12 +130,12 @@ async def list_sources(
     Returns sources joined with project_name from the Project table.
     JWT authentication required.
     """
-    _get_user(request)
+    user = _get_user(request)
 
     # Build query with project name join
     query = db.query(Source, Project.name.label("project_name")).outerjoin(
         Project, Source.project_id == Project.id
-    )
+    ).filter(_visible_sources(user))
 
     # Apply filters
     if ingestion_status:
@@ -170,7 +171,9 @@ async def list_sources(
     rows = query.all()
 
     # Count total pending (unfiltered) for badge
-    pending_count = db.query(Source).filter(Source.ingestion_status == "pending").count()
+    pending_count = (
+        db.query(Source).filter(Source.ingestion_status == "pending", _visible_sources(user)).count()
+    )
 
     # Format response to match frontend TypeScript contract
     sources_list = []
@@ -201,7 +204,7 @@ async def list_history(
     Returns sources that are no longer pending, along with who approved/rejected,
     when, and how many items were extracted.
     """
-    _get_user(request)
+    user = _get_user(request)
 
     # Subquery for item counts per source
     item_count_sq = (
@@ -231,6 +234,7 @@ async def list_history(
         .outerjoin(RejectedUser, Source.rejected_by == RejectedUser.c.id)
         # Story 13.2: "approved" = queued or being processed by the worker
         .filter(Source.ingestion_status.in_(["approved", "processed", "rejected", "failed"]))
+        .filter(_visible_sources(user))
     )
 
     if project_id:
@@ -278,14 +282,7 @@ async def update_source_status(
     Story 7.9: Auto-sets `included` flag — approve sets True, reject sets False.
     No standalone included toggle anymore.
     """
-    user = _require_admin(request)
-
-    source = db.query(Source).filter(Source.id == source_id).first()
-    if not source:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source not found",
-        )
+    user, source = _require_source_admin(request, db, source_id)
 
     source.ingestion_status = update.ingestion_status
 
@@ -319,14 +316,7 @@ async def retry_source(
     """
     Story 7.9: Retry a failed source — resets to approved and re-triggers pipeline.
     """
-    user = _require_admin(request)
-
-    source = db.query(Source).filter(Source.id == source_id).first()
-    if not source:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source not found",
-        )
+    user, source = _require_source_admin(request, db, source_id)
 
     if source.ingestion_status != "failed":
         raise HTTPException(
@@ -360,14 +350,7 @@ async def delete_source(
 
     Only processed or failed sources can be deleted (not pending — those should be rejected).
     """
-    _require_admin(request)
-
-    source = db.query(Source).filter(Source.id == source_id).first()
-    if not source:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source not found",
-        )
+    _user, source = _require_source_admin(request, db, source_id)
 
     if source.ingestion_status == "pending":
         raise HTTPException(
@@ -398,15 +381,16 @@ async def batch_update_sources(
     Batch approve or reject multiple sources.
 
     Story 7.9: Auto-sets included flag per source.
+    Story 12.2: sources the user does not administer are skipped (like missing ones).
     """
-    user = _require_admin(request)
+    user = _get_user(request)
 
     updated_count = 0
     new_status = "approved" if batch.action == "approve" else "rejected"
 
     for sid in batch.source_ids:
         source = db.query(Source).filter(Source.id == sid).first()
-        if not source:
+        if not source or not has_access(project_access_level(db, user, source.project), ADMIN):
             continue
 
         source.ingestion_status = new_status
@@ -443,8 +427,8 @@ async def pending_count(
     Used by the frontend navigation badge.
     JWT authentication required.
     """
-    _get_user(request)
+    user = _get_user(request)
 
-    count = db.query(Source).filter(Source.ingestion_status == "pending").count()
+    count = db.query(Source).filter(Source.ingestion_status == "pending", _visible_sources(user)).count()
 
     return {"pending": count}

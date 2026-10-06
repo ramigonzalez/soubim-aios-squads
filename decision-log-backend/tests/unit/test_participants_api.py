@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectParticipant, User
+from tests.org_helpers import default_org_id
 
 
 @pytest.fixture
@@ -24,7 +25,7 @@ def test_user(db_session: Session):
 
 @pytest.fixture
 def test_project(db_session: Session):
-    project = Project(
+    project = Project(owner_organization_id=default_org_id(db_session),
         id=uuid.uuid4(),
         name="Participants Test Project",
         description="Testing participants",
@@ -214,7 +215,7 @@ class TestProjectExtended:
     """Test extended project operations from Story 6.1."""
 
     def test_project_with_type(self, db_session):
-        project = Project(
+        project = Project(owner_organization_id=default_org_id(db_session),
             id=uuid.uuid4(),
             name="Typed Project",
             project_type="architecture_full",
@@ -227,7 +228,7 @@ class TestProjectExtended:
     def test_project_archive(self, db_session):
         from datetime import datetime
 
-        project = Project(
+        project = Project(owner_organization_id=default_org_id(db_session),
             id=uuid.uuid4(),
             name="Archive Test",
         )
@@ -241,7 +242,7 @@ class TestProjectExtended:
 
     def test_v1_project_without_stages(self, db_session):
         """V1 projects without stages are valid."""
-        project = Project(
+        project = Project(owner_organization_id=default_org_id(db_session),
             id=uuid.uuid4(),
             name="Legacy Project",
         )

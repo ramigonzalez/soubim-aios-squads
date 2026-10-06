@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.database.models import SharedLink, Project, ProjectItem, ProjectStage
+from app.services.access import ADMIN, require_project_access
 
 
 router = APIRouter()
@@ -67,19 +68,15 @@ class SharedTimelineResponse(BaseModel):
 # ─── Helper: require admin user ──────────────────────────────────────────────
 
 
-def _require_admin(request: Request):
-    """Require the current user to be an admin (director role)."""
+def _require_admin(request: Request, db: Session, project_id: str):
+    """Require organization admin on the project (Story 12.2; was the global director role)."""
     user = getattr(request.state, "user", None)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    if user.role != "director":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
+    require_project_access(db, user, project_id, ADMIN)
     return user
 
 
@@ -95,17 +92,9 @@ async def create_share_link(
 ):
     """
     Generate a shareable link for the project's milestone timeline.
-    Admin-only (director role).
+    Organization admins of the project only.
     """
-    current_user = _require_admin(request)
-
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    current_user = _require_admin(request, db, project_id)
 
     # Generate cryptographically secure token
     token = secrets.token_urlsafe(32)
@@ -137,9 +126,9 @@ async def list_share_links(
 ):
     """
     List active (non-revoked, non-expired) shared links for a project.
-    Admin-only (director role).
+    Organization admins of the project only.
     """
-    _require_admin(request)
+    _require_admin(request, db, project_id)
 
     now = datetime.utcnow()
     links = (
@@ -176,9 +165,9 @@ async def revoke_share_link(
 ):
     """
     Revoke a shared link, making it immediately inaccessible.
-    Admin-only (director role).
+    Organization admins of the project only.
     """
-    _require_admin(request)
+    _require_admin(request, db, project_id)
 
     link = (
         db.query(SharedLink)

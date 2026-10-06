@@ -11,8 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from app.api.middleware.auth import get_current_user
 from app.database.models import ProjectItem, Source, Transcript
 from app.database.session import get_db
+from app.services.access import NONE, WRITE, has_access, project_access_level, require_project_access
 
 # Backward compatibility alias for route internals
 Decision = ProjectItem
@@ -35,12 +37,14 @@ async def list_decisions(
     sort_by: str = "created_at",
     sort_order: str = "desc",
     db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
     """
     V1 backward-compatible decisions endpoint.
     Internally queries project_items WHERE item_type='decision'.
     Response uses V1 field names (decision_statement, discipline singular).
     """
+    require_project_access(db, user, project_id)  # Story 12.2
     # Query only decisions (V1 item type)
     query = (
         db.query(
@@ -159,7 +163,7 @@ async def list_decisions(
 
 
 @router.get("/decisions/{decision_id}")
-async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
+async def get_decision(decision_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Get complete details for a single decision."""
     row = (
         db.query(
@@ -174,7 +178,8 @@ async def get_decision(decision_id: UUID, db: Session = Depends(get_db)):
         .first()
     )
 
-    if not row:
+    # Story 12.2: a decision of a project the user cannot see is reported as not found
+    if not row or project_access_level(db, user, row[0].project) == NONE:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Decision {decision_id} not found",
@@ -216,12 +221,20 @@ async def update_decision(
     decision_id: UUID,
     approved: Optional[bool] = None,
     notes: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
     """
     Update decision (approval, notes).
 
     TODO: Implement actual database update
     """
+    decision = db.query(Decision).filter(Decision.id == str(decision_id)).first()
+    level = project_access_level(db, user, decision.project) if decision else NONE
+    if level == NONE:  # Story 12.2: other organizations' decisions are not found
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Decision {decision_id} not found")
+    if not has_access(level, WRITE):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Write access required")
     return {
         "error": "resource_not_found",
         "detail": f"Decision {decision_id} not found",

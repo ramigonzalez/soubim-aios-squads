@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectItem, ProjectMember, User
+from app.services.access import NONE, accessible_projects_filter, project_access_level
 
 # Backward compatibility alias
 Decision = ProjectItem
@@ -44,22 +45,12 @@ def get_projects(
     """
     user = db.query(User).filter(User.id == user_id).one()
 
-    query = db.query(Project)
+    # Story 12.2: only projects of the user's organizations (see app/services/access.py)
+    query = db.query(Project).filter(accessible_projects_filter(user))
 
     # Filter by archive status
     if not archived:
         query = query.filter(Project.archived_at.is_(None))
-
-    # Filter by user role
-    if user.role == "director":
-        # Director sees all projects
-        pass
-    else:
-        # Architect/client see only assigned projects
-        query = query.join(
-            ProjectMember,
-            ProjectMember.project_id == Project.id,
-        ).filter(ProjectMember.user_id == user_id)
 
     # Get total count
     total_count = query.count()
@@ -123,22 +114,12 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
     if not project:
         raise ProjectNotFoundError(f"Project {project_id} not found")
 
-    # Check authorization
+    # Check authorization (Story 12.2: organization-scoped)
     user = db.query(User).filter(User.id == user_id).one()
-    if user.role != "director":
-        # Check if user is member
-        is_member = (
-            db.query(ProjectMember)
-            .filter(
-                ProjectMember.project_id == project_id,
-                ProjectMember.user_id == user_id,
-            )
-            .first()
+    if project_access_level(db, user, project) == NONE:
+        raise PermissionDeniedError(
+            f"User {user_id} doesn't have access to project {project_id}"
         )
-        if not is_member:
-            raise PermissionDeniedError(
-                f"User {user_id} doesn't have access to project {project_id}"
-            )
 
     # Get members
     members = (

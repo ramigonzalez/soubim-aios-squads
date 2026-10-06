@@ -14,6 +14,7 @@ from app.database.models import (
     Source,
     User,
 )
+from tests.org_helpers import default_org_id
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ def test_architect(db_session: Session):
 @pytest.fixture
 def test_project(db_session: Session):
     """Create a test project."""
-    project = Project(
+    project = Project(owner_organization_id=default_org_id(db_session),
         id=uuid.uuid4(),
         name="Test Project Alpha",
         description="Test project for items API",

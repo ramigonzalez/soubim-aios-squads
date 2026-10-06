@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Source
 from app.database.session import get_db
+from app.services.access import WRITE, require_project_access
 from app.services.document_processor import DocumentProcessor
 
 logger = logging.getLogger(__name__)
@@ -91,8 +92,9 @@ async def upload_document(
     Returns:
         Source ID, status, and AI summary.
     """
-    # Authenticate
+    # Authenticate + Story 12.2: write access to the project
     user = _get_user(request)
+    require_project_access(db, user, project_id, WRITE)
 
     # Validate file extension
     if not file.filename or "." not in file.filename:

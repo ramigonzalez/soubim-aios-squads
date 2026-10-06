@@ -95,9 +95,13 @@ def seed_database():
         db.flush()
         print("  ✓ Created user: carlos@mep.com")
 
+        # Story 12.2: projects must have an owning organization — create souBIM first
+        org = ensure_default_organization(db)
+
         # Create test project
         project1 = Project(
             id=uuid4(),
+            owner_organization_id=org.id,
             name="Residential Tower Alpha",
             description="50-floor residential tower in downtown",
             project_type="residential",
@@ -110,6 +114,7 @@ def seed_database():
         # Create second project
         project2 = Project(
             id=uuid4(),
+            owner_organization_id=org.id,
             name="Commercial Plaza Beta",
             description="Mixed-use commercial development",
             project_type="commercial",
@@ -945,7 +950,7 @@ def seed_database():
         db.flush()
         print("  ✓ Created 5 project items (Project 2) incl. V2 types")
 
-        # Story 12.1: every user and project belongs to an organization
+        # Story 12.1: every user (also those created after the projects) belongs to an organization
         org = ensure_default_organization(db)
         print(f"  ✓ Organization '{org.name}' with all users and projects")
 

@@ -8,9 +8,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
-from app.api.routes.project_items import _check_project_access
-from app.database.models import Source
 from app.database.session import get_db
+from app.services.access import require_source_access
 from app.services.recordings import (
     org_id_for_source,
     recording_file,
@@ -24,11 +23,11 @@ router = APIRouter()
 
 @router.get("/sources/{source_id}/meeting")
 async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    """Transcript, summary and recording link for the meeting viewer."""
-    source = db.query(Source).filter(Source.id == str(source_id)).first()
-    if not source:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
-    _check_project_access(db, str(source.project_id), user)
+    """Transcript, summary and recording link for the meeting viewer.
+
+    Story 12.2: the signed recording link is only issued after the organization access check.
+    """
+    source = require_source_access(db, user, source_id)
 
     recording = None
     storage_url = storage_recording_url(org_id_for_source(db, source), str(source.id))

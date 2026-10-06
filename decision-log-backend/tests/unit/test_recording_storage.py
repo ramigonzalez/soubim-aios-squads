@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.routes import meetings
 from app.config import settings
 from app.database.models import Organization, Project, Source, User
+from tests.org_helpers import make_org_member
 from app.services import recordings, storage
 
 
@@ -90,23 +91,31 @@ def recordings_dir(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def user(db_session: Session) -> User:
+def user(db_session: Session, org) -> User:
     u = User(email="dir@soubim.com", password_hash="x", name="Gabriela", role="director")
     db_session.add(u)
+    make_org_member(db_session, u, "admin", org)  # Story 12.2: access comes from org membership
     db_session.commit()
     return u
 
 
-@pytest.fixture
-def org(db_session: Session) -> Organization:
-    o = Organization(name="Soubim", slug="soubim")
-    db_session.add(o)
-    db_session.commit()
+def _soubim(db: Session) -> Organization:
+    o = db.query(Organization).filter(Organization.slug == "soubim").first()
+    if o is None:
+        o = Organization(name="Soubim", slug="soubim")
+        db.add(o)
+        db.commit()
     return o
 
 
+@pytest.fixture
+def org(db_session: Session) -> Organization:
+    return _soubim(db_session)
+
+
 def make_source(db: Session, org_id=None) -> Source:
-    project = Project(name="D/SEASON", owner_organization_id=org_id)
+    """Source in a project owned by ``org_id`` (default: Soubim — owner is NOT NULL since 12.2)."""
+    project = Project(name="D/SEASON", owner_organization_id=org_id or _soubim(db).id)
     db.add(project)
     db.flush()
     source = Source(
@@ -186,11 +195,6 @@ class TestMeetingEndpoint:
             "type": "file",
             "url": f"https://storage.test/bucket/{key}?X-Amz-Expires={recordings.LINK_TTL_SECONDS}",
         }
-
-    def test_unknown_org_key(self, db_session, user, fake_s3):
-        source = make_source(db_session, None)
-        fake_s3.objects[storage.recording_key(None, str(source.id))] = b"video"
-        assert "org/unknown/" in self.get(db_session, source, user)["recording"]["url"]
 
     def test_other_orgs_object_is_not_served(self, db_session, user, org, fake_s3):
         source = make_source(db_session, org.id)

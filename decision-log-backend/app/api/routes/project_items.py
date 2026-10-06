@@ -15,8 +15,9 @@ from app.api.models.project_item import (
     ProjectItemUpdate,
     SourceInfo,
 )
-from app.database.models import Project, ProjectItem, ProjectMember, Source, User
+from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.access import ADMIN, READ, WRITE, has_access, project_access_level, require_project_access
 
 router = APIRouter()
 
@@ -32,29 +33,9 @@ def _get_user(request: Request):
     return user
 
 
-def _check_project_access(db: Session, project_id: str, user) -> Project:
-    """Verify project exists and user has access."""
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
-    if user.role != "director":
-        is_member = (
-            db.query(ProjectMember)
-            .filter(
-                ProjectMember.project_id == project_id,
-                ProjectMember.user_id == str(user.id),
-            )
-            .first()
-        )
-        if not is_member:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You don't have access to this project",
-            )
-    return project
+def _check_project_access(db: Session, project_id: str, user, required: str = READ) -> Project:
+    """Verify the project exists and the user's organization access (Story 12.2)."""
+    return require_project_access(db, user, project_id, required)
 
 
 def _item_to_response(item: ProjectItem) -> dict:
@@ -253,7 +234,7 @@ async def create_project_item(
 ):
     """Create a manual input project item."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    _check_project_access(db, project_id, user, WRITE)
 
     item = ProjectItem(
         id=uuid.uuid4(),
@@ -293,7 +274,7 @@ async def update_project_item(
 ):
     """Update a project item (milestone toggle, is_done, statement)."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    project = _check_project_access(db, project_id, user, WRITE)
 
     item = (
         db.query(ProjectItem)
@@ -306,12 +287,12 @@ async def update_project_item(
             detail=f"Project item {item_id} not found",
         )
 
-    # is_milestone toggle requires admin/director role
+    # is_milestone toggle requires organization admin on the project (Story 12.2)
     if body.is_milestone is not None:
-        if user.role not in ("director",):
+        if not has_access(project_access_level(db, user, project), ADMIN):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only directors can toggle milestone status",
+                detail="Only organization admins can toggle milestone status",
             )
         item.is_milestone = body.is_milestone
 

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.database.models import User, Project, Source, ProjectItem, ProjectParticipant
 from app.utils.security import hash_password
 from app.api.models.ingestion import IngestionUpdate, IngestionBatchAction
+from tests.org_helpers import default_org_id
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ def architect_user(db_session: Session) -> User:
 @pytest.fixture
 def test_project(db_session: Session) -> Project:
     """Create a test project."""
-    project = Project(
+    project = Project(owner_organization_id=default_org_id(db_session),
         name="Test Project Alpha",
         description="A test project for ingestion",
     )

@@ -15,6 +15,7 @@ from app.services.project_service import (
     PermissionDeniedError,
 )
 from app.utils.security import hash_password
+from tests.org_helpers import default_org_id
 
 
 @pytest.fixture
@@ -54,17 +55,17 @@ def test_projects(
     from datetime import timedelta
     base_time = datetime.utcnow()
 
-    project1 = Project(
+    project1 = Project(owner_organization_id=default_org_id(db_session),
         name="Project Alpha",
         description="First project",
         created_at=base_time - timedelta(hours=2)  # Oldest
     )
-    project2 = Project(
+    project2 = Project(owner_organization_id=default_org_id(db_session),
         name="Project Beta",
         description="Second project",
         created_at=base_time - timedelta(hours=1)  # Middle
     )
-    project3 = Project(
+    project3 = Project(owner_organization_id=default_org_id(db_session),
         name="Project Gamma",
         description="Third project",
         created_at=base_time  # Most recent
