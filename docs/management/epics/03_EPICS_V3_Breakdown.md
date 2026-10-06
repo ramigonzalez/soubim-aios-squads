@@ -151,6 +151,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.12 | Meeting Thumbnails (generated from the stored video) | M | Medium | ✅ |
 | 13.13 | Fathom Import per Organization | M | Medium | Draft |
 | 13.14 | Extraction Model Choice Explained to Users, Plus Eval | M | Medium | Draft |
+| 13.15 | On-demand Previews of Fathom Meetings Not Imported Yet ("Gerar prévia") | M | Medium | Ready for Review |
 
 ### Agent Assignment
 

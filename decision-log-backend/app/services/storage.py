@@ -178,3 +178,8 @@ def recording_key(org_id: Optional[str], source_id: str, ext: str = ".mp4") -> s
 def thumbnail_key(org_id: Optional[str], source_id: str) -> str:
     """org/<org_id>/sources/<source_id>/thumbnail.jpg (Story 13.12)."""
     return f"org/{org_id or 'unknown'}/sources/{source_id}/thumbnail.jpg"
+
+
+def fathom_preview_key(user_id: str, recording_id: str) -> str:
+    """previews/user/<user_id>/fathom/<recording_id>.jpg (Story 13.15): private to the user, outside org/."""
+    return f"previews/user/{user_id}/fathom/{recording_id}.jpg"

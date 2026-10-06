@@ -55,6 +55,13 @@ def handle_thumbnail(payload: dict) -> None:
         db.close()
 
 
+def handle_fathom_preview(payload: dict) -> None:
+    """Make the preview JPEG of a not-yet-imported Fathom meeting (Story 13.15). Never touches a Source."""
+    from app.services import fathom_previews
+
+    fathom_previews.run(payload["preview_id"])
+
+
 def _not_implemented(story: str) -> Callable[[dict], None]:
     def handler(payload: dict) -> None:
         raise jobs.PermanentJobError(f"Job type not implemented yet (Story {story})")
@@ -65,6 +72,7 @@ HANDLERS: Dict[str, Callable[[dict], None]] = {
     "process_source": handle_process_source,
     "fathom_import": handle_fathom_import,
     "thumbnail": handle_thumbnail,  # Story 13.12
+    "fathom_preview": handle_fathom_preview,  # Story 13.15
     "transcribe": _not_implemented("14.1"),
 }
 

@@ -54,6 +54,13 @@ export interface FathomImport {
   can_retry: boolean
 }
 
+/** Story 13.15: on-demand preview of a meeting that is not imported (private to the user) */
+export interface FathomPreview {
+  status: 'queued' | 'processing' | 'ready' | 'failed'
+  /** presigned image (6 h) when ready */
+  url: string | null
+}
+
 /** One meeting of the user's own Fathom list — GET /api/integrations/fathom/meetings */
 export interface FathomMeeting {
   recording_id: string
@@ -67,6 +74,8 @@ export interface FathomMeeting {
   /** Story 13.12: video-call platform from the meeting link; null when unknown */
   platform?: 'meet' | 'zoom' | 'teams' | null
   imports: FathomImport[]
+  /** Story 13.15: the user's own preview of this meeting, null until they ask for one */
+  preview?: FathomPreview | null
 }
 
 export interface FathomMeetingsPage {

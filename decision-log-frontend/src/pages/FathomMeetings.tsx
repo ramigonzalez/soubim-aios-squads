@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle, ArrowLeft, Search } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Loader2, Search } from 'lucide-react'
 import { integrationsService } from '../services/integrationsService'
 import { FathomImportDialog, FATHOM_MEETINGS_KEY } from '../components/organisms/FathomImportDialog'
 import { FathomUnassignedList } from '../components/organisms/FathomUnassignedList'
@@ -10,10 +10,11 @@ import { MeetingThumbnail } from '../components/atoms/MeetingThumbnail'
 import IngestionStatusBadge from '../components/molecules/IngestionStatusBadge'
 import { FATHOM_STATUS_KEY } from './IntegrationsSettings'
 import { formatDateTime } from '../lib/utils'
-import type { FathomImport, FathomMeeting, FathomMeetingsPage } from '../types/integrations'
+import type { FathomImport, FathomMeeting, FathomMeetingsPage, FathomPreview } from '../types/integrations'
 
 const SHOWN_INVITEES = 4
 const POLL_MS = 5000
+const PREVIEW_POLL_MS = 10_000
 
 function matches(meeting: FathomMeeting, term: string): boolean {
   const people = [...meeting.invitees, ...(meeting.recorded_by ? [meeting.recorded_by] : [])]
@@ -54,6 +55,35 @@ export default function FathomMeetings() {
   )
 
   const all = useMemo(() => meetings.data?.pages.flatMap(p => p.items) ?? [], [meetings.data])
+
+  // Story 13.15: previews asked for on this page override the list's copy; while any is generating,
+  // poll the (database-only) status endpoint every 10 s
+  const [previews, setPreviews] = useState<Record<string, FathomPreview>>({})
+  const [previewErrors, setPreviewErrors] = useState<Record<string, 'limit' | 'generic'>>({})
+  const previewOf = (m: FathomMeeting): FathomPreview | null => previews[m.recording_id] ?? m.preview ?? null
+  const generatingIds = all
+    .filter(m => {
+      const status = previewOf(m)?.status
+      return status === 'queued' || status === 'processing'
+    })
+    .map(m => m.recording_id)
+    .sort()
+  useQuery(['fathom-previews', generatingIds.join(',')], () => integrationsService.getFathomPreviews(generatingIds), {
+    enabled: connected && generatingIds.length > 0,
+    refetchInterval: PREVIEW_POLL_MS,
+    onSuccess: data => setPreviews(prev => ({ ...prev, ...data })),
+  })
+  const requestPreview = useMutation(
+    (recordingId: string) => integrationsService.requestFathomPreview(recordingId),
+    {
+      onMutate: id => setPreviewErrors(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id))),
+      onSuccess: (data, id) => setPreviews(prev => ({ ...prev, [id]: data })),
+      onError: (error, id) => {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        setPreviewErrors(prev => ({ ...prev, [id]: status === 429 ? 'limit' : 'generic' }))
+      },
+    }
+  )
   const term = search.trim().toLowerCase()
   const shown = term ? all.filter(m => matches(m, term)) : all
   const needsReconnect = status?.needs_reconnect || apiDetail(meetings.error) === 'needs_reconnect'
@@ -112,7 +142,15 @@ export default function FathomMeetings() {
             {shown.length > 0 && (
               <ul className="mt-4 divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-sm">
                 {shown.map(meeting => (
-                  <MeetingRow key={meeting.recording_id} meeting={meeting} onImport={() => setImporting(meeting)} />
+                  <MeetingRow
+                    key={meeting.recording_id}
+                    meeting={meeting}
+                    preview={previewOf(meeting)}
+                    previewError={previewErrors[meeting.recording_id]}
+                    requestingPreview={requestPreview.isLoading && requestPreview.variables === meeting.recording_id}
+                    onGeneratePreview={() => requestPreview.mutate(meeting.recording_id)}
+                    onImport={() => setImporting(meeting)}
+                  />
                 ))}
               </ul>
             )}
@@ -137,22 +175,63 @@ export default function FathomMeetings() {
   )
 }
 
-function MeetingRow({ meeting, onImport }: { meeting: FathomMeeting; onImport: () => void }) {
+interface MeetingRowProps {
+  meeting: FathomMeeting
+  preview: FathomPreview | null
+  previewError?: 'limit' | 'generic'
+  requestingPreview: boolean
+  onGeneratePreview: () => void
+  onImport: () => void
+}
+
+function MeetingRow({ meeting, preview, previewError, requestingPreview, onGeneratePreview, onImport }: MeetingRowProps) {
   const { t } = useTranslation('integrations')
   const invitees = meeting.invitees
   const extra = invitees.length - SHOWN_INVITEES
   // Story 13.12: the thumbnail of an imported copy (the API only sends it for meetings the user may see)
   const thumbnail = meeting.imports.find(i => i.state === 'imported' && i.thumbnail_url)?.thumbnail_url
+  // Story 13.15: a not-imported meeting can get an on-demand preview
+  const imported = meeting.imports.some(i => i.state === 'imported')
+  const generating = requestingPreview || preview?.status === 'queued' || preview?.status === 'processing'
+  const title = meeting.title || t('meetings.untitled')
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
-      <MeetingThumbnail
-        src={thumbnail}
-        alt={t('meetings.thumbnailAlt', { title: meeting.title || t('meetings.untitled') })}
-        className="w-full sm:w-40 shrink-0"
-      >
-        {meeting.platform && <span className="font-medium">{t(`meetings.platform.${meeting.platform}`)}</span>}
-        {meeting.duration_minutes != null && <span>{t('meetings.duration', { count: meeting.duration_minutes })}</span>}
-      </MeetingThumbnail>
+      <div className="w-full sm:w-40 shrink-0">
+        <MeetingThumbnail
+          src={thumbnail ?? (preview?.status === 'ready' ? preview.url : null)}
+          alt={thumbnail ? t('meetings.thumbnailAlt', { title }) : t('meetings.preview.alt', { title })}
+        >
+          {generating ? (
+            <span role="status" className="flex flex-col items-center gap-1">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              {t('meetings.preview.generating')}
+            </span>
+          ) : (
+            <>
+              {meeting.platform && <span className="font-medium">{t(`meetings.platform.${meeting.platform}`)}</span>}
+              {meeting.duration_minutes != null && <span>{t('meetings.duration', { count: meeting.duration_minutes })}</span>}
+            </>
+          )}
+        </MeetingThumbnail>
+        {!imported && !thumbnail && !generating && preview?.status !== 'ready' && (
+          <div className="mt-1">
+            {preview?.status === 'failed' && <p className="text-xs text-red-700">{t('meetings.preview.failed')}</p>}
+            <button
+              type="button"
+              onClick={onGeneratePreview}
+              className="text-xs font-medium text-blue-700 hover:underline"
+              aria-label={`${preview?.status === 'failed' ? t('meetings.preview.retry') : t('meetings.preview.generate')}: ${title}`}
+            >
+              {preview?.status === 'failed' ? t('meetings.preview.retry') : t('meetings.preview.generate')}
+            </button>
+          </div>
+        )}
+        {previewError && (
+          <p role="alert" className="mt-1 text-xs text-red-700">
+            {t(previewError === 'limit' ? 'meetings.preview.limit' : 'meetings.preview.error')}
+          </p>
+        )}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="font-medium text-gray-900">{meeting.title || t('meetings.untitled')}</p>
         <p className="mt-0.5 text-sm text-gray-600">

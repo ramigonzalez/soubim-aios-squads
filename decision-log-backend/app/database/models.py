@@ -557,6 +557,34 @@ class FathomImport(Base):
     )
 
 
+class FathomPreview(Base):
+    """On-demand preview thumbnail of a Fathom meeting that is not imported (Story 13.15).
+
+    Private to the user (the Fathom list is per account): unique on ``(user_id, recording_id)``.
+    The ``fathom_preview`` worker job asks Fathom for the video download, lets ffmpeg read one
+    frame from the signed URL and stores only the JPEG at ``thumbnail_key``. The video is never stored.
+    ``status``: queued | processing | ready | failed.
+    """
+
+    __tablename__ = "fathom_previews"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    recording_id = Column(String(128), nullable=False)
+    status = Column(String(20), nullable=False, default="queued", server_default="queued")
+    thumbnail_key = Column(String(500))
+    download_id = Column(String(128))  # Fathom download being prepared; reused across retries (and on import)
+    job_id = Column(GUID(), ForeignKey("jobs.id", ondelete="SET NULL"))
+    error = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "recording_id", name="uq_fathom_previews_user_recording"),
+        CheckConstraint("status IN ('queued', 'processing', 'ready', 'failed')", name="ck_fathom_preview_status"),
+    )
+
+
 class FathomWebhookEvent(Base):
     """A Fathom webhook delivery already accepted (Story 13.9) — dedupes by ``webhook-id`` per connection
     (Fathom retries failed deliveries with the same id). Old rows are pruned on insert."""

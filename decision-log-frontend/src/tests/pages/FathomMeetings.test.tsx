@@ -15,13 +15,15 @@ vi.mock('../../services/integrationsService', () => ({
     getFathomImportProjects: vi.fn(),
     importFathomMeeting: vi.fn(),
     retryFathomImport: vi.fn(),
+    requestFathomPreview: vi.fn(),
+    getFathomPreviews: vi.fn(),
     listFathomUnassigned: vi.fn().mockResolvedValue([]),
   },
 }))
 
 type Mocked = ReturnType<typeof vi.fn>
 const service = integrationsService as unknown as Record<
-  'getFathomStatus' | 'listFathomMeetings' | 'getFathomImportProjects' | 'importFathomMeeting' | 'retryFathomImport',
+  'getFathomStatus' | 'listFathomMeetings' | 'getFathomImportProjects' | 'importFathomMeeting' | 'retryFathomImport' | 'requestFathomPreview' | 'getFathomPreviews',
   Mocked
 >
 
@@ -282,6 +284,94 @@ describe('FathomMeetings (Story 13.4)', () => {
     service.listFathomMeetings.mockResolvedValue({ items: [], next_cursor: null })
     renderPage()
     expect(await screen.findByText('No meetings found in your Fathom account.')).toBeInTheDocument()
+  })
+
+  describe('on-demand previews (Story 13.15)', () => {
+    afterEach(() => vi.useRealTimers())
+
+    it('offers "Generate preview" on a not-imported meeting only, and shows a spinner after the click', async () => {
+      service.listFathomMeetings.mockResolvedValue({
+        items: [meeting(), meeting({ recording_id: '456', title: 'Importada', imports: [anImport()] })],
+        next_cursor: null,
+      })
+      service.requestFathomPreview.mockResolvedValue({ status: 'queued', url: null })
+      service.getFathomPreviews.mockResolvedValue({ '123': { status: 'queued', url: null } })
+      renderPage()
+      expect(await screen.findAllByRole('button', { name: /^Generate preview/ })).toHaveLength(1)
+
+      await userEvent.click(screen.getByRole('button', { name: 'Generate preview: Coordenação D/SEASON' }))
+
+      expect(service.requestFathomPreview).toHaveBeenCalledWith('123')
+      expect(await screen.findByText('Generating preview… (~1 min)')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^Generate preview/ })).not.toBeInTheDocument()
+    })
+
+    it('polls every 10 s and shows the image when ready', async () => {
+      service.listFathomMeetings.mockResolvedValue({
+        items: [meeting({ preview: { status: 'processing', url: null } })],
+        next_cursor: null,
+      })
+      service.getFathomPreviews
+        .mockResolvedValueOnce({ '123': { status: 'processing', url: null } })
+        .mockResolvedValue({ '123': { status: 'ready', url: 'https://storage.test/p.jpg' } })
+      vi.useFakeTimers({ toFake: ['setInterval'] })
+      renderPage()
+      expect(await screen.findByText('Generating preview… (~1 min)')).toBeInTheDocument()
+      expect(service.getFathomPreviews).toHaveBeenCalledTimes(1)
+
+      await vi.advanceTimersByTimeAsync(10_000)
+
+      const img = await screen.findByRole('img', { name: 'Preview of Coordenação D/SEASON' })
+      expect(img).toHaveAttribute('src', 'https://storage.test/p.jpg')
+      expect(img).toHaveAttribute('loading', 'lazy')
+      expect(screen.queryByText('Generating preview… (~1 min)')).not.toBeInTheDocument()
+      expect(service.getFathomPreviews).toHaveBeenCalledWith(['123'])
+    })
+
+    it('shows the image of a ready preview from the list, without polling', async () => {
+      service.listFathomMeetings.mockResolvedValue({
+        items: [meeting({ preview: { status: 'ready', url: 'https://storage.test/p.jpg' } })],
+        next_cursor: null,
+      })
+      renderPage()
+      expect(await screen.findByRole('img', { name: 'Preview of Coordenação D/SEASON' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^Generate preview/ })).not.toBeInTheDocument()
+      expect(service.getFathomPreviews).not.toHaveBeenCalled()
+    })
+
+    it('a failed preview offers "Try again"', async () => {
+      service.listFathomMeetings.mockResolvedValue({
+        items: [meeting({ preview: { status: 'failed', url: null } })],
+        next_cursor: null,
+      })
+      service.requestFathomPreview.mockResolvedValue({ status: 'queued', url: null })
+      service.getFathomPreviews.mockResolvedValue({ '123': { status: 'queued', url: null } })
+      renderPage()
+      expect(await screen.findByText('The preview could not be generated.')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Try again: Coordenação D/SEASON' }))
+      expect(service.requestFathomPreview).toHaveBeenCalledWith('123')
+      expect(await screen.findByText('Generating preview… (~1 min)')).toBeInTheDocument()
+    })
+
+    it('answers a 429 with a friendly message and keeps the button', async () => {
+      service.listFathomMeetings.mockResolvedValue({ items: [meeting()], next_cursor: null })
+      service.requestFathomPreview.mockRejectedValue({ response: { status: 429 } })
+      renderPage()
+      await userEvent.click(await screen.findByRole('button', { name: /^Generate preview/ }))
+      expect(await screen.findByRole('alert')).toHaveTextContent('You already have 3 previews being generated')
+      expect(screen.getByRole('button', { name: /^Generate preview/ })).toBeInTheDocument()
+    })
+
+    it('labels the preview controls in pt-BR', async () => {
+      await i18n.changeLanguage('pt-BR')
+      try {
+        service.listFathomMeetings.mockResolvedValue({ items: [meeting()], next_cursor: null })
+        renderPage()
+        expect(await screen.findByRole('button', { name: /^Gerar prévia/ })).toBeInTheDocument()
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    })
   })
 
   describe('in Portuguese', () => {
