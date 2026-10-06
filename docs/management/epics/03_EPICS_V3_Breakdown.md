@@ -85,6 +85,9 @@ Today DecisionLog has no organization concept: one global `director` role, proje
 | 12.5 | Users, Invitations & Active Organization | M | High | ✅ #19 |
 | 12.6 | Item Review: Approve / Reject / Edit by Role | M | Medium | ✅ #25 |
 | 12.7 | Roles Follow-ups: Reviewer Role, Project Assignment, Admin UI Gating | M | High | Ready for Review |
+| 12.10 | Private Meetings, Explicit Milestone Publishing | M | High | Draft |
+| 12.11 | Orphaned Meetings After Unsharing | M | Medium | Draft |
+| 12.12 | White Label and Platform Operator | XL | Medium | Draft |
 
 ### Agent Assignment
 
@@ -145,6 +148,8 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.8 | Deploy API + Worker + Postgres on Railway | M | High | ✅ config #13 (live deploy pending) |
 | 13.9 | Fathom Webhook (Push) | M | Low | ✅ #23 |
 | 13.10 | CI Checks (GitHub Actions) | S | High | ✅ |
+| 13.13 | Fathom Import per Organization | M | Medium | Draft |
+| 13.14 | Extraction Model Choice Explained to Users, Plus Eval | M | Medium | Draft |
 
 ### Agent Assignment
 
