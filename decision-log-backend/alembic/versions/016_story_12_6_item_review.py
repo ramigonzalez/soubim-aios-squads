@@ -1,7 +1,7 @@
 """Story 12.6: item review by role.
 
-Revision ID: 015_story_12_6
-Revises: 014_story_13_7
+Revision ID: 016_story_12_6
+Revises: 015_story_13_9
 Create Date: 2026-10-06
 
 Changes:
@@ -16,8 +16,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers
-revision = '015_story_12_6'
-down_revision = '014_story_13_7'
+revision = '016_story_12_6'
+down_revision = '015_story_13_9'
 branch_labels = None
 depends_on = None
 
