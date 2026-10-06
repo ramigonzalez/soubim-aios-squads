@@ -35,6 +35,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
       JWT_SECRET_KEY: ci-only-placeholder-secret-not-used-anywhere-else  # test_auth requires >= 32 chars
       ANTHROPIC_API_KEY: ci-dummy-key  # tests never call the real API
+      TACTIQ_WEBHOOK_SECRET: ci-dummy-webhook-secret  # required by Settings; .env.development is no longer tracked (13.8)
       ENVIRONMENT: test
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,16 @@
+# Railway config-as-code for the API service (Story 13.8).
+# Service settings: Root Directory = decision-log-backend, Config Path = /decision-log-backend/railway.toml
+# The worker service uses railway.worker.toml (same image, different start command).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+# Runs before each new deployment goes live; a failing migration aborts the deploy.
+preDeployCommand = ["alembic upgrade head"]
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
