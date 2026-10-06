@@ -186,7 +186,7 @@ class TestWorker:
         assert src.ingestion_status == "failed" and src.extraction_error == "Anthropic API overloaded"
 
     @pytest.mark.parametrize("job_type, message", [
-        ("fathom_import", "Story 13.4"), ("transcribe", "Story 14.1"), ("nonsense", "Unknown job type"),
+        ("fathom_import", "import_id"), ("transcribe", "Story 14.1"), ("nonsense", "Unknown job type"),
     ])
     def test_unimplemented_and_unknown_job_types_fail_permanently(self, db_session: Session, factory,
                                                                   job_type, message):

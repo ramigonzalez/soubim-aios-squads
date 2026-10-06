@@ -77,7 +77,7 @@ Add the Vercel preview domain only if you want previews to call production.
 
 1. API service -> Networking -> Generate Domain (`https://<name>.up.railway.app`) or add a custom domain (e.g. `api.<yourdomain>`; add the CNAME Railway shows). The custom domain purchase is out of scope for this story.
 2. In the Fathom developer app settings, replace the localhost redirect with `https://<api-domain>/api/fathom/callback` and set `FATHOM_REDIRECT_URI` to the identical string. They must match exactly.
-3. The Fathom webhook URL (13.4) is also `https://<api-domain>/...`.
+3. The Fathom webhook URL (13.9) is also `https://<api-domain>/...`.
 4. Point the frontend's API base URL (Vercel env) at `https://<api-domain>`.
 
 ## 6. First deploy checklist

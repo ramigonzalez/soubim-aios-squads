@@ -1,5 +1,5 @@
 import api from './api'
-import type { FathomStatus } from '../types/integrations'
+import type { FathomImport, FathomImportProject, FathomMeetingsPage, FathomStatus } from '../types/integrations'
 
 export const integrationsService = {
   getFathomStatus: (): Promise<FathomStatus> =>
@@ -23,4 +23,17 @@ export const integrationsService = {
 
   disconnectFathom: (): Promise<void> =>
     api.delete('/integrations/fathom').then(() => undefined),
+
+  /** One page of the user's own Fathom meetings (Story 13.4); pass the previous page's next_cursor. */
+  listFathomMeetings: (cursor?: string | null): Promise<FathomMeetingsPage> =>
+    api.get('/integrations/fathom/meetings', { params: cursor ? { cursor } : {} }).then(r => r.data),
+
+  getFathomImportProjects: (): Promise<FathomImportProject[]> =>
+    api.get('/integrations/fathom/projects').then(r => r.data),
+
+  importFathomMeeting: (body: { recording_id: string; project_id: string }): Promise<FathomImport> =>
+    api.post('/integrations/fathom/imports', body).then(r => r.data),
+
+  retryFathomImport: (importId: string): Promise<FathomImport> =>
+    api.post(`/integrations/fathom/imports/${encodeURIComponent(importId)}/retry`).then(r => r.data),
 }

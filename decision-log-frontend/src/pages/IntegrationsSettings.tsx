@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, CheckCircle2, Plug } from 'lucide-react'
@@ -18,7 +18,7 @@ function confirmErrorReason(error: unknown): string {
 
 /**
  * Settings → Integrations (Story 13.3): connect / disconnect the user's own Fathom account.
- * Browsing and importing Fathom meetings comes in Story 13.4.
+ * When connected, links to the Fathom meetings page (Story 13.4: browse & import).
  */
 export default function IntegrationsSettings() {
   const { t } = useTranslation('integrations')
@@ -138,7 +138,16 @@ export default function IntegrationsSettings() {
                     <p className="text-gray-500">{t('fathom.connectedSince', { date: formatDate(status.connected_at) })}</p>
                   )}
                 </div>
-                <DisconnectButton label={t('fathom.disconnect')} disabled={disconnect.isLoading} onClick={handleDisconnect} />
+                <div className="flex gap-2">
+                  {/* Story 13.4: browse & import */}
+                  <Link
+                    to="/settings/integrations/fathom"
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    {t('fathom.browse')}
+                  </Link>
+                  <DisconnectButton label={t('fathom.disconnect')} disabled={disconnect.isLoading} onClick={handleDisconnect} />
+                </div>
               </div>
             )}
 
