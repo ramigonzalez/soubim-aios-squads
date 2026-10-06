@@ -7,11 +7,12 @@ from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectItem, Source
 from app.services.item_import import import_items
+from tests.org_helpers import default_org_id
 
 
 @pytest.fixture
 def meeting_source(db_session: Session) -> Source:
-    project = Project(name="D/SEASON", description="Construtora: DIMAS")
+    project = Project(owner_organization_id=default_org_id(db_session), name="D/SEASON", description="Construtora: DIMAS")
     db_session.add(project)
     db_session.flush()
     source = Source(

@@ -9,7 +9,7 @@ from typing import Optional
 from uuid import UUID
 
 from app.database.session import get_db
-from app.services.organizations import primary_organization
+from app.services.access import ADMIN, admin_organization, require_project_access
 from app.database.models import Project, ProjectMember
 from app.services.project_service import (
     get_projects,
@@ -152,7 +152,7 @@ async def update_project(
 
     Raises:
         401: If not authenticated
-        403: If user is not a director
+        403: If user is not an admin of the owning organization
         404: If project not found
     """
     user = getattr(request.state, "user", None)
@@ -162,19 +162,8 @@ async def update_project(
             detail="Not authenticated",
         )
 
-    # Only directors can update project settings
-    if user.role != "director":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only directors can update project settings",
-        )
-
-    project = db.query(Project).filter(Project.id == str(project_id)).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    # Story 12.2: organization admins of the owning organization only
+    project = require_project_access(db, user, project_id, ADMIN)
 
     # Apply partial updates (resolve title → name)
     update_data = payload.model_dump(exclude_unset=True)
@@ -205,14 +194,14 @@ async def create_project(
     """
     Create a new project.
 
-    Story 6.4: Director-only endpoint.
+    Story 6.4 / 12.2: organization admins only.
 
     Returns:
         Created project data with id
 
     Raises:
         401: If not authenticated
-        403: If user is not a director
+        403: If user is not an owner/admin of any organization
     """
     user = getattr(request.state, "user", None)
     if not user:
@@ -221,10 +210,12 @@ async def create_project(
             detail="Not authenticated",
         )
 
-    if user.role != "director":
+    # Story 12.2: the project is owned by an organization the creator administers
+    owner_org = admin_organization(db, user)
+    if owner_org is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only directors can create projects",
+            detail="Only organization admins can create projects",
         )
 
     project_name = payload.resolved_name
@@ -234,13 +225,12 @@ async def create_project(
             detail="Project name is required",
         )
 
-    owner_org = primary_organization(db, user)  # Story 12.1: projects belong to an organization
     project = Project(
         name=project_name,
         description=payload.description,
         project_type=payload.project_type,
         drive_folder_id=payload.drive_folder_id,
-        owner_organization_id=owner_org.id if owner_org else None,
+        owner_organization_id=owner_org.id,
     )
     db.add(project)
     db.flush()
@@ -273,14 +263,14 @@ async def archive_project(
     """
     Soft-delete (archive) a project by setting archived_at.
 
-    Story 6.4: Director-only endpoint.
+    Story 6.4 / 12.2: organization admins only.
 
     Returns:
         Confirmation with archived_at timestamp
 
     Raises:
         401: If not authenticated
-        403: If user is not a director
+        403: If user is not an admin of the owning organization
         404: If project not found
     """
     user = getattr(request.state, "user", None)
@@ -290,18 +280,7 @@ async def archive_project(
             detail="Not authenticated",
         )
 
-    if user.role != "director":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only directors can archive projects",
-        )
-
-    project = db.query(Project).filter(Project.id == str(project_id)).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    project = require_project_access(db, user, project_id, ADMIN)  # Story 12.2
 
     project.archived_at = datetime.utcnow()
     db.commit()

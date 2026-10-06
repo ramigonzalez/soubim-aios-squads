@@ -14,6 +14,7 @@ from app.services.auth_service import (
     UserNotFoundError,
 )
 from app.utils.security import hash_password, verify_password, create_access_token, decode_access_token
+from tests.org_helpers import default_org_id, make_org_member
 
 
 @pytest.fixture
@@ -47,9 +48,12 @@ def test_architect(db_session: Session) -> User:
 @pytest.fixture
 def test_projects(db_session: Session, test_user: User, test_architect: User) -> tuple:
     """Create test projects."""
-    project1 = Project(name="Project Alpha", description="First project")
-    project2 = Project(name="Project Beta", description="Second project")
+    project1 = Project(owner_organization_id=default_org_id(db_session), name="Project Alpha", description="First project")
+    project2 = Project(owner_organization_id=default_org_id(db_session), name="Project Beta", description="Second project")
     db_session.add_all([project1, project2])
+    # Story 12.2: access comes from the organization (director -> admin, architect -> member)
+    make_org_member(db_session, test_user, "admin")
+    make_org_member(db_session, test_architect, "member")
     db_session.commit()
 
     # Add director to both projects

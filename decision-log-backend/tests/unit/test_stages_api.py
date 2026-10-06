@@ -7,6 +7,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectStage, StageTemplate, User
+from tests.org_helpers import default_org_id
 
 
 @pytest.fixture
@@ -25,7 +26,7 @@ def test_user(db_session: Session):
 
 @pytest.fixture
 def test_project(db_session: Session):
-    project = Project(
+    project = Project(owner_organization_id=default_org_id(db_session),
         id=uuid.uuid4(),
         name="Stage Test Project",
         description="Testing stage schedule",

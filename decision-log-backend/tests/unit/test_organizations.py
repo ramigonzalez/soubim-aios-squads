@@ -23,6 +23,7 @@ from app.services.organizations import (
     membership_role_for,
     primary_organization,
 )
+from tests.org_helpers import allow_projects_without_owner
 
 MIGRATION = pathlib.Path(__file__).parents[2] / "alembic/versions/006_story_12_1_organizations.py"
 
@@ -39,6 +40,8 @@ def _user(db: Session, email: str, role: str, deleted: bool = False) -> User:
 
 @pytest.fixture
 def people(db_session: Session):
+    # 12.1 backfill rules apply to projects created before 008_story_12_2 (owner was nullable)
+    allow_projects_without_owner(db_session)
     director = _user(db_session, "dir@soubim.com", "director")
     architect = _user(db_session, "arch@soubim.com", "architect")
     gone = _user(db_session, "gone@soubim.com", "architect", deleted=True)
@@ -150,6 +153,7 @@ class TestMigrationBackfill:
         return module
 
     def test_backfill_matches_the_service_rules(self, pg_session: Session, monkeypatch):
+        allow_projects_without_owner(pg_session)  # pre-008 schema
         director = _user(pg_session, "dir@soubim.com", "director")
         architect = _user(pg_session, "arch@soubim.com", "architect")
         _user(pg_session, "gone@soubim.com", "client", deleted=True)
@@ -177,6 +181,7 @@ class TestSeedOnExistingDatabase:
 
         from app.database import seed
 
+        allow_projects_without_owner(db_session)  # a pre-008 database
         _user(db_session, "test@example.com", "director")  # marks the DB as already seeded
         db_session.add(Project(name="Old project"))
         db_session.commit()

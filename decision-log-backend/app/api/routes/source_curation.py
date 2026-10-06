@@ -6,25 +6,19 @@ Story 7.7: Manual triggers for upload and sync operations.
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.database.models import Source
 from app.database.session import get_db
+from app.services.access import ADMIN, require_platform_admin, require_source_access
 from app.services.source_curation import SourceCurationService
 
 router = APIRouter()
 
 
-def _require_admin(request: Request):
-    """Require admin/director role for access."""
+def _get_user(request: Request):
     user = getattr(request.state, "user", None)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
-        )
-    if user.role != "director":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
         )
     return user
 
@@ -39,14 +33,7 @@ async def upload_source_to_storage(
 
     Admin-only. Useful when auto-upload was missed or needs to be retried.
     """
-    _require_admin(request)
-
-    source = db.query(Source).filter(Source.id == source_id).first()
-    if not source:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source not found",
-        )
+    require_source_access(db, _get_user(request), source_id, ADMIN)  # Story 12.2
 
     service = SourceCurationService(db)
     success = service.upload_to_storage(source_id)
@@ -68,9 +55,9 @@ async def trigger_curation_sync(
 ):
     """Manually trigger a curation sync poll for all uploaded sources.
 
-    Admin-only. Runs in background and returns immediately.
+    Platform admins only (polls the sources of every organization). Runs in background.
     """
-    _require_admin(request)
+    require_platform_admin(db, _get_user(request))  # Story 12.2
 
     def _run_sync():
         from app.database.session import SessionLocal
@@ -92,19 +79,7 @@ async def get_curation_status(
     db: Session = Depends(get_db),
 ):
     """Get curation status for a specific source."""
-    user = getattr(request.state, "user", None)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    source = db.query(Source).filter(Source.id == source_id).first()
-    if not source:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Source not found",
-        )
+    source = require_source_access(db, _get_user(request), source_id)  # Story 12.2
 
     return {
         "source_id": str(source.id),

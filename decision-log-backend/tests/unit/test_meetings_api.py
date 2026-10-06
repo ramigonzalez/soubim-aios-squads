@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.routes import meetings
 from app.database.models import Project, Source, User
 from app.services import recordings
+from tests.org_helpers import default_org_id, make_org_member
 
 
 @pytest.fixture(autouse=True)
@@ -24,6 +25,7 @@ def recordings_dir(tmp_path, monkeypatch):
 def director(db_session: Session) -> User:
     user = User(email="dir@soubim.com", password_hash="x", name="Gabriela", role="director")
     db_session.add(user)
+    make_org_member(db_session, user, "admin")  # Story 12.2: access through the organization
     db_session.commit()
     return user
 
@@ -32,13 +34,14 @@ def director(db_session: Session) -> User:
 def architect(db_session: Session) -> User:
     user = User(email="arch@soubim.com", password_hash="x", name="Outsider", role="architect")
     db_session.add(user)
+    make_org_member(db_session, user, "member")  # same organization, not assigned to the project
     db_session.commit()
     return user
 
 
 @pytest.fixture
 def meeting(db_session: Session) -> Source:
-    project = Project(name="D/SEASON")
+    project = Project(owner_organization_id=default_org_id(db_session), name="D/SEASON")
     db_session.add(project)
     db_session.flush()
     source = Source(
@@ -103,7 +106,7 @@ class TestGetMeeting:
     def test_non_member_is_forbidden(self, db_session, architect, meeting):
         with pytest.raises(HTTPException) as exc:
             run(meetings.get_meeting(meeting.id, db=db_session, user=architect))
-        assert exc.value.status_code == 403
+        assert exc.value.status_code == 404  # Story 12.2: sources the user cannot see are not found
 
 
 class TestStreamRecording:

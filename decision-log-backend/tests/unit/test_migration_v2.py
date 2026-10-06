@@ -40,6 +40,7 @@ from app.database.models import (
     Source,
     Transcript,
 )
+from tests.org_helpers import default_org_id
 from tests.conftest import _exec_migration_sql
 
 
@@ -104,7 +105,7 @@ class TestColumnDefaults:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -185,7 +186,7 @@ class TestItemTypes:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -225,7 +226,7 @@ class TestAffectedDisciplines:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -260,7 +261,7 @@ class TestConsensusV2Format:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -321,7 +322,7 @@ class TestSourcesTable:
         assert required.issubset(columns)
 
     def test_source_creation_meeting(self, db_session):
-        project = Project(name="Test")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(project)
         db_session.commit()
 
@@ -341,7 +342,7 @@ class TestSourcesTable:
 
     def test_source_item_linking(self, db_session):
         """Source records can be linked to project items via source_id."""
-        project = Project(name="Test")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(project)
         db_session.commit()
 
@@ -380,7 +381,7 @@ class TestProjectParticipantsTable:
         assert required.issubset(columns)
 
     def test_participant_with_email(self, db_session):
-        project = Project(name="Test")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(project)
         db_session.commit()
 
@@ -394,7 +395,7 @@ class TestProjectParticipantsTable:
         assert p.email == "carlos@example.com"
 
     def test_participant_without_email(self, db_session):
-        project = Project(name="Test")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(project)
         db_session.commit()
 
@@ -444,7 +445,7 @@ class TestDataPreservation:
     @pytest.fixture
     def seeded_data(self, db_session):
         """Create V1-style data to verify preservation."""
-        project = Project(name="Test Project")
+        project = Project(owner_organization_id=default_org_id(db_session), name="Test Project")
         db_session.add(project)
         db_session.commit()
 
@@ -499,7 +500,7 @@ class TestMilestoneAndDone:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -543,7 +544,7 @@ class TestBackwardCompatibility:
 
     @pytest.fixture
     def project(self, db_session):
-        p = Project(name="Test")
+        p = Project(owner_organization_id=default_org_id(db_session), name="Test")
         db_session.add(p)
         db_session.commit()
         return p
@@ -629,7 +630,7 @@ class TestGINIndexQuery:
 
     @pytest.fixture
     def project(self, pg_session):
-        p = Project(name="GIN Test Project")
+        p = Project(owner_organization_id=default_org_id(pg_session), name="GIN Test Project")
         pg_session.add(p)
         pg_session.commit()
         return p
@@ -788,7 +789,7 @@ class TestVectorSearchPostMigration:
 
     @pytest.fixture
     def project(self, pg_session):
-        p = Project(name="Vector Test Project")
+        p = Project(owner_organization_id=default_org_id(pg_session), name="Vector Test Project")
         pg_session.add(p)
         pg_session.commit()
         return p

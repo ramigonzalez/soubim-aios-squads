@@ -142,8 +142,8 @@ class Project(Base):
     description = Column(Text)
     project_type = Column(String(100))  # V2: residential, commercial, mixed-use, etc.
     actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
-    # Story 12.1: organization that owns the project (nullable until every path sets it — 12.2)
-    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"))
+    # Story 12.1: organization that owns the project; Story 12.2: required (authorization is org-scoped)
+    owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime, nullable=False, default=func.now())
     archived_at = Column(DateTime)
 

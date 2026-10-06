@@ -13,6 +13,7 @@ from app.api.models.ingestion import IngestionUpdate
 from app.api.routes import ingestion as ingestion_routes
 from app.database.models import Job, Project, ProjectItem, Source, User
 from app.services import extraction_v2, ingestion_pipeline, jobs
+from tests.org_helpers import default_org_id, make_org_member
 from tests.unit.test_meeting_extraction import OUTPUT, FakeClient, _message
 
 T0 = datetime(2026, 10, 5, 12, 0, 0)
@@ -20,7 +21,7 @@ T0 = datetime(2026, 10, 5, 12, 0, 0)
 
 @pytest.fixture
 def source(db_session: Session) -> Source:
-    project = Project(name="D/SEASON")
+    project = Project(owner_organization_id=default_org_id(db_session), name="D/SEASON")
     db_session.add(project)
     db_session.flush()
     src = Source(
@@ -203,6 +204,7 @@ class TestIngestionRoutes:
     def _director(self, db_session: Session) -> User:
         user = User(email="dir@soubim.com", password_hash="x", name="Gabriela", role="director")
         db_session.add(user)
+        make_org_member(db_session, user, "admin")  # Story 12.2
         db_session.commit()
         return user
 

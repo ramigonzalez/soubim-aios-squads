@@ -16,6 +16,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.database.models import SharedLink, Project, ProjectItem, User
+from tests.org_helpers import default_org_id
 
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ from app.database.models import SharedLink, Project, ProjectItem, User
 @pytest.fixture
 def sample_project(db_session: Session) -> Project:
     """Create a test project."""
-    project = Project(
+    project = Project(owner_organization_id=default_org_id(db_session),
         id=uuid.uuid4(),
         name="Test Project",
         description="A test project for shared links",

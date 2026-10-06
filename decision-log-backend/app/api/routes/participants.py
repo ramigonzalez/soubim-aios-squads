@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.models.project import ParticipantCreate, ParticipantUpdate
-from app.database.models import Project, ProjectMember, ProjectParticipant
+from app.database.models import Project, ProjectParticipant
+from app.services.access import READ, WRITE, require_project_access
 from app.database.session import get_db
 
 router = APIRouter()
@@ -19,19 +20,9 @@ def _get_user(request: Request):
     return user
 
 
-def _check_project_access(db: Session, project_id: str, user) -> Project:
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    if user.role != "director":
-        is_member = (
-            db.query(ProjectMember)
-            .filter(ProjectMember.project_id == project_id, ProjectMember.user_id == str(user.id))
-            .first()
-        )
-        if not is_member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return project
+def _check_project_access(db: Session, project_id: str, user, required: str = READ) -> Project:
+    """Organization-scoped access check (Story 12.2)."""
+    return require_project_access(db, user, project_id, required)
 
 
 def _participant_to_response(p: ProjectParticipant) -> dict:
@@ -72,7 +63,7 @@ async def add_participant(
 ):
     """Add a participant to a project."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    _check_project_access(db, project_id, user, WRITE)
 
     # Check unique email per project
     if body.email:
@@ -131,7 +122,7 @@ async def update_participant(
 ):
     """Update a project participant."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    _check_project_access(db, project_id, user, WRITE)
 
     participant = (
         db.query(ProjectParticipant)
@@ -168,7 +159,7 @@ async def remove_participant(
 ):
     """Remove a participant from a project."""
     user = _get_user(request)
-    _check_project_access(db, project_id, user)
+    _check_project_access(db, project_id, user, WRITE)
 
     participant = (
         db.query(ProjectParticipant)

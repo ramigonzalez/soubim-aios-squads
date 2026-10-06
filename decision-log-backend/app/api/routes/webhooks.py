@@ -8,12 +8,13 @@ from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.models import Source
 from app.database.session import get_db
+from app.services.access import WRITE, require_project_access
 from app.services.summary_service import generate_ai_summary
 
 router = APIRouter()
@@ -22,6 +23,7 @@ router = APIRouter()
 @router.post("/transcript", status_code=status.HTTP_202_ACCEPTED)
 async def receive_transcript(
     payload: dict,
+    request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     x_tactiq_signature: Optional[str] = Header(None),
@@ -33,7 +35,15 @@ async def receive_transcript(
     AI summary generation in the background. Returns 202 Accepted.
 
     Duplicate webhooks are detected via webhook_id for idempotency.
+    Story 12.2: the caller needs write access to the payload's project.
     """
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    if not payload.get("project_id"):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="project_id is required")
+    require_project_access(db, user, payload["project_id"], WRITE)
+
     # Check for duplicate webhook (idempotency)
     webhook_id = payload.get("webhook_id")
     if webhook_id:
