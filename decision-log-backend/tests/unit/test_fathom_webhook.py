@@ -555,7 +555,7 @@ class TestAutoImportSettings:
         payload = json.loads(sent.content)
         assert payload["destination_url"] == f"https://example.ngrok.app/api/fathom/webhook/{plain_conn.id}"
         assert payload["triggered_for"] == ["my_recordings"]
-        assert payload["include_transcript"] is False
+        assert payload["include_transcript"] is True  # Fathom requires at least one content type
         assert sent.headers["authorization"] == "Bearer acc-1"
         db_session.refresh(plain_conn)
         assert plain_conn.webhook_id == "wh_abc"

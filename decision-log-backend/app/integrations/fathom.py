@@ -337,12 +337,13 @@ class FathomClient:
         """Register a ``new_meeting`` webhook for the account's own recordings: ``{id, secret, ...}``.
 
         Only the recording id is needed from the payload (the import job fetches the rest with the
-        user's token), so no transcript/summary/action items are requested.
+        user's token), but Fathom rejects a webhook with no content type ("At least one content type
+        must be included", verified live 2026-10-06), so the transcript is requested.
         """
         return self._request("POST", "/webhooks", json={
             "destination_url": destination_url,
             "triggered_for": ["my_recordings"],
-            "include_transcript": False,
+            "include_transcript": True,
             "include_summary": False,
             "include_action_items": False,
             "include_crm_matches": False,
