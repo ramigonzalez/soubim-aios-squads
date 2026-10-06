@@ -3,6 +3,7 @@
 # Environment & Secrets (AIOS)
 .env
 .env.local
+.env.development
 
 # SQLite development database
 decisionlog_dev.db

@@ -1,0 +1,11 @@
+# Railway config-as-code for the WORKER service (Story 13.8).
+# Service settings: Root Directory = decision-log-backend, Config Path = /decision-log-backend/railway.worker.toml
+# No HTTP server, so no healthcheck; the API service owns migrations (preDeployCommand).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python -m app.worker"
+restartPolicyType = "ALWAYS"
