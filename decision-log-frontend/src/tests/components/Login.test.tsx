@@ -372,13 +372,13 @@ describe('Login ?redirect= (Story 12.5 security review)', () => {
 
   it('goes back to the invitation after logging in', async () => {
     await loginWith('/invite/tok123')
-    expect(window.location.pathname).toBe('/invite/tok123')
+    await waitFor(() => expect(window.location.pathname).toBe('/invite/tok123'))
   })
 
   it.each(['/\\evil.com', '//evil.com', 'https://evil.com'])('ignores the open redirect %j', async value => {
     const before = window.location.origin
     await loginWith(value)
+    await waitFor(() => expect(window.location.pathname).toBe('/projects'))
     expect(window.location.origin).toBe(before)
-    expect(window.location.pathname).toBe('/projects')
   })
 })
