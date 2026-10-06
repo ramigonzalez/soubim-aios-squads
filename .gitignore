@@ -32,3 +32,6 @@ Thumbs.db
 .claude/settings.local.json
 .aios/install-log.txt
 tmp/
+
+# Story 13.1: real SeaweedFS identities (contains credentials)
+decision-log-backend/docker/seaweedfs-s3.json

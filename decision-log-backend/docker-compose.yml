@@ -48,5 +48,17 @@ services:
       - .:/app
     command: python -m app.worker
 
+  # Story 13.1: S3-compatible object storage for recordings (dev). Production: Cloudflare R2 / Backblaze B2.
+  # Needs docker/seaweedfs-s3.json (git-ignored) — copy docker/seaweedfs-s3.json.example and set real keys.
+  storage:
+    image: chrislusf/seaweedfs
+    command: server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "127.0.0.1:9000:8333"
+    volumes:
+      - seaweedfs_data:/data
+      - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+
 volumes:
   postgres_data:
+  seaweedfs_data:

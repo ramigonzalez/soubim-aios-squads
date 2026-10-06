@@ -10,11 +10,15 @@ like uploads/documents). Production storage (Drive / S3) is an open decision.
 
 import hashlib
 import hmac
+import logging
 import time
 from pathlib import Path
 from typing import Optional
 
 from app.config import settings
+from app.services import storage
+
+logger = logging.getLogger(__name__)
 
 RECORDINGS_DIR = Path("uploads/recordings")
 VIDEO_EXTENSIONS = (".mp4", ".webm", ".mov", ".m4v")
@@ -28,6 +32,30 @@ def recording_file(source_id: str) -> Optional[Path]:
         if path.is_file():
             return path
     return None
+
+
+CONTENT_TYPES = {".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime", ".m4v": "video/x-m4v"}
+
+
+def org_id_for_source(db, source) -> Optional[str]:
+    """Organization that owns the source's project (None if unset)."""
+    from app.database.models import Project
+
+    project = db.query(Project).filter(Project.id == source.project_id).first()
+    org = getattr(project, "owner_organization_id", None)
+    return str(org) if org else None
+
+
+def storage_recording_url(org_id: Optional[str], source_id: str) -> Optional[str]:
+    """Presigned storage URL if storage is enabled and the object exists; else None (local fallback)."""
+    if not storage.is_enabled():
+        return None
+    try:
+        key = storage.find_key(storage.recording_prefix(org_id, source_id))
+        return storage.presigned_get(key, LINK_TTL_SECONDS) if key else None
+    except Exception:  # storage down must not break the meeting viewer
+        logger.exception("Recording storage lookup failed for source %s", source_id)
+        return None
 
 
 def _signature(source_id: str, expires: int) -> str:
