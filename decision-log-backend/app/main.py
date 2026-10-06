@@ -10,6 +10,7 @@ from app.config import settings
 from app.api.routes import admin, auth, fathom, health, ingestion, meetings, organizations, participants, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, source_curation, stages, uploads, webhooks
 from app.api.routes.shared_links import router as shared_links_router
 from app.api.middleware.auth import auth_middleware
+from app.api.middleware.rate_limit import setup_rate_limiting
 from app.database.init_db import init_db
 from app.scheduler import app_scheduler
 
@@ -62,6 +63,9 @@ app = FastAPI(
 
 # Add authentication middleware (must be before CORS)
 app.middleware("http")(auth_middleware)
+
+# Rate limiting (Story 13.11): outside auth (no DB lookup for rejected requests), inside CORS
+setup_rate_limiting(app)
 
 # Add CORS middleware
 app.add_middleware(

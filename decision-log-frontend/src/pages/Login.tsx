@@ -29,8 +29,9 @@ export function Login() {
       setAuth(user, access_token)
       navigate(destination)
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { detail?: string } } }
-      setError(e?.response?.data?.detail || t('login.error'))
+      const e = err as { response?: { status?: number; data?: { detail?: string } } }
+      // Story 13.11: 429 = rate limited (the backend detail is English-only)
+      setError(e?.response?.status === 429 ? t('login.rateLimited') : e?.response?.data?.detail || t('login.error'))
     } finally {
       setIsLoading(false)
     }

@@ -56,7 +56,7 @@ export default function AcceptInvitation() {
     const gone = statusOf(preview.error) === 410
     return shell(
       <p role="alert" className="text-sm text-red-700">
-        {gone ? t('accept.gone') : t('accept.notFound')}
+        {statusOf(preview.error) === 429 ? t('accept.rateLimited') : gone ? t('accept.gone') : t('accept.notFound')}
       </p>
     )
   }
@@ -147,7 +147,7 @@ export default function AcceptInvitation() {
 
       {error && (
         <p role="alert" className="text-sm text-red-700">
-          {errorDetail || t('accept.error')}
+          {statusOf(error) === 429 ? t('accept.rateLimited') : errorDetail || t('accept.error')}
         </p>
       )}
     </>

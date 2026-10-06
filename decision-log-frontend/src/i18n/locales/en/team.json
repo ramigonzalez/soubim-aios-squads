@@ -53,6 +53,7 @@
     "accepting": "Joining...",
     "wrongAccount": "You are logged in as {{current}}, but this invitation is for {{email}}. Log out and log in with the invited email.",
     "logout": "Log out",
-    "error": "Could not accept the invitation."
+    "error": "Could not accept the invitation.",
+    "rateLimited": "Too many requests. Please wait a minute and try again."
   }
 }
