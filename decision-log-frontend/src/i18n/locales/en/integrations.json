@@ -25,6 +25,54 @@
     "errors": {
       "load": "Could not load the integration status.",
       "action": "Something went wrong. Please try again."
+    },
+    "browse": "Browse Fathom meetings"
+  },
+  "meetings": {
+    "title": "Fathom meetings",
+    "subtitle": "Pick which meetings from your Fathom account to import into a project. Nothing is imported automatically.",
+    "back": "Integrations",
+    "search": "Search by title or participant",
+    "searchHint": "Search covers the meetings loaded so far.",
+    "empty": "No meetings found in your Fathom account.",
+    "noMatch": "No loaded meeting matches the search.",
+    "loadMore": "Load more",
+    "loadingMore": "Loading...",
+    "untitled": "Untitled meeting",
+    "duration": "{{count}} min",
+    "invitees_one": "{{count}} invitee",
+    "invitees_other": "{{count}} invitees",
+    "more": "+{{count}}",
+    "import": "Import",
+    "notConnected": "Connect your Fathom account to see your meetings.",
+    "needsReconnect": "The Fathom connection expired. Reconnect your account.",
+    "goToSettings": "Go to Integrations",
+    "errors": {
+      "load": "Could not load your Fathom meetings."
+    },
+    "imports": {
+      "imported": "Imported into {{project}}",
+      "importing": "Importing into {{project}}",
+      "failed": "Import into {{project}} failed",
+      "retry": "Retry",
+      "retryError": "Could not retry."
+    },
+    "dialog": {
+      "title": "Import meeting",
+      "description": "The recording and transcript are downloaded from Fathom. The meeting shows up in Ingestion as pending, ready for extraction.",
+      "project": "Project",
+      "selectProject": "Select a project",
+      "alreadyImported": "{{project}} (already imported)",
+      "noProjects": "You have no projects you can import meetings into.",
+      "cancel": "Cancel",
+      "submit": "Import",
+      "submitting": "Importing...",
+      "close": "Close",
+      "errors": {
+        "alreadyImported": "This meeting is already imported into this project.",
+        "storage": "Recording storage is not configured on this server.",
+        "generic": "Could not import. Try again."
+      }
     }
   }
 }

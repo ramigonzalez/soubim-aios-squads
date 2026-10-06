@@ -32,6 +32,13 @@ def handle_process_source(payload: dict) -> None:
     process_approved_source(payload["source_id"], raise_errors=True)
 
 
+def handle_fathom_import(payload: dict) -> None:
+    """Download a picked Fathom recording into storage and create its meeting (Story 13.4)."""
+    from app.services.fathom_import import run_import
+
+    run_import(payload["import_id"])
+
+
 def _not_implemented(story: str) -> Callable[[dict], None]:
     def handler(payload: dict) -> None:
         raise jobs.PermanentJobError(f"Job type not implemented yet (Story {story})")
@@ -40,7 +47,7 @@ def _not_implemented(story: str) -> Callable[[dict], None]:
 
 HANDLERS: Dict[str, Callable[[dict], None]] = {
     "process_source": handle_process_source,
-    "fathom_import": _not_implemented("13.4"),
+    "fathom_import": handle_fathom_import,
     "transcribe": _not_implemented("14.1"),
 }
 

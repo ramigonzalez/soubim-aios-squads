@@ -25,6 +25,54 @@
     "errors": {
       "load": "Não foi possível carregar o status da integração.",
       "action": "Algo deu errado. Tente novamente."
+    },
+    "browse": "Ver reuniões do Fathom"
+  },
+  "meetings": {
+    "title": "Reuniões do Fathom",
+    "subtitle": "Escolha quais reuniões da sua conta do Fathom importar para um projeto. Nada é importado automaticamente.",
+    "back": "Integrações",
+    "search": "Buscar por título ou participante",
+    "searchHint": "A busca considera as reuniões já carregadas.",
+    "empty": "Nenhuma reunião encontrada na sua conta do Fathom.",
+    "noMatch": "Nenhuma reunião carregada corresponde à busca.",
+    "loadMore": "Carregar mais",
+    "loadingMore": "Carregando...",
+    "untitled": "Reunião sem título",
+    "duration": "{{count}} min",
+    "invitees_one": "{{count}} convidado",
+    "invitees_other": "{{count}} convidados",
+    "more": "+{{count}}",
+    "import": "Importar",
+    "notConnected": "Conecte sua conta do Fathom para ver suas reuniões.",
+    "needsReconnect": "A conexão com o Fathom expirou. Reconecte sua conta.",
+    "goToSettings": "Ir para Integrações",
+    "errors": {
+      "load": "Não foi possível carregar suas reuniões do Fathom."
+    },
+    "imports": {
+      "imported": "Importada em {{project}}",
+      "importing": "Importando para {{project}}",
+      "failed": "Falha ao importar para {{project}}",
+      "retry": "Tentar novamente",
+      "retryError": "Não foi possível tentar novamente."
+    },
+    "dialog": {
+      "title": "Importar reunião",
+      "description": "A gravação e a transcrição serão baixadas do Fathom. A reunião aparece em Ingestão como pendente, pronta para a extração.",
+      "project": "Projeto",
+      "selectProject": "Selecione um projeto",
+      "alreadyImported": "{{project}} (já importada)",
+      "noProjects": "Você não tem projetos em que possa importar reuniões.",
+      "cancel": "Cancelar",
+      "submit": "Importar",
+      "submitting": "Importando...",
+      "close": "Fechar",
+      "errors": {
+        "alreadyImported": "Esta reunião já foi importada neste projeto.",
+        "storage": "O armazenamento de gravações não está configurado neste servidor.",
+        "generic": "Não foi possível importar. Tente novamente."
+      }
     }
   }
 }

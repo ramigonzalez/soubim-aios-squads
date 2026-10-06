@@ -178,6 +178,15 @@ def apply_tokens(connection: FathomConnection, tokens: TokenSet) -> None:
 # --------------------------------------------------------------------------- API
 
 
+def _expiring(conn: FathomConnection) -> bool:
+    return conn.expires_at is not None and utcnow() >= conn.expires_at - REFRESH_MARGIN
+
+
+def is_valid_id(value) -> bool:
+    """True for an id that may go into a Fathom URL path (recording / download ids)."""
+    return bool(_PATH_ID.match(str(value)))
+
+
 @dataclass
 class MeetingsPage:
     items: List[Dict[str, Any]] = field(default_factory=list)
@@ -209,8 +218,27 @@ class FathomClient:
 
     # -- tokens
 
-    def refresh(self) -> None:
-        conn = self.connection
+    def refresh(self, used_access_enc: Optional[str] = None) -> None:
+        """Refresh the access token, safely when the API and the worker share the connection.
+
+        The connection row is locked (``SELECT … FOR UPDATE``) for the whole refresh, so two
+        processes never send the same refresh token to Fathom (a rotated refresh token would be
+        invalidated and the connection wrongly marked as needing reconnect). After the lock the
+        row is re-read: if another process already replaced the token we were using (and the new
+        one is not about to expire), that token is used and no refresh happens.
+        ``used_access_enc`` is the encrypted access token the caller used (defaults to the
+        in-memory one).
+        """
+        if used_access_enc is None:
+            used_access_enc = self.connection.access_token_enc
+        conn = self._lock_connection()
+        if conn.revoked_at is not None:
+            self.db.commit()  # release the lock
+            raise FathomReconnectRequired("Fathom connection needs to be reconnected")
+        if conn.access_token_enc != used_access_enc and not _expiring(conn):
+            self.db.commit()  # release the lock: someone else refreshed while we waited
+            logger.info("Fathom token for connection %s already refreshed by another process", conn.id)
+            return
         if not conn.refresh_token_enc:
             self._mark_reconnect()
         try:
@@ -224,10 +252,29 @@ class FathomClient:
             if exc.status_code in (400, 401, 403):  # invalid_grant & co: the grant is gone
                 logger.warning("Fathom refresh rejected for connection %s: HTTP %s", conn.id, exc.status_code)
                 self._mark_reconnect()
+            self.db.rollback()  # release the lock
+            raise
+        except FathomError:
+            self.db.rollback()
             raise
         apply_tokens(conn, tokens)
-        self.db.commit()
+        self.db.commit()  # stores the new tokens and releases the lock
         logger.info("Fathom token refreshed for connection %s", conn.id)
+
+    def _lock_connection(self) -> FathomConnection:
+        """Re-read the connection row under a row lock (no-op lock on SQLite)."""
+        conn = (
+            self.db.query(FathomConnection)
+            .filter(FathomConnection.id == self.connection.id)
+            .with_for_update()
+            .populate_existing()
+            .first()
+        )
+        if conn is None:  # disconnected meanwhile
+            self.db.rollback()
+            raise FathomReconnectRequired("Fathom is not connected anymore")
+        self.connection = conn
+        return conn
 
     def _mark_reconnect(self) -> None:
         self.connection.revoked_at = utcnow()
@@ -238,8 +285,9 @@ class FathomClient:
         conn = self.connection
         if conn.revoked_at is not None:
             raise FathomReconnectRequired("Fathom connection needs to be reconnected")
-        if conn.expires_at is not None and utcnow() >= conn.expires_at - REFRESH_MARGIN:
-            self.refresh()
+        if _expiring(conn):
+            self.refresh(conn.access_token_enc)
+            conn = self.connection
         try:
             return decrypt_token(conn.access_token_enc)
         except TokenEncryptionError:  # key changed: the user must reconnect
@@ -251,12 +299,13 @@ class FathomClient:
     def _request(self, method: str, path: str, *, params=None, json=None, action: str = "request") -> Dict[str, Any]:
         for attempt in (1, 2):
             headers = {"Authorization": f"Bearer {self.access_token()}"}
+            used_access_enc = self.connection.access_token_enc
             try:
                 response = self.http.request(method, API_BASE + path, params=params, json=json, headers=headers)
             except httpx.HTTPError as exc:
                 raise FathomError(f"Fathom {action} failed: {type(exc).__name__}") from exc
             if response.status_code == 401 and attempt == 1:
-                self.refresh()  # token revoked/expired early: refresh once and retry
+                self.refresh(used_access_enc)  # token revoked/expired early: refresh once and retry
                 continue
             if response.status_code not in (200, 201, 202):
                 raise FathomAPIError(response.status_code, _error_code(response), action)

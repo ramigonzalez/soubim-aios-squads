@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
 const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
 const IntegrationsSettings = lazy(() => import('./pages/IntegrationsSettings'))
+const FathomMeetings = lazy(() => import('./pages/FathomMeetings'))
 
 const queryClient = new QueryClient()
 
@@ -95,6 +96,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
                 <IntegrationsSettings />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/integrations/fathom"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <FathomMeetings />
               </Suspense>
             </ProtectedRoute>
           }

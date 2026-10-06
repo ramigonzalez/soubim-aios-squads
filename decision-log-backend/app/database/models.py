@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     TypeDecorator,
+    UniqueConstraint,
     func,
     text,
 )
@@ -417,6 +418,39 @@ class FathomPendingConnection(Base):
     expires_at = Column(DateTime, nullable=False)
     consumed_at = Column(DateTime)
     created_at = Column(DateTime, nullable=False, default=func.now())
+
+
+class FathomImport(Base):
+    """A Fathom recording picked for import into a project (Story 13.4).
+
+    Created when the user picks a recording; the ``fathom_import`` worker job downloads the
+    recording into storage and creates the Source **with this row's id** (so the storage key
+    is known before the Source exists). ``(project_id, recording_id)`` is unique: the same
+    recording cannot be imported twice into a project. Deleting the Source deletes this row
+    (the recording can then be imported again). Status is derived: ``source_id`` set → imported,
+    otherwise the job's status (queued / running / failed).
+    """
+
+    __tablename__ = "fathom_imports"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    recording_id = Column(String(128), nullable=False)
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))  # importer (whose Fathom account)
+    source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), unique=True)
+    job_id = Column(GUID(), ForeignKey("jobs.id", ondelete="SET NULL"))
+    download_id = Column(String(128))  # Fathom download being prepared; reused across retries
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    project = relationship("Project")
+    source = relationship("Source")
+    job = relationship("Job")
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "recording_id", name="uq_fathom_imports_project_recording"),
+        Index("idx_fathom_imports_recording", "recording_id"),
+    )
 
 
 class ProjectParticipant(Base):
