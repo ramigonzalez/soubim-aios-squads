@@ -119,7 +119,7 @@ class TestComplete:
         up = presign(db_session, user, project)
         key = f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"
         fake_s3.objects[key] = b"x" * 1000
-        body = complete(db_session, user, project, source_id=up["source_id"], video_extension=".mp4",
+        body = complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension=".mp4",
                         transcript=TRANSCRIPT, participants=["Ana", " ", "Bruno"])
         src = db_session.query(Source).one()
         assert body["id"] == up["source_id"] == str(src.id)
@@ -130,7 +130,7 @@ class TestComplete:
     def test_missing_object_is_404_and_creates_nothing(self, db_session, user, project, fake_s3):
         up = presign(db_session, user, project)
         with pytest.raises(HTTPException) as exc:
-            complete(db_session, user, project, source_id=up["source_id"], video_extension=".mp4")
+            complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension=".mp4")
         assert code(exc) == 404
         assert db_session.query(Source).count() == 0
 
@@ -140,10 +140,10 @@ class TestComplete:
         fake_s3.objects[key] = b"x" * 600
         monkeypatch.setattr(settings, "recording_max_bytes", 500)
         with pytest.raises(HTTPException) as exc:
-            complete(db_session, user, project, source_id=up["source_id"], video_extension="mp4")
+            complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
         assert code(exc) == 413 and key not in fake_s3.objects
 
-    def test_object_of_another_project_org_is_not_found(self, db_session, user, project, fake_s3):
+    def test_object_of_another_project_org_is_refused(self, db_session, user, project, fake_s3):
         other_org = make_org(db_session, "Other", "other2")
         other = Project(owner_organization_id=other_org.id, name="Other")
         db_session.add(other)
@@ -151,20 +151,20 @@ class TestComplete:
         fake_s3.objects[f"org/{other_org.id}/sources/{'1' * 8}-1111-4111-8111-{'1' * 12}/recording.mp4"] = b"x"
         with pytest.raises(HTTPException) as exc:
             complete(db_session, user, project, source_id=f"{'1' * 8}-1111-4111-8111-{'1' * 12}", video_extension="mp4")
-        assert code(exc) == 404
+        assert code(exc) == 403  # no token for it
 
     def test_second_complete_is_409(self, db_session, user, project, fake_s3):
         up = presign(db_session, user, project)
         fake_s3.objects[f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"] = b"x"
-        complete(db_session, user, project, source_id=up["source_id"], video_extension="mp4")
+        complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
         with pytest.raises(HTTPException) as exc:
-            complete(db_session, user, project, source_id=up["source_id"], video_extension="mp4")
+            complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
         assert code(exc) == 409
 
     def test_video_without_transcript_is_allowed(self, db_session, user, project, fake_s3):
         up = presign(db_session, user, project)
         fake_s3.objects[f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"] = b"x"
-        complete(db_session, user, project, source_id=up["source_id"], video_extension="mp4")
+        complete(db_session, user, project, source_id=up["source_id"], upload_token=up["upload_token"], video_extension="mp4")
         assert db_session.query(Source).one().raw_content is None
 
     def test_transcript_only_needs_no_storage(self, db_session, user, project, monkeypatch):
@@ -195,6 +195,56 @@ class TestComplete:
     def test_title_is_required(self):
         with pytest.raises(ValidationError):
             routes.CompleteRequest(project_id="p", title="", occurred_at=NOW)
+
+
+class TestUploadToken:
+    def _uploaded(self, db, user, project, fake_s3):
+        up = presign(db, user, project)
+        fake_s3.objects[f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"] = b"x"
+        return up
+
+    def _try(self, db, user, project, up, **over):
+        kw = {"source_id": up["source_id"], "video_extension": "mp4", "upload_token": up["upload_token"], **over}
+        with pytest.raises(HTTPException) as exc:
+            complete(db, user, project, **kw)
+        assert code(exc) == 403
+        assert db.query(Source).count() == 0
+
+    def test_token_of_user_a_used_by_user_b(self, db_session, org, user, project, fake_s3):
+        up = self._uploaded(db_session, user, project, fake_s3)
+        b = User(email="b@soubim.com", password_hash="x", name="B", role="director")
+        db_session.add(b)
+        make_org_member(db_session, b, "admin", org)
+        db_session.commit()
+        self._try(db_session, b, project, up)
+
+    def test_token_of_project_x_used_with_project_y(self, db_session, org, user, project, fake_s3):
+        up = self._uploaded(db_session, user, project, fake_s3)
+        y = Project(owner_organization_id=org.id, name="Y")
+        db_session.add(y)
+        db_session.commit()
+        fake_s3.objects[f"org/{org.id}/sources/{up['source_id']}/recording.mp4"] = b"x"
+        self._try(db_session, user, y, up)
+
+    def test_expired_token(self, db_session, user, project, fake_s3):
+        up = self._uploaded(db_session, user, project, fake_s3)
+        key = f"org/{project.owner_organization_id}/sources/{up['source_id']}/recording.mp4"
+        old = manual_upload.make_upload_token(up["source_id"], str(project.id), str(user.id), key, now=0)
+        self._try(db_session, user, project, up, upload_token=old)
+
+    def test_tampered_missing_and_other_id(self, db_session, user, project, fake_s3):
+        up = self._uploaded(db_session, user, project, fake_s3)
+        expires, mac = up["upload_token"].split(".")
+        self._try(db_session, user, project, up, upload_token=f"{expires}.{'0' * len(mac)}")
+        self._try(db_session, user, project, up, upload_token=f"{int(expires) + 99999}.{mac}")
+        self._try(db_session, user, project, up, upload_token="garbage")
+        self._try(db_session, user, project, up, upload_token=None)
+        self._try(db_session, user, project, up, video_extension="webm")  # key is bound to the extension
+
+    def test_happy_path_with_token(self, db_session, user, project, fake_s3):
+        up = self._uploaded(db_session, user, project, fake_s3)
+        assert complete(db_session, user, project, source_id=up["source_id"], video_extension="mp4",
+                        upload_token=up["upload_token"])["id"] == up["source_id"]
 
 
 def test_upload_projects_lists_writable_projects(db_session, user, project):

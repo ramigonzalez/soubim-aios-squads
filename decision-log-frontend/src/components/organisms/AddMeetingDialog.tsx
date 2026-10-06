@@ -129,6 +129,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
     try {
       let sourceId: string | null = null
       let extension: string | null = null
+      let token: string | null = null
       if (video) {
         setStage('uploading')
         setProgress(0)
@@ -136,6 +137,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
         await uploadService.putVideo(target, video, setProgress, abortRef.current.signal)
         sourceId = target.source_id
         extension = target.video_extension
+        token = target.upload_token
       }
       setStage('saving')
       await uploadService.complete({
@@ -146,6 +148,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
         transcript: transcriptText,
         source_id: sourceId,
         video_extension: extension,
+        upload_token: token,
       })
       queryClient.invalidateQueries('ingestion')
       queryClient.invalidateQueries('ingestion-history')

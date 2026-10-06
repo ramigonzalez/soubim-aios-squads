@@ -13,6 +13,7 @@ const svc = vi.mocked(uploadService)
 const TARGET = {
   source_id: 'src-9',
   video_extension: '.mp4',
+  upload_token: 'tok-1',
   upload_url: 'https://storage.test/x',
   method: 'PUT' as const,
   headers: { 'Content-Type': 'video/mp4' },
@@ -80,7 +81,7 @@ describe('AddMeetingDialog (Story 13.5)', () => {
     await user.click(screen.getByRole('button', { name: 'Add meeting' }))
     await waitFor(() => expect(svc.complete).toHaveBeenCalled())
     expect(svc.presign).toHaveBeenCalledWith({ project_id: 'p1', filename: 'obra.mp4', size: 3 })
-    expect(svc.complete.mock.calls[0][0]).toMatchObject({ source_id: 'src-9', video_extension: '.mp4', transcript: null })
+    expect(svc.complete.mock.calls[0][0]).toMatchObject({ source_id: 'src-9', video_extension: '.mp4', upload_token: 'tok-1', transcript: null })
     await waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 

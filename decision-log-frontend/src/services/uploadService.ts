@@ -13,6 +13,7 @@ export interface UploadProject {
 export interface PresignedUpload {
   source_id: string
   video_extension: string
+  upload_token: string
   upload_url: string
   method: 'PUT'
   headers: Record<string, string>
@@ -28,6 +29,7 @@ export interface CompleteUploadBody {
   transcript?: string | null
   source_id?: string | null
   video_extension?: string | null
+  upload_token?: string | null
 }
 
 export const uploadService = {

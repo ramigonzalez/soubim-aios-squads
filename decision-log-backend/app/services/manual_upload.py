@@ -7,7 +7,10 @@ Ingestão. A transcript-only upload skips storage entirely. Nothing is extracted
 meeting is approved.
 """
 
+import hashlib
+import hmac
 import logging
+import time
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -24,6 +27,32 @@ SOURCE_LABEL = "Upload"
 UPLOAD_URL_TTL = 2 * 60 * 60  # seconds; a 2 GB video on a slow link
 MAX_TRANSCRIPT_CHARS = 2_000_000
 MAX_PARTICIPANTS = 100
+TOKEN_TTL = 6 * 60 * 60  # seconds between presign and complete
+
+
+def _token_mac(source_id: str, project_id: str, user_id: str, key: str, expires: int) -> str:
+    message = "|".join(["upload", source_id, project_id, user_id, key, str(expires)]).encode()
+    secret = hmac.new(settings.jwt_secret_key.encode(), b"manual-upload-token", hashlib.sha256).digest()
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+
+def make_upload_token(source_id: str, project_id: str, user_id: str, key: str, now: Optional[float] = None) -> str:
+    expires = int((now if now is not None else time.time()) + TOKEN_TTL)
+    return f"{expires}.{_token_mac(source_id, project_id, user_id, key, expires)}"
+
+
+def verify_upload_token(token: Optional[str], source_id: str, project_id: str, user_id: str, key: str,
+                        now: Optional[float] = None) -> None:
+    """403 unless the token was issued by presign for exactly this user, project, id and key, and is fresh."""
+    try:
+        expires_s, mac = (token or "").split(".", 1)
+        expires = int(expires_s)
+    except ValueError:
+        raise UploadError(403, "Invalid upload token")
+    if not hmac.compare_digest(_token_mac(source_id, project_id, user_id, key, expires), mac):
+        raise UploadError(403, "Invalid upload token")
+    if expires < (now if now is not None else time.time()):
+        raise UploadError(403, "The upload token expired; upload the video again")
 
 
 class UploadError(Exception):
@@ -48,7 +77,7 @@ def _org_id(project: Project) -> Optional[str]:
     return str(org) if org else None
 
 
-def presign(project: Project, filename: str, size: int) -> dict:
+def presign(project: Project, user_id: str, filename: str, size: int) -> dict:
     """Validate the video and return the signed PUT target. The caller checked write access."""
     if not storage.is_enabled():
         raise UploadError(503, "Recording storage is not configured")
@@ -68,6 +97,7 @@ def presign(project: Project, filename: str, size: int) -> dict:
     return {
         "source_id": source_id,
         "video_extension": ext,
+        "upload_token": make_upload_token(source_id, str(project.id), str(user_id), key),
         "upload_url": url,
         "method": "PUT",
         "headers": {"Content-Type": content_type},
@@ -86,6 +116,8 @@ def complete(
     transcript: Optional[str],
     source_id: Optional[str],
     video_ext: Optional[str],
+    user_id: str,
+    upload_token: Optional[str] = None,
 ) -> Source:
     """Create the pending Source; verify the uploaded video first when there is one."""
     transcript = (transcript or "").strip() or None
@@ -106,6 +138,7 @@ def complete(
         if db.query(Source.id).filter(Source.id == new_id).first():
             raise UploadError(409, "This upload was already completed")
         key = storage.recording_key(_org_id(project), str(new_id), ext)
+        verify_upload_token(upload_token, str(new_id), str(project.id), str(user_id), key)
         try:
             meta = storage.head(key)
         except storage.StorageError as exc:
