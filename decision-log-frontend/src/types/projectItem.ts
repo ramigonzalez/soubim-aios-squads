@@ -83,6 +83,7 @@ export interface SourceInfo {
   occurred_at: string
   summary?: string | null  // Story 7.12: meeting summary
   visibility?: MeetingVisibility | null  // Story 12.4
+  thumbnail_url?: string | null  // Story 13.12: presigned, only for meetings the user may see
 }
 
 /** Story 12.4: who sees a meeting — its owner organization only, or every organization on the project */

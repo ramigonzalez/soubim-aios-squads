@@ -173,3 +173,8 @@ def recording_prefix(org_id: Optional[str], source_id: str) -> str:
 def recording_key(org_id: Optional[str], source_id: str, ext: str = ".mp4") -> str:
     """org/<org_id>/sources/<source_id>/recording.<ext> (org/unknown/... if the project has no org)."""
     return recording_prefix(org_id, source_id) + ext.lstrip(".").lower()
+
+
+def thumbnail_key(org_id: Optional[str], source_id: str) -> str:
+    """org/<org_id>/sources/<source_id>/thumbnail.jpg (Story 13.12)."""
+    return f"org/{org_id or 'unknown'}/sources/{source_id}/thumbnail.jpg"

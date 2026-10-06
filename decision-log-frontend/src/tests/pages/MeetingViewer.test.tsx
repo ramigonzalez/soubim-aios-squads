@@ -106,6 +106,19 @@ describe('MeetingViewer (Story 7.13)', () => {
     expect(video.getAttribute('src')).toMatch(/\/api\/recordings\/src-1\?expires=1&signature=abc$/)
   })
 
+  it('uses the thumbnail as the video poster (Story 13.12)', () => {
+    useMeetingMock.mockReturnValue({
+      data: makeMeeting({
+        recording: { type: 'file', url: '/api/recordings/src-1?expires=1&signature=abc' },
+        thumbnail_url: 'https://storage.test/t.jpg',
+      }),
+      isLoading: false,
+      error: null,
+    })
+    renderAt('/meetings/src-1')
+    expect(screen.getByTestId('meeting-video')).toHaveAttribute('poster', 'https://storage.test/t.jpg')
+  })
+
   it('clicking a turn seeks the recording there', async () => {
     useMeetingMock.mockReturnValue({
       data: makeMeeting({ recording: { type: 'file', url: '/api/recordings/src-1?expires=1&signature=abc' } }),

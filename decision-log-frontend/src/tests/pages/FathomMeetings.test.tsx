@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -101,6 +101,37 @@ describe('FathomMeetings (Story 13.4)', () => {
     renderPage()
     expect(await screen.findByText('Imported into D/SEASON')).toBeInTheDocument()
     expect(screen.getByText('pending')).toBeInTheDocument()
+  })
+
+  it('shows the thumbnail of an imported meeting, lazy-loaded, with alt text (Story 13.12)', async () => {
+    service.listFathomMeetings.mockResolvedValue({
+      items: [meeting({ imports: [anImport({ thumbnail_url: 'https://storage.test/t.jpg' })] })],
+      next_cursor: null,
+    })
+    renderPage()
+    const img = await screen.findByRole('img', { name: 'Thumbnail of Coordenação D/SEASON' })
+    expect(img).toHaveAttribute('src', 'https://storage.test/t.jpg')
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(screen.queryByTestId('meeting-thumbnail-placeholder')).not.toBeInTheDocument()
+  })
+
+  it('shows a placeholder with duration and platform for a meeting not imported yet (Story 13.12)', async () => {
+    service.listFathomMeetings.mockResolvedValue({ items: [meeting({ platform: 'zoom' })], next_cursor: null })
+    renderPage()
+    const placeholder = await screen.findByTestId('meeting-thumbnail-placeholder')
+    expect(within(placeholder).getByText('Zoom')).toBeInTheDocument()
+    expect(within(placeholder).getByText('98 min')).toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the placeholder when the image fails to load (Story 13.12)', async () => {
+    service.listFathomMeetings.mockResolvedValue({
+      items: [meeting({ imports: [anImport({ thumbnail_url: 'https://storage.test/expired.jpg' })] })],
+      next_cursor: null,
+    })
+    renderPage()
+    fireEvent.error(await screen.findByRole('img'))
+    expect(await screen.findByTestId('meeting-thumbnail-placeholder')).toBeInTheDocument()
   })
 
   it('shows imports in progress with the worker badge', async () => {

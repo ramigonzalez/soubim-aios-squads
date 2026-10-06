@@ -56,6 +56,20 @@ describe('SourceGroupAccordion', () => {
     expect(screen.getByTitle('Meeting')).toBeInTheDocument()
   })
 
+  it('shows a lazy-loaded thumbnail in the header instead of the icon (Story 13.12)', () => {
+    render(
+      <SourceGroupAccordion
+        source={{ ...makeSource(), thumbnail_url: 'https://storage.test/t.jpg' }}
+        items={[makeItem()]}
+        onItemClick={mockOnItemClick}
+      />
+    )
+    const img = screen.getByRole('img', { name: 'Thumbnail of Design Coordination Meeting' })
+    expect(img).toHaveAttribute('src', 'https://storage.test/t.jpg')
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(screen.queryByTitle('Meeting')).not.toBeInTheDocument()
+  })
+
   it('shows item count', () => {
     const items = [makeItem({ id: 'a' }), makeItem({ id: 'b' }), makeItem({ id: 'c' })]
     render(

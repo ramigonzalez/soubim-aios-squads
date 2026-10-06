@@ -44,6 +44,17 @@ def handle_fathom_import(payload: dict) -> None:
     run_import(payload["import_id"])
 
 
+def handle_thumbnail(payload: dict) -> None:
+    """Make the thumbnail of a stored recording (Story 13.12). Failures retry, then give up quietly."""
+    from app.services import thumbnails
+
+    db = SessionLocal()
+    try:
+        thumbnails.generate(db, payload["source_id"])
+    finally:
+        db.close()
+
+
 def _not_implemented(story: str) -> Callable[[dict], None]:
     def handler(payload: dict) -> None:
         raise jobs.PermanentJobError(f"Job type not implemented yet (Story {story})")
@@ -53,6 +64,7 @@ def _not_implemented(story: str) -> Callable[[dict], None]:
 HANDLERS: Dict[str, Callable[[dict], None]] = {
     "process_source": handle_process_source,
     "fathom_import": handle_fathom_import,
+    "thumbnail": handle_thumbnail,  # Story 13.12
     "transcribe": _not_implemented("14.1"),
 }
 

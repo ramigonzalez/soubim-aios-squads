@@ -158,6 +158,7 @@ export function MeetingViewer() {
               src={recordingSrc(meeting.recording)}
               controls
               preload="metadata"
+              poster={meeting.thumbnail_url || undefined}
               onLoadedMetadata={handleLoadedMetadata}
               className="w-full rounded-lg bg-black"
               data-testid="meeting-video"

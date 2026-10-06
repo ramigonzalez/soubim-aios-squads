@@ -80,6 +80,7 @@ class SourceInfo(BaseModel):
     occurred_at: Optional[str] = None
     summary: Optional[str] = None  # Story 7.12: meeting summary (Source.ai_summary)
     visibility: Optional[str] = None  # Story 12.4: 'internal' | 'shared'
+    thumbnail_url: Optional[str] = None  # Story 13.12: presigned thumbnail, only for visible meetings
 
 
 class ProjectItemResponse(BaseModel):

@@ -342,6 +342,7 @@ class Source(Base):
     duration_minutes = Column(Integer)
     webhook_id = Column(String(255))
     recording_url = Column(String(1000))  # Story 7.13: external recording link (e.g. Fathom share URL)
+    thumbnail_key = Column(String(500))  # Story 13.12: storage key of the generated thumbnail (JPEG), None until made
 
     # Email-specific
     email_from = Column(String(500))

@@ -17,6 +17,7 @@ from app.api.models.project_item import (
 )
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.thumbnails import thumbnail_url
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import capture_original
 from app.services.access import (
@@ -67,6 +68,7 @@ def _item_to_response(item: ProjectItem, show_original: bool = False) -> dict:
             occurred_at=item.source.occurred_at.isoformat() if item.source.occurred_at else None,
             summary=item.source.ai_summary,
             visibility=item.source.visibility,
+            thumbnail_url=thumbnail_url(item.source),  # Story 13.12
         ).model_dump()
 
     return {

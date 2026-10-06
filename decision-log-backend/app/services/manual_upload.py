@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.models import Project, Source
-from app.services import recordings, storage
+from app.services import recordings, storage, thumbnails
 from app.services.access import INTERNAL, VISIBILITIES, acting_organization_id, can_create_shared
 
 logger = logging.getLogger(__name__)
@@ -182,4 +182,6 @@ def complete(
             raise UploadError(409, "This upload was already completed") from exc
         raise
     db.refresh(source)
+    if source_id:
+        thumbnails.enqueue(db, source)  # Story 13.12: never fails the upload
     return source

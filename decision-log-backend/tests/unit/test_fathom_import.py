@@ -173,6 +173,7 @@ class TestFormatting:
                          {"name": "bruno@example.com", "email": "bruno@example.com"}],
             "recorded_by": {"name": "Rami", "email": "rami@example.com"},
             "share_url": "https://fathom.video/share/abc",
+            "platform": None,  # Story 13.12: no meeting_url in this fixture
         }
 
     def test_meeting_summary_falls_back_to_meeting_title_and_scheduled_times(self):
@@ -346,7 +347,8 @@ class TestImportJob:
         key = f"org/{project.owner_organization_id}/sources/{body['id']}/recording.mp4"
         assert fake_s3.objects[key] == b"mp4-bytes" * 10
         assert video["urls"] == [VIDEO_URL]
-        assert db_session.query(Job).one().status == "succeeded"
+        assert db_session.query(Job).filter(Job.type == "fathom_import").one().status == "succeeded"
+        assert db_session.query(Job).filter(Job.type == "thumbnail").count() == 1  # Story 13.12
         assert imp.download_id is None
         # the list was read with transcripts; download requested once, polled until completed
         assert requests_to(fake, "GET", "/meetings")[0].url.params["include_transcript"] == "true"

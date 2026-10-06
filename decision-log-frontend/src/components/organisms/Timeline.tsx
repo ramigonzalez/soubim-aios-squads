@@ -37,6 +37,7 @@ interface DenseTimelineGroup {
       ai_summary?: string
       meetingId?: string  // V2 source id — enables the meeting viewer link
       visibility?: MeetingVisibility | null  // Story 12.4: internal / shared badge
+      thumbnail_url?: string | null  // Story 13.12
     }
     items: ProjectItem[]
   }[]
@@ -81,6 +82,7 @@ function buildDenseGroups(items: ProjectItem[]): DenseTimelineGroup[] {
             ai_summary: item.source?.summary || undefined,
             meetingId: item.source?.id,
             visibility: item.source?.visibility,
+            thumbnail_url: item.source?.thumbnail_url,
           },
           items: [],
         })
@@ -142,6 +144,7 @@ function buildDenseGroupsByDiscipline(items: ProjectItem[]): DenseTimelineGroup[
             ai_summary: item.source?.summary || undefined,
             meetingId: item.source?.id,
             visibility: item.source?.visibility,
+            thumbnail_url: item.source?.thumbnail_url,
           },
           items: [],
         })
