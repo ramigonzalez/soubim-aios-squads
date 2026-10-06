@@ -1,12 +1,14 @@
 """Extraction versions of a meeting (Story 13.7): list runs, re-extract, switch the active run."""
 
 from uuid import UUID
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
+from app.config import settings
 from app.database.models import ExtractionRun, ProjectItem, User
 from app.database.session import get_db
 from app.services.access import ADMIN, has_access, project_access_level, require_source_access
@@ -16,6 +18,23 @@ from app.services.jobs import enqueue, latest_job_for_source
 router = APIRouter()
 
 EXTRACTABLE_SOURCE_TYPES = ("meeting", "manual_input")
+
+
+def _calculate_extraction_cost(model: Optional[str], input_tokens: Optional[int], output_tokens: Optional[int]) -> Optional[float]:
+    """Calculate estimated cost in USD for an extraction run (Story 13.6).
+
+    Uses pricing from settings.model_pricing, keyed by model.
+    Returns None if model or tokens are missing / model not in pricing table.
+    """
+    if not model or input_tokens is None or output_tokens is None:
+        return None
+    pricing = settings.model_pricing.get(model)
+    if not pricing:
+        return None
+    # Cost = (input_tokens / 1M) * input_price + (output_tokens / 1M) * output_price
+    input_cost = (input_tokens / 1_000_000) * pricing["input"]
+    output_cost = (output_tokens / 1_000_000) * pricing["output"]
+    return round(input_cost + output_cost, 5)  # round to 5 decimal places for clarity
 
 
 def _runs_payload(db: Session, source, user) -> dict:
@@ -55,6 +74,7 @@ def _runs_payload(db: Session, source, user) -> dict:
                 "created_by_name": creators.get(str(r.created_by)) if r.created_by else None,
                 "input_tokens": r.input_tokens,
                 "output_tokens": r.output_tokens,
+                "estimated_cost_usd": _calculate_extraction_cost(r.model, r.input_tokens, r.output_tokens),  # Story 13.6
                 "item_count": sum(counts.get(str(r.id), {}).values()),
                 "counts_by_type": counts.get(str(r.id), {}),
             }

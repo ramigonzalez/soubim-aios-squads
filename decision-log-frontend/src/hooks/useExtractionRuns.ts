@@ -16,6 +16,7 @@ export interface ExtractionRun {
   created_by_name: string | null
   input_tokens: number | null
   output_tokens: number | null
+  estimated_cost_usd: number | null  // Story 13.6: estimated cost in USD
   item_count: number
   counts_by_type: Record<string, number>
 }
