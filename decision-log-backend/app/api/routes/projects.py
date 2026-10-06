@@ -11,6 +11,7 @@ from uuid import UUID
 from app.database.session import get_db
 from app.services.access import ADMIN, admin_organization, is_platform_admin, require_project_access
 from app.database.models import Project, ProjectMember
+from app.services.organizations import active_organization_id
 from app.services.project_sharing import add_owner_row
 from app.services.project_service import (
     get_projects,
@@ -95,6 +96,7 @@ async def list_projects(
         limit=limit,
         offset=offset,
         archived=archived,
+        active_organization_id=active_organization_id(request),
     )
 
     return {

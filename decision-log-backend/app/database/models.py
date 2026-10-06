@@ -134,6 +134,40 @@ class OrganizationMember(Base):
     )
 
 
+class OrganizationInvitation(Base):
+    """Invitation to join an organization by email (Story 12.5).
+
+    Only the SHA-256 of the token is stored; the raw token exists in the invite link only.
+    ``organization_id`` is NULL for a company that has no organization yet: the organization
+    named ``organization_name`` is created on acceptance and the invitee becomes its ``owner``.
+    """
+
+    __tablename__ = "organization_invitations"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"))
+    organization_name = Column(String(255))
+    email = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False, default="member")
+    token_hash = Column(String(64), unique=True, nullable=False)
+    invited_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    expires_at = Column(DateTime, nullable=False)
+    accepted_at = Column(DateTime)
+    revoked_at = Column(DateTime)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+
+    organization = relationship("Organization")
+
+    __table_args__ = (
+        CheckConstraint("role IN ('owner', 'admin', 'member')", name="ck_organization_invitation_role"),
+        CheckConstraint(
+            "organization_id IS NOT NULL OR organization_name IS NOT NULL", name="ck_organization_invitation_target"
+        ),
+        Index("idx_organization_invitations_org", "organization_id"),
+        Index("idx_organization_invitations_email", "email"),
+    )
+
+
 class Project(Base):
     """Project model for architectural projects."""
 

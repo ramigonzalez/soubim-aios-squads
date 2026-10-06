@@ -1,0 +1,58 @@
+{
+  "title": "Equipe",
+  "subtitle": "Pessoas e convites de {{organization}}",
+  "noAccess": "Somente proprietários e administradores podem gerenciar a equipe.",
+  "roles": {
+    "owner": "Proprietário(a)",
+    "admin": "Administrador(a)",
+    "member": "Membro"
+  },
+  "members": {
+    "title": "Membros",
+    "loading": "Carregando membros...",
+    "name": "Nome",
+    "email": "E-mail",
+    "role": "Papel",
+    "remove": "Remover",
+    "confirmRemove": "Remover {{name}} desta organização?",
+    "error": "Não foi possível atualizar o membro."
+  },
+  "invite": {
+    "title": "Convidar alguém",
+    "email": "E-mail",
+    "role": "Papel",
+    "companyToggle": "Convidar uma empresa que ainda não está no DecisionLog",
+    "companyName": "Nome da empresa",
+    "companyHint": "A organização é criada quando o convite é aceito e quem foi convidado se torna proprietário(a).",
+    "submit": "Enviar convite",
+    "sending": "Enviando...",
+    "created": "Convite criado para {{email}}. Envie este link (ele é exibido apenas uma vez):",
+    "copy": "Copiar link",
+    "copied": "Copiado",
+    "error": "Não foi possível criar o convite."
+  },
+  "pending": {
+    "title": "Convites pendentes",
+    "empty": "Nenhum convite pendente.",
+    "expires": "expira em {{date}}",
+    "revoke": "Revogar"
+  },
+  "accept": {
+    "title": "Entrar em {{organization}}",
+    "loading": "Carregando convite...",
+    "invitedAs": "{{email}} foi convidado(a) como {{role}}.",
+    "notFound": "Este convite não existe.",
+    "gone": "Este convite já foi usado, revogado ou expirou. Peça um novo.",
+    "name": "Seu nome",
+    "password": "Senha (mínimo de 8 caracteres)",
+    "createAccount": "Criar conta e entrar",
+    "creating": "Criando...",
+    "haveAccount": "Este e-mail já tem uma conta. Entre para aceitar o convite.",
+    "login": "Entrar",
+    "accept": "Aceitar convite",
+    "accepting": "Entrando...",
+    "wrongAccount": "Você está conectado como {{current}}, mas este convite é para {{email}}. Saia e entre com o e-mail convidado.",
+    "logout": "Sair",
+    "error": "Não foi possível aceitar o convite."
+  }
+}

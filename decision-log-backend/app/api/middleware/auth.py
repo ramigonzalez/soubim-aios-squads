@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.utils.security import decode_access_token
 from app.services.auth_service import get_user_by_id, UserNotFoundError
+from app.services.organizations import ACTIVE_ORGANIZATION_HEADER, validate_active_organization
 from app.database.session import SessionLocal
 
 
@@ -24,6 +25,7 @@ async def auth_middleware(request: Request, call_next):
         "/api/health",
         "/api/shared/",
         "/api/recordings/",  # Story 7.13: signed, expiring recording links (checked in the route)
+        "/api/invitations/public/",  # Story 12.5: the invitation token identifies the invitee
         "/api/fathom/callback",  # Story 13.3: Fathom OAuth redirect (the signed state identifies the user)
         "/docs",
         "/openapi.json",
@@ -67,6 +69,14 @@ async def auth_middleware(request: Request, call_next):
     try:
         user = get_user_by_id(db, payload.get("user_id"))
         request.state.user = user
+        # Story 12.5: active organization (X-Organization-Id) — the user must belong to it.
+        # /organizations/me lists the memberships, so a stale id must not lock the client out of it.
+        if request.url.path != "/api/organizations/me":
+            request.state.active_organization_id = validate_active_organization(
+                db, user, request.headers.get(ACTIVE_ORGANIZATION_HEADER)
+            )
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     except UserNotFoundError:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,

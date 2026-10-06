@@ -333,3 +333,34 @@ describe('Login Component', () => {
     })
   })
 })
+
+describe('Login ?redirect= (Story 12.5 security review)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().clearAuth()
+    vi.clearAllMocks()
+  })
+
+  async function loginWith(redirect: string) {
+    window.history.pushState({}, '', `/login?redirect=${encodeURIComponent(redirect)}`)
+    vi.mocked(apiModule.default.post).mockResolvedValueOnce({
+      data: { access_token: 't', user: { id: '1', email: 'a@b.com', name: 'A', role: 'client', projects: [] } },
+    })
+    renderLogin()
+    await userEvent.type(screen.getByLabelText(/email/i), 'a@b.com')
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+    await waitFor(() => expect(window.location.pathname).not.toBe('/login'))
+  }
+
+  it('goes back to the invitation after logging in', async () => {
+    await loginWith('/invite/tok123')
+    expect(window.location.pathname).toBe('/invite/tok123')
+  })
+
+  it.each(['/\\evil.com', '//evil.com', 'https://evil.com'])('ignores the open redirect %j', async value => {
+    const before = window.location.origin
+    await loginWith(value)
+    expect(window.location.origin).toBe(before)
+    expect(window.location.pathname).toBe('/projects')
+  })
+})

@@ -1,0 +1,58 @@
+{
+  "title": "Team",
+  "subtitle": "People and invitations of {{organization}}",
+  "noAccess": "Only owners and admins can manage the team.",
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member"
+  },
+  "members": {
+    "title": "Members",
+    "loading": "Loading members...",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "remove": "Remove",
+    "confirmRemove": "Remove {{name}} from this organization?",
+    "error": "Could not update the member."
+  },
+  "invite": {
+    "title": "Invite someone",
+    "email": "Email",
+    "role": "Role",
+    "companyToggle": "Invite a company that is not on DecisionLog yet",
+    "companyName": "Company name",
+    "companyHint": "The organization is created when the invitation is accepted and the invitee becomes its owner.",
+    "submit": "Send invitation",
+    "sending": "Sending...",
+    "created": "Invitation created for {{email}}. Send them this link (it is shown only once):",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "error": "Could not create the invitation."
+  },
+  "pending": {
+    "title": "Pending invitations",
+    "empty": "No pending invitations.",
+    "expires": "expires {{date}}",
+    "revoke": "Revoke"
+  },
+  "accept": {
+    "title": "Join {{organization}}",
+    "loading": "Loading invitation...",
+    "invitedAs": "{{email}} was invited as {{role}}.",
+    "notFound": "This invitation does not exist.",
+    "gone": "This invitation has already been used, revoked or has expired. Ask for a new one.",
+    "name": "Your name",
+    "password": "Password (at least 8 characters)",
+    "createAccount": "Create account and join",
+    "creating": "Creating...",
+    "haveAccount": "This email already has an account. Log in to accept the invitation.",
+    "login": "Log in",
+    "accept": "Accept invitation",
+    "accepting": "Joining...",
+    "wrongAccount": "You are logged in as {{current}}, but this invitation is for {{email}}. Log out and log in with the invited email.",
+    "logout": "Log out",
+    "error": "Could not accept the invitation."
+  }
+}
