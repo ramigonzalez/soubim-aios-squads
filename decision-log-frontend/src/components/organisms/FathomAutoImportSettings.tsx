@@ -1,9 +1,11 @@
 /**
  * FathomAutoImportSettings — opt-in automatic import of new Fathom meetings (Story 13.9).
  *
- * Off by default. When on, Fathom pushes each new meeting of the user's account to DecisionLog:
- * it goes to the default project (internal unless chosen otherwise) as a pending meeting in
- * Ingestão, or — with no default project — waits in the Unassigned list.
+ * Off by default. When on, Fathom pushes each new meeting of the user's account to DecisionLog.
+ * Story 13.16: there is no default project — the projects' Fathom rules (project settings) choose
+ * where each meeting goes; a meeting that matches no project, or more than one, waits in Ingestão.
+ * The visibility applies to every routed meeting (``shared`` falls back to internal on a project
+ * where the user cannot share).
  */
 
 import { useState } from 'react'
@@ -29,12 +31,11 @@ function errorKey(error: unknown): string {
 export function FathomAutoImportSettings({ settings, onSaved }: FathomAutoImportSettingsProps) {
   const { t } = useTranslation('integrations')
   const [enabled, setEnabled] = useState(settings?.enabled ?? false)
-  const [projectId, setProjectId] = useState(settings?.project_id ?? '')
   const [visibility, setVisibility] = useState<MeetingVisibility>(settings?.visibility ?? 'internal')
   const [saved, setSaved] = useState(false)
 
   const { data: projects } = useQuery('fathom-import-projects', integrationsService.getFathomImportProjects, { staleTime: 60_000 })
-  const canShare = !!projects?.find(p => p.id === projectId)?.can_share
+  const canShare = !!projects?.some(p => p.can_share)
 
   const save = useMutation(integrationsService.setFathomAutoImport, {
     onSuccess: () => {
@@ -43,19 +44,9 @@ export function FathomAutoImportSettings({ settings, onSaved }: FathomAutoImport
     },
   })
 
-  const selectProject = (id: string) => {
-    setProjectId(id)
-    setSaved(false)
-    if (!projects?.find(p => p.id === id)?.can_share) setVisibility('internal')
-  }
-
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    save.mutate({
-      enabled,
-      project_id: projectId || null,
-      visibility: projectId && canShare ? visibility : 'internal',
-    })
+    save.mutate({ enabled, visibility: canShare ? visibility : 'internal' })
   }
 
   return (
@@ -74,41 +65,29 @@ export function FathomAutoImportSettings({ settings, onSaved }: FathomAutoImport
 
       {enabled && (
         <>
-          <label className="block">
-            <span className="font-medium text-gray-700">{t('fathom.autoImport.project')}</span>
-            <select
-              value={projectId}
-              onChange={e => selectProject(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">{t('fathom.autoImport.noProject')}</option>
-              {(projects ?? []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </label>
-          {projectId && (
-            <fieldset>
-              <legend className="font-medium text-gray-700">{t('fathom.autoImport.visibility')}</legend>
-              <label className="mt-1 flex items-center gap-2 text-gray-700">
-                <input
-                  type="radio"
-                  name="fathom-auto-visibility"
-                  checked={visibility === 'internal'}
-                  onChange={() => { setVisibility('internal'); setSaved(false) }}
-                />
-                {t('meetings.dialog.visibilityInternal')}
-              </label>
-              <label className={`mt-1 flex items-center gap-2 ${canShare ? 'text-gray-700' : 'text-gray-400'}`}>
-                <input
-                  type="radio"
-                  name="fathom-auto-visibility"
-                  checked={visibility === 'shared'}
-                  disabled={!canShare}
-                  onChange={() => { setVisibility('shared'); setSaved(false) }}
-                />
-                {t('meetings.dialog.visibilityShared')}
-              </label>
-            </fieldset>
-          )}
+          <p className="text-gray-600">{t('fathom.autoImport.routing')}</p>
+          <fieldset>
+            <legend className="font-medium text-gray-700">{t('fathom.autoImport.visibility')}</legend>
+            <label className="mt-1 flex items-center gap-2 text-gray-700">
+              <input
+                type="radio"
+                name="fathom-auto-visibility"
+                checked={visibility === 'internal'}
+                onChange={() => { setVisibility('internal'); setSaved(false) }}
+              />
+              {t('meetings.dialog.visibilityInternal')}
+            </label>
+            <label className={`mt-1 flex items-center gap-2 ${canShare ? 'text-gray-700' : 'text-gray-400'}`}>
+              <input
+                type="radio"
+                name="fathom-auto-visibility"
+                checked={visibility === 'shared'}
+                disabled={!canShare}
+                onChange={() => { setVisibility('shared'); setSaved(false) }}
+              />
+              {t('meetings.dialog.visibilityShared')}
+            </label>
+          </fieldset>
         </>
       )}
 

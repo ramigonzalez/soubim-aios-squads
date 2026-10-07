@@ -6,6 +6,8 @@ import type {
   FathomPreview,
   FathomMeetingsPage,
   FathomStatus,
+  FathomRule,
+  FathomRuleField,
   FathomUnassignedMeeting,
 } from '../types/integrations'
 import type { MeetingVisibility } from '../types/projectItem'
@@ -58,10 +60,9 @@ export const integrationsService = {
   retryFathomImport: (importId: string): Promise<FathomImport> =>
     api.post(`/integrations/fathom/imports/${encodeURIComponent(importId)}/retry`).then(r => r.data),
 
-  /** Story 13.9: opt in/out of the Fathom webhook auto-import (off by default) */
+  /** Story 13.9: opt in/out of the Fathom webhook auto-import (off by default). Story 13.16: no default project */
   setFathomAutoImport: (body: {
     enabled: boolean
-    project_id: string | null
     visibility: MeetingVisibility
   }): Promise<FathomAutoImport> =>
     api.put('/integrations/fathom/auto-import', body).then(r => r.data),
@@ -74,4 +75,14 @@ export const integrationsService = {
 
   discardFathomUnassigned: (id: string): Promise<void> =>
     api.delete(`/integrations/fathom/unassigned/${encodeURIComponent(id)}`).then(() => undefined),
+
+  /** Story 13.16: Fathom routing rules of a project (admins and reviewers of the project) */
+  listFathomRules: (projectId: string): Promise<FathomRule[]> =>
+    api.get(`/projects/${encodeURIComponent(projectId)}/fathom-rules`).then(r => r.data),
+
+  createFathomRule: (projectId: string, body: { field: FathomRuleField; value: string }): Promise<FathomRule> =>
+    api.post(`/projects/${encodeURIComponent(projectId)}/fathom-rules`, body).then(r => r.data),
+
+  deleteFathomRule: (projectId: string, ruleId: string): Promise<void> =>
+    api.delete(`/projects/${encodeURIComponent(projectId)}/fathom-rules/${encodeURIComponent(ruleId)}`).then(() => undefined),
 }

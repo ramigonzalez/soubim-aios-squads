@@ -43,6 +43,7 @@
     "found_one": "{{count}} item encontrado",
     "found_other": "{{count}} itens encontrados",
     "edit": "Editar",
+    "fathomRules": "Regras do Fathom",
     "archive": "Arquivar",
     "archiveDialog": {
       "title": "Arquivar projeto?",
@@ -139,5 +140,29 @@
     "empty": "Nenhuma etapa definida. Adicione etapas ou carregue um modelo.",
     "namePlaceholder": "Nome da etapa",
     "replaceConfirm": "Isso substituirá as etapas existentes. Continuar?"
+  },
+  "fathomRules": {
+    "title": "Regras do Fathom",
+    "description": "Reuniões que chegam do Fathom vão automaticamente para este projeto quando atendem a qualquer uma destas regras. Uma reunião que não atende a nenhum projeto, ou atende a mais de um, aguarda na Ingestão até alguém escolher o projeto.",
+    "field": "Campo",
+    "value": "Valor",
+    "fields": {
+      "title": "Título contém",
+      "participant_email": "E-mail do participante é",
+      "participant_domain": "Domínio do participante é"
+    },
+    "placeholders": {
+      "title": "ex.: D/SEASON",
+      "participant_email": "ex.: ana@cliente.com",
+      "participant_domain": "ex.: cliente.com"
+    },
+    "add": "Adicionar regra",
+    "remove": "Remover regra: {{rule}}",
+    "empty": "Nenhuma regra ainda: reuniões do Fathom não chegam sozinhas a este projeto.",
+    "errors": {
+      "invalid": "Confira o valor: não pode ficar vazio nem passar de 200 caracteres, um e-mail precisa de @ e um domínio não tem @.",
+      "duplicate": "Esta regra já existe.",
+      "generic": "Não foi possível salvar a regra. Tente novamente."
+    }
   }
 }

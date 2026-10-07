@@ -155,5 +155,28 @@
     "visibilityInternal": "Internal — only your organization sees it",
     "visibilityShared": "Shared — every organization on the project sees it",
     "sharedAdminOnly": "Only an owner or admin of your organization can share a meeting."
+  },
+  "unassigned": {
+    "noProject": "No project",
+    "conflict": "Conflict",
+    "noProjectHint": "Matches no project's Fathom rules — pick a project",
+    "conflictHint": "Matches {{count}} projects: {{projects}} — pick one",
+    "source": "Fathom (automatic)",
+    "untitled": "Untitled meeting",
+    "project": "Project for {{name}}",
+    "selectProject": "Select a project",
+    "matchedGroup": "Matched projects",
+    "otherGroup": "Other projects",
+    "import": "Import",
+    "discard": "Discard",
+    "importItem": "Import {{name}}",
+    "discardItem": "Discard {{name}}",
+    "notSelectable": "Pick a project and import it first",
+    "errors": {
+      "alreadyImported": "This meeting is already imported into that project.",
+      "storage": "Recording storage is not configured on this server.",
+      "forbidden": "You cannot import into this project.",
+      "generic": "Could not complete the action. Try again."
+    }
   }
 }

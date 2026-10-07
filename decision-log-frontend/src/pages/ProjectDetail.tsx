@@ -268,6 +268,16 @@ export function ProjectDetail() {
               {t('detail.found', { count: filteredDecisions.length })}
             </p>
           </div>
+          {/* Story 13.16: reviewers only manage the project's Fathom rules */}
+          {!isAdmin && canReview && (
+            <button
+              onClick={() => navigate(`/projects/${projectId}/edit`)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              <Pencil className="w-4 h-4" />
+              {t('detail.fathomRules')}
+            </button>
+          )}
           {isAdmin && (
             <div className="flex items-center gap-2">
               <button

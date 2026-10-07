@@ -446,6 +446,7 @@ class FathomConnection(Base):
     # user's token; its signing secret is stored encrypted. Meetings go to the default project
     # (``internal`` unless chosen otherwise) or, without one, to the Unassigned list.
     auto_import_enabled = Column(Boolean, nullable=False, default=False, server_default=sql_false())
+    # Story 13.16: no longer read or written (routing uses the projects' Fathom rules); kept for rollback
     auto_import_project_id = Column(GUID(), ForeignKey("projects.id", ondelete="SET NULL"))
     auto_import_visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
     webhook_id = Column(String(128))  # Fathom's id of the registered webhook
@@ -610,10 +611,38 @@ class FathomUnassignedMeeting(Base):
     recording_id = Column(String(128), nullable=False)
     title = Column(String(255))
     started_at = Column(DateTime)
-    reason = Column(String(40), nullable=False)  # no_default_project | project_unavailable
+    # Story 13.16: no_match | conflict (13.9 rows: no_default_project | project_unavailable)
+    reason = Column(String(40), nullable=False)
+    matched_project_ids = Column(JSONType)  # Story 13.16: projects a ``conflict`` meeting matched (ids)
     created_at = Column(DateTime, nullable=False, default=func.now())
 
     __table_args__ = (UniqueConstraint("user_id", "recording_id", name="uq_fathom_unassigned_user_recording"),)
+
+
+class ProjectFathomRule(Base):
+    """A rule that sends a Fathom webhook meeting to a project (Story 13.16).
+
+    ``field``: title (operator ``contains``) | participant_email | participant_domain (operator ``equals``).
+    Matching is case-insensitive and ignores surrounding whitespace; a project matches when any of its
+    rules matches. Deleted with the project.
+    """
+
+    __tablename__ = "project_fathom_rules"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    field = Column(String(30), nullable=False)
+    operator = Column(String(20), nullable=False)
+    value = Column(String(200), nullable=False)
+    created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint(
+            "field IN ('title', 'participant_email', 'participant_domain')", name="ck_project_fathom_rule_field"),
+        CheckConstraint("operator IN ('contains', 'equals')", name="ck_project_fathom_rule_operator"),
+    )
 
 
 class ProjectParticipant(Base):

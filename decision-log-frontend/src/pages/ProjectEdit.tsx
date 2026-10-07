@@ -3,6 +3,7 @@
  * Story 6.4: Project CRUD Completion
  * Story 6.5: Load stages/participants, orchestrate update
  * Story 12.3: Organizations with access (sharing section)
+ * Story 13.16: Fathom routing rules (admins and reviewers of the project)
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -16,6 +17,7 @@ import { useParticipants } from '../hooks/useParticipants'
 import { StageRow } from '../components/organisms/StageScheduleBuilder'
 import { ParticipantRow } from '../components/organisms/ParticipantRoster'
 import ProjectSharing from '../components/organisms/ProjectSharing'
+import FathomRulesSection from '../components/organisms/FathomRulesSection'
 import api from '../services/api'
 
 export default function ProjectEdit() {
@@ -117,21 +119,27 @@ export default function ProjectEdit() {
               {error}
             </div>
           )}
-          <ProjectForm
-            initialData={{
-              id: project.id,
-              name: project.name,
-              description: project.description || '',
-              project_type: project.project_type || '',
-              drive_folder_id: project.drive_folder_id || '',
-              stages: initialStages,
-              participants: initialParticipants,
-            }}
-            onSubmit={handleSubmit}
-            onCancel={() => navigate(`/projects/${id}`)}
-            isLoading={isSaving}
-          />
-          <ProjectSharing projectId={project.id} />
+          {/* Story 13.16: reviewers who are not admins only see the Fathom rules */}
+          {project.can_manage && (
+            <>
+              <ProjectForm
+                initialData={{
+                  id: project.id,
+                  name: project.name,
+                  description: project.description || '',
+                  project_type: project.project_type || '',
+                  drive_folder_id: project.drive_folder_id || '',
+                  stages: initialStages,
+                  participants: initialParticipants,
+                }}
+                onSubmit={handleSubmit}
+                onCancel={() => navigate(`/projects/${id}`)}
+                isLoading={isSaving}
+              />
+              <ProjectSharing projectId={project.id} />
+            </>
+          )}
+          <FathomRulesSection projectId={project.id} />
         </div>
       </div>
     </div>

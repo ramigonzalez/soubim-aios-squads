@@ -29,10 +29,9 @@
     "browse": "Browse Fathom meetings",
     "autoImport": {
       "title": "Automatic import",
-      "description": "Off by default. When on, new meetings of your Fathom account arrive in DecisionLog by themselves as pending meetings in Ingestion. Personal meetings of your account would arrive too, so only turn it on if that is what you want.",
+      "description": "Off by default. When on, new meetings of your Fathom account arrive in DecisionLog by themselves. Personal meetings of your account would arrive too, so only turn it on if that is what you want.",
       "enable": "Import new Fathom meetings automatically",
-      "project": "Default project",
-      "noProject": "No default project (meetings wait in Ingestion, under \"Unassigned meetings\")",
+      "routing": "Each meeting goes to the project whose Fathom rules it matches (set them in each project's settings). A meeting that matches no project, or more than one, waits in Ingestion for you to pick the project.",
       "visibility": "Visibility",
       "save": "Save",
       "saving": "Saving...",
@@ -40,7 +39,7 @@
       "errors": {
         "reconnect": "Reconnect your Fathom account first.",
         "fathom": "Fathom could not register the webhook. Try again.",
-        "forbidden": "You cannot use this project or visibility.",
+        "forbidden": "You cannot use this visibility.",
         "generic": "Could not save. Try again."
       }
     }
@@ -109,18 +108,6 @@
         "storage": "Recording storage is not configured on this server.",
         "generic": "Could not import. Try again."
       }
-    }
-  },
-  "unassigned": {
-    "title": "Unassigned meetings",
-    "description": "These meetings arrived from Fathom without a project to go to. Pick a project to import each one, or discard it.",
-    "project": "Project",
-    "assign": "Import",
-    "discard": "Discard",
-    "errors": {
-      "alreadyImported": "This meeting is already imported into that project.",
-      "storage": "Recording storage is not configured on this server.",
-      "generic": "Could not complete the action. Try again."
     }
   }
 }

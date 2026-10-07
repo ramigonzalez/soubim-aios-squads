@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -38,9 +38,14 @@ vi.mock('../../services/ingestionService', () => ({
   },
 }))
 
-// Fathom webhook meetings without a project are shown on the Ingestion page (moved from the Fathom page)
-vi.mock('../../components/organisms/FathomUnassignedList', () => ({
-  FathomUnassignedList: () => <div data-testid="fathom-unassigned" />,
+// Story 13.16: Fathom webhook meetings without a project are rows of the Pendentes table
+vi.mock('../../services/integrationsService', () => ({
+  integrationsService: {
+    listFathomUnassigned: vi.fn(),
+    getFathomImportProjects: vi.fn(),
+    assignFathomUnassigned: vi.fn(),
+    discardFathomUnassigned: vi.fn(),
+  },
 }))
 
 // Story 12.7: the ingestion page is gated on organization roles (owner/admin/reviewer)
@@ -51,6 +56,13 @@ vi.mock('../../hooks/useOrganizations', () => ({
 
 import { useIngestion, useIngestionHistory, useFilteredSources } from '../../hooks/useIngestion'
 import { useBatchAction, useApproveSource, useRejectSource, useRetrySource, useDeleteSource } from '../../hooks/useIngestionMutation'
+import { integrationsService } from '../../services/integrationsService'
+import type { FathomUnassignedMeeting } from '../../types/integrations'
+
+const fathomService = integrationsService as unknown as Record<
+  'listFathomUnassigned' | 'getFathomImportProjects' | 'assignFathomUnassigned' | 'discardFathomUnassigned',
+  ReturnType<typeof vi.fn>
+>
 
 const mockUseIngestion = useIngestion as any
 const mockUseIngestionHistory = useIngestionHistory as any
@@ -865,9 +877,175 @@ describe('IngestionApproval', () => {
   })
 })
 
-describe('Ingestion page — Fathom unassigned meetings', () => {
-  it('shows the Fathom unassigned list above the queue', () => {
+// --- Story 13.16: unassigned Fathom meetings as rows of the Pendentes table ---
+
+const noProjectItem: FathomUnassignedMeeting = {
+  id: 'un_1',
+  recording_id: '777001',
+  title: 'Coordenação semanal',
+  started_at: '2026-02-19T13:00:00Z',
+  reason: 'no_match',
+  matched_projects: [],
+  received_at: '2026-02-19T14:00:00Z',
+}
+
+const conflictItem: FathomUnassignedMeeting = {
+  id: 'un_2',
+  recording_id: '777002',
+  title: 'Obra semanal',
+  started_at: '2026-02-17T10:00:00Z',
+  reason: 'conflict',
+  matched_projects: [{ id: 'p_season', name: 'D/SEASON' }, { id: 'p_obra', name: 'Obra X' }],
+  received_at: '2026-02-17T11:00:00Z',
+}
+
+const IMPORT_PROJECTS = [
+  { id: 'p_casa', name: 'Casa Verde', can_share: false },
+  { id: 'p_obra', name: 'Obra X', can_share: false },
+  { id: 'p_season', name: 'D/SEASON', can_share: true },
+]
+
+describe('IngestionApproval — unassigned Fathom meetings (Story 13.16)', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    useIngestionStore.setState({
+      activeTab: 'pending',
+      selectedIds: new Set(),
+      filters: { project_id: null, source_type: null, date_from: null, date_to: null },
+      deleteConfirmId: null,
+    })
+    fathomService.listFathomUnassigned.mockResolvedValue([noProjectItem, conflictItem])
+    fathomService.getFathomImportProjects.mockResolvedValue(IMPORT_PROJECTS)
+    fathomService.assignFathomUnassigned.mockResolvedValue({})
+    fathomService.discardFathomUnassigned.mockResolvedValue(undefined)
+  })
+
+  it('shows them as rows of the pending table with "No project" and "Conflict" status', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    const row = (await screen.findByText('Coordenação semanal')).closest('tr')!
+    expect(within(row).getByText('No project')).toBeInTheDocument()
+    expect(within(row).getByText('777001')).toBeInTheDocument()
+    const conflictRow = screen.getByText('Obra semanal').closest('tr')!
+    expect(within(conflictRow).getByText('Conflict')).toHaveAttribute(
+      'title', 'Matches 2 projects: D/SEASON, Obra X — pick one')
+    expect(within(conflictRow).getByText('Matches 2 projects: D/SEASON, Obra X — pick one')).toBeInTheDocument()
+    expect(screen.queryByText('Unassigned meetings')).not.toBeInTheDocument() // no separate box
+  })
+
+  it('mixes them with the meetings, newest first', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    await screen.findByText('Coordenação semanal')
+    const ids = screen.getAllByRole('row').slice(1).map((r) => within(r).queryAllByRole('cell')[1]?.textContent)
+    // meetings (19 Feb unassigned, 18 Feb source, 17 Feb conflict) before the email and the document
+    expect(ids).toEqual(['777001', 'call_xyz789', '777002', 'email_abc', 'doc_001'])
+  })
+
+  it('counts them in the pending header and the tab badge', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    expect(await screen.findByText(/3 pending items/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Pending/ })).toHaveTextContent('3')
+  })
+
+  it('a conflict offers the matched projects first', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    const select = await screen.findByLabelText('Project for Obra semanal')
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'Casa Verde' })).toBeInTheDocument())
+    const groups = within(select).getAllByRole('group')
+    expect(groups[0]).toHaveAttribute('label', 'Matched projects')
+    expect(within(groups[0]).getAllByRole('option').map((o) => o.textContent)).toEqual(['D/SEASON', 'Obra X'])
+    expect(within(groups[1]).getAllByRole('option').map((o) => o.textContent)).toEqual(['Casa Verde'])
+  })
+
+  it('imports a row once a project is picked', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    const button = await screen.findByRole('button', { name: 'Import Coordenação semanal' })
+    expect(button).toBeDisabled()
+    const select = screen.getByLabelText('Project for Coordenação semanal')
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'Casa Verde' })).toBeInTheDocument())
+    await userEvent.selectOptions(select, 'p_casa')
+    await userEvent.click(button)
+    await waitFor(() => expect(fathomService.assignFathomUnassigned).toHaveBeenCalledWith(
+      'un_1', { project_id: 'p_casa', visibility: 'internal' }))
+    // the list is reloaded: the row turns into the pending source once the import creates it
+    await waitFor(() => expect(fathomService.listFathomUnassigned).toHaveBeenCalledTimes(2))
+  })
+
+  it('explains a failed import', async () => {
+    fathomService.assignFathomUnassigned.mockRejectedValue({ response: { status: 409 } })
+    setupMocks()
+    renderIngestionApproval()
+    const select = await screen.findByLabelText('Project for Coordenação semanal')
+    await waitFor(() => expect(within(select).getByRole('option', { name: 'Casa Verde' })).toBeInTheDocument())
+    await userEvent.selectOptions(select, 'p_casa')
+    await userEvent.click(screen.getByRole('button', { name: 'Import Coordenação semanal' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('already imported')
+  })
+
+  it('discards a row', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard Obra semanal' }))
+    await waitFor(() => expect(fathomService.discardFathomUnassigned).toHaveBeenCalledWith('un_2'))
+  })
+
+  it('the Meeting type filter keeps them; other types hide them', async () => {
+    useIngestionStore.setState({ filters: { project_id: null, source_type: 'meeting', date_from: null, date_to: null } })
+    setupMocks({ filteredSources: [meetingSource] })
+    const { unmount } = renderIngestionApproval()
+    expect(await screen.findByText('Coordenação semanal')).toBeInTheDocument()
+    unmount()
+    useIngestionStore.setState({ filters: { project_id: null, source_type: 'email', date_from: null, date_to: null } })
+    setupMocks({ filteredSources: [emailSource] })
+    renderIngestionApproval()
+    await waitFor(() => expect(fathomService.listFathomUnassigned).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText('Coordenação semanal')).not.toBeInTheDocument()
+  })
+
+  it('a project filter hides them (only "All projects" shows them)', async () => {
+    useIngestionStore.setState({ filters: { project_id: 'proj_001', source_type: null, date_from: null, date_to: null } })
+    setupMocks({ filteredSources: [meetingSource] })
+    renderIngestionApproval()
+    await waitFor(() => expect(fathomService.listFathomUnassigned).toHaveBeenCalled())
+    expect(await screen.findByText('call_xyz789')).toBeInTheDocument()
+    expect(screen.queryByText('Coordenação semanal')).not.toBeInTheDocument()
+  })
+
+  it('date filters apply to them too', async () => {
+    useIngestionStore.setState({ filters: { project_id: null, source_type: null, date_from: '2026-02-18', date_to: null } })
+    setupMocks()
+    renderIngestionApproval()
+    expect(await screen.findByText('Coordenação semanal')).toBeInTheDocument()
+    expect(screen.queryByText('Obra semanal')).not.toBeInTheDocument()
+  })
+
+  it('bulk select skips them', async () => {
+    setupMocks()
+    renderIngestionApproval()
+    await screen.findByText('Coordenação semanal')
+    expect(screen.getByLabelText('Select 777001')).toBeDisabled()
+    await userEvent.click(screen.getByLabelText('Select all'))
+    expect(Array.from(useIngestionStore.getState().selectedIds).sort()).toEqual(['src_001', 'src_002', 'src_003'])
+  })
+
+  it('the empty state is not shown while there are unassigned rows', async () => {
+    setupMocks({ data: { sources: [], total: 0, pending_count: 0 }, filteredSources: [] })
+    renderIngestionApproval()
+    expect(await screen.findByText('Coordenação semanal')).toBeInTheDocument()
+    expect(screen.queryByText('No pending items')).not.toBeInTheDocument()
+    expect(screen.getByText(/2 pending items/)).toBeInTheDocument()
+  })
+})
+
+describe('Ingestion page — no separate Fathom box (Story 13.16)', () => {
+  it('renders only the queue', () => {
+    setupMocks()
     renderIngestionPage()
-    expect(screen.getByTestId('fathom-unassigned')).toBeInTheDocument()
+    expect(screen.getByText('Ingestion Approval')).toBeInTheDocument()
+    expect(screen.queryByText('Unassigned meetings')).not.toBeInTheDocument()
   })
 })
