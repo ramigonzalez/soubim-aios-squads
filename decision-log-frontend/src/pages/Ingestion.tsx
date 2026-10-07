@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useActiveOrganization } from '../hooks/useOrganizations'
 import IngestionApproval from '../components/organisms/IngestionApproval'
+import { FathomUnassignedList } from '../components/organisms/FathomUnassignedList'
 
 /**
  * Ingestion queue. Story 12.7: open to organization owners/admins/reviewers (organization roles, not the
@@ -22,6 +23,10 @@ export default function Ingestion() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Fathom webhook meetings waiting for a project (Story 13.9) live with the rest of the queue */}
+        <div className="mb-6">
+          <FathomUnassignedList />
+        </div>
         <IngestionApproval />
       </div>
     </main>

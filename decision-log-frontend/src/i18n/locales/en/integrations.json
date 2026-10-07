@@ -32,7 +32,7 @@
       "description": "Off by default. When on, new meetings of your Fathom account arrive in DecisionLog by themselves as pending meetings in Ingestion. Personal meetings of your account would arrive too, so only turn it on if that is what you want.",
       "enable": "Import new Fathom meetings automatically",
       "project": "Default project",
-      "noProject": "No default project (meetings wait in the Unassigned list)",
+      "noProject": "No default project (meetings wait in Ingestion, under \"Unassigned meetings\")",
       "visibility": "Visibility",
       "save": "Save",
       "saving": "Saving...",
@@ -47,7 +47,7 @@
   },
   "meetings": {
     "title": "Fathom meetings",
-    "subtitle": "Pick which meetings from your Fathom account to import into a project. Nothing is imported automatically.",
+    "subtitle": "Pick which meetings from your Fathom account to import into a project. With auto-import on, new meetings arrive in Ingestion on their own.",
     "back": "Integrations",
     "search": "Search by title or participant",
     "searchHint": "Search covers the meetings loaded so far.",
