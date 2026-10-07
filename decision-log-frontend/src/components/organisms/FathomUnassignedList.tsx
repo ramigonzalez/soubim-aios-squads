@@ -23,10 +23,13 @@ function assignErrorKey(error: unknown): string {
 
 export function FathomUnassignedList() {
   const { t } = useTranslation('integrations')
-  const { data: items } = useQuery(FATHOM_UNASSIGNED_KEY, integrationsService.listFathomUnassigned, { retry: false })
+  const { data: items } = useQuery(FATHOM_UNASSIGNED_KEY, integrationsService.listFathomUnassigned, {
+    retry: false,
+    refetchInterval: 30_000, // webhook meetings appear without a reload
+  })
   if (!items || items.length === 0) return null
   return (
-    <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4" aria-labelledby="fathom-unassigned-title">
+    <section className="rounded-lg border border-amber-200 bg-amber-50 p-4" aria-labelledby="fathom-unassigned-title">
       <h2 id="fathom-unassigned-title" className="text-base font-semibold text-gray-900">{t('unassigned.title')}</h2>
       <p className="mt-1 text-sm text-gray-700">{t('unassigned.description')}</p>
       <ul className="mt-3 divide-y divide-amber-200">

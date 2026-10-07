@@ -38,6 +38,11 @@ vi.mock('../../services/ingestionService', () => ({
   },
 }))
 
+// Fathom webhook meetings without a project are shown on the Ingestion page (moved from the Fathom page)
+vi.mock('../../components/organisms/FathomUnassignedList', () => ({
+  FathomUnassignedList: () => <div data-testid="fathom-unassigned" />,
+}))
+
 // Story 12.7: the ingestion page is gated on organization roles (owner/admin/reviewer)
 const organizationsState = { canReviewSomewhere: true, isLoading: false }
 vi.mock('../../hooks/useOrganizations', () => ({
@@ -857,5 +862,12 @@ describe('IngestionApproval', () => {
       const bar = screen.getByRole('status')
       expect(bar).toHaveAttribute('aria-live', 'polite')
     })
+  })
+})
+
+describe('Ingestion page — Fathom unassigned meetings', () => {
+  it('shows the Fathom unassigned list above the queue', () => {
+    renderIngestionPage()
+    expect(screen.getByTestId('fathom-unassigned')).toBeInTheDocument()
   })
 })

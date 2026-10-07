@@ -32,7 +32,7 @@
       "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao DecisionLog como reuniões pendentes na Ingestão. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
       "enable": "Importar novas reuniões do Fathom automaticamente",
       "project": "Projeto padrão",
-      "noProject": "Sem projeto padrão (as reuniões aguardam na lista de não atribuídas)",
+      "noProject": "Sem projeto padrão (as reuniões aguardam em Ingestão, em \"Reuniões não atribuídas\")",
       "visibility": "Visibilidade",
       "save": "Salvar",
       "saving": "Salvando...",
@@ -47,7 +47,7 @@
   },
   "meetings": {
     "title": "Reuniões do Fathom",
-    "subtitle": "Escolha quais reuniões da sua conta do Fathom importar para um projeto. Nada é importado automaticamente.",
+    "subtitle": "Escolha quais reuniões da sua conta do Fathom importar para um projeto. Com a importação automática ligada, as novas reuniões chegam sozinhas na Ingestão.",
     "back": "Integrações",
     "search": "Buscar por título ou participante",
     "searchHint": "A busca considera as reuniões já carregadas.",
