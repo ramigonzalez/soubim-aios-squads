@@ -1,4 +1,4 @@
-"""Tests for the Fathom webhook auto-import (Story 13.9).
+"""Tests for the Fathom webhook auto-import (Story 13.9; routing by project rules since Story 13.16).
 
 No real call reaches Fathom: registration goes through the httpx.MockTransport fake of the 13.3
 tests; deliveries are signed here with the same Standard Webhooks scheme Fathom uses.
@@ -25,6 +25,7 @@ from app.database.models import (
     FathomWebhookEvent,
     Job,
     Project,
+    ProjectFathomRule,
     User,
 )
 from app.database.session import get_db
@@ -69,12 +70,24 @@ def project(db_session: Session, org) -> Project:
     return p
 
 
+def add_rule(db: Session, project: Project, field: str = "title", value: str = "Coordenação") -> ProjectFathomRule:
+    rule = ProjectFathomRule(project_id=project.id, field=field, operator="contains" if field == "title" else "equals", value=value)
+    db.add(rule)
+    db.commit()
+    return rule
+
+
+def drop_rules(db: Session) -> None:
+    db.query(ProjectFathomRule).delete()
+    db.commit()
+
+
 @pytest.fixture
 def conn(db_session: Session, user, project, fake, fake_s3) -> FathomConnection:
-    """A connection with auto-import on, a default project and a known signing secret."""
+    """A connection with auto-import on, a project whose rule matches PAYLOAD and a known signing secret."""
     c = make_connection(db_session, user)
     c.auto_import_enabled = True
-    c.auto_import_project_id = project.id
+    add_rule(db_session, project)
     c.webhook_id = "wh_1"
     c.webhook_secret_enc = encrypt_token(SECRET)
     db_session.commit()
@@ -180,7 +193,7 @@ class TestSignature:
 
 
 class TestDelivery:
-    def test_valid_delivery_queues_an_import_into_the_default_project(self, client, db_session, user, project, conn):
+    def test_valid_delivery_queues_an_import_into_the_matching_project(self, client, db_session, user, project, conn):
         response = deliver(client, conn.id)
         assert response.status_code == 202 and response.json() == {"status": "imported"}
         imp = db_session.query(FathomImport).one()
@@ -228,7 +241,6 @@ class TestDelivery:
         db_session.commit()
         other = make_connection(db_session, other_user)
         other.auto_import_enabled = True
-        other.auto_import_project_id = project.id
         other.webhook_secret_enc = encrypt_token(OTHER_SECRET)
         db_session.commit()
         # signed with conn's secret but sent to other's URL, and vice versa
@@ -260,8 +272,7 @@ class TestDelivery:
         assert counts(db_session) == (1, 1, 0, 1)
 
     def test_replay_of_an_unassigned_delivery_adds_nothing(self, client, db_session, conn):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id, webhook_id="msg_u")
         deliver(client, conn.id, webhook_id="msg_u")
         assert counts(db_session) == (0, 0, 1, 1)
@@ -391,23 +402,22 @@ class TestDelivery:
 
 
 class TestUnassigned:
-    def test_no_default_project_lands_in_unassigned(self, client, db_session, user, conn):
-        conn.auto_import_project_id = None
-        db_session.commit()
+    def test_no_matching_rule_lands_in_unassigned(self, client, db_session, user, conn):
+        drop_rules(db_session)
         response = deliver(client, conn.id)
         assert response.json() == {"status": "unassigned"}
         row = db_session.query(FathomUnassignedMeeting).one()
-        assert (row.user_id, row.recording_id, row.title, row.reason) == (
-            user.id, REC, "Coordenação semanal", "no_default_project")
+        assert (row.user_id, row.recording_id, row.title, row.reason, row.matched_project_ids) == (
+            user.id, REC, "Coordenação semanal", "no_match", None)
         assert row.started_at.isoformat() == "2026-10-02T13:00:00"
         assert counts(db_session)[:2] == (0, 0)  # no import, no job
 
     @pytest.mark.parametrize("setup", ["archived", "deleted", "no_access", "no_storage"])
-    def test_unusable_default_project_lands_in_unassigned(self, client, db_session, org, project, conn, monkeypatch, setup):
+    def test_unusable_matching_project_lands_in_unassigned(self, client, db_session, org, project, conn, monkeypatch, setup):
         if setup == "archived":
             project.archived_at = fathom.utcnow()
         elif setup == "deleted":
-            db_session.delete(project)  # FK SET NULL on the connection
+            db_session.delete(project)  # its rules go with it (cascade)
         elif setup == "no_access":
             from app.database.models import OrganizationMember
             db_session.query(OrganizationMember).filter_by(user_id=conn.user_id).update({"role": "member"})  # not assigned
@@ -419,8 +429,7 @@ class TestUnassigned:
         assert counts(db_session)[:3] == (0, 0, 1)
 
     def test_same_recording_twice_is_listed_once(self, client, db_session, conn):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id)
         deliver(client, conn.id)
         assert db_session.query(FathomUnassignedMeeting).count() == 1
@@ -428,8 +437,7 @@ class TestUnassigned:
     def test_concurrent_park_of_the_same_recording_keeps_the_claim(self, client, db_session, conn, monkeypatch):
         """Security review: two deliveries (different webhook-ids) racing on the unique (user, recording)
         row must not 500 — the loser still records its delivery id and answers ``unassigned``."""
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         assert deliver(client, conn.id).json()["status"] == "unassigned"
         from sqlalchemy.orm import Query
         real_first = Query.first
@@ -447,14 +455,12 @@ class TestUnassigned:
         assert db_session.query(FathomWebhookEvent).filter_by(webhook_id="msg_racer").count() == 1
 
     def test_title_is_trimmed_and_capped(self, client, db_session, conn):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id, {**PAYLOAD, "title": "  " + "A" * 400 + "\n x "})
         assert len(db_session.query(FathomUnassignedMeeting).one().title) == 255
 
     def test_list_assign_and_discard(self, client, db_session, user, project, conn, fake_s3):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id)
         deliver(client, conn.id, {**PAYLOAD, "recording_id": 777002})
         listed = routes.fathom_unassigned(db=db_session, user=user)
@@ -475,8 +481,7 @@ class TestUnassigned:
         assert db_session.query(FathomImport).count() == 1  # discarding imports nothing
 
     def test_assign_checks_access_and_visibility_like_a_manual_import(self, client, db_session, org, user, project, conn, fake_s3):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id)
         item = routes.fathom_unassigned(db=db_session, user=user)[0]
         foreign = Project(owner_organization_id=make_org(db_session, "DIMAS").id, name="Other")
@@ -492,8 +497,7 @@ class TestUnassigned:
         assert db_session.query(FathomImport).one().visibility == "shared"
 
     def test_assign_of_an_already_imported_recording_is_a_conflict(self, client, db_session, user, project, conn, fake_s3):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id)
         routes.fathom_start_import(
             body=routes.ImportRequest(recording_id=REC, project_id=str(project.id)), db=db_session, user=user)
@@ -503,8 +507,7 @@ class TestUnassigned:
         assert exc.value.status_code == 409
 
     def test_other_users_items_are_invisible(self, client, db_session, org, user, conn):
-        conn.auto_import_project_id = None
-        db_session.commit()
+        drop_rules(db_session)
         deliver(client, conn.id)
         item = routes.fathom_unassigned(db=db_session, user=user)[0]
         intruder = User(email="i@soubim.com", password_hash="x", name="I", role="director")
@@ -543,14 +546,13 @@ class TestAutoImportSettings:
     def test_off_by_default(self, db_session, user, plain_conn):
         import asyncio
         body = asyncio.run(routes.fathom_status(db=db_session, user=user))
-        assert body["auto_import"] == {"enabled": False, "project_id": None, "project_name": None, "visibility": "internal"}
+        assert body["auto_import"] == {"enabled": False, "visibility": "internal"}
         assert plain_conn.webhook_secret_enc is None
 
     def test_enable_registers_the_webhook_and_stores_the_secret_encrypted(self, db_session, user, project, plain_conn, fake):
         api(fake, "POST", "/webhooks", httpx.Response(201, json={"id": "wh_abc", "secret": SECRET, "url": "x"}))
-        body = routes.fathom_auto_import(
-            routes.AutoImportRequest(enabled=True, project_id=str(project.id)), db=db_session, user=user)
-        assert body == {"enabled": True, "project_id": str(project.id), "project_name": "D/SEASON", "visibility": "internal"}
+        body = routes.fathom_auto_import(routes.AutoImportRequest(enabled=True), db=db_session, user=user)
+        assert body == {"enabled": True, "visibility": "internal"}
         sent = webhook_requests(fake, "POST")[0]
         payload = json.loads(sent.content)
         assert payload["destination_url"] == f"https://example.ngrok.app/api/fathom/webhook/{plain_conn.id}"
@@ -571,15 +573,19 @@ class TestAutoImportSettings:
         assert SECRET not in json.dumps(body) and SECRET not in json.dumps(status)
         assert "webhook" not in json.dumps(status)
 
-    def test_enable_without_project_is_allowed_everything_goes_to_unassigned(self, db_session, user, plain_conn, fake):
+    def test_a_default_project_sent_by_an_old_client_is_ignored(self, db_session, user, project, plain_conn, fake):
+        """Story 13.16: the default project is gone; routing uses only the projects' rules."""
         api(fake, "POST", "/webhooks", httpx.Response(201, json={"id": "wh_abc", "secret": SECRET}))
-        body = routes.fathom_auto_import(routes.AutoImportRequest(enabled=True), db=db_session, user=user)
-        assert body["enabled"] is True and body["project_id"] is None
+        body = routes.fathom_auto_import(
+            routes.AutoImportRequest.model_validate({"enabled": True, "project_id": str(project.id)}), db=db_session, user=user)
+        assert body == {"enabled": True, "visibility": "internal"}
+        db_session.refresh(plain_conn)
+        assert plain_conn.auto_import_project_id is None
 
-    def test_changing_project_does_not_register_again(self, db_session, user, project, plain_conn, fake):
+    def test_changing_visibility_does_not_register_again(self, db_session, user, project, plain_conn, fake):
         api(fake, "POST", "/webhooks", httpx.Response(201, json={"id": "wh_abc", "secret": SECRET}))
         routes.fathom_auto_import(routes.AutoImportRequest(enabled=True), db=db_session, user=user)
-        routes.fathom_auto_import(routes.AutoImportRequest(enabled=True, project_id=str(project.id)), db=db_session, user=user)
+        routes.fathom_auto_import(routes.AutoImportRequest(enabled=True, visibility="shared"), db=db_session, user=user)
         assert len(webhook_requests(fake, "POST")) == 1
 
     def test_registration_failure_leaves_it_disabled(self, db_session, user, plain_conn, fake):
@@ -623,28 +629,6 @@ class TestAutoImportSettings:
         with pytest.raises(HTTPException) as exc:
             routes.fathom_auto_import(routes.AutoImportRequest(enabled=True), db=db_session, user=user)
         assert exc.value.status_code == 409
-
-    def test_default_project_needs_write_access(self, db_session, org, user, plain_conn, fake):
-        foreign = Project(owner_organization_id=make_org(db_session, "DIMAS").id, name="Other")
-        db_session.add(foreign)
-        db_session.commit()
-        with pytest.raises(HTTPException) as exc:
-            routes.fathom_auto_import(routes.AutoImportRequest(enabled=True, project_id=str(foreign.id)), db=db_session, user=user)
-        assert exc.value.status_code == 403
-        assert webhook_requests(fake, "POST") == []
-
-    def test_shared_default_needs_an_admin(self, db_session, org, project, fake):
-        from tests.org_helpers import assign_to_project
-        member = User(email="m@soubim.com", password_hash="x", name="M", role="architect")
-        db_session.add(member)
-        make_org_member(db_session, member, "member", org)
-        assign_to_project(db_session, member, project)
-        db_session.commit()
-        make_connection(db_session, member)
-        with pytest.raises(HTTPException) as exc:
-            routes.fathom_auto_import(
-                routes.AutoImportRequest(enabled=True, project_id=str(project.id), visibility="shared"), db=db_session, user=member)
-        assert exc.value.status_code == 403
 
     def test_needs_reconnect_blocks_enabling(self, db_session, user, plain_conn, fake):
         plain_conn.revoked_at = fathom.utcnow()

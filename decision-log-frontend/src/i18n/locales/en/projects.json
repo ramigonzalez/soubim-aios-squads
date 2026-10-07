@@ -43,6 +43,7 @@
     "found_one": "{{count}} decision found",
     "found_other": "{{count}} decisions found",
     "edit": "Edit",
+    "fathomRules": "Fathom rules",
     "archive": "Archive",
     "archiveDialog": {
       "title": "Archive Project?",
@@ -139,5 +140,29 @@
     "empty": "No stages defined. Add stages or load a template.",
     "namePlaceholder": "Stage name",
     "replaceConfirm": "This will replace existing stages. Continue?"
+  },
+  "fathomRules": {
+    "title": "Fathom rules",
+    "description": "Meetings that arrive from Fathom automatically go to this project when they match any of these rules. A meeting that matches no project, or more than one, waits in Ingestion for someone to pick the project.",
+    "field": "Field",
+    "value": "Value",
+    "fields": {
+      "title": "Title contains",
+      "participant_email": "Participant email is",
+      "participant_domain": "Participant domain is"
+    },
+    "placeholders": {
+      "title": "e.g. D/SEASON",
+      "participant_email": "e.g. ana@client.com",
+      "participant_domain": "e.g. client.com"
+    },
+    "add": "Add rule",
+    "remove": "Remove rule: {{rule}}",
+    "empty": "No rules yet: Fathom meetings do not come to this project on their own.",
+    "errors": {
+      "invalid": "Check the value: it cannot be empty or longer than 200 characters, an email needs an @ and a domain has no @.",
+      "duplicate": "This rule already exists.",
+      "generic": "Could not save the rule. Try again."
+    }
   }
 }

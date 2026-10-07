@@ -152,6 +152,7 @@ Make getting a meeting into DecisionLog an app workflow instead of scripts. User
 | 13.13 | Fathom Import per Organization | M | Medium | Draft |
 | 13.14 | Extraction Model Choice Explained to Users, Plus Eval | M | Medium | Draft |
 | 13.15 | On-demand Previews of Fathom Meetings Not Imported Yet ("Gerar prévia") | M | Medium | Ready for Review |
+| 13.16 | Fathom Routing Rules per Project; Unassigned Meetings Inside the Ingestão List | M | High | In Progress |
 
 ### Agent Assignment
 

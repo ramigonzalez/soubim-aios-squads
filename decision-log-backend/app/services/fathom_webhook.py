@@ -9,10 +9,11 @@ secret is stored encrypted. Each delivery is:
    ``whsec_<base64>``) with the secret of the connection in the URL, constant-time compare,
    several signatures allowed, timestamp within +-5 minutes (replay window);
 2. deduplicated by ``webhook-id`` (per connection);
-3. routed — the connection's default project (still writable by the user) gets a normal
-   ``fathom_imports`` row + ``fathom_import`` job (Story 13.4/12.4 path, so the owner organization
-   and visibility rules are the same as a manual import); otherwise the recording waits in the
-   user's Unassigned list. Nothing is downloaded in the request.
+3. routed by the projects' Fathom rules (Story 13.16, ``fathom_rules``): when exactly one project the
+   user can write to (not archived) matches, it gets a normal ``fathom_imports`` row + ``fathom_import``
+   job (Story 13.4/12.4 path, so the owner organization and visibility rules are the same as a manual
+   import); no match parks the recording in the user's Unassigned list (``no_match``), two or more
+   matches park it as ``conflict`` with the matched project ids. Nothing is downloaded in the request.
 
 Every authentication failure looks the same to the caller (no oracle for connection ids / secrets).
 Bodies, signatures and secrets are never logged.
@@ -34,10 +35,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database.models import FathomConnection, FathomUnassignedMeeting, FathomWebhookEvent, Project, User
+from app.database.models import FathomConnection, FathomUnassignedMeeting, FathomWebhookEvent, User
 from app.integrations import fathom
-from app.services import fathom_import, storage
-from app.services.access import INTERNAL, WRITE, can_create_shared, has_access, project_access_level
+from app.services import fathom_import, fathom_rules, storage
+from app.services.access import INTERNAL, can_create_shared
 from app.utils.crypto import TokenEncryptionError, decrypt_token, encrypt_token
 
 logger = logging.getLogger(__name__)
@@ -199,10 +200,14 @@ def process(db: Session, connection: FathomConnection, webhook_id: str, body: by
         db.commit()  # keep the claim: a retry of this delivery would fail the same way
         return Outcome("ignored")
 
-    project = _usable_default_project(db, user, connection)
-    if project is None:
-        reason = "project_unavailable" if connection.auto_import_project_id else "no_default_project"
-        return _park(db, connection, webhook_id, user, recording_id, payload, reason)
+    matches = fathom_rules.matching_projects(db, user, payload)
+    if not matches:
+        return _park(db, connection, webhook_id, user, recording_id, payload, "no_match")
+    if len(matches) > 1:  # never resolved automatically (Story 13.16)
+        return _park(db, connection, webhook_id, user, recording_id, payload, "conflict", matches)
+    project = matches[0]
+    if not storage.is_enabled():  # the import could not store the recording: the user decides later
+        return _park(db, connection, webhook_id, user, recording_id, payload, "project_unavailable", matches)
 
     if fathom_import.find_import(db, project.id, recording_id) is not None:
         db.commit()
@@ -221,19 +226,8 @@ def process(db: Session, connection: FathomConnection, webhook_id: str, body: by
     return Outcome("imported")
 
 
-def _usable_default_project(db: Session, user, connection: FathomConnection) -> Optional[Project]:
-    """The default project when it still exists, is not archived, the user can still write to it and
-    recording storage is configured; otherwise None (the meeting goes to Unassigned)."""
-    if connection.auto_import_project_id is None or not storage.is_enabled():
-        return None
-    project = db.get(Project, connection.auto_import_project_id)
-    if project is None or project.archived_at is not None:
-        return None
-    return project if has_access(project_access_level(db, user, project), WRITE) else None
-
-
 def _park(db: Session, connection: FathomConnection, webhook_id: str, user, recording_id: str, payload: dict,
-          reason: str) -> Outcome:
+          reason: str, matches=()) -> Outcome:
     exists = (
         db.query(FathomUnassignedMeeting)
         .filter(FathomUnassignedMeeting.user_id == user.id, FathomUnassignedMeeting.recording_id == recording_id)
@@ -242,6 +236,7 @@ def _park(db: Session, connection: FathomConnection, webhook_id: str, user, reco
     if exists is None:
         db.add(FathomUnassignedMeeting(
             user_id=user.id, recording_id=recording_id, title=_title(payload), reason=reason,
+            matched_project_ids=[str(p.id) for p in matches] or None,
             started_at=fathom_import._parse_time(payload.get("recording_start_time") or payload.get("scheduled_start_time")),
         ))
     try:

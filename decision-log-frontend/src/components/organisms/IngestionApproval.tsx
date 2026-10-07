@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { dateLocale } from '../../i18n'
 import { getSourceTypeLabel } from '../../lib/utils'
 import { useIngestion, useIngestionHistory, useFilteredSources } from '../../hooks/useIngestion'
+import { filterUnassigned, unassignedDate, useFathomUnassigned } from '../../hooks/useFathomUnassigned'
 import { useBatchAction, useApproveSource, useRejectSource, useRetrySource, useDeleteSource } from '../../hooks/useIngestionMutation'
 import { useIngestionStore } from '../../store/ingestionStore'
 import IngestionFiltersBar from '../molecules/IngestionFiltersBar'
@@ -13,7 +14,30 @@ import EmailSourceRow from '../molecules/EmailSourceRow'
 import DocumentSourceRow from '../molecules/DocumentSourceRow'
 import BulkActionBar from './BulkActionBar'
 import { AddMeetingDialog } from './AddMeetingDialog'
+import UnassignedMeetingRow from './UnassignedMeetingRow'
 import type { Source } from '../../types/ingestion'
+import type { FathomUnassignedMeeting } from '../../types/integrations'
+
+/** A row of the Pendentes table: a source, or a Fathom webhook meeting without a project (Story 13.16) */
+type PendingRow = { kind: 'source'; source: Source } | { kind: 'unassigned'; item: FathomUnassignedMeeting }
+
+const TYPE_ORDER: Record<string, number> = { meeting: 0, email: 1, document: 2 }
+
+function sourceDate(source: Source): string {
+  switch (source.source_type) {
+    case 'meeting': return source.meeting_date
+    case 'email': return source.email_date
+    case 'document': return source.upload_date
+  }
+}
+
+function rowType(row: PendingRow): number {
+  return row.kind === 'unassigned' ? TYPE_ORDER.meeting : TYPE_ORDER[row.source.source_type]
+}
+
+function rowDate(row: PendingRow): string {
+  return (row.kind === 'unassigned' ? unassignedDate(row.item) : sourceDate(row.source)) || ''
+}
 
 function SkeletonRows() {
   return (
@@ -49,6 +73,7 @@ export default function IngestionApproval() {
   const { t } = useTranslation('ingestion')
   const [addMeetingOpen, setAddMeetingOpen] = useState(false)
   const { data, isLoading, error, refetch } = useIngestion()
+  const { data: unassignedData } = useFathomUnassigned()
   const { data: historyData, isLoading: historyLoading, error: historyError, refetch: historyRefetch } = useIngestionHistory()
   const batchAction = useBatchAction()
   const approveSource = useApproveSource()
@@ -63,11 +88,22 @@ export default function IngestionApproval() {
   const filteredSources = useFilteredSources(data?.sources, filters)
   const filteredHistory = useFilteredSources(historyData?.sources, filters)
 
-  // Sort: meetings first, then emails, then documents
-  const sortedSources = useMemo(() => {
-    const order: Record<string, number> = { meeting: 0, email: 1, document: 2 }
-    return [...filteredSources].sort((a, b) => order[a.source_type] - order[b.source_type])
-  }, [filteredSources])
+  // Story 13.16: Fathom meetings without a project are rows of the same table (same filters)
+  const filteredUnassigned = useMemo(() => filterUnassigned(unassignedData, filters), [unassignedData, filters])
+  const unassignedCount = unassignedData?.length ?? 0
+
+  // Sort: meetings (with the unassigned ones) first, then emails, then documents; newest first in each
+  const pendingRows = useMemo<PendingRow[]>(() => {
+    const rows: PendingRow[] = [
+      ...filteredSources.map((source) => ({ kind: 'source' as const, source })),
+      ...filteredUnassigned.map((item) => ({ kind: 'unassigned' as const, item })),
+    ]
+    return rows.sort((a, b) => rowType(a) - rowType(b) || rowDate(b).localeCompare(rowDate(a)))
+  }, [filteredSources, filteredUnassigned])
+  const sortedSources = useMemo(
+    () => pendingRows.flatMap((row) => (row.kind === 'source' ? [row.source] : [])),
+    [pendingRows],
+  )
 
   const sortedHistory = useMemo(() => {
     const order: Record<string, number> = { meeting: 0, email: 1, document: 2 }
@@ -84,6 +120,7 @@ export default function IngestionApproval() {
   }, [data?.sources, historyData?.sources])
 
   // Story 12.7: only sources the user can review are selectable for bulk actions
+  // Story 13.16: unassigned Fathom meetings never are (they need a project first)
   const allVisibleIds = sortedSources.filter((s) => s.can_review).map((s) => s.id)
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id))
 
@@ -171,8 +208,8 @@ export default function IngestionApproval() {
           <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
           {data && (
             <p className="mt-1 text-sm text-gray-500">
-              {t('header.pending', { count: data.pending_count })} &middot;{' '}
-              {t('header.total', { count: data.total })}
+              {t('header.pending', { count: data.pending_count + unassignedCount })} &middot;{' '}
+              {t('header.total', { count: data.total + unassignedCount })}
             </p>
           )}
         </div>
@@ -199,9 +236,9 @@ export default function IngestionApproval() {
             }`}
           >
             {t('tabs.pending')}
-            {data && data.pending_count > 0 && (
+            {data && data.pending_count + unassignedCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-blue-600 rounded-full">
-                {data.pending_count}
+                {data.pending_count + unassignedCount}
               </span>
             )}
           </button>
@@ -300,7 +337,7 @@ export default function IngestionApproval() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {currentLoading && <SkeletonRows />}
-              {!currentLoading && currentSources.length === 0 && (
+              {!currentLoading && pendingRows.length === 0 && (
                 <tr>
                   <td colSpan={12} className="px-4 py-12 text-center">
                     <Inbox className="mx-auto h-10 w-10 text-gray-300 mb-3" />
@@ -311,7 +348,11 @@ export default function IngestionApproval() {
                   </td>
                 </tr>
               )}
-              {!currentLoading && currentSources.map(renderRow)}
+              {!currentLoading && pendingRows.map((row) =>
+                row.kind === 'source'
+                  ? renderRow(row.source)
+                  : <UnassignedMeetingRow key={`unassigned-${row.item.id}`} item={row.item} />
+              )}
             </tbody>
           </table>
         </div>

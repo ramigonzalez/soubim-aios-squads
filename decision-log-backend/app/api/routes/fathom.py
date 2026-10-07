@@ -21,7 +21,7 @@ by default (``shared`` only for admins of that organization). Imports of meeting
 (another organization's internal meeting) are never listed or returned.
 
 Story 13.9 (webhook auto-import, opt-in, off by default):
-- PUT    /api/integrations/fathom/auto-import             → enable/disable + default project + visibility
+- PUT    /api/integrations/fathom/auto-import             → enable/disable + visibility (13.16: no default project)
 - GET    /api/integrations/fathom/unassigned              → pushed recordings waiting for a project
 - POST   /api/integrations/fathom/unassigned/{id}/assign  → import into a project (same rules as 13.4)
 - DELETE /api/integrations/fathom/unassigned/{id}         → discard
@@ -97,12 +97,10 @@ def _back_to_settings(result: str, reason: Optional[str] = None, nonce: Optional
     )
 
 
-def _auto_import_state(db: Session, conn: Optional[FathomConnection]) -> dict:
-    project = db.get(Project, conn.auto_import_project_id) if conn and conn.auto_import_project_id else None
+def _auto_import_state(conn: Optional[FathomConnection]) -> dict:
+    """Story 13.16: meetings are routed by the projects' Fathom rules; there is no default project."""
     return {
         "enabled": bool(conn and conn.auto_import_enabled),
-        "project_id": str(project.id) if project else None,
-        "project_name": project.name if project else None,
         "visibility": conn.auto_import_visibility if conn else "internal",
     }
 
@@ -113,7 +111,7 @@ async def fathom_status(db: Session = Depends(get_db), user=Depends(get_current_
     configured = fathom.is_configured()
     conn = fathom_connections.get_connection(db, user) if configured else None
     return {
-        "auto_import": _auto_import_state(db, conn),
+        "auto_import": _auto_import_state(conn),
         "configured": configured,
         "connected": conn is not None,
         "needs_reconnect": bool(conn and conn.needs_reconnect),
@@ -406,7 +404,8 @@ def fathom_retry_import(import_id: str, db: Session = Depends(get_db), user=Depe
 
 class AutoImportRequest(BaseModel):
     enabled: bool
-    project_id: Optional[str] = Field(None, max_length=64)  # default project; none → everything lands in Unassigned
+    # Story 13.16: no default project (routing uses the projects' Fathom rules). ``shared`` falls back to
+    # ``internal`` per meeting when the user cannot share on the routed project.
     visibility: Literal["internal", "shared"] = "internal"
 
 
@@ -418,13 +417,6 @@ def fathom_auto_import(body: AutoImportRequest, db: Session = Depends(get_db), u
     conn = fathom_connections.get_connection(db, user)
     if conn is None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="not_connected")
-    if body.project_id:  # same checks as a manual import: write access, ``shared`` only for admins
-        project = require_project_access(db, user, body.project_id, WRITE)
-        if body.visibility == "shared" and not can_create_shared(db, user, project):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only admins of your organization can import a meeting as shared",
-            )
     if body.enabled:
         _usable_connection(db, user)
         client = fathom.FathomClient(db, conn)
@@ -449,19 +441,35 @@ def fathom_auto_import(body: AutoImportRequest, db: Session = Depends(get_db), u
         finally:
             if client is not None:
                 client.close()
-    conn.auto_import_project_id = uuid.UUID(body.project_id) if body.project_id else None
     conn.auto_import_visibility = body.visibility
     db.commit()
-    return _auto_import_state(db, conn)
+    return _auto_import_state(conn)
 
 
-def _format_unassigned(row: FathomUnassignedMeeting) -> dict:
+def _matched_projects(db: Session, user, row: FathomUnassignedMeeting) -> list:
+    """Story 13.16: the projects a ``conflict`` meeting matched that still exist and the user can still
+    write to (names read now, so a renamed project shows its current name)."""
+    ids = []
+    for value in row.matched_project_ids or []:
+        try:
+            ids.append(uuid.UUID(str(value)))
+        except ValueError:
+            continue
+    if not ids:
+        return []
+    projects = db.query(Project).filter(Project.id.in_(ids)).all()
+    allowed = [p for p in projects if has_access(project_access_level(db, user, p), WRITE)]
+    return [{"id": str(p.id), "name": p.name} for p in sorted(allowed, key=lambda p: (p.name or "").lower())]
+
+
+def _format_unassigned(db: Session, user, row: FathomUnassignedMeeting) -> dict:
     return {
         "id": str(row.id),
         "recording_id": row.recording_id,
         "title": row.title,
         "started_at": row.started_at.isoformat() + "Z" if row.started_at else None,
         "reason": row.reason,
+        "matched_projects": _matched_projects(db, user, row),
         "received_at": row.created_at.isoformat() + "Z" if row.created_at else None,
     }
 
@@ -485,7 +493,7 @@ def fathom_unassigned(db: Session = Depends(get_db), user=Depends(get_current_us
         .order_by(FathomUnassignedMeeting.created_at.desc())
         .all()
     )
-    return [_format_unassigned(r) for r in rows]
+    return [_format_unassigned(db, user, r) for r in rows]
 
 
 @router.post("/integrations/fathom/unassigned/{item_id}/assign", status_code=status.HTTP_202_ACCEPTED)

@@ -12,13 +12,14 @@ export interface FathomStatus {
   auto_import?: FathomAutoImport
 }
 
-/** Webhook auto-import settings (Story 13.9) — off by default */
+/** Webhook auto-import settings (Story 13.9) — off by default. Story 13.16: routed by project rules */
 export interface FathomAutoImport {
   enabled: boolean
-  project_id: string | null
-  project_name: string | null
   visibility: MeetingVisibility
 }
+
+/** Why a webhook meeting waits for a project. 13.16: no_match | conflict (older rows: the 13.9 reasons) */
+export type FathomUnassignedReason = 'no_match' | 'conflict' | 'no_default_project' | 'project_unavailable'
 
 /** A recording pushed by the Fathom webhook that waits for a project (Story 13.9) */
 export interface FathomUnassignedMeeting {
@@ -26,8 +27,22 @@ export interface FathomUnassignedMeeting {
   recording_id: string
   title: string | null
   started_at: string | null
-  reason: 'no_default_project' | 'project_unavailable'
+  reason: FathomUnassignedReason
+  /** Story 13.16: projects a `conflict` meeting matched (that the user can still write to) */
+  matched_projects?: { id: string; name: string }[]
   received_at: string | null
+}
+
+/** Story 13.16: a rule that sends Fathom webhook meetings to a project */
+export type FathomRuleField = 'title' | 'participant_email' | 'participant_domain'
+
+export interface FathomRule {
+  id: string
+  project_id: string
+  field: FathomRuleField
+  operator: 'contains' | 'equals'
+  value: string
+  created_at: string | null
 }
 
 export interface FathomPerson {

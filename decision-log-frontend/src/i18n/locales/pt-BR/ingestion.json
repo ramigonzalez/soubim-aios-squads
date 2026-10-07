@@ -155,5 +155,28 @@
     "visibilityInternal": "Interna — só a sua organização vê",
     "visibilityShared": "Compartilhada — todas as organizações do projeto veem",
     "sharedAdminOnly": "Só o proprietário ou admin da sua organização pode compartilhar uma reunião."
+  },
+  "unassigned": {
+    "noProject": "Sem projeto",
+    "conflict": "Conflito",
+    "noProjectHint": "Não corresponde às regras do Fathom de nenhum projeto — escolha um projeto",
+    "conflictHint": "Corresponde a {{count}} projetos: {{projects}} — escolha um",
+    "source": "Fathom (automático)",
+    "untitled": "Reunião sem título",
+    "project": "Projeto para {{name}}",
+    "selectProject": "Escolha um projeto",
+    "matchedGroup": "Projetos correspondentes",
+    "otherGroup": "Outros projetos",
+    "import": "Importar",
+    "discard": "Descartar",
+    "importItem": "Importar {{name}}",
+    "discardItem": "Descartar {{name}}",
+    "notSelectable": "Escolha um projeto e importe primeiro",
+    "errors": {
+      "alreadyImported": "Esta reunião já foi importada nesse projeto.",
+      "storage": "O armazenamento de gravações não está configurado neste servidor.",
+      "forbidden": "Você não pode importar neste projeto.",
+      "generic": "Não foi possível concluir a ação. Tente novamente."
+    }
   }
 }

@@ -357,4 +357,20 @@ describe('ProjectDetail capabilities (Story 12.7)', () => {
     expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Archive/ })).not.toBeInTheDocument()
   })
+
+  it('shows reviewers a Fathom rules button, not to members (Story 13.16)', () => {
+    withCapabilities({ can_manage: false, can_review: true })
+    const { unmount } = renderProjectDetail()
+    expect(screen.getByRole('button', { name: /Fathom rules/ })).toBeInTheDocument()
+    unmount()
+    withCapabilities({ can_manage: false, can_review: false })
+    renderProjectDetail()
+    expect(screen.queryByRole('button', { name: /Fathom rules/ })).not.toBeInTheDocument()
+  })
+
+  it('admins get Edit, not the separate Fathom rules button (Story 13.16)', () => {
+    withCapabilities({ can_manage: true, can_review: true })
+    renderProjectDetail()
+    expect(screen.queryByRole('button', { name: /Fathom rules/ })).not.toBeInTheDocument()
+  })
 })

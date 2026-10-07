@@ -29,10 +29,9 @@
     "browse": "Ver reuniões do Fathom",
     "autoImport": {
       "title": "Importação automática",
-      "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao DecisionLog como reuniões pendentes na Ingestão. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
+      "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao DecisionLog. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
       "enable": "Importar novas reuniões do Fathom automaticamente",
-      "project": "Projeto padrão",
-      "noProject": "Sem projeto padrão (as reuniões aguardam em Ingestão, em \"Reuniões não atribuídas\")",
+      "routing": "Cada reunião vai para o projeto cujas regras do Fathom ela atende (defina-as nas configurações de cada projeto). Uma reunião que não atende a nenhum projeto, ou atende a mais de um, aguarda na Ingestão para você escolher o projeto.",
       "visibility": "Visibilidade",
       "save": "Salvar",
       "saving": "Salvando...",
@@ -40,7 +39,7 @@
       "errors": {
         "reconnect": "Reconecte sua conta do Fathom primeiro.",
         "fathom": "O Fathom não conseguiu registrar o webhook. Tente novamente.",
-        "forbidden": "Você não pode usar este projeto ou esta visibilidade.",
+        "forbidden": "Você não pode usar esta visibilidade.",
         "generic": "Não foi possível salvar. Tente novamente."
       }
     }
@@ -109,18 +108,6 @@
         "storage": "O armazenamento de gravações não está configurado neste servidor.",
         "generic": "Não foi possível importar. Tente novamente."
       }
-    }
-  },
-  "unassigned": {
-    "title": "Reuniões não atribuídas",
-    "description": "Estas reuniões chegaram do Fathom sem um projeto de destino. Escolha um projeto para importar cada uma, ou descarte.",
-    "project": "Projeto",
-    "assign": "Importar",
-    "discard": "Descartar",
-    "errors": {
-      "alreadyImported": "Esta reunião já foi importada nesse projeto.",
-      "storage": "O armazenamento de gravações não está configurado neste servidor.",
-      "generic": "Não foi possível concluir a ação. Tente novamente."
     }
   }
 }
