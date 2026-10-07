@@ -47,7 +47,7 @@
   },
   "meetings": {
     "title": "Fathom meetings",
-    "subtitle": "Pick which meetings from your Fathom account to import into a project. With auto-import on, new meetings arrive in Ingestion on their own.",
+    "subtitle": "Pick which meetings from your Fathom account to import into a project. With auto-import on, new meetings arrive in Ingestion on their own — only calls that get a Fathom summary are sent (very short calls are not).",
     "back": "Integrations",
     "search": "Search by title or participant",
     "searchHint": "Search covers the meetings loaded so far.",
