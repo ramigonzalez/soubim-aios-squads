@@ -1,0 +1,16 @@
+# Netlify build for the frontend (site base directory: decision-log-frontend)
+# Set VITE_API_BASE_URL in Netlify → Site configuration → Environment variables,
+# e.g. https://<railway-api-domain>/api
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Single-page app: every route serves index.html (React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
