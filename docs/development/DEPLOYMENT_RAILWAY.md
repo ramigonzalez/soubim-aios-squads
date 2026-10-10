@@ -53,7 +53,7 @@ Set on **both** `api` and `worker` unless noted.
 - Webhooks: `TACTIQ_WEBHOOK_SECRET` (currently required by `Settings`)
 - Fathom (13.3): `FATHOM_CLIENT_ID`, `FATHOM_CLIENT_SECRET`, `FATHOM_REDIRECT_URI` (both: the worker refreshes tokens for 13.4 imports); `FRONTEND_URL` (API: the frontend origin the OAuth callback redirects back to)
 - Google sign-in (12.8, API only, optional): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` = `https://<api-domain>/api/auth/google/callback` (identical to an Authorized redirect URI of the Google OAuth client); uses `FRONTEND_URL` too
-- Storage (once 13.1 decides the provider): `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`
+- Storage (Backblaze B2, decided 2026-10-09): `S3_ENDPOINT` (e.g. `https://s3.<region>.backblazeb2.com`), `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`
 - `TOKEN_ENCRYPTION_KEY` (both): Fernet key encrypting stored Fathom tokens (`python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). Keep it stable: a new key makes stored tokens unreadable and every user must reconnect.
 - Runtime: `ENVIRONMENT=production`, `DEBUG=false`, `DEMO_MODE=false` (or unset), `WORKER_POLL_SECONDS` (worker only)
 - `CORS_ORIGINS` (API): see below
