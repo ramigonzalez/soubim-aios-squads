@@ -21,7 +21,7 @@ from typing import Iterable, List, Optional, Set
 from sqlalchemy.orm import Session
 
 from app.database.models import Project, ProjectFathomRule
-from app.services.access import WRITE, has_access, project_access_level
+from app.services.access import NONE, WRITE, has_access, project_access_by_organization
 
 TITLE, EMAIL, DOMAIN = "title", "participant_email", "participant_domain"
 FIELDS = (TITLE, EMAIL, DOMAIN)
@@ -115,10 +115,29 @@ def rule_matches(rule: ProjectFathomRule, facts: MeetingFacts) -> bool:
 
 
 def candidate_projects(db: Session, user) -> List[Project]:
-    """Projects with at least one rule that ``user`` can write to and that are not archived."""
+    """Projects with at least one rule, not archived, that ``user`` can write to **through the owning
+    organization**.
+
+    Projects reached only through a share (12.3) are never candidates: otherwise the owner organization's
+    rules could pull another organization's Fathom meetings into its project (12.13 tenancy audit, H1).
+    """
+    from app.database.models import OrganizationMember
+
+    own_org_ids = db.query(OrganizationMember.organization_id).filter(OrganizationMember.user_id == user.id)
     with_rules = db.query(ProjectFathomRule.project_id).distinct()
-    projects = db.query(Project).filter(Project.id.in_(with_rules), Project.archived_at.is_(None)).all()
-    return [p for p in projects if has_access(project_access_level(db, user, p), WRITE)]
+    projects = (
+        db.query(Project)
+        .filter(
+            Project.id.in_(with_rules),
+            Project.archived_at.is_(None),
+            Project.owner_organization_id.in_(own_org_ids),
+        )
+        .all()
+    )
+    return [
+        p for p in projects
+        if has_access(project_access_by_organization(db, user, p).get(str(p.owner_organization_id), NONE), WRITE)
+    ]
 
 
 def matching_projects(db: Session, user, payload) -> List[Project]:
