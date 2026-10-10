@@ -251,6 +251,35 @@ class TestRouting:
         assert deliver(client, conn.id).json() == {"status": "imported"}
         assert db_session.query(FathomImport).one().project_id == project.id
 
+    def test_shared_in_project_is_not_a_candidate(self, client, db_session, project, conn):
+        """12.13 audit H1: another organization's rules on a project shared with us never route our meetings."""
+        from app.database.models import ProjectOrganization
+
+        foreign = Project(owner_organization_id=make_org(db_session, "DIMAS").id, name="Projeto DIMAS")
+        db_session.add(foreign)
+        db_session.flush()
+        db_session.add(ProjectOrganization(project_id=foreign.id, organization_id=project.owner_organization_id,
+                                           access="contributor"))
+        db_session.commit()
+        add_rule(db_session, foreign, "title", "a")  # broad rule set by the other organization
+        assert deliver(client, conn.id).json() == {"status": "imported"}
+        assert db_session.query(FathomImport).one().project_id == project.id
+
+    def test_only_a_shared_in_match_is_no_match(self, client, db_session, project, conn):
+        from app.database.models import ProjectOrganization
+
+        db_session.query(ProjectFathomRule).delete()
+        foreign = Project(owner_organization_id=make_org(db_session, "DIMAS").id, name="Projeto DIMAS")
+        db_session.add(foreign)
+        db_session.flush()
+        db_session.add(ProjectOrganization(project_id=foreign.id, organization_id=project.owner_organization_id,
+                                           access="contributor"))
+        db_session.commit()
+        add_rule(db_session, foreign, "title", "a")
+        assert deliver(client, conn.id).json() == {"status": "unassigned"}
+        assert db_session.query(FathomUnassignedMeeting).one().reason == "no_match"
+        assert db_session.query(FathomImport).count() == 0
+
     def test_case_insensitive_title_match(self, client, db_session, project, conn):
         db_session.query(ProjectFathomRule).delete()
         add_rule(db_session, project, "title", "  COORDENAÇÃO SEMANAL ")
