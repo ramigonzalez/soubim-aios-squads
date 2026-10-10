@@ -10,7 +10,7 @@ Topology: three services in one Railway project.
 | `api` | this repo, `decision-log-backend/` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Healthcheck `/health`; runs `alembic upgrade head` before each deploy |
 | `worker` | same repo, same Dockerfile | `python -m app.worker` | No HTTP, no domain |
 
-The frontend is deployed separately (Vercel, see `docs/architecture/06-DEPLOYMENT.md`).
+The frontend is deployed separately on Netlify (`decision-log-frontend/netlify.toml`; Rami chose Netlify over Vercel on 2026-10-09).
 
 ## 0. Before anything: rotate the leaked Anthropic key
 
@@ -53,7 +53,7 @@ Set on **both** `api` and `worker` unless noted.
 - Webhooks: `TACTIQ_WEBHOOK_SECRET` (currently required by `Settings`)
 - Fathom (13.3): `FATHOM_CLIENT_ID`, `FATHOM_CLIENT_SECRET`, `FATHOM_REDIRECT_URI` (both: the worker refreshes tokens for 13.4 imports); `FRONTEND_URL` (API: the frontend origin the OAuth callback redirects back to)
 - Google sign-in (12.8, API only, optional): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` = `https://<api-domain>/api/auth/google/callback` (identical to an Authorized redirect URI of the Google OAuth client); uses `FRONTEND_URL` too
-- Storage (once 13.1 decides the provider): `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`
+- Storage (Backblaze B2, decided 2026-10-09): `S3_ENDPOINT` (e.g. `https://s3.<region>.backblazeb2.com`), `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`
 - `TOKEN_ENCRYPTION_KEY` (both): Fernet key encrypting stored Fathom tokens (`python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). Keep it stable: a new key makes stored tokens unreadable and every user must reconnect.
 - Runtime: `ENVIRONMENT=production`, `DEBUG=false`, `DEMO_MODE=false` (or unset), `WORKER_POLL_SECONDS` (worker only)
 - `CORS_ORIGINS` (API): see below
@@ -94,14 +94,14 @@ Origins come from `CORS_ORIGINS` (`app/config.py`, passed to `CORSMiddleware` in
 CORS_ORIGINS=["https://<your-frontend-domain>"]
 ```
 
-Add the Vercel preview domain only if you want previews to call production.
+Add the Netlify deploy-preview domain only if you want previews to call production.
 
 ## 5. Domain and Fathom redirect URL
 
 1. API service -> Networking -> Generate Domain (`https://<name>.up.railway.app`) or add a custom domain (e.g. `api.<yourdomain>`; add the CNAME Railway shows). The custom domain purchase is out of scope for this story.
 2. In the Fathom developer app settings, replace the localhost redirect with `https://<api-domain>/api/fathom/callback` and set `FATHOM_REDIRECT_URI` to the identical string. They must match exactly.
 3. The Fathom webhook URL (13.9) is also `https://<api-domain>/...`.
-4. Point the frontend's API base URL (Vercel env) at `https://<api-domain>`.
+4. Set `VITE_API_BASE_URL=https://<api-domain>/api` in Netlify (Site configuration → Environment variables) and redeploy.
 
 ## 6. First deploy checklist
 
