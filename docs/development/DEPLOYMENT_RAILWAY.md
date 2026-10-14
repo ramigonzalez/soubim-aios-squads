@@ -91,7 +91,7 @@ Over the limit: `429`, `Retry-After` header, JSON `detail`.
 Origins come from `CORS_ORIGINS` (`app/config.py`, passed to `CORSMiddleware` in `app/main.py`). It is parsed as a JSON list. Production value, exactly the frontend origin(s) with scheme and no trailing slash:
 
 ```
-CORS_ORIGINS=["https://<your-frontend-domain>"]
+CORS_ORIGINS=["https://decisionlog-soubim.netlify.app"]   # set 2026-10-14
 ```
 
 Add the Netlify deploy-preview domain only if you want previews to call production.
@@ -101,7 +101,39 @@ Add the Netlify deploy-preview domain only if you want previews to call producti
 1. API service -> Networking -> Generate Domain (`https://<name>.up.railway.app`) or add a custom domain (e.g. `api.<yourdomain>`; add the CNAME Railway shows). The custom domain purchase is out of scope for this story.
 2. In the Fathom developer app settings, replace the localhost redirect with `https://<api-domain>/api/fathom/callback` and set `FATHOM_REDIRECT_URI` to the identical string. They must match exactly.
 3. The Fathom webhook URL (13.9) is also `https://<api-domain>/...`.
-4. Set `VITE_API_BASE_URL=https://<api-domain>/api` in Netlify (Site configuration → Environment variables) and redeploy.
+4. Set `VITE_API_BASE_URL` in `decision-log-frontend/.env.production` (committed; a public value) and redeploy the frontend.
+
+## 5b. Frontend (Netlify now, Cloudflare ready)
+
+Everything the build needs is in files, so neither host needs dashboard settings:
+
+| File | What it sets |
+|---|---|
+| `decision-log-frontend/.env.production` | `VITE_API_BASE_URL` for every production build |
+| `decision-log-frontend/netlify.toml` | Netlify build command, `dist`, SPA redirect |
+| `decision-log-frontend/wrangler.jsonc` | Cloudflare name, `dist`, SPA fallback |
+
+**Netlify (live since 2026-10-14):** site `decisionlog-soubim`, https://decisionlog-soubim.netlify.app, created with the CLI and deployed by hand:
+
+```
+cd decision-log-frontend
+npm run build
+NETLIFY_SITE_ID=70b2647f-7552-4afa-9980-8c256e85a399 npx netlify-cli deploy --prod --dir dist --no-build
+```
+
+Netlify bills in credits (Free = 300/month; one production deploy = 15, one GB = 20). Deploy on purpose, not on every push.
+
+**Cloudflare (prepared, not deployed):** free for commercial use, unlimited static bandwidth.
+
+```
+cd decision-log-frontend
+npx wrangler login          # once, opens the browser
+npm run build && npx wrangler deploy
+```
+
+It prints `https://decisionlog-soubim.<account>.workers.dev`. Then add that origin to `CORS_ORIGINS` and set `FRONTEND_URL` on the Railway `api` (and `FRONTEND_URL` on `worker`).
+
+Switching hosts = change `CORS_ORIGINS` / `FRONTEND_URL` on Railway. With a custom domain (e.g. `app.codeshift.space`) the switch is only a DNS change.
 
 ## 6. First deploy checklist
 

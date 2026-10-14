@@ -1,0 +1,11 @@
+// Cloudflare Workers static assets (alternative host to Netlify; see docs/development/DEPLOYMENT_RAILWAY.md).
+// Deploy: npm run build && npx wrangler deploy
+{
+  "name": "decisionlog-soubim",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // React Router: unknown paths serve index.html instead of a 404
+    "not_found_handling": "single-page-application"
+  }
+}
