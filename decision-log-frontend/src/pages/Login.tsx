@@ -2,20 +2,25 @@ import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
+import { isOrganizationBlocked } from '../lib/organizationBlocked'
 import { useAuthStore } from '../store/authStore'
 import { safeRedirect } from '../lib/safeRedirect'
 import { GoogleSignInButton } from '../components/organisms/GoogleSignInButton'
+import { homePath } from '../components/common/PlatformRoute'
 
 export function Login() {
   const { t } = useTranslation('auth')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [searchParams] = useSearchParams()
+  // Story 12.13: sent here after the session ended because every organization of the user is blocked
+  const [error, setError] = useState(() => (searchParams.get('blocked') ? t('login.blocked') : ''))
   const [isLoading, setIsLoading] = useState(false)
 
   const navigate = useNavigate()
   // Story 12.5: come back to the invitation page after logging in (same-site paths only)
-  const destination = safeRedirect(useSearchParams()[0].get('redirect'))
+  const redirectParam = searchParams.get('redirect')
+  const destination = safeRedirect(redirectParam)
   const setAuth = useAuthStore((state) => state.setAuth)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,11 +33,13 @@ export function Login() {
       const { access_token, user } = response.data
 
       setAuth(user, access_token)
-      navigate(destination)
+      // Story 12.13: without an explicit redirect the platform operator lands on /platform
+      navigate(redirectParam ? destination : homePath(user))
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: { detail?: string } } }
+      if (isOrganizationBlocked(err)) setError(t('login.blocked'))
       // Story 13.11: 429 = rate limited (the backend detail is English-only)
-      setError(e?.response?.status === 429 ? t('login.rateLimited') : e?.response?.data?.detail || t('login.error'))
+      else setError(e?.response?.status === 429 ? t('login.rateLimited') : e?.response?.data?.detail || t('login.error'))
     } finally {
       setIsLoading(false)
     }
@@ -116,7 +123,7 @@ export function Login() {
 
           {/* Story 12.8: Sign in with Google (hidden when the server has it disabled) */}
           <div className="mt-5">
-            <GoogleSignInButton redirect={destination} />
+            <GoogleSignInButton redirect={redirectParam ? destination : undefined} />
           </div>
 
           {/* Demo Info */}

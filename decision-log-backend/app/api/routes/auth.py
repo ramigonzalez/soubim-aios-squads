@@ -17,11 +17,11 @@ from app.services import google_login
 from app.utils.security import create_access_token
 from app.services.auth_service import (
     authenticate_user,
-    get_user_by_id,
-    get_user_projects,
+    user_response,
     AuthenticationError,
     UserNotFoundError,
 )
+from app.services.organizations import ORGANIZATION_BLOCKED, is_account_blocked
 from app.database.session import get_db
 from app.api.middleware.auth import get_current_user
 from app.api.middleware.rate_limit import enforce_login_email_limit
@@ -35,17 +35,13 @@ router = APIRouter()
 def token_response(db: Session, user: User) -> TokenResponse:
     """Our JWT + user info: the same answer for password and Google login."""
     token = create_access_token(user_id=str(user.id), email=user.email, role=user.role)
-    return TokenResponse(
-        access_token=token,
-        token_type="bearer",
-        user=UserResponse(
-            id=user.id,
-            email=user.email,
-            name=user.name,
-            role=user.role,
-            projects=get_user_projects(db, str(user.id)),
-        ),
-    )
+    return TokenResponse(access_token=token, token_type="bearer", user=user_response(db, user))
+
+
+def refuse_blocked_account(db: Session, user: User) -> None:
+    """Story 12.13: no login for a user whose organizations are all blocked (403 ``organization_blocked``)."""
+    if is_account_blocked(db, user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ORGANIZATION_BLOCKED)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -75,14 +71,14 @@ async def login(
     try:
         # Story 12.8: the email is compared case-insensitively (authenticate_user normalizes it)
         user = authenticate_user(db, request.email, request.password)
-        return token_response(db, user)
-
-    except (AuthenticationError, UserNotFoundError) as e:
+    except (AuthenticationError, UserNotFoundError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    refuse_blocked_account(db, user)  # Story 12.13 (after the password check: no account oracle)
+    return token_response(db, user)
 
 
 @router.get("/me", response_model=UserResponse)
@@ -111,16 +107,8 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Get user's projects
-    projects = get_user_projects(db, str(user.id))
-
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        name=user.name,
-        role=user.role,
-        projects=projects,
-    )
+    # Story 12.13: a blocked account never gets here (the auth middleware answers 403 organization_blocked)
+    return user_response(db, user)
 
 
 @router.post("/logout", status_code=204)
@@ -233,6 +221,7 @@ def google_exchange(body: GoogleRedeemRequest, db: Session = Depends(get_db)):
         result = google_login.redeem(db, body.code, body.browser_key)
     except google_login.GoogleLoginError as exc:
         raise HTTPException(status_code=exc.status, detail=exc.reason)
+    refuse_blocked_account(db, result.user)  # Story 12.13
     logger.info("Google sign-in for user %s", result.user.id)
     response = token_response(db, result.user)
     return GoogleLoginResponse(

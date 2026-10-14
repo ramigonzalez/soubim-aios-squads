@@ -57,6 +57,14 @@ def make_user(db, email, name="Someone"):
     return user
 
 
+def make_operator(db, email="operator@platform.com"):
+    """Story 12.13: the platform operator (no organization)."""
+    user = make_user(db, email, "Operator")
+    user.is_platform_operator = True
+    db.commit()
+    return user
+
+
 def join(db, user, org, role):
     db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=role))
     db.commit()
@@ -146,13 +154,15 @@ class TestCreate:
         assert listed.json()["invitations"] == []
         assert client.post("/api/invitations/public/preview", json={"token": token_of(r)}).status_code == 410
 
-    def test_new_company_needs_platform_admin(self, client, world, sent):
+    def test_new_company_is_not_created_here(self, client, world, sent):
+        """Story 12.13: new-company invitations moved to /api/platform/invitations (operator only)."""
         r = client.post(
             "/api/invitations",
             json={"email": "boss@newco.com", "organization_name": "NewCo"},
             headers=auth(world["admin"]),
         )
-        assert r.status_code == 403
+        assert r.status_code == 422
+        assert world["db"].query(OrganizationInvitation).count() == 0
 
 
 class TestAcceptNewUser:
@@ -235,12 +245,10 @@ class TestAcceptExistingUser:
 
 
 class TestNewCompany:
-    def test_platform_admin_invites_company_owner(self, client, world, sent):
-        platform = make_org(world["db"], "souBIM", "soubim")
-        boss = make_user(world["db"], "boss@soubim.com", "Boss")
-        join(world["db"], boss, platform, "admin")
+    def test_platform_operator_invites_company_owner(self, client, world, sent):
+        boss = make_operator(world["db"])
         r = client.post(
-            "/api/invitations",
+            "/api/platform/invitations",
             json={"email": "ceo@newco.com", "role": "member", "organization_name": "New Co"},
             headers=auth(boss),
         )
@@ -413,11 +421,11 @@ class TestSecurityReview:
         ).count() == 0
 
     def test_new_company_double_accept_creates_one_organization(self, client, world, sent, monkeypatch):
-        platform = make_org(world["db"], "souBIM", "soubim")
-        boss = make_user(world["db"], "boss@soubim.com", "Boss")
-        join(world["db"], boss, platform, "owner")
+        boss = make_operator(world["db"])
         r = client.post(
-            "/api/invitations", json={"email": "outsider@other.com", "organization_name": "Dup Co"}, headers=auth(boss)
+            "/api/platform/invitations",
+            json={"email": "outsider@other.com", "organization_name": "Dup Co"},
+            headers=auth(boss),
         )
         token = token_of(r)
         _race(monkeypatch, world["db"], _set("accepted_at"))
@@ -441,11 +449,9 @@ class TestSecurityReview:
         # the invitation is still usable after rejected attempts
         assert client.post(url, json={"token": token, "name": "N", "password": PASSWORD}).status_code == 200
 
-        platform = make_org(world["db"], "souBIM", "soubim")
-        boss = make_user(world["db"], "boss@soubim.com", "Boss")
-        join(world["db"], boss, platform, "owner")
+        boss = make_operator(world["db"])
         r = client.post(
-            "/api/invitations", json={"email": "a@b.com", "organization_name": "X" * 300}, headers=auth(boss)
+            "/api/platform/invitations", json={"email": "a@b.com", "organization_name": "X" * 300}, headers=auth(boss)
         )
         assert r.status_code == 422
 

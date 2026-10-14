@@ -1,0 +1,58 @@
+{
+  "title": "Platform",
+  "subtitle": "Client organizations and invitations for new companies. Counts only: client content is never shown here.",
+  "organizations": {
+    "title": "Organizations",
+    "loading": "Loading organizations...",
+    "empty": "No organizations yet.",
+    "error": "Could not load the organizations.",
+    "name": "Name",
+    "status": "Status",
+    "created": "Created",
+    "members": "Members",
+    "projects": "Projects",
+    "lastActivity": "Last activity",
+    "details": "Members",
+    "hideDetails": "Hide",
+    "statusLabel": "Status of {{name}}",
+    "statusError": "Could not change the status.",
+    "confirmBlock": "Block {{name}}? Its members lose access to this organization immediately."
+  },
+  "status": {
+    "active": "Active",
+    "payment_pending": "Payment pending",
+    "blocked": "Blocked"
+  },
+  "detail": {
+    "loading": "Loading members...",
+    "empty": "No members.",
+    "error": "Could not load the members.",
+    "membersOf": "Members of {{name}}"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "reviewer": "Reviewer",
+    "member": "Member"
+  },
+  "invite": {
+    "title": "Invite a new company",
+    "hint": "The organization is created when the invitation is accepted and the invitee becomes its owner. Emails are not sent yet: copy the link and send it yourself.",
+    "companyName": "Company name",
+    "email": "Owner's email",
+    "submit": "Create invitation",
+    "sending": "Creating...",
+    "created": "Invitation created for {{email}}. Send them this link (it is shown only once):",
+    "link": "Invitation link",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "error": "Could not create the invitation."
+  },
+  "pending": {
+    "title": "Pending invitations",
+    "empty": "No pending invitations.",
+    "expires": "expires {{date}}",
+    "revoke": "Revoke",
+    "revokeError": "Could not revoke the invitation."
+  }
+}

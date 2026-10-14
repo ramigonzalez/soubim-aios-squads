@@ -394,3 +394,59 @@ describe('Login ?redirect= (Story 12.5 security review)', () => {
     await waitFor(() => expect(currentPath).toBe('/projects'))
   })
 })
+
+describe('Login: platform operator and blocked accounts (Story 12.13)', () => {
+  beforeEach(() => {
+    useAuthStore.getState().clearAuth()
+    vi.clearAllMocks()
+  })
+
+  let currentPath = ''
+  function LocationProbe() {
+    currentPath = useLocation().pathname
+    return null
+  }
+
+  function renderAt(entry: string) {
+    currentPath = ''
+    return render(
+      <MemoryRouter initialEntries={[entry]}>
+        <Login />
+        <LocationProbe />
+      </MemoryRouter>
+    )
+  }
+
+  async function submit() {
+    await userEvent.type(screen.getByLabelText(/email/i), 'a@b.com')
+    await userEvent.type(screen.getByLabelText(/password/i), 'password123')
+    await userEvent.click(screen.getByRole('button', { name: /login/i }))
+  }
+
+  it('the platform operator lands on /platform', async () => {
+    vi.mocked(apiModule.default.post).mockResolvedValueOnce({
+      data: {
+        access_token: 't',
+        user: { id: '1', email: 'op@x.com', name: 'Op', role: 'client', projects: [], is_platform_operator: true },
+      },
+    })
+    renderAt('/login')
+    await submit()
+    await waitFor(() => expect(currentPath).toBe('/platform'))
+  })
+
+  it('a refused login of a blocked account says the account is suspended', async () => {
+    vi.mocked(apiModule.default.post).mockRejectedValueOnce({
+      response: { status: 403, data: { detail: 'organization_blocked' } },
+    })
+    renderAt('/login')
+    await submit()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Account suspended. Please contact support.')
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+  })
+
+  it('shows the suspended message when the session ended (?blocked=1)', () => {
+    renderAt('/login?blocked=1')
+    expect(screen.getByRole('alert')).toHaveTextContent('Account suspended. Please contact support.')
+  })
+})

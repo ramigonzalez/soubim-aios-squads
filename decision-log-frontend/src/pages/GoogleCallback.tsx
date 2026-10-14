@@ -12,6 +12,7 @@ import { ORGANIZATIONS_KEY } from '../hooks/useOrganizations'
 import { safeRedirect } from '../lib/safeRedirect'
 import { useAuthStore } from '../store/authStore'
 import { useOrganizationStore } from '../store/organizationStore'
+import { homePath } from '../components/common/PlatformRoute'
 
 /** Reasons with a specific message (backend callback fragment `error=` or exchange `detail`). */
 export const GOOGLE_ERROR_REASONS = [
@@ -28,6 +29,7 @@ export const GOOGLE_ERROR_REASONS = [
   'browser_mismatch',
   'google_account_mismatch',
   'google_account_in_use',
+  'organization_blocked', // Story 12.13
 ] as const
 
 function reasonKey(reason: string | undefined): string {
@@ -76,7 +78,9 @@ export default function GoogleCallback() {
           setActiveOrganizationId(data.organization_id)
           queryClient.invalidateQueries(ORGANIZATIONS_KEY)
         }
-        navigate(pending.invitationToken ? '/projects' : safeRedirect(pending.redirect), { replace: true })
+        // Story 12.13: without an explicit redirect the platform operator lands on /platform
+        const target = pending.redirect ? safeRedirect(pending.redirect) : homePath(data.user)
+        navigate(pending.invitationToken ? '/projects' : target, { replace: true })
       })
       .catch((err: unknown) => {
         const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail

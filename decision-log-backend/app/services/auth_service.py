@@ -75,6 +75,32 @@ def get_user_by_id(db: Session, user_id: str) -> User:
     return user
 
 
+def user_response(db: Session, user: User):
+    """``UserResponse`` for login, /auth/me and invitation accept (Story 12.13: operator flag and
+    organizations with their status)."""
+    from app.api.models.auth import OrganizationSummary, UserResponse
+    from app.services.organizations import get_memberships
+
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        role=user.role,
+        projects=get_user_projects(db, str(user.id)),
+        is_platform_operator=bool(user.is_platform_operator),
+        organizations=[
+            OrganizationSummary(
+                id=m.organization.id,
+                name=m.organization.name,
+                slug=m.organization.slug,
+                role=m.role,
+                status=m.organization.status,
+            )
+            for m in get_memberships(db, user)
+        ],
+    )
+
+
 def get_user_projects(db: Session, user_id: str) -> list:
     """
     Get all projects accessible to user.

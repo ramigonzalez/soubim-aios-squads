@@ -27,12 +27,9 @@
     "error": "Could not update project access."
   },
   "invite": {
-    "title":"Invite someone",
+    "title": "Invite someone",
     "email": "Email",
     "role": "Role",
-    "companyToggle": "Invite a company that is not on DecisionLog yet",
-    "companyName": "Company name",
-    "companyHint": "The organization is created when the invitation is accepted and the invitee becomes its owner.",
     "submit": "Send invitation",
     "sending": "Sending...",
     "created": "Invitation created for {{email}}. Send them this link (it is shown only once):",

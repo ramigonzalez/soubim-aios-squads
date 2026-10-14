@@ -20,9 +20,6 @@ import type {
   OrganizationRole,
 } from '../types/organization'
 
-// the platform operator organization (seeded with this slug) may invite new companies
-const PLATFORM_SLUG = 'soubim'
-
 function apiError(error: unknown, fallback: string): string {
   return (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fallback
 }
@@ -45,7 +42,7 @@ export default function TeamSettings() {
         </header>
         {active && isAdmin ? (
           <>
-            <InviteForm orgId={active.id} canCreateCompany={active.slug === PLATFORM_SLUG} isOwner={active.role === 'owner'} />
+            <InviteForm orgId={active.id} isOwner={active.role === 'owner'} />
             <PendingInvitations orgId={active.id} />
             <Members orgId={active.id} isOwner={active.role === 'owner'} />
           </>
@@ -92,12 +89,10 @@ function RoleSelect({
   )
 }
 
-function InviteForm({ orgId, canCreateCompany, isOwner }: { orgId: string; canCreateCompany: boolean; isOwner: boolean }) {
+function InviteForm({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
   const { t } = useTranslation('team')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<OrganizationRole>('member')
-  const [company, setCompany] = useState(false)
-  const [companyName, setCompanyName] = useState('')
   const [created, setCreated] = useState<OrganizationInvitationInfo | null>(null)
   const [copied, setCopied] = useState(false)
   const create = useCreateInvitation(orgId)
@@ -105,13 +100,12 @@ function InviteForm({ orgId, canCreateCompany, isOwner }: { orgId: string; canCr
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     create.mutate(
-      { email, role, organizationName: company ? companyName : undefined },
+      { email, role },
       {
         onSuccess: invitation => {
           setCreated(invitation)
           setCopied(false)
           setEmail('')
-          setCompanyName('')
         },
       }
     )
@@ -130,27 +124,6 @@ function InviteForm({ orgId, canCreateCompany, isOwner }: { orgId: string; canCr
     <section className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
       <h2 className="text-lg font-semibold text-gray-900">{t('invite.title')}</h2>
       <form onSubmit={submit} className="space-y-3">
-        {canCreateCompany && (
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" checked={company} onChange={e => setCompany(e.target.checked)} />
-            {t('invite.companyToggle')}
-          </label>
-        )}
-        {company && (
-          <div>
-            <label htmlFor="invite-company" className="block text-sm font-medium text-gray-700">
-              {t('invite.companyName')}
-            </label>
-            <input
-              id="invite-company"
-              required
-              value={companyName}
-              onChange={e => setCompanyName(e.target.value)}
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
-            <p className="mt-1 text-xs text-gray-500">{t('invite.companyHint')}</p>
-          </div>
-        )}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[12rem]">
             <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700">
@@ -165,14 +138,12 @@ function InviteForm({ orgId, canCreateCompany, isOwner }: { orgId: string; canCr
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
-          {!company && (
-            <div>
-              <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700">
-                {t('invite.role')}
-              </label>
-              <RoleSelect id="invite-role" value={role} onChange={setRole} isOwner={isOwner} label={t('invite.role')} />
-            </div>
-          )}
+          <div>
+            <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700">
+              {t('invite.role')}
+            </label>
+            <RoleSelect id="invite-role" value={role} onChange={setRole} isOwner={isOwner} label={t('invite.role')} />
+          </div>
           <button
             type="submit"
             disabled={create.isLoading}

@@ -1,0 +1,58 @@
+{
+  "title": "Plataforma",
+  "subtitle": "Organizações clientes e convites para novas empresas. Somente contagens: o conteúdo dos clientes não aparece aqui.",
+  "organizations": {
+    "title": "Organizações",
+    "loading": "Carregando organizações...",
+    "empty": "Nenhuma organização ainda.",
+    "error": "Não foi possível carregar as organizações.",
+    "name": "Nome",
+    "status": "Situação",
+    "created": "Criada em",
+    "members": "Membros",
+    "projects": "Projetos",
+    "lastActivity": "Última atividade",
+    "details": "Membros",
+    "hideDetails": "Ocultar",
+    "statusLabel": "Situação de {{name}}",
+    "statusError": "Não foi possível alterar a situação.",
+    "confirmBlock": "Bloquear {{name}}? Os membros perdem o acesso a esta organização imediatamente."
+  },
+  "status": {
+    "active": "Ativa",
+    "payment_pending": "Pagamento pendente",
+    "blocked": "Bloqueada"
+  },
+  "detail": {
+    "loading": "Carregando membros...",
+    "empty": "Nenhum membro.",
+    "error": "Não foi possível carregar os membros.",
+    "membersOf": "Membros de {{name}}"
+  },
+  "roles": {
+    "owner": "Proprietário(a)",
+    "admin": "Administrador(a)",
+    "reviewer": "Revisor(a)",
+    "member": "Membro"
+  },
+  "invite": {
+    "title": "Convidar uma nova empresa",
+    "hint": "A organização é criada quando o convite é aceito e quem foi convidado se torna proprietário(a). Os e-mails ainda não são enviados: copie o link e envie você mesmo.",
+    "companyName": "Nome da empresa",
+    "email": "E-mail do(a) proprietário(a)",
+    "submit": "Criar convite",
+    "sending": "Criando...",
+    "created": "Convite criado para {{email}}. Envie este link (ele é exibido apenas uma vez):",
+    "link": "Link do convite",
+    "copy": "Copiar link",
+    "copied": "Copiado",
+    "error": "Não foi possível criar o convite."
+  },
+  "pending": {
+    "title": "Convites pendentes",
+    "empty": "Nenhum convite pendente.",
+    "expires": "expira em {{date}}",
+    "revoke": "Revogar",
+    "revokeError": "Não foi possível revogar o convite."
+  }
+}

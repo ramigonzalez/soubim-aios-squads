@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
 import { ACTIVE_ORGANIZATION_KEY } from '../store/organizationStore'
+import { isOrganizationBlocked } from '../lib/organizationBlocked'
 
 const API_BASE_URL = (import.meta as unknown as { env: Record<string, string> }).env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
@@ -28,7 +29,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    if (isOrganizationBlocked(error) && error.config?.url !== '/auth/login') {
+      // Story 12.13: the session ends; the login page shows "conta suspensa"
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('auth_user')
+      localStorage.removeItem(ACTIVE_ORGANIZATION_KEY)
+      window.location.href = '/login?blocked=1'
+    } else if (error.response?.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem('access_token')
       localStorage.removeItem(ACTIVE_ORGANIZATION_KEY)

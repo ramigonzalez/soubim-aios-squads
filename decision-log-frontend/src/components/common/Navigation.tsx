@@ -70,6 +70,13 @@ export function Navigation() {
           {/* Ingestion Link — Story 12.7: organization owner/admin/reviewer (not the legacy users.role) */}
           {canReviewSomewhere && <IngestionNavLink />}
 
+          {/* Story 12.13: the platform page, only for the platform operator */}
+          {user?.is_platform_operator && (
+            <Link to="/platform" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">
+              {t('platform')}
+            </Link>
+          )}
+
           {/* Active organization + team management (Story 12.5; owner/admin of the active organization) */}
           <OrganizationSwitcher />
           {isOrganizationAdmin && (

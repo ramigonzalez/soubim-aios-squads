@@ -18,12 +18,33 @@ export interface ProjectCapabilities {
   can_manage?: boolean
 }
 
+/** Story 12.13: set by the platform operator. `payment_pending` shows a banner; `blocked` grants no access. */
+export type OrganizationStatus = 'active' | 'payment_pending' | 'blocked'
+
 /** An organization the current user belongs to (GET /organizations/me). */
 export interface MyOrganization {
   id: string
   name: string
   slug: string
   role: OrganizationRole
+  /** Story 12.13 */
+  status?: OrganizationStatus
+}
+
+/** Story 12.13: an organization as the platform operator sees it (counts only, never content). */
+export interface PlatformOrganization {
+  id: string
+  name: string
+  slug: string
+  status: OrganizationStatus
+  created_at: string
+  member_count: number
+  project_count: number
+  last_activity_at: string | null
+}
+
+export interface PlatformOrganizationDetail extends PlatformOrganization {
+  members: Array<{ name: string; email: string; role: OrganizationRole }>
 }
 
 export interface OrganizationMemberInfo {

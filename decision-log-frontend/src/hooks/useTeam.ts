@@ -76,21 +76,14 @@ export function useInvitations(orgId: string | undefined) {
 export interface InviteInput {
   email: string
   role: OrganizationRole
-  /** Platform admins only: invite the first owner of a company that has no organization yet. */
-  organizationName?: string
 }
 
+/** Story 12.13: new-company invitations moved to the platform page (`usePlatform`). */
 export function useCreateInvitation(orgId: string) {
   const queryClient = useQueryClient()
   return useMutation<OrganizationInvitationInfo, Error, InviteInput>(
-    async ({ email, role, organizationName }) =>
-      (
-        await api.post<OrganizationInvitationInfo>('/invitations', {
-          email,
-          role,
-          ...(organizationName ? { organization_name: organizationName } : { organization_id: orgId }),
-        })
-      ).data,
+    async ({ email, role }) =>
+      (await api.post<OrganizationInvitationInfo>('/invitations', { email, role, organization_id: orgId })).data,
     { onSuccess: () => queryClient.invalidateQueries(invitationsKey(orgId)) }
   )
 }
