@@ -1,0 +1,103 @@
+/* Promem — Tailwind CSS v4 theme mapping.
+   Use this INSTEAD of tailwind.preset.ts when the codebase is on Tailwind v4.
+   Import order in your global CSS:
+     @import "tailwindcss";
+     @import "./design-system/tokens.css";
+     @import "./design-system/tailwind-v4-theme.css";
+   Values reference tokens.css (single source of truth). */
+
+@theme inline {
+  /* colours */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-track: var(--track);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-weak: var(--accent-weak);
+  --color-accent-on-dark: var(--accent-on-dark);
+  --color-success: var(--success);
+  --color-success-weak: var(--success-weak);
+  --color-success-on-dark: var(--success-on-dark);
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-weak: var(--warning-weak);
+  --color-warning-line: var(--warning-line);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-weak: var(--danger-weak);
+  --color-danger-line: var(--danger-line);
+  --color-danger-on-dark: var(--danger-on-dark);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-2: var(--on-dark-2);
+  --color-on-dark-3: var(--on-dark-3);
+  --color-on-dark-line: var(--on-dark-line);
+  --color-disc-arq: var(--disc-arq);
+  --color-disc-est: var(--disc-est);
+  --color-disc-ins: var(--disc-ins);
+  --color-disc-ele: var(--disc-ele);
+  --color-disc-hid: var(--disc-hid);
+  --color-disc-pai: var(--disc-pai);
+  --color-disc-inc: var(--disc-inc);
+  --color-disc-acu: var(--disc-acu);
+  --color-disc-sus: var(--disc-sus);
+  --color-disc-civ: var(--disc-civ);
+  --color-disc-cli: var(--disc-cli);
+  --color-disc-con: var(--disc-con);
+  --color-disc-loc: var(--disc-loc);
+  --color-disc-eng: var(--disc-eng);
+  --color-disc-ger: var(--disc-ger);
+
+  /* families */
+  --font-sans: var(--family-sans);
+  --font-serif: var(--family-serif);
+  --font-mono: var(--family-mono);
+
+  /* type scale (prototype sizes snap to these tokens per README §6.3) */
+  --text-display: 48px;   --text-display--line-height: 1.05; --text-display--letter-spacing: -0.035em; --text-display--font-weight: 700;
+  --text-h1: 28px;        --text-h1--line-height: 1.2;       --text-h1--letter-spacing: -0.025em;      --text-h1--font-weight: 600;
+  --text-h2: 20px;        --text-h2--line-height: 1.3;       --text-h2--letter-spacing: -0.015em;      --text-h2--font-weight: 600;
+  --text-h3: 15px;        --text-h3--line-height: 1.4;       --text-h3--font-weight: 600;
+  --text-body: 14px;      --text-body--line-height: 1.5;
+  --text-small: 13px;     --text-small--line-height: 1.45;
+  --text-caption: 12px;   --text-caption--line-height: 1.4;
+  --text-micro: 11px;     --text-micro--line-height: 1.35;
+  --text-label: 11px;     --text-label--line-height: 1.3;    --text-label--letter-spacing: 0.06em;     --text-label--font-weight: 600;
+  --text-reading: 17px;   --text-reading--line-height: 1.5;
+  --text-mono: 12px;      --text-mono--line-height: 1.4;
+  --text-mono-sm: 11px;   --text-mono-sm--line-height: 1.4;
+  --text-kpi: 26px;       --text-kpi--line-height: 1.1;      --text-kpi--letter-spacing: -0.03em;      --text-kpi--font-weight: 600;
+  --text-hero: clamp(36px, 6vw, 56px);       --text-hero--line-height: 1.05;    --text-hero--letter-spacing: -0.04em;    --text-hero--font-weight: 700;
+  --text-section: clamp(30px, 5vw, 44px);    --text-section--line-height: 1.1; --text-section--letter-spacing: -0.03em; --text-section--font-weight: 700;
+  --text-section-sm: clamp(28px, 4.6vw, 40px); --text-section-sm--line-height: 1.12; --text-section-sm--letter-spacing: -0.03em; --text-section-sm--font-weight: 700;
+  --text-reading-lg: 19px; --text-reading-lg--line-height: 1.55;
+
+  /* corners */
+  --radius-xs: var(--corner-xs);
+  --radius-sm: var(--corner-sm);
+  --radius: var(--corner-md);
+  --radius-md: var(--corner-md);
+  --radius-lg: var(--corner-lg);
+
+  /* elevation */
+  --shadow-xs: var(--elev-xs);
+  --shadow-1: var(--elev-1);
+  --shadow-2: var(--elev-2);
+  --shadow-rail: var(--rail-selected);
+  --shadow-tab-active: var(--tab-active);
+  --shadow-focus: var(--focus-ring);
+
+  /* motion + breakpoints */
+  --ease-promem: var(--ease);
+  --breakpoint-xs: 375px;
+}

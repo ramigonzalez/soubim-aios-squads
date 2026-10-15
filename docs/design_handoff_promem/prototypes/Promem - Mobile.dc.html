@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#E9E8E4;font-family:'Plus Jakarta Sans',sans-serif;color:#1C1E22;-webkit-font-smoothing:antialiased}a{color:#3E5F66}a:hover{color:#2F4C52}*{box-sizing:border-box}</style>
+</helmet>
+<section style="padding:56px;display:flex;flex-direction:column;gap:32px">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">Etapa 2 · Mobile · 390 × 844</span>
+    <h1 style="margin:0;font-size:36px;font-weight:700;letter-spacing:-0.03em">O diretor confere o projeto no celular</h1>
+    <p style="margin:0;font-size:16px;line-height:1.55;color:#4A4A47;text-wrap:pretty">Sem rolagem horizontal. A sidebar vira uma barra inferior com 4 destinos. A troca de projeto fica no topo. Filtros abrem numa folha que sobe da base, e o detalhe do item ocupa a tela inteira.</p>
+  </header>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <sc-for list="{{ phones }}" as="ph" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:14px;font-weight:600">{{ ph.label }}</span>
+        <div style="width:390px;height:844px;border-radius:44px;background:#1C1E22;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.18)">
+          <div style="width:100%;height:100%;border-radius:36px;overflow:hidden;background:#F4F3EF;display:flex;flex-direction:column;position:relative">
+            <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px;font-weight:600;background:{{ ph.topBg }}"><span>9:41</span><span style="width:110px;height:28px;border-radius:14px;background:#1C1E22"></span><span style="font-size:12px">●●● ▮</span></div>
+
+            <sc-if value="{{ ph.isDetail }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;background:#FFFFFF;overflow:hidden">
+                <div style="height:52px;flex:none;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid #EFEDE8">
+                  <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px">‹</span>
+                  <span style="font-size:14px;font-weight:600;flex:1">Decisão</span>
+                  <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#3E5F66">{{ ic.starFill }}</span>
+                  <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center">{{ ic.share }}</span>
+                </div>
+                <div style="flex:1;overflow:hidden;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+                  <h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;text-wrap:pretty">Preservar as árvores existentes e instalar cobertura verde no pódio</h2>
+                  <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;font-weight:500"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#2E9E73"></span>Paisagismo</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:#7C5AD6"></span>Estrutura</span><span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:3px;background:#F8E7E3;color:#8E3224;font-size:11.5px;font-weight:600">Impacto alto</span></div>
+                  <div style="display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px 10px;font-size:13.5px"><span style="color:#5F6168">Quem</span><span>Gabriela · Diretora</span><span style="color:#5F6168">Origem</span><span>Revisão de paisagismo · 07/02</span><span style="color:#5F6168">Etapa</span><span>Estudo Preliminar</span></div>
+                  <span style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:1px solid #CFCBC2;border-radius:6px;font-size:14px;font-weight:500;color:#3E5F66">▶ Ouvir trecho · 00:08:30</span>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Por quê</span><p style="margin:0;font-family:'Newsreader',serif;font-size:17px;line-height:1.5;text-wrap:pretty">Benefícios ambientais, exigência da comunidade e créditos LEED de águas pluviais.</p></div>
+                  <div style="display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Consenso</span><span style="font-size:12px;font-weight:600;color:#2F7A4F">3 de 3 concordam</span></span>
+                    <sc-for list="{{ cons }}" as="c" hint-placeholder-count="3"><span style="display:flex;justify-content:space-between;align-items:center;height:40px;border-bottom:1px solid #EFEDE8;font-size:14px"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:2px;background:{{ c.hex }}"></span>{{ c.n }}</span><span style="font-size:12.5px;font-weight:600;color:#2F7A4F">✓ Concorda</span></span></sc-for>
+                  </div>
+                </div>
+                <div style="flex:none;display:flex;gap:8px;padding:12px 16px 28px;border-top:1px solid #EFEDE8"><span style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #CFCBC2;border-radius:6px;font-size:14px;font-weight:500">↑ Anterior</span><span style="flex:1;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #CFCBC2;border-radius:6px;font-size:14px;font-weight:500">Próximo ↓</span></div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ ph.isMain }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:none;padding:6px 16px 10px;display:flex;align-items:center;gap:10px;background:#FFFFFF;border-bottom:1px solid #E3E0D9">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Residential Tower Alpha <span style="font-size:12px;color:#5F6168">▾</span></span><span style="font-size:12px;color:#5F6168">Anteprojeto · 2 de 4 · faltam 28 dias</span></div>
+                <span style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:22px;color:#5F6168">{{ ic.search }}</span>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:14px">
+                <sc-if value="{{ ph.isOverview }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:grid;grid-template-columns:31fr 44fr 45fr 108fr;gap:3px;position:relative"><span style="height:6px;background:#1C1E22;border-radius:1px"></span><span style="height:6px;background:linear-gradient(90deg,#1C1E22 0 36%,#D6D2CA 36%);border-radius:1px"></span><span style="height:6px;background:#E3E0D9;border-radius:1px"></span><span style="height:6px;background:#E3E0D9;border-radius:1px"></span><span style="position:absolute;left:20.6%;top:-4px;width:2px;height:14px;background:#3E5F66"></span></div>
+                  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+                    <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="3"><div style="padding:10px;border:1px solid {{ t.border }};border-radius:6px;background:#FFFFFF;box-shadow:{{ t.sh }};display:flex;flex-direction:column;gap:2px;min-height:76px"><span style="font-size:22px;font-weight:600;letter-spacing:-0.03em;line-height:1.1">{{ t.v }}</span><span style="font-size:12px;font-weight:600;line-height:1.25">{{ t.l }}</span><span style="font-size:11px;font-weight:600;color:{{ t.nc }}">{{ t.note }}</span></div></sc-for>
+                  </div>
+                  <span style="font-size:15px;font-weight:600">Desde sua última visita</span>
+                  <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+                    <sc-for list="{{ newRows }}" as="r" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;padding:12px 14px;min-height:56px;border-bottom:1px solid #EFEDE8"><span style="display:flex;padding-top:2px">{{ r.icon }}</span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:14.5px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ r.t }}</span><span style="display:flex;gap:8px;font-size:12px;color:#5F6168"><sc-for list="{{ r.discs }}" as="d" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.code }}</span></sc-for><span>{{ r.meta }}</span></span></span></div></sc-for>
+                  </div>
+                  <span style="font-size:15px;font-weight:600">Marcos da etapa atual</span>
+                  <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:4px 14px"><span style="display:flex;align-items:center;gap:10px;min-height:48px;font-size:14px;font-weight:500"><span style="color:#3E5F66;display:flex">{{ ic.starFill }}</span>Shaft de prumadas ampliado em 20 cm<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">28/02</span></span></div>
+                </sc-if>
+
+                <sc-if value="{{ ph.isMarcos }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:600">Marcos</span><span style="display:flex;gap:8px"><span style="height:36px;padding:0 12px;display:flex;align-items:center;border:1px solid #CFCBC2;border-radius:18px;background:#FFFFFF;font-size:13px;font-weight:500">Compartilhar</span></span></div>
+                  <sc-for list="{{ mStages }}" as="st" hint-placeholder-count="3">
+                    <div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:12px">
+                      <div style="display:flex;flex-direction:column;align-items:center"><span style="width:12px;height:12px;margin-top:4px;border-radius:50%;border:2px solid #1C1E22;background:{{ st.dot }}"></span><span style="flex:1;width:2px;background:{{ st.line }}"></span></div>
+                      <div style="display:flex;flex-direction:column;gap:2px;padding-bottom:14px;min-width:0">
+                        <span style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:15px;font-weight:600">{{ st.name }}</span><span style="font-size:11.5px;font-weight:600;color:{{ st.sc }};white-space:nowrap">{{ st.status }}</span></span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ st.dates }}</span>
+                        <sc-for list="{{ st.items }}" as="it" hint-placeholder-count="2"><span style="display:flex;flex-direction:column;gap:2px;padding:10px 0;min-height:48px;border-bottom:1px solid #E3E0D9"><span style="font-size:14px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ it.t }}</span><span style="display:flex;gap:8px;font-size:11.5px;color:#5F6168"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ it.hex }}"></span>{{ it.code }}</span>{{ it.d }}</span></span></sc-for>
+                        <sc-if value="{{ st.today }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:#3E5F66;color:#FFFFFF">Hoje · 03/03</span></sc-if>
+                        <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#8A8C92;padding-top:4px">Sem marcos ainda</span></sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </sc-if>
+
+                <sc-if value="{{ ph.isHist }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:8px"><span style="flex:1;height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #E3E0D9;border-radius:6px;background:#FFFFFF;color:#8A8C92;font-size:14px">{{ ic.search }}Buscar em 21 itens</span><span style="height:44px;padding:0 14px;display:flex;align-items:center;gap:6px;border:1px solid #3E5F66;border-radius:6px;background:#E6EEEF;font-size:13.5px;font-weight:600;white-space:nowrap">Filtros · 1</span></div>
+                  <div style="display:flex;gap:6px;overflow:hidden"><span style="height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;border:1px solid #E3E0D9;border-radius:16px;background:#FFFFFF;font-size:12.5px;font-weight:500;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:#7C5AD6"></span>Estrutura ✕</span><span style="height:32px;padding:0 10px;display:inline-flex;align-items:center;border-radius:16px;background:#EFEDE8;font-size:12.5px;font-weight:600;white-space:nowrap">Data ▾</span></div>
+                  <span style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:600">6 de fevereiro</span><span style="font-size:12.5px;color:#5F6168">sexta-feira</span></span>
+                  <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F9F8F5;border-bottom:1px solid #E3E0D9"><span style="width:30px;height:30px;border-radius:6px;background:#1C1E22;color:#FFFFFF;display:flex;align-items:center;justify-content:center">{{ ic.video }}</span><span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Revisão do projeto estrutural</span><span style="font-size:11.5px;color:#5F6168">Reunião · 45 min · 4 decisões · 1 ação</span></span></div>
+                    <sc-for list="{{ histRows }}" as="r" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;padding:11px 12px;min-height:56px;border-bottom:1px solid #EFEDE8"><span style="display:flex;padding-top:2px;color:{{ r.ic }}">{{ r.icon }}</span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:14px;font-weight:500;line-height:1.35;color:{{ r.tc }};text-decoration:{{ r.deco }};text-wrap:pretty">{{ r.t }}</span><span style="display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:#5F6168"><sc-for list="{{ r.discs }}" as="d" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.code }}</span></sc-for><span>{{ r.meta }}</span></span></span></div></sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              <nav style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px 26px;background:#FFFFFF;border-top:1px solid #E3E0D9">
+                <sc-for list="{{ ph.tabs }}" as="t" hint-placeholder-count="4"><span style="height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:{{ t.w }};color:{{ t.c }}"><span style="display:flex">{{ t.icon }}</span>{{ t.n }}</span></sc-for>
+              </nav>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const h = React.createElement;
+    const svg = (size, kids, extra) => h('svg', { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.75, strokeLinecap:'round', strokeLinejoin:'round', ...(extra||{}) }, ...kids);
+    const P = (d) => h('path', { d }); const C = (cx, cy, r) => h('circle', { cx, cy, r }); const R = (x, y, w, hh, rx) => h('rect', { x, y, width:w, height:hh, rx });
+    const D = {
+      d: () => [C(12,12,10), P('m9 12 2 2 4-4')], a: () => [R(3,3,18,18,2)], ad: () => [R(3,3,18,18,2), P('m9 12 2 2 4-4')], t: () => [P('M7.9 20A9 9 0 1 0 4 16.1L2 22Z')],
+      star: () => [P('M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z')],
+      search: () => [C(11,11,8), P('m21 21-4.3-4.3')], video: () => [P('m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5'), R(2,6,14,12,2)],
+      share: () => [P('M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'), P('M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71')],
+      overview: () => [R(3,3,7,9,1), R(14,3,7,5,1), R(14,12,7,9,1), R(3,16,7,5,1)], timeline: () => [P('M12 3v6'), C(12,12,3), P('M12 15v6')], history: () => [P('M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'), P('M3 3v5h5'), P('M12 7v5l4 2')], more: () => [C(5,12,1), C(12,12,1), C(19,12,1)]
+    };
+    const ic = { starFill: svg(18, D.star(), { fill:'currentColor' }), search: svg(18, D.search()), video: svg(15, D.video()), share: svg(18, D.share()) };
+    const X = { ARQ:'#3D7DD8', EST:'#7C5AD6', INS:'#E67A3A', ELE:'#E2A92A', CIV:'#8D6B45', INC:'#D9423A', PAI:'#2E9E73', CLI:'#4F5768', HID:'#2BA9C2' };
+    const ds = (arr) => arr.map(c => ({ code:c, hex:X[c] }));
+    const tabsFor = (k) => [['overview','Visão geral'],['timeline','Marcos'],['history','Histórico'],['more','Mais']].map(([i, n]) => ({ n, icon: svg(22, D[i]()), w: i === k ? 700 : 500, c: i === k ? '#1C1E22' : '#8A8C92' }));
+    const phones = [
+      { label:'1 · Visão geral', isMain:true, isOverview:true, topBg:'#FFFFFF', tabs: tabsFor('overview') },
+      { label:'2 · Marcos', isMain:true, isMarcos:true, topBg:'#FFFFFF', tabs: tabsFor('timeline') },
+      { label:'3 · Histórico (filtro ativo)', isMain:true, isHist:true, topBg:'#FFFFFF', tabs: tabsFor('history') },
+      { label:'4 · Detalhe do item', isDetail:true, topBg:'#FFFFFF', tabs: [] }
+    ];
+    const tiles = [{ v:'3', l:'novos desde 27/02', note:'', border:'#1C1E22', sh:'inset 0 -3px 0 #1C1E22', nc:'#5F6168' },{ v:'5', l:'em aberto', note:'1 atrasada', border:'#E3E0D9', sh:'none', nc:'#8E3224' },{ v:'3', l:'aguardando aprovação', note:'', border:'#E3E0D9', sh:'none', nc:'#5F6168' }];
+    const newRows = [
+      { icon: svg(18, D.a()), t:'Avaliar impacto estrutural da antecipação do fit-out do pódio', discs: ds(['EST']), meta:'Carlos · até 06/03' },
+      { icon: svg(18, D.t()), t:'Elevar a resistência ao fogo das vigas de transição de 2 h para 3 h', discs: ds(['INC','EST']), meta:'E-mail · 28/02' },
+      { icon: svg(18, D.d()), t:'Shaft de prumadas ampliado em 20 cm', discs: ds(['INS','EST']), meta:'Reunião · 28/02' }
+    ];
+    const mi = (t, code, d) => ({ t, code, hex:X[code], d });
+    const mStages = [
+      { name:'Estudo Preliminar', dates:'15/01 – 15/02', status:'Concluída', sc:'#2F7A4F', dot:'#1C1E22', line:'#1C1E22', items:[mi('Concreto C50 nos pilares principais','EST','06/02'), mi('Vigas de transição no nível 5','EST','06/02'), mi('Isoladores sísmicos no térreo','EST','06/02'), mi('Iluminação LED com controle inteligente','ELE','07/02')] },
+      { name:'Anteprojeto', dates:'16/02 – 31/03', status:'Em andamento', sc:'#3E5F66', dot:'#FFFFFF', line:'#E3E0D9', today:true, items:[mi('Shaft de prumadas ampliado em 20 cm','INS','28/02')] },
+      { name:'Projeto Legal', dates:'01/04 – 15/05', status:'', sc:'#5F6168', dot:'#FFFFFF', line:'transparent', items:[], empty:true }
+    ];
+    const hr = (k, t, discs, meta, done) => ({ icon: svg(18, D[k]()), t, discs: ds(discs), meta, ic: done ? '#8A8C92' : '#1C1E22', tc: done ? '#8A8C92' : '#1C1E22', deco: done ? 'line-through' : 'none' });
+    const histRows = [hr('d','Concreto de alta resistência (C50) nos pilares principais',['EST','ARQ'],'Carlos · ★ marco'), hr('d','Vigas de transição no nível 5 para liberar o pódio',['EST','ARQ'],'Carlos · ★ marco'), hr('d','Isoladores sísmicos nos pilares do térreo',['EST','CIV'],'Carlos'), hr('ad','Enviar tabela de cargas revisada',['EST'],'Carlos · concluída', true), hr('d','Coordenação BIM nível 3 para as ligações',['ARQ','EST'],'Lucia')];
+    const cons = [{ n:'Paisagismo', hex:X.PAI },{ n:'Estrutura', hex:X.EST },{ n:'Cliente', hex:X.CLI }];
+    return { ic, phones, tiles, newRows, mStages, histRows, cons };
+  }
+}
+</script>
+</body>
+</html>
