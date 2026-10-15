@@ -16,7 +16,7 @@ import type { DriveFolderOption, DriveFolderState } from '../../types/integratio
 export const driveFolderKey = (projectId: string) => ['drive-folder', projectId]
 const optionsKey = (projectId: string) => ['drive-folder-options', projectId]
 
-const KNOWN_ERRORS = ['folder_not_shared_by_organization', 'drive_unavailable']
+const KNOWN_ERRORS = ['folder_not_shared_by_organization', 'folder_in_use', 'drive_unavailable']
 
 function errorKey(error: unknown): string {
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
@@ -26,7 +26,7 @@ function errorKey(error: unknown): string {
 export default function DriveFolderSection({ projectId }: { projectId: string }) {
   const { t, i18n } = useTranslation('projects')
   const queryClient = useQueryClient()
-  const { data: state, isLoading, isError } = useQuery<DriveFolderState>(
+  const { data: state, isLoading, error: stateError } = useQuery<DriveFolderState>(
     driveFolderKey(projectId),
     () => integrationsService.getDriveFolder(projectId),
     { enabled: !!projectId, retry: false },
@@ -54,7 +54,18 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
     },
   })
 
-  if (isLoading || isError || !state) return null
+  if (isLoading) return null
+  if (!state) {
+    // 403: this user cannot manage the folder, so the section is hidden. Any other failure is shown.
+    const forbidden = (stateError as { response?: { status?: number } })?.response?.status === 403
+    if (forbidden || !stateError) return null
+    return (
+      <section className="mt-10 pt-6 border-t border-gray-200" aria-labelledby="drive-folder-title">
+        <h2 id="drive-folder-title" className="text-lg font-medium text-gray-900">{t('driveFolder.title')}</h2>
+        <p role="alert" className="mt-2 text-sm text-red-700">{t('driveFolder.errors.generic')}</p>
+      </section>
+    )
+  }
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString(i18n.language)
 

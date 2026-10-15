@@ -191,6 +191,7 @@
       "folder_not_accessible": "Não conseguimos acessar a pasta. Ela ainda está compartilhada com o e-mail acima?",
       "poll_failed": "A última verificação da pasta falhou. Tentaremos de novo automaticamente.",
       "folder_not_shared_by_organization": "Esta pasta não foi compartilhada por alguém da sua organização.",
+      "folder_in_use": "Esta pasta já alimenta outro projeto. Cada pasta pode alimentar um projeto só.",
       "drive_unavailable": "O Google Drive não respondeu. Tente de novo em instantes.",
       "generic": "Não foi possível concluir. Tente de novo."
     }

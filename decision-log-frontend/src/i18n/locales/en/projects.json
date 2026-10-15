@@ -191,6 +191,7 @@
       "folder_not_accessible": "We cannot reach the folder. Is it still shared with the e-mail above?",
       "poll_failed": "The last folder check failed. We will retry automatically.",
       "folder_not_shared_by_organization": "This folder was not shared by someone in your organization.",
+      "folder_in_use": "This folder already feeds another project. A folder can feed one project only.",
       "drive_unavailable": "Google Drive did not answer. Try again in a moment.",
       "generic": "Something went wrong. Try again."
     }

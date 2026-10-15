@@ -121,13 +121,21 @@ class DriveClient:
             if mime_queries:
                 query += f" and ({' or '.join(mime_queries)})"
 
-        results = self.service.files().list(
-            q=query,
-            fields="files(id, name, mimeType, size, modifiedTime, webViewLink)",
-            orderBy="modifiedTime desc",
-            pageSize=100,
-        ).execute()
-        return results.get('files', [])
+        # Every page: a newly chosen folder is read from the start, and the poll timestamp moves on after it.
+        files: list[dict] = []
+        page_token = None
+        while True:
+            results = self.service.files().list(
+                q=query,
+                fields="nextPageToken, files(id, name, mimeType, size, modifiedTime, webViewLink)",
+                orderBy="modifiedTime desc",
+                pageSize=100,
+                pageToken=page_token,
+            ).execute()
+            files.extend(results.get('files', []))
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                return files
 
     def download_file(self, file_id: str) -> bytes:
         """Download file content by file ID.

@@ -107,6 +107,17 @@ class TestDriveClientListFiles:
         result = client.list_new_files('folder-123')
         assert result == []
 
+    def test_list_files_reads_every_page(self):
+        """A large folder: all pages, not only the first 100 files (the poll timestamp moves on after)."""
+        client, mock_service = self._make_client()
+        mock_service.files().list().execute.side_effect = [
+            {'files': [{'id': 'f1'}], 'nextPageToken': 'p2'},
+            {'files': [{'id': 'f2'}]},
+        ]
+
+        assert [f['id'] for f in client.list_new_files('folder-123')] == ['f1', 'f2']
+        assert mock_service.files().list.call_args.kwargs['pageToken'] == 'p2'
+
 
 class TestDriveClientVerifyAccess:
     """Tests for DriveClient.verify_folder_access."""

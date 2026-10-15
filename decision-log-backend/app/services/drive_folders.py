@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 def drive_configured() -> bool:
-    """True when the server has a Drive service account (the monitor also needs GOOGLE_DRIVE_ENABLED)."""
-    return service_account_email() is not None
+    """True when Drive monitoring is on (GOOGLE_DRIVE_ENABLED) and the server has a service account key."""
+    return bool(settings.google_drive_enabled) and service_account_email() is not None
 
 
 def _member_emails(db: Session, organization_id) -> set:
@@ -90,6 +90,14 @@ def set_project_folder(db: Session, project: Project, folder_id: str, client: Op
     )
     if match is None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="folder_not_shared_by_organization")
+    # A Drive file becomes one source (sources.drive_file_id is unique), so a folder feeds one project only.
+    in_use = (
+        db.query(Project.id)
+        .filter(Project.drive_folder_id == folder_id, Project.id != project.id)
+        .first()
+    )
+    if in_use is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="folder_in_use")
     if project.drive_folder_id != folder_id:
         project.last_drive_poll = None  # a new folder is read from the start
     project.drive_folder_id = folder_id

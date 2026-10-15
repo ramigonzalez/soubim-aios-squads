@@ -42,6 +42,7 @@ def client(pg_session):
 
 @pytest.fixture
 def drive(monkeypatch):
+    monkeypatch.setattr(drive_folders.settings, "google_drive_enabled", True)
     monkeypatch.setattr(drive_folders, "service_account_email", lambda: ROBOT)
     monkeypatch.setattr(drive_folders, "DriveClient", FakeDrive)
 
@@ -138,6 +139,27 @@ def test_not_configured(client, world, monkeypatch):
     assert (state["configured"], state["service_account_email"]) == (False, None)
     r = client.get(url(world["project"], "/options"), headers=auth(world["admin"]))
     assert (r.status_code, r.json()["detail"]) == (503, "drive_not_configured")
+
+
+def test_drive_switched_off_counts_as_not_configured(client, world, drive, monkeypatch):
+    """A key without GOOGLE_DRIVE_ENABLED: the monitor would never poll, so do not offer folders."""
+    monkeypatch.setattr(drive_folders.settings, "google_drive_enabled", False)
+    assert client.get(url(world["project"]), headers=auth(world["admin"])).json()["configured"] is False
+    assert client.get(url(world["project"], "/options"), headers=auth(world["admin"])).status_code == 503
+
+
+def test_folder_already_used_by_another_project_is_refused(client, world, drive):
+    """A Drive file becomes one source (unique drive_file_id), so a folder feeds one project."""
+    db = world["db"]
+    from app.database.models import Project
+
+    sibling = Project(name="Acme Annex", owner_organization_id=world["acme"].id, drive_folder_id="f-acme")
+    db.add(sibling)
+    db.commit()
+    r = client.put(url(world["project"]), json={"folder_id": "f-acme"}, headers=auth(world["admin"]))
+    assert (r.status_code, r.json()["detail"]) == (409, "folder_in_use")
+    r = client.put(url(sibling), json={"folder_id": "f-acme"}, headers=auth(world["admin"]))
+    assert r.status_code == 200  # choosing it again for the same project is fine
 
 
 def test_google_failure_is_502(client, world, drive, monkeypatch):

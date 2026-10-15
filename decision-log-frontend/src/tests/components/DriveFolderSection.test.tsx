@@ -53,7 +53,25 @@ describe('DriveFolderSection (Story 12.9)', () => {
     service.getDriveFolder.mockRejectedValue({ response: { status: 403 } })
     const { container } = wrap()
     await waitFor(() => expect(service.getDriveFolder).toHaveBeenCalled())
+    await new Promise(resolve => setTimeout(resolve, 0)) // let the rejected query settle
     expect(container).toBeEmptyDOMElement()
+    expect(service.listDriveFolderOptions).not.toHaveBeenCalled()
+  })
+
+  it('shows an error when the state request fails for another reason', async () => {
+    service.getDriveFolder.mockRejectedValue({ response: { status: 500 } })
+    wrap()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong')
+  })
+
+  it('explains a folder that already feeds another project', async () => {
+    service.setDriveFolder.mockRejectedValue({ response: { status: 409, data: { detail: 'folder_in_use' } } })
+    const user = userEvent.setup()
+    wrap()
+    await screen.findByRole('option', { name: /D\/SEASON/ })
+    await user.selectOptions(screen.getByLabelText('Folder'), 'f1')
+    await user.click(screen.getByRole('button', { name: 'Use this folder' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('already feeds another project')
   })
 
   it('says when Drive is not configured, without listing folders', async () => {
