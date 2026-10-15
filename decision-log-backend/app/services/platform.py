@@ -5,7 +5,7 @@ created date, member / project counts, last activity, and the member list (name,
 No project, meeting or item data leaves this module.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import HTTPException, status
@@ -17,7 +17,15 @@ from app.services import invitations as inv
 from app.services.organizations import ORGANIZATION_STATUSES, list_members
 
 
+def _naive_utc(value: Optional[datetime]) -> Optional[datetime]:
+    """Naive UTC. Some columns are timestamptz and some are not, and Postgres keeps both kinds."""
+    if value is not None and value.tzinfo is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
 def _iso(value: Optional[datetime]) -> Optional[str]:
+    value = _naive_utc(value)
     return value.isoformat() + "Z" if value is not None else None
 
 
@@ -55,14 +63,14 @@ def _stats(db: Session, org_ids: Optional[List] = None) -> Dict[str, Dict[str, o
         key: {
             "member_count": members.get(key, 0),
             "project_count": projects.get(key, 0),
-            "last_activity": max((d[key] for d in latest if d.get(key) is not None), default=None),
+            "last_activity": max((_naive_utc(d[key]) for d in latest if d.get(key) is not None), default=None),
         }
         for key in keys
     }
 
 
 def _summary(org: Organization, stats: Dict[str, object]) -> dict:
-    moments = [m for m in (stats.get("last_activity"), org.created_at) if m is not None]
+    moments = [_naive_utc(m) for m in (stats.get("last_activity"), org.created_at) if m is not None]
     return {
         "id": str(org.id),
         "name": org.name,

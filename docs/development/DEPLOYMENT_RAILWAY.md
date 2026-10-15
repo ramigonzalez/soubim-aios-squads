@@ -61,6 +61,7 @@ Set on **both** `api` and `worker` unless noted.
 - Runtime: `ENVIRONMENT=production`, `DEBUG=false`, `DEMO_MODE=false` (or unset), `WORKER_POLL_SECONDS` (worker only)
 - `CORS_ORIGINS` (API): see below
 - Optional: `SENTRY_DSN`
+- Proxy scheme, API only: `FORWARDED_ALLOW_IPS=*` so uvicorn trusts Railway's `X-Forwarded-Proto` header. Without it, FastAPI's trailing-slash redirects (e.g. `/api/projects` → `/api/projects/`) point to `http://`, the browser blocks them as mixed content and the app shows "Network Error". The rate limiter does not use this; it reads `X-Forwarded-For` itself (see `TRUSTED_PROXY` below).
 - Rate limiting (13.11), API only: `RATE_LIMIT_STORAGE_URI`, `TRUSTED_PROXY=true`, optionally `RATE_LIMIT_ENABLED`, `RATE_LIMIT_*` (see the section below).
 - `PORT` is injected by Railway; do not set it.
 

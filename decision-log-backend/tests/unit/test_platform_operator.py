@@ -510,3 +510,18 @@ class TestCreatePlatformOperatorScript:
         code, lines = run_script(script, db_session, "rami@example.com")
         assert code == 1 and lines[0].startswith("error:")
         assert db_session.query(User).one().is_platform_operator is False
+
+
+class TestMixedTimestamps:
+    """Some columns are timestamptz and some are not; Postgres returns both kinds (production 500, 2026-10-15)."""
+
+    def test_summary_compares_aware_and_naive(self):
+        from datetime import timedelta, timezone
+
+        from app.services.platform import _summary
+
+        org = Organization(name="Mixed", slug="mixed", status="active", created_at=datetime(2026, 10, 1, 12, 0))
+        aware = datetime(2026, 10, 2, 9, 0, tzinfo=timezone(timedelta(hours=-3)))  # 12:00 UTC
+        summary = _summary(org, {"last_activity": aware})
+        assert summary["last_activity_at"] == "2026-10-02T12:00:00Z"
+        assert summary["created_at"] == "2026-10-01T12:00:00Z"
