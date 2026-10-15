@@ -214,4 +214,21 @@ describe('ProjectCard Component', () => {
     const svgs = container.querySelectorAll('svg')
     expect(svgs.length).toBeGreaterThanOrEqual(3) // Users, FileText, Calendar
   })
+
+  describe('Edit button (project list)', () => {
+    it('opens the edit page without opening the project when the user can manage it', async () => {
+      const onEdit = vi.fn()
+      const onClick = vi.fn()
+      const user = userEvent.setup()
+      const { container } = render(<ProjectCard project={{ ...mockProject, can_manage: true }} onClick={onClick} onEdit={onEdit} />)
+      await user.click(container.querySelector('button')!)
+      expect(onEdit).toHaveBeenCalledWith('proj-123')
+      expect(onClick).not.toHaveBeenCalled()
+    })
+
+    it('is hidden when the user cannot manage the project', () => {
+      const { container } = render(<ProjectCard project={{ ...mockProject, can_manage: false }} onClick={vi.fn()} onEdit={vi.fn()} />)
+      expect(container.querySelector('button')).toBeNull()
+    })
+  })
 })

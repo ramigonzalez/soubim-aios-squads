@@ -107,6 +107,7 @@ export function Projects() {
                   key={project.id}
                   project={project}
                   onClick={handleProjectClick}
+                  onEdit={(id) => navigate(`/projects/${id}/edit`)}
                 />
               ))}
             </div>
