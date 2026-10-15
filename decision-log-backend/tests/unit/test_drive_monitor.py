@@ -20,6 +20,7 @@ class TestDriveMonitor:
         project.name = 'Test Project'
         project.drive_folder_id = drive_folder_id
         project.last_drive_poll = last_poll
+        project.drive_poll_error = None
         return project
 
     def _make_mock_file(
@@ -119,7 +120,7 @@ class TestDriveMonitor:
         mock_processor_cls.return_value = MagicMock()
 
         # Return empty project list
-        mock_db.query().filter().all.return_value = []
+        mock_db.query().join().filter().all.return_value = []
 
         monitor = DriveMonitor(mock_db)
         monitor.poll_all_projects()
@@ -196,13 +197,12 @@ class TestDriveMonitor:
         # Two projects — first will fail
         project1 = self._make_mock_project(drive_folder_id='folder-bad')
         project2 = self._make_mock_project(drive_folder_id='folder-good')
-        mock_db.query().filter().all.return_value = [project1, project2]
+        mock_db.query().join().filter().all.return_value = [project1, project2]
 
-        # First project fails, second succeeds
-        mock_drive.list_new_files.side_effect = [
-            Exception("Folder not found"),
-            [],
-        ]
+        # First project fails (Google answers 404: folder unshared or deleted), second succeeds
+        not_found = Exception("Folder not found")
+        not_found.resp = MagicMock(status=404)
+        mock_drive.list_new_files.side_effect = [not_found, []]
 
         monitor = DriveMonitor(mock_db)
         # Should not raise — continues past project1 failure
@@ -210,6 +210,18 @@ class TestDriveMonitor:
 
         # list_new_files called for both projects
         assert mock_drive.list_new_files.call_count == 2
+        # Story 12.9: the failure is recorded on the project, the other one has no error
+        assert project1.drive_poll_error == "folder_not_accessible"
+        assert project2.drive_poll_error is None
+
+    def test_poll_error_codes(self):
+        """Story 12.9: 403/404 from Google mean the folder is no longer reachable; anything else is generic."""
+        from app.services.drive_monitor import _poll_error_code
+
+        forbidden = Exception("forbidden")
+        forbidden.resp = MagicMock(status="403")
+        assert _poll_error_code(forbidden) == "folder_not_accessible"
+        assert _poll_error_code(Exception("timeout")) == "poll_failed"
 
     @patch('app.services.drive_monitor.DriveClient')
     @patch('app.services.drive_monitor.DocumentProcessor')

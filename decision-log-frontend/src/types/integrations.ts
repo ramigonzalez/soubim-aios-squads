@@ -105,3 +105,21 @@ export interface FathomImportProject {
   /** Story 12.4: the user may import as shared (admin of the organization they act for) */
   can_share?: boolean
 }
+
+/** Story 12.9: a project's Drive folder, shared by its organization with the service account */
+export interface DriveFolderState {
+  configured: boolean
+  service_account_email: string | null
+  folder_id: string | null
+  folder_name: string | null
+  last_checked_at: string | null
+  error: 'folder_not_accessible' | 'poll_failed' | null
+}
+
+export interface DriveFolderOption {
+  id: string
+  name: string
+  shared_by: string
+  shared_at: string | null
+  url: string | null
+}

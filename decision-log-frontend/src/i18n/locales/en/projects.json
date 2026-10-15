@@ -115,11 +115,6 @@
         "infrastructure": "Infrastructure"
       }
     },
-    "drive": {
-      "label": "Google Drive Folder ID",
-      "placeholder": "e.g., 1a2b3c4d5e6f7g8h9i0j",
-      "help": "Paste the folder ID from Google Drive to enable automatic document monitoring"
-    },
     "cancel": "Cancel",
     "saving": "Saving...",
     "update": "Update Project",
@@ -163,6 +158,42 @@
       "invalid": "Check the value: it cannot be empty or longer than 200 characters, an email needs an @ and a domain has no @.",
       "duplicate": "This rule already exists.",
       "generic": "Could not save the rule. Try again."
+    }
+  },
+  "driveFolder": {
+    "title": "Google Drive folder",
+    "description": "Documents (PDF and DOCX) added to this folder, including later ones, appear in Ingestion for review.",
+    "notConfigured": "Google Drive is not enabled on this server yet.",
+    "howTo": {
+      "title": "How to connect a folder",
+      "step1": "Open the folder in Google Drive and click Share.",
+      "step2": "Add this e-mail as Viewer:",
+      "step3": "Come back, click “Refresh list” and pick the folder.",
+      "note": "Only folders shared by people in your organization are listed."
+    },
+    "copy": "Copy",
+    "copied": "Copied",
+    "refresh": "Refresh list",
+    "loadingOptions": "Looking for folders…",
+    "select": "Folder",
+    "selectPlaceholder": "Pick a folder",
+    "save": "Use this folder",
+    "saving": "Saving…",
+    "noOptions": "No shared folders yet. Share the folder with the e-mail above and click “Refresh list”.",
+    "sharedBy": "shared by {{email}}",
+    "current": "Current folder: {{name}}",
+    "lastChecked": "Last checked: {{date}}",
+    "notCheckedYet": "Not checked yet.",
+    "open": "Open in Drive",
+    "remove": "Remove folder",
+    "removeConfirm": "Stop monitoring this folder? Documents already imported stay in the project.",
+    "errors": {
+      "folder_not_accessible": "We cannot reach the folder. Is it still shared with the e-mail above?",
+      "poll_failed": "The last folder check failed. We will retry automatically.",
+      "folder_not_shared_by_organization": "This folder was not shared by someone in your organization.",
+      "folder_in_use": "This folder already feeds another project. A folder can feed one project only.",
+      "drive_unavailable": "Google Drive did not answer. Try again in a moment.",
+      "generic": "Something went wrong. Try again."
     }
   }
 }

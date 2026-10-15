@@ -9,6 +9,8 @@ import type {
   FathomRule,
   FathomRuleField,
   FathomUnassignedMeeting,
+  DriveFolderOption,
+  DriveFolderState,
 } from '../types/integrations'
 import type { MeetingVisibility } from '../types/projectItem'
 
@@ -85,4 +87,17 @@ export const integrationsService = {
 
   deleteFathomRule: (projectId: string, ruleId: string): Promise<void> =>
     api.delete(`/projects/${encodeURIComponent(projectId)}/fathom-rules/${encodeURIComponent(ruleId)}`).then(() => undefined),
+
+  /** Story 12.9: the project's Drive folder (shared with the service account) */
+  getDriveFolder: (projectId: string): Promise<DriveFolderState> =>
+    api.get(`/projects/${encodeURIComponent(projectId)}/drive-folder`).then(r => r.data),
+
+  listDriveFolderOptions: (projectId: string): Promise<DriveFolderOption[]> =>
+    api.get(`/projects/${encodeURIComponent(projectId)}/drive-folder/options`).then(r => r.data),
+
+  setDriveFolder: (projectId: string, folderId: string): Promise<DriveFolderState> =>
+    api.put(`/projects/${encodeURIComponent(projectId)}/drive-folder`, { folder_id: folderId }).then(r => r.data),
+
+  clearDriveFolder: (projectId: string): Promise<void> =>
+    api.delete(`/projects/${encodeURIComponent(projectId)}/drive-folder`).then(() => undefined),
 }
