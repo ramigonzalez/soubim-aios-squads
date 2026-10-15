@@ -92,12 +92,25 @@ _FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 
 def _client():
-    """Anthropic client (patched in tests)."""
-    import anthropic
+    """LLM client for the configured provider (patched in tests)."""
+    from app.services.llm_client import get_llm_client
 
-    from app.config import settings
+    return get_llm_client()
 
-    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+def _stream_options(settings) -> Dict[str, Any]:
+    """Provider-specific request fields (Story 13.17).
+
+    effort works on both providers; the server-side refusal fallback (beta header + ``fallbacks``)
+    only on the Claude API — OpenRouter rejects ``fallbacks: "default"`` (it expects its own array).
+    """
+    from app.services.llm_client import supports_server_side_fallback
+
+    body: Dict[str, Any] = {"output_config": {"effort": settings.extraction_effort}}
+    if not supports_server_side_fallback(settings):
+        return {"extra_body": body}
+    body["fallbacks"] = "default"
+    return {"extra_headers": {"anthropic-beta": _FALLBACK_BETA}, "extra_body": body}
 
 
 def _strip_code_fence(text: str) -> str:
@@ -122,8 +135,7 @@ def run_meeting_extraction(prompt: str, client=None) -> ExtractionResult:
         model=settings.llm_model,
         max_tokens=settings.extraction_max_tokens,
         messages=[{"role": "user", "content": prompt}],
-        extra_headers={"anthropic-beta": _FALLBACK_BETA},
-        extra_body={"output_config": {"effort": settings.extraction_effort}, "fallbacks": "default"},
+        **_stream_options(settings),
     ) as stream:
         message = stream.get_final_message()
 

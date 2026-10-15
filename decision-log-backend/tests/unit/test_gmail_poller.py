@@ -51,7 +51,7 @@ class TestStripHtml:
 @pytest.fixture
 def poller():
     """Create a GmailPollerService instance with mocked Anthropic client."""
-    with patch("app.services.gmail_poller.Anthropic"):
+    with patch("app.services.gmail_poller.get_llm_client"):
         service = GmailPollerService()
     return service
 

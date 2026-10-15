@@ -14,6 +14,7 @@ from app.database.session import get_db
 from app.services.access import ADMIN, has_access, project_access_level, require_source_access, visible_items_filter
 from app.services.extraction_runs import activate_run
 from app.services.jobs import enqueue, latest_job_for_source
+from app.services.llm_client import lookup_pricing
 
 router = APIRouter()
 
@@ -23,12 +24,13 @@ EXTRACTABLE_SOURCE_TYPES = ("meeting", "manual_input")
 def _calculate_extraction_cost(model: Optional[str], input_tokens: Optional[int], output_tokens: Optional[int]) -> Optional[float]:
     """Calculate estimated cost in USD for an extraction run (Story 13.6).
 
-    Uses pricing from settings.model_pricing, keyed by model.
+    Uses pricing from settings.model_pricing, keyed by model; OpenRouter ids
+    (anthropic/claude-opus-5.5) map to the same entry (Story 13.17).
     Returns None if model or tokens are missing / model not in pricing table.
     """
     if not model or input_tokens is None or output_tokens is None:
         return None
-    pricing = settings.model_pricing.get(model)
+    pricing = lookup_pricing(model, settings.model_pricing)
     if not pricing:
         return None
     # Cost = (input_tokens / 1M) * input_price + (output_tokens / 1M) * output_price

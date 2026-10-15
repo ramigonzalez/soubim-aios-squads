@@ -203,7 +203,7 @@ class TestStripQuotedReplies:
 class TestEmailExtractor:
     """Tests for the EmailExtractor service."""
 
-    @patch("app.services.email_extractor.Anthropic")
+    @patch("app.services.email_extractor.get_llm_client")
     def test_extract_produces_items(
         self,
         mock_anthropic_cls,
@@ -223,7 +223,7 @@ class TestEmailExtractor:
         assert len(items) == 2
         mock_client.messages.create.assert_called_once()
 
-    @patch("app.services.email_extractor.Anthropic")
+    @patch("app.services.email_extractor.get_llm_client")
     def test_items_have_correct_structure(
         self,
         mock_anthropic_cls,
@@ -253,7 +253,7 @@ class TestEmailExtractor:
                 "information",
             )
 
-    @patch("app.services.email_extractor.Anthropic")
+    @patch("app.services.email_extractor.get_llm_client")
     def test_handles_markdown_code_block_response(
         self,
         mock_anthropic_cls,
@@ -312,7 +312,7 @@ class TestEmailExtractor:
 
         assert items == []
 
-    @patch("app.services.email_extractor.Anthropic")
+    @patch("app.services.email_extractor.get_llm_client")
     def test_failed_api_call_returns_empty_list(
         self,
         mock_anthropic_cls,
@@ -332,7 +332,7 @@ class TestEmailExtractor:
 
         assert items == []
 
-    @patch("app.services.email_extractor.Anthropic")
+    @patch("app.services.email_extractor.get_llm_client")
     def test_invalid_json_returns_empty_list(
         self,
         mock_anthropic_cls,
@@ -478,7 +478,7 @@ class TestPipelineIntegration:
         try:
             with (
                 patch.object(pipeline_mod, "SessionLocal", return_value=db_session),
-                patch("app.services.email_extractor.Anthropic") as mock_anthropic_cls,
+                patch("app.services.email_extractor.get_llm_client") as mock_anthropic_cls,
             ):
                 mock_anthropic_cls.return_value = mock_client
 
@@ -513,7 +513,7 @@ class TestPipelineIntegration:
         try:
             with (
                 patch.object(pipeline_mod, "SessionLocal", return_value=db_session),
-                patch("app.services.email_extractor.Anthropic") as mock_anthropic_cls,
+                patch("app.services.email_extractor.get_llm_client") as mock_anthropic_cls,
             ):
                 mock_anthropic_cls.return_value = mock_client
 

@@ -91,10 +91,16 @@ export default function ExtractionVersions({ sourceId }: { sourceId: string }) {
                       {t('versions.tokens', { input: run.input_tokens, output: run.output_tokens })}
                     </span>
                   )}
-                  {run.estimated_cost_usd != null && (
+                  {run.estimated_cost_usd != null ? (
                     <span className="text-xs text-gray-400">
                       {t('versions.cost', { cost: (run.estimated_cost_usd as number).toFixed(4) })}
                     </span>
+                  ) : (
+                    // Story 13.17: tokens known but the model has no MODEL_PRICING entry
+                    run.input_tokens != null &&
+                    run.output_tokens != null && (
+                      <span className="text-xs text-gray-400">{t('versions.costUnknown')}</span>
+                    )
                   )}
                   {data.can_manage && !run.is_active && (
                     <button

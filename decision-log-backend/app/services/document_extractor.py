@@ -69,9 +69,9 @@ class DocumentExtractor:
 
         # Call Claude API
         try:
-            from anthropic import Anthropic
+            from app.services.llm_client import get_llm_client
 
-            client = Anthropic(api_key=settings.anthropic_api_key)
+            client = get_llm_client()
             response = client.messages.create(
                 model=settings.llm_model,
                 max_tokens=4096,
