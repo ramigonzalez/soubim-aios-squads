@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F4F3EF;font-family:'Plus Jakarta Sans',sans-serif;color:#1C1E22;-webkit-font-smoothing:antialiased}a{color:#3E5F66}a:hover{color:#2F4C52}*{box-sizing:border-box}</style>
+</helmet>
+<div style="max-width:1320px;margin:0 auto;padding:56px 40px 120px;display:flex;flex-direction:column;gap:72px">
+
+  <header style="display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="display:inline-flex;align-items:center;font-weight:700;font-size:30px;letter-spacing:-0.04em;line-height:1">pro<span style="width:2px;height:28px;background:#3E5F66;margin:0 3px;transform:translateY(2px)"></span><span style="font-weight:500">mem</span></span>
+      <span style="font-size:13px;color:#5F6168">by souBIM</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border:1px solid #CFCBC2;border-radius:3px;color:#5F6168;white-space:nowrap">Design System · v0.1</span>
+    </div>
+    <h1 style="margin:0;font-size:44px;font-weight:700;letter-spacing:-0.035em;line-height:1.05;max-width:900px;text-wrap:balance">Fundamentos e componentes do app e da landing</h1>
+    <p style="margin:0;font-size:17px;line-height:1.55;color:#5F6168;max-width:860px;text-wrap:pretty">Três regras guiam tudo: <b style="color:#1C1E22">(1)</b> a cor pertence às disciplinas; a interface é tinta sobre papel, com um único acento petróleo para foco, seleção e "hoje". <b style="color:#1C1E22">(2)</b> Nada é comunicado só pela cor: disciplina sempre tem código (ARQ, EST…), tipo sempre tem ícone. <b style="color:#1C1E22">(3)</b> Densidade dentro dos grupos, respiro entre eles, como numa prancha bem diagramada.</p>
+    <nav style="display:flex;flex-wrap:wrap;gap:8px;font-size:13px">
+      <a href="#cores" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Cores</a>
+      <a href="#disciplinas" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Disciplinas</a>
+      <a href="#tipos" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Tipos e fontes</a>
+      <a href="#tipografia" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Tipografia</a>
+      <a href="#espaco" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Espaço</a>
+      <a href="#tailwind" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Tailwind</a>
+      <a href="#shell" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Navegação</a>
+      <a href="#lista" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Lista de itens</a>
+      <a href="#detalhe" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Detalhe</a>
+      <a href="#timeline" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Linha do tempo</a>
+      <a href="#reuniao" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Transcrição</a>
+      <a href="#ingestao" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Ingestão</a>
+      <a href="#forms" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Formulários</a>
+      <a href="#estados" style="padding:6px 10px;border:1px solid #E3E0D9;border-radius:4px;background:#FFFFFF;text-decoration:none;white-space:nowrap">Estados e feedback</a>
+    </nav>
+  </header>
+
+  <section id="cores" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">01 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Cores de interface</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+      <sc-for list="{{ neutrals }}" as="c" hint-placeholder-count="12">
+        <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:64px;background:{{ c.hex }};border-bottom:1px solid #E3E0D9"></div>
+          <div style="padding:10px 12px;display:flex;flex-direction:column;gap:2px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500">{{ c.t }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ c.hex }}</span>
+            <span style="font-size:12px;line-height:1.4;color:#5F6168;text-wrap:pretty">{{ c.use }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;font-size:13px;color:#5F6168;max-width:860px;text-wrap:pretty">Contraste: --ink sobre --surface = 16:1; --ink-2 sobre --bg = 5,6:1 (AA). --ink-3 só para placeholders e metadados não essenciais. Botão primário em tinta (não no acento), para manter o acento raro e significativo. Modo escuro fica fora do v0.1.</p>
+  </section>
+
+  <section id="disciplinas" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">02 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Disciplinas</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">15 cores com luminosidade e croma equilibrados em OKLCH, cada uma com um código de 3 letras que a acompanha sempre. Os 8 matizes atuais foram mantidos e refinados; as 7 disciplinas que eram cinzas ganharam cor própria.</p></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1px;background:#E3E0D9;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+      <sc-for list="{{ disc }}" as="d" hint-placeholder-count="15">
+        <div style="background:#FFFFFF;padding:12px 14px;display:flex;align-items:center;gap:12px">
+          <span style="width:28px;height:28px;border-radius:4px;background:{{ d.hex }};flex:none"></span>
+          <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+            <span style="font-size:14px;font-weight:600">{{ d.n }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ d.code }} · {{ d.hex }} · {{ d.ok }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:13px;font-weight:600">Marcador de disciplina: simples</span>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5F6168"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.EST }}"></span>EST</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500"><span style="width:10px;height:10px;border-radius:2px;background:{{ dc.PAI }}"></span>Paisagismo</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 6px;border:1px solid #E3E0D9;border-radius:3px;font-size:12px;font-weight:500"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.ARQ }}"></span>Arquitetura</span>
+        </div>
+        <span style="font-size:12px;color:#5F6168">Na lista: quadrado + código. No detalhe e nos filtros: quadrado + nome completo.</span>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:13px;font-weight:600">Marcador de disciplina: múltiplo</span>
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;font-size:12px;font-weight:500;color:#5F6168">
+          <span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.PAI }}"></span>PAI</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.EST }}"></span>EST</span></span>
+          <span style="display:inline-flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.INS }}"></span>INS</span><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.HID }}"></span>HID</span><span style="padding:1px 5px;border-radius:3px;background:#EFEDE8;color:#1C1E22">+2</span></span>
+        </div>
+        <span style="font-size:12px;color:#5F6168">Até 2 códigos na linha; acima disso, "+N" com tooltip listando todas.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="tipos" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:24px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">03 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Tipos de item</h2><p style="margin:0;font-size:14px;color:#5F6168;text-wrap:pretty">Monocromáticos de propósito: o ícone diferencia o tipo e a cor fica livre para a disciplina.</p></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;display:flex;flex-direction:column">
+        <sc-for list="{{ types }}" as="t" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:24px 120px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #EFEDE8">
+            <span style="display:flex;color:#1C1E22">{{ t.icon }}</span>
+            <span style="font-size:14px;font-weight:600">{{ t.n }}</span>
+            <span style="font-size:13px;color:#5F6168;text-wrap:pretty">{{ t.d }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border:1px solid #E3E0D9;border-radius:3px;white-space:nowrap;flex:none;font-size:11.5px;font-weight:600;white-space:nowrap">{{ t.iconSm }}{{ t.n }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">04 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Fontes, marco e impacto</h2><p style="margin:0;font-size:14px;color:#5F6168;text-wrap:pretty">Ícones lucide-react, 16 px, traço 1,75, sempre em --ink-2.</p></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-wrap:wrap;gap:18px">
+          <sc-for list="{{ sources }}" as="s" hint-placeholder-count="4"><span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:#5F6168">{{ s.icon }}<span style="color:#1C1E22">{{ s.n }}</span></span></sc-for>
+        </div>
+        <div style="height:1px;background:#EFEDE8"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;font-size:13px">
+          <span style="display:inline-flex;align-items:center;gap:7px;color:#3E5F66">{{ ic.starFill }}<span style="color:#1C1E22;font-weight:500">Marco</span></span>
+          <span style="display:inline-flex;align-items:center;gap:7px;color:#8A8C92">{{ ic.star }}<span style="color:#5F6168">Não é marco</span></span>
+        </div>
+        <div style="height:1px;background:#EFEDE8"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;font-weight:600">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;white-space:nowrap;flex:none;background:#F8E7E3;color:#8E3224"><span style="display:inline-flex;gap:2px;align-items:flex-end"><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:9px;background:currentColor"></span><span style="width:3px;height:12px;background:currentColor"></span></span>Impacto alto</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;white-space:nowrap;flex:none;background:#F8F0DE;color:#7A520C"><span style="display:inline-flex;gap:2px;align-items:flex-end"><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:9px;background:currentColor"></span><span style="width:3px;height:12px;background:#E0D3B5"></span></span>Médio</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;white-space:nowrap;flex:none;background:#EFEDE8;color:#5F6168"><span style="display:inline-flex;gap:2px;align-items:flex-end"><span style="width:3px;height:6px;background:currentColor"></span><span style="width:3px;height:9px;background:#D6D2CA"></span><span style="width:3px;height:12px;background:#D6D2CA"></span></span>Baixo</span>
+        </div>
+        <span style="font-size:12px;color:#5F6168">O impacto usa barras (forma) e texto, além da cor. Vermelho e âmbar ficam reservados a impacto e erro, nunca a fundos de destaque.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="tipografia" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">05 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Tipografia</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">Plus Jakarta Sans para interface e títulos · Newsreader para leitura longa (justificativas, resumos, landing) · IBM Plex Mono para datas, horários e códigos. Todas do Google Fonts.</p></div>
+    <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;display:flex;flex-direction:column">
+      <sc-for list="{{ scale }}" as="s" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:150px 170px minmax(0,1fr);align-items:baseline;gap:16px;padding:14px 20px;border-bottom:1px solid #EFEDE8">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500">{{ s.token }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168">{{ s.spec }}</span>
+          <span style="font-family:{{ s.f }};font-size:{{ s.size }};font-weight:{{ s.w }};letter-spacing:{{ s.ls }};line-height:{{ s.lh }};text-transform:{{ s.tt }};color:#1C1E22;text-wrap:pretty">{{ s.sample }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="espaco" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:24px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">06 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Espaço e grid</h2></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:16px 20px;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ spacing }}" as="s" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:60px 50px minmax(0,1fr);align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:12px"><span>{{ s.t }}</span><span style="color:#5F6168">{{ s.px }}</span><span style="height:10px;width:{{ s.w }};background:#3E5F66;border-radius:1px"></span></div>
+        </sc-for>
+        <span style="font-size:12px;color:#5F6168;margin-top:6px;text-wrap:pretty">Base de 4 px. Dentro de um grupo: 4–12. Entre grupos: 24–48. Linha de lista: 40 px (confortável) / 32 px (compacta). App: sidebar de 248 px + conteúdo fluido até 1280 px; painel de detalhe de 480 px.</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">07 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Raio e elevação</h2></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;border:1.5px solid #1C1E22;border-radius:3px"></div>--radius-sm 3 · chips</div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;border:1.5px solid #1C1E22;border-radius:4px"></div>--radius-md 4 · botões, campos</div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;border:1.5px solid #1C1E22;border-radius:6px"></div>--radius-lg 6 · painéis</div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px"></div>nível 0 · borda, sem sombra</div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;box-shadow:0 4px 16px rgba(28,30,34,.08)"></div>nível 1 · popover, menu</div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:56px;background:#FFFFFF;border-radius:6px;box-shadow:0 12px 40px rgba(28,30,34,.16),0 0 0 1px rgba(28,30,34,.06)"></div>nível 2 · painel, diálogo</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tailwind" style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">08 · Fundamentos</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Tokens → Tailwind</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px">
+      <pre style="margin:0;padding:20px;background:#1C1E22;color:#E9E7E1;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.65;overflow-x:auto">{{ cssVars }}</pre>
+      <pre style="margin:0;padding:20px;background:#1C1E22;color:#E9E7E1;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.65;overflow-x:auto">{{ twConfig }}</pre>
+    </div>
+  </section>
+
+  <section id="shell" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">09 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">App shell, navegação e troca de projeto</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">Proposta: sair da top bar e ir para uma sidebar. O seletor de projeto fica no topo (o diretor alterna entre 3+ projetos), e as seções do projeto viram navegação, não abas. Ingestão vira uma caixa de entrada global com contador.</p></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <aside style="width:248px;height:620px;background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between">
+          <span style="display:inline-flex;align-items:center;font-weight:700;font-size:19px;letter-spacing:-0.04em;line-height:1">pro<span style="width:2px;height:18px;background:#3E5F66;margin:0 2px;transform:translateY(1px)"></span><span style="font-weight:500">mem</span></span>
+          <span style="font-size:11px;color:#5F6168">Escritório Exemplo</span>
+        </div>
+        <div style="margin:0 10px 8px;padding:8px 10px;border:1px solid #E3E0D9;border-radius:4px;display:flex;align-items:center;gap:8px;box-shadow:0 0 0 3px rgba(62,95,102,.18)">
+          <div style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Residential Tower Alpha</span><span style="font-size:11px;color:#5F6168">Anteprojeto · 2 de 4</span></div>
+          <span style="display:flex;color:#5F6168">{{ ic.chevrons }}</span>
+        </div>
+        <div style="padding:4px 10px;display:flex;flex-direction:column;gap:1px;font-size:13.5px">
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;background:#E6EEEF;color:#1C1E22;font-weight:600"><span style="display:flex;color:#3E5F66">{{ ic.overview }}</span>Visão geral</span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.timeline }}</span>Marcos</span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.history }}</span>Histórico<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">21</span></span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.video }}</span>Reuniões<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">6</span></span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.file }}</span>Resumo executivo</span>
+        </div>
+        <div style="height:1px;background:#EFEDE8;margin:10px 16px"></div>
+        <div style="padding:0 10px;display:flex;flex-direction:column;gap:1px;font-size:13.5px">
+          <span style="padding:4px 10px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Escritório</span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.folder }}</span>Todos os projetos</span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.inbox }}</span>Ingestão<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;padding:1px 6px;border-radius:9px;background:#1C1E22;color:#FFFFFF">7</span></span>
+          <span style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;color:#3A3C42"><span style="display:flex;color:#5F6168">{{ ic.search }}</span>Buscar<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">⌘K</span></span>
+        </div>
+        <div style="margin-top:auto;padding:12px 16px;border-top:1px solid #EFEDE8;display:flex;align-items:center;gap:10px">
+          <span style="width:28px;height:28px;border-radius:50%;background:#1C1E22;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">G</span>
+          <div style="display:flex;flex-direction:column;line-height:1.25"><span style="font-size:13px;font-weight:600">Gabriela</span><span style="font-size:11px;color:#5F6168">Diretora · Admin</span></div>
+        </div>
+      </aside>
+      <div style="width:340px;background:#FFFFFF;border-radius:6px;box-shadow:0 4px 16px rgba(28,30,34,.08),0 0 0 1px #E3E0D9;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 12px;border-bottom:1px solid #EFEDE8;display:flex;align-items:center;gap:8px;color:#5F6168">{{ ic.search }}<span style="font-size:13.5px;color:#8A8C92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">Buscar projeto…</span></div>
+        <span style="padding:10px 14px 4px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Projetos ativos</span>
+        <sc-for list="{{ projects }}" as="p" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:9px 14px;background:{{ p.bg }}">
+            <span style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ p.newColor }};text-align:right">{{ p.news }}</span>
+            <span style="font-size:12px;color:#5F6168">{{ p.stage }}</span>
+            <span style="font-size:11px;color:#8A8C92;text-align:right">{{ p.when }}</span>
+          </div>
+        </sc-for>
+        <div style="padding:10px 14px;border-top:1px solid #EFEDE8;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500">{{ ic.plus }}Criar projeto</div>
+      </div>
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.5;color:#5F6168;text-wrap:pretty">
+        <b style="color:#1C1E22;font-size:14px">Por que sidebar</b>
+        <span>• A troca de projeto fica sempre a um clique e mostra a etapa atual e as novidades desde a última visita, que é a pergunta do diretor.</span>
+        <span>• As seções do projeto viram navegação persistente: "Visão geral" é a nova tela inicial do projeto (o "onde estamos" em um olhar); Marcos, Histórico e Reuniões ganham página própria.</span>
+        <span>• Editar e Arquivar saem do cabeçalho e vão para um menu "⋯", sem competir com as ações principais.</span>
+        <span>• No mobile, a sidebar vira uma barra inferior com 4 itens (Visão geral, Marcos, Histórico, Mais) e o seletor de projeto fica no topo.</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:24px 28px;display:flex;flex-direction:column;gap:18px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Cabeçalho do projeto · visão geral</span>
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;justify-content:space-between">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.025em;line-height:1.15">Residential Tower Alpha</h3>
+          <span style="font-size:14px;color:#5F6168">Torre residencial de 50 pavimentos · Centro · 8 participantes</span>
+        </div>
+        <div style="display:flex;gap:8px;white-space:nowrap;font-size:13.5px;font-weight:500">
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #CFCBC2;border-radius:4px;background:#FFFFFF">{{ ic.upload }}Enviar documento</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:4px;background:#1C1E22;color:#FFFFFF">{{ ic.link }}Compartilhar marcos</span>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;border:1px solid #CFCBC2;border-radius:4px">⋯</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1.3fr 1fr 2fr;gap:4px;position:relative">
+          <div style="height:6px;background:#1C1E22;border-radius:1px"></div>
+          <div style="height:6px;background:linear-gradient(90deg,#1C1E22 0 42%,#D6D2CA 42%);border-radius:1px"></div>
+          <div style="height:6px;background:#E3E0D9;border-radius:1px"></div>
+          <div style="height:6px;background:#E3E0D9;border-radius:1px"></div>
+          <div style="position:absolute;left:calc(25% + 0.42 * 32.5%);top:-5px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;height:16px;background:#3E5F66"></span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.3fr 1fr 2fr;gap:4px;font-size:12px">
+          <div style="display:flex;flex-direction:column"><span style="font-weight:600;color:#5F6168">Estudo Preliminar</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">15/01 – 15/02</span></div>
+          <div style="display:flex;flex-direction:column"><span style="font-weight:600;color:#1C1E22">Anteprojeto · <span style="color:#3E5F66">hoje, 03/03</span></span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">16/02 – 31/03 · faltam 28 dias</span></div>
+          <div style="display:flex;flex-direction:column"><span style="font-weight:600;color:#5F6168">Projeto Legal</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">01/04 – 15/05</span></div>
+          <div style="display:flex;flex-direction:column"><span style="font-weight:600;color:#5F6168">Projeto Executivo</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">16/05 – 31/08</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;padding-top:14px;border-top:1px solid #EFEDE8;font-size:13px">
+        <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:#3E5F66"></span><b>5 novidades</b><span style="color:#5F6168">desde sua última visita, 27/02</span></span>
+        <span style="color:#5F6168"><b style="color:#1C1E22">3</b> ações em aberto · <b style="color:#8E3224">1 atrasada</b></span>
+        <span style="color:#5F6168"><b style="color:#1C1E22">2</b> tópicos sem decisão</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="lista" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">10 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Filtros, cabeçalhos de grupo e linha de item</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">Uma barra de filtros só: busca + 5 menus. Os filtros ativos aparecem como chips removíveis logo abaixo, em vez de 13 pílulas sempre visíveis. O agrupamento fica no canto da lista, com rótulo explícito.</p></div>
+    <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+      <div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid #EFEDE8">
+        <div style="flex:1 1 260px;min-width:200px;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;color:#5F6168">{{ ic.search }}<span style="font-size:13.5px;color:#8A8C92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">Buscar em 21 itens…</span><span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">/</span></div>
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid {{ f.border }};border-radius:4px;font-size:13px;font-weight:500;white-space:nowrap;background:{{ f.bg }}">{{ f.n }}<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3E5F66">{{ f.count }}</span><span style="display:flex;color:#5F6168">{{ ic.chevron }}</span></span>
+        </sc-for>
+      </div>
+      <div style="padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid #E3E0D9;background:#F9F8F5">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 8px;border-radius:3px;background:#FFFFFF;border:1px solid #E3E0D9;font-size:12px;font-weight:500"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.EST }}"></span>Estrutura<span style="display:flex;color:#5F6168">{{ ic.x }}</span></span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 8px;border-radius:3px;background:#FFFFFF;border:1px solid #E3E0D9;font-size:12px;font-weight:500">{{ ic.decisionSm }}Decisão<span style="display:flex;color:#5F6168">{{ ic.x }}</span></span>
+        <span style="font-size:12px;font-weight:500;color:#3E5F66;text-decoration:underline;text-underline-offset:2px">Limpar filtros</span>
+        <span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#5F6168">Agrupar por<span style="display:inline-flex;padding:2px;border-radius:4px;background:#EFEDE8"><span style="padding:3px 10px;border-radius:3px;background:#FFFFFF;color:#1C1E22;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)">Data</span><span style="padding:3px 10px;color:#5F6168;font-weight:500">Disciplina</span></span></span>
+      </div>
+      <div style="padding:20px 16px 6px;display:flex;align-items:baseline;gap:10px">
+        <span style="font-size:15px;font-weight:600">6 de fevereiro</span><span style="font-size:13px;color:#5F6168">sexta-feira</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92">13 itens</span>
+      </div>
+      <div style="margin:0 16px;padding:8px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid #E3E0D9">
+        <span style="display:flex;color:#5F6168">{{ ic.video }}</span>
+        <span style="font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto">Structural Design Review</span>
+        <span style="font-size:12px;color:#5F6168;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto">Reunião · 45 min · Gabriela, Carlos, Lucia</span>
+        <span style="margin-left:auto;flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#3E5F66">{{ ic.play }}Abrir transcrição</span>
+      </div>
+      <div style="padding:0 16px 16px;display:flex;flex-direction:column">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 112px 128px 20px 52px 20px;align-items:center;gap:12px;height:40px;padding:0 8px;border-bottom:1px solid #EFEDE8;background:{{ r.bg }};box-shadow:{{ r.shadow }}">
+            <span style="display:flex;color:{{ r.iconColor }}">{{ r.icon }}</span>
+            <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:14px;font-weight:500;color:{{ r.titleColor }};text-decoration:{{ r.deco }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.t }}</span><sc-if value="{{ r.due }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:1px 6px;border-radius:3px;background:{{ r.dueBg }};color:{{ r.dueColor }}">{{ r.due }}</span></sc-if></span>
+            <span style="display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:500;color:#5F6168">
+              <sc-for list="{{ r.discs }}" as="d" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.code }}</span></sc-for>
+            </span>
+            <span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="width:20px;height:20px;flex:none;border-radius:50%;background:#EFEDE8;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ r.ini }}</span><span style="font-size:12.5px;color:#5F6168;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.who }}</span></span>
+            <span style="display:flex;color:#8A8C92">{{ r.src }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168">{{ r.date }}</span>
+            <span style="display:flex;color:{{ r.starColor }}">{{ r.star }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;font-size:12px;color:#5F6168">
+      <span><b style="color:#1C1E22">Padrão</b> · fundo branco</span><span><b style="color:#1C1E22">Hover</b> · --surface-2</span><span><b style="color:#1C1E22">Selecionado</b> (painel aberto) · --accent-weak + filete de 2 px</span><span><b style="color:#1C1E22">Ação concluída</b> · riscada, em --ink-3</span><span><b style="color:#1C1E22">Ação atrasada</b> · prazo em --danger-weak</span><span><b style="color:#1C1E22">Teclado</b> · ↑↓ navega, Enter abre, M marca como marco, X conclui</span>
+    </div>
+  </section>
+
+  <section id="detalhe" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">11 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Painel de detalhe, consenso e KPIs</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">O modal vira um painel lateral de 480 px: a lista continua visível, e ↑↓ troca de item sem fechar. Hierarquia clara: título → contexto → por quê (em serifa, para leitura) → consenso → impactos. Seções vazias não aparecem.</p></div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div style="width:480px;max-width:100%;background:#FFFFFF;border-radius:6px;box-shadow:0 12px 40px rgba(28,30,34,.16),0 0 0 1px rgba(28,30,34,.06);display:flex;flex-direction:column">
+        <div style="padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #EFEDE8">
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 6px;border:1px solid #E3E0D9;border-radius:3px;white-space:nowrap;flex:none;font-size:11.5px;font-weight:600">{{ ic.decisionSm }}Decisão</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;white-space:nowrap;flex:none;background:#F8E7E3;color:#8E3224;font-size:11.5px;font-weight:600"><span style="display:inline-flex;gap:2px;align-items:flex-end"><span style="width:3px;height:5px;background:currentColor"></span><span style="width:3px;height:8px;background:currentColor"></span><span style="width:3px;height:11px;background:currentColor"></span></span>Impacto alto</span>
+          <span style="margin-left:auto;display:flex;gap:4px;color:#5F6168"><span style="display:flex;padding:6px;color:#3E5F66">{{ ic.starFill }}</span><span style="display:flex;padding:6px">{{ ic.up }}</span><span style="display:flex;padding:6px">{{ ic.down }}</span><span style="display:flex;padding:6px">{{ ic.x }}</span></span>
+        </div>
+        <div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:14px">
+          <h3 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;text-wrap:pretty">Preservar as árvores existentes e instalar cobertura verde no pódio</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;font-weight:500">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:{{ dc.PAI }}"></span>Paisagismo</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:{{ dc.EST }}"></span>Estrutura</span>
+          </div>
+          <div style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:7px 12px;font-size:13px">
+            <span style="color:#5F6168">Quem</span><span>Gabriela · Diretora de projeto</span>
+            <span style="color:#5F6168">Origem</span><span style="display:flex;align-items:center;gap:6px"><span style="display:flex;color:#5F6168">{{ ic.video }}</span>Landscape Design Review · 07/02/2026</span>
+            <span style="color:#5F6168">Na gravação</span><span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#3E5F66;font-weight:500">{{ ic.play }}<span style="font-family:'IBM Plex Mono',monospace">00:08:30</span> ouvir trecho</span>
+            <span style="color:#5F6168">Etapa</span><span>Estudo Preliminar</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;padding:0 20px;margin-top:18px;border-bottom:1px solid #E3E0D9;font-size:13px;font-weight:500">
+          <span style="padding:10px 0;border-bottom:2px solid #1C1E22;margin-bottom:-1px">Visão geral</span><span style="padding:10px 0;color:#5F6168">Trecho da transcrição</span><span style="padding:10px 0;color:#5F6168">Similares <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">3</span></span>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Por quê</span><p style="margin:0;font-family:'Newsreader',serif;font-size:17px;line-height:1.5;text-wrap:pretty">Benefícios ambientais, exigência da comunidade e créditos LEED de águas pluviais. A avaliação ambiental identificou 5 árvores patrimoniais no terreno.</p></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Consenso</span><span style="font-size:12px;color:#2F7A4F;font-weight:600">3 de 3 concordam</span></div>
+            <div style="display:flex;gap:3px"><span style="flex:1;height:4px;background:#2F7A4F;border-radius:1px"></span><span style="flex:1;height:4px;background:#2F7A4F;border-radius:1px"></span><span style="flex:1;height:4px;background:#2F7A4F;border-radius:1px"></span></div>
+            <sc-for list="{{ consensus }}" as="c" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:6px 0;border-bottom:1px solid #EFEDE8;font-size:13px">
+                <span style="display:inline-flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:2px;background:{{ c.hex }}"></span>{{ c.n }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:{{ c.color }}">{{ c.icon }}{{ c.state }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Impactos</span>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45">
+              <span style="display:flex;gap:8px"><span style="width:8px;height:8px;margin-top:5px;flex:none;border-radius:2px;background:{{ dc.EST }}"></span>Reforço da laje do pódio para a carga da cobertura verde.</span>
+              <span style="display:flex;gap:8px"><span style="width:8px;height:8px;margin-top:5px;flex:none;border-radius:2px;background:{{ dc.HID }}"></span>Nova drenagem e reúso de água na cobertura.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-size:13px;font-weight:600">Estados de consenso</span>
+        <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:22px;font-size:12.5px;font-weight:600">
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#2F7A4F">{{ ic.check }}Concorda</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#7A520C">{{ ic.tilde }}Com ressalvas</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#8E3224">{{ ic.x }}Discorda</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#5F6168">{{ ic.minus }}Sem posição</span>
+        </div>
+        <span style="font-size:13px;font-weight:600;margin-top:8px">KPI · resumo executivo</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:#E3E0D9;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+            <div style="background:#FFFFFF;padding:16px 18px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:12.5px;font-weight:500;color:#5F6168">{{ k.label }}</span>
+              <span style="font-size:32px;font-weight:600;letter-spacing:-0.03em;line-height:1.1">{{ k.v }}</span>
+              <span style="font-size:12px;color:{{ k.noteColor }}">{{ k.note }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <span style="font-size:12px;color:#5F6168;text-wrap:pretty">Os rótulos dizem exatamente o que contam ("Itens capturados", não "Total de decisões"). O número fica em tinta; a cor aparece só na nota quando há algo a agir.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="timeline" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">12 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Linha do tempo de etapas</h2><p style="margin:0;font-size:14px;color:#5F6168;max-width:860px;text-wrap:pretty">Pronta para apresentação e exportação para PDF: datas em uma linha só, marcador "hoje" no lugar real, etapas futuras sem marcos compactadas em uma linha. Sem filtros na tela: eles ficam num menu discreto.</p></div>
+    <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:28px 32px;display:flex;flex-direction:column">
+      <sc-for list="{{ stages }}" as="st" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:200px 24px minmax(0,1fr);gap:0 16px">
+          <div style="display:flex;flex-direction:column;gap:2px;padding:2px 0 24px;text-align:right">
+            <span style="font-size:15px;font-weight:600;color:{{ st.nameColor }}">{{ st.name }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168;white-space:nowrap">{{ st.dates }}</span>
+            <span style="font-size:11.5px;font-weight:600;color:{{ st.statusColor }}">{{ st.status }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center">
+            <span style="width:13px;height:13px;margin-top:5px;border-radius:50%;border:2px solid #1C1E22;background:{{ st.dot }};flex:none"></span>
+            <span style="flex:1;width:2px;background:{{ st.line }}"></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;padding-bottom:24px">
+            <sc-if value="{{ st.today }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:10px;margin:2px 0 8px -30px"><span style="width:20px;height:2px;background:#3E5F66"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:#3E5F66;color:#FFFFFF">Hoje · 03/03</span><span style="flex:1;height:1px;background:repeating-linear-gradient(90deg,#3E5F66 0 4px,transparent 4px 8px)"></span></div>
+            </sc-if>
+            <sc-for list="{{ st.items }}" as="it" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:20px minmax(0,1fr) auto 52px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #EFEDE8">
+                <span style="display:flex;color:#1C1E22">{{ it.icon }}</span>
+                <span style="font-size:14px;font-weight:500;text-wrap:pretty">{{ it.t }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;color:#5F6168"><span style="width:8px;height:8px;border-radius:2px;background:{{ it.hex }}"></span>{{ it.code }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168;text-align:right">{{ it.d }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:#8A8C92;padding-top:3px">{{ st.empty }}</span></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="reuniao" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:24px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">13 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Turno de transcrição</h2><p style="margin:0;font-size:14px;color:#5F6168;text-wrap:pretty">Item extraído aparece ancorado ao trecho de onde veio. Locutor incerto: ícone + texto, nunca só cor.</p></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:8px 0">
+        <sc-for list="{{ turns }}" as="t" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:10px 18px;background:{{ t.bg }};box-shadow:{{ t.shadow }}">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168;padding-top:2px">{{ t.ts }}</span>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;font-size:13px;font-weight:600;color:{{ t.whoColor }}">{{ t.warn }}{{ t.who }}<span style="flex-basis:100%;font-size:11.5px;font-weight:500;line-height:1.4">{{ t.flag }}</span></span>
+              <span style="font-size:14px;line-height:1.55;text-wrap:pretty">{{ t.text }}</span>
+              <sc-if value="{{ t.item }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:6px;margin-top:4px;padding:4px 8px;border:1px solid #CFCBC2;border-radius:4px;background:#FFFFFF;font-size:12.5px;font-weight:500">{{ ic.decisionSm }}{{ t.item }}</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div id="ingestao" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">14 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Linha da caixa de ingestão</h2><p style="margin:0;font-size:14px;color:#5F6168;text-wrap:pretty">Caixa de entrada, não tabela: título humano, projeto sugerido, resumo da IA em 2 linhas e as ações sempre visíveis. Sem IDs técnicos. Teclas A aprova e R recusa.</p></div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;display:flex;flex-direction:column">
+        <sc-for list="{{ inbox }}" as="i" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:18px 20px minmax(0,1fr) auto;gap:12px;padding:14px 16px;border-bottom:1px solid #EFEDE8;background:{{ i.bg }}">
+            <span style="width:16px;height:16px;margin-top:2px;border:1.5px solid {{ i.cbBorder }};border-radius:3px;background:{{ i.cbBg }}"></span>
+            <span style="display:flex;color:#5F6168;padding-top:1px">{{ i.icon }}</span>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+              <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:8px"><span style="font-size:14px;font-weight:600">{{ i.t }}</span><span style="font-size:12px;color:#5F6168">{{ i.meta }}</span></div>
+              <span style="font-size:13px;line-height:1.5;color:#3A3C42;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ i.sum }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#5F6168">Projeto: <span style="padding:1px 6px;border:1px solid #E3E0D9;border-radius:3px;color:#1C1E22;font-weight:500">{{ i.proj }} ▾</span></span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-start;white-space:nowrap;font-size:13px;font-weight:500">
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid #CFCBC2;border-radius:4px">{{ ic.x }}Recusar</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:4px;background:#1C1E22;color:#FFFFFF">{{ ic.check }}Aprovar</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="forms" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">15 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Formulários</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:24px">
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13px;font-weight:600">Nome do projeto</label><div style="padding:9px 12px;border:1px solid #CFCBC2;border-radius:4px;font-size:14px">Residential Tower Alpha</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13px;font-weight:600">Descrição</label><div style="padding:9px 12px;border:1px solid #3E5F66;border-radius:4px;box-shadow:0 0 0 3px rgba(62,95,102,.2);font-size:14px;min-height:64px">Torre residencial de 50 pavimentos no centro|</div><span style="font-size:12px;color:#5F6168">Estado de foco</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13px;font-weight:600">Pasta do Google Drive</label><div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #B3402F;border-radius:4px;font-size:14px;color:#8A8C92">{{ ic.link }}Cole o link da pasta</div><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8E3224">{{ ic.alert }}Não encontramos essa pasta. Verifique se ela foi compartilhada com o Promem.</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13px;font-weight:600">Tipo de projeto</label><div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border:1px solid #CFCBC2;border-radius:4px;font-size:14px">Residencial<span style="display:flex;color:#5F6168">{{ ic.chevron }}</span></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:13px;font-weight:600">Período</label><div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #CFCBC2;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:13px"><span style="display:flex;color:#5F6168">{{ ic.calendar }}</span>15/01 → 31/08/26</div></div>
+        </div>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center"><span style="font-size:15px;font-weight:600">Etapas</span><span style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid #CFCBC2;border-radius:4px;font-size:12.5px;font-weight:500">Carregar modelo: Edificação padrão {{ ic.chevron }}</span></div>
+        <sc-for list="{{ stageRows }}" as="s" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:14px minmax(0,1fr) auto 20px;align-items:center;gap:10px">
+            <span style="color:#8A8C92;font-size:12px;letter-spacing:-2px">⋮⋮</span>
+            <div style="padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.n }}</div>
+            <div style="padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap">{{ s.d }}</div>
+            <span style="display:flex;color:#8A8C92">{{ ic.trash }}</span>
+          </div>
+        </sc-for>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:#3E5F66">{{ ic.plus }}Adicionar etapa</span>
+        <div style="height:1px;background:#EFEDE8"></div>
+        <span style="font-size:15px;font-weight:600">Participante</span>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;white-space:nowrap">
+          <div style="padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;font-size:13.5px">Carlos</div>
+          <div style="padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;font-size:13.5px;color:#5F6168;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">carlos@mep.com</div>
+          <div style="display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #E3E0D9;border-radius:4px;font-size:13.5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ dc.EST }}"></span>Estrutura<span style="margin-left:auto;display:flex;color:#5F6168">{{ ic.chevron }}</span></div>
+        </div>
+        <span style="font-size:12px;color:#5F6168;text-wrap:pretty">A disciplina vem de uma lista fixa (com cor e código) e define o papel. O cargo vira um campo opcional, não um segundo texto livre.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="estados" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#5F6168">16 · Componentes</div><h2 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Estados, compartilhamento e toasts</h2></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+        <span style="display:flex;color:#8A8C92">{{ ic.inboxLg }}</span>
+        <span style="font-size:15px;font-weight:600">Nenhum item nesta etapa ainda</span>
+        <span style="font-size:13px;color:#5F6168;max-width:260px;text-wrap:pretty">Assim que uma reunião ou um e-mail do projeto for aprovado, os itens aparecem aqui.</span>
+        <span style="margin-top:6px;padding:7px 12px;border:1px solid #CFCBC2;border-radius:4px;font-size:13px;font-weight:500">Enviar documento</span>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <span style="font-size:12px;font-weight:600;color:#5F6168">Carregando</span>
+        <sc-for list="{{ skel }}" as="s" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:18px minmax(0,1fr) 60px;gap:12px;align-items:center"><span style="height:14px;border-radius:3px;background:#EFEDE8"></span><span style="height:12px;width:{{ s }};border-radius:3px;background:#EFEDE8"></span><span style="height:10px;border-radius:3px;background:#F4F3EF"></span></div>
+        </sc-for>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+        <span style="display:flex;color:#B3402F">{{ ic.alertLg }}</span>
+        <span style="font-size:15px;font-weight:600">Não foi possível carregar o histórico</span>
+        <span style="font-size:13px;color:#5F6168;max-width:260px;text-wrap:pretty">A conexão caiu no meio do caminho. Nada foi perdido.</span>
+        <span style="margin-top:6px;padding:7px 12px;border-radius:4px;background:#1C1E22;color:#FFFFFF;font-size:13px;font-weight:500">Tentar de novo</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div style="width:520px;max-width:100%;background:#FFFFFF;border-radius:6px;box-shadow:0 12px 40px rgba(28,30,34,.16),0 0 0 1px rgba(28,30,34,.06);display:flex;flex-direction:column">
+        <div style="padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:17px;font-weight:600">Compartilhar marcos</span><span style="font-size:13px;color:#5F6168">Link somente leitura para clientes e fornecedores. Ninguém precisa de login.</span></div><span style="display:flex;color:#5F6168">{{ ic.x }}</span></div>
+        <div style="margin:16px 20px 0;border:1px solid #E3E0D9;border-radius:4px;background:#F4F3EF;padding:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#5F6168"><span style="font-weight:600">Prévia do que o cliente vê</span><span>Escritório Exemplo · com seu logo</span></div>
+          <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:3px;padding:10px 12px;display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:12px;font-weight:600">Residential Tower Alpha</span>
+            <div style="display:flex;gap:3px"><span style="flex:1;height:3px;background:#1C1E22"></span><span style="flex:1.3;height:3px;background:linear-gradient(90deg,#1C1E22 0 42%,#E3E0D9 42%)"></span><span style="flex:1;height:3px;background:#E3E0D9"></span><span style="flex:2;height:3px;background:#E3E0D9"></span></div>
+            <span style="height:6px;width:80%;background:#EFEDE8;border-radius:2px"></span><span style="height:6px;width:64%;background:#EFEDE8;border-radius:2px"></span>
+          </div>
+        </div>
+        <div style="padding:16px 20px;display:flex;gap:8px">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #CFCBC2;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3A3C42;white-space:nowrap;overflow:hidden"><span style="display:flex;color:#5F6168">{{ ic.link }}</span>promem.com.br/m/rta-7k2p</div>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:4px;background:#1C1E22;color:#FFFFFF;font-size:13px;font-weight:500;white-space:nowrap">{{ ic.copy }}Copiar link</span>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid #EFEDE8;display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:12.5px;color:#5F6168">
+          <span>Expira em <b style="color:#1C1E22">04/11/2026</b> ▾</span><span>Visualizado <b style="color:#1C1E22">0 vezes</b></span>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#8E3224;font-weight:500">{{ ic.trash }}Revogar link</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:380px;max-width:100%">
+        <span style="font-size:13px;font-weight:600">Toasts</span>
+        <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:6px;background:#1C1E22;color:#FFFFFF;font-size:13px;box-shadow:0 8px 24px rgba(28,30,34,.2)">
+            <span style="display:flex;color:{{ t.color }}">{{ t.icon }}</span><span style="flex:1">{{ t.t }}</span><span style="font-weight:600;color:#A9C4C9">{{ t.action }}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:12px;color:#5F6168;text-wrap:pretty">Canto inferior esquerdo, 5 s, com "Desfazer" quando a ação é reversível (aprovar, concluir, marcar como marco).</span>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const h = React.createElement;
+    const svg = (size, kids, extra) => h('svg', { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.75, strokeLinecap:'round', strokeLinejoin:'round', ...(extra||{}) }, ...kids);
+    const P = (d) => h('path', { d }); const C = (cx, cy, r) => h('circle', { cx, cy, r }); const R = (x, y, w, hh, rx) => h('rect', { x, y, width:w, height:hh, rx });
+    const defs = {
+      decision: () => [C(12,12,10), P('m9 12 2 2 4-4')],
+      action: () => [R(3,3,18,18,2)],
+      actionDone: () => [R(3,3,18,18,2), P('m9 12 2 2 4-4')],
+      topic: () => [P('M7.9 20A9 9 0 1 0 4 16.1L2 22Z')],
+      idea: () => [P('M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'), P('M9 18h6'), P('M10 22h4')],
+      info: () => [C(12,12,10), P('M12 16v-4'), P('M12 8h.01')],
+      video: () => [P('m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5'), R(2,6,14,12,2)],
+      mail: () => [R(2,4,20,16,2), P('m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7')],
+      file: () => [P('M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'), P('M14 2v4a2 2 0 0 0 2 2h4'), P('M16 13H8'), P('M16 17H8')],
+      pencil: () => [P('M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z')],
+      star: () => [P('M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z')],
+      search: () => [C(11,11,8), P('m21 21-4.3-4.3')],
+      check: () => [P('M20 6 9 17l-5-5')],
+      x: () => [P('M18 6 6 18'), P('m6 6 12 12')],
+      minus: () => [P('M5 12h14')],
+      tilde: () => [P('M2 15c6.667-6 13.333 0 20-6')],
+      plus: () => [P('M5 12h14'), P('M12 5v14')],
+      chevron: () => [P('m6 9 6 6 6-6')],
+      chevrons: () => [P('m7 15 5 5 5-5'), P('m7 9 5-5 5 5')],
+      up: () => [P('m18 15-6-6-6 6')],
+      down: () => [P('m6 9 6 6 6-6')],
+      alert: () => [P('m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'), P('M12 9v4'), P('M12 17h.01')],
+      link: () => [P('M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'), P('M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71')],
+      calendar: () => [R(3,4,18,18,2), P('M16 2v4'), P('M8 2v4'), P('M3 10h18')],
+      play: () => [C(12,12,10), P('m10 8 6 4-6 4Z')],
+      inbox: () => [P('M22 12h-6l-2 3h-4l-2-3H2'), P('M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z')],
+      folder: () => [P('M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z')],
+      timeline: () => [P('M12 3v6'), C(12,12,3), P('M12 15v6')],
+      history: () => [P('M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'), P('M3 3v5h5'), P('M12 7v5l4 2')],
+      overview: () => [R(3,3,7,9,1), R(14,3,7,5,1), R(14,12,7,9,1), R(3,16,7,5,1)],
+      upload: () => [P('M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'), P('m17 8-5-5-5 5'), P('M12 3v12')],
+      trash: () => [P('M3 6h18'), P('M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6'), P('M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2')],
+      copy: () => [R(8,8,14,14,2), P('M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2')]
+    };
+    const ic = {};
+    Object.keys(defs).forEach(k => { ic[k] = svg(16, defs[k]()); });
+    ic.starFill = svg(16, defs.star(), { fill:'currentColor' });
+    ic.decisionSm = svg(13, defs.decision()); ic.inboxLg = svg(32, defs.inbox(), { strokeWidth:1.25 }); ic.alertLg = svg(32, defs.alert(), { strokeWidth:1.25 });
+    const typeIcon = { Decisão:'decision', Ação:'action', Tópico:'topic', Ideia:'idea', Informação:'info' };
+
+    const okToHex = (L, Cc, H) => {
+      const a = Cc*Math.cos(H*Math.PI/180), b = Cc*Math.sin(H*Math.PI/180);
+      const l = (L+0.3963377774*a+0.2158037573*b)**3, m = (L-0.1055613458*a-0.0638541728*b)**3, s = (L-0.0894841775*a-1.2914855480*b)**3;
+      const rgb = [4.0767416621*l-3.3077115913*m+0.2309699292*s, -1.2684380046*l+2.6097574011*m-0.3413193965*s, -0.0041960863*l-0.7034186147*m+1.7076147010*s];
+      return '#' + rgb.map(x => { x = Math.min(1, Math.max(0, x)); x = x <= 0.0031308 ? 12.92*x : 1.055*Math.pow(x, 1/2.4)-0.055; return Math.round(x*255).toString(16).padStart(2,'0'); }).join('').toUpperCase();
+    };
+    const DISC = [['Arquitetura','ARQ',0.58,0.14,255,'refinado'],['Estrutura','EST',0.55,0.15,295,'refinado'],['Instalações (MEP)','INS',0.67,0.16,50,'refinado'],['Elétrica','ELE',0.77,0.15,85,'refinado'],['Hidrossanitário','HID',0.68,0.11,210,'refinado'],['Paisagismo','PAI',0.63,0.13,160,'refinado'],['Prevenção de incêndio','INC',0.58,0.19,25,'refinado'],['Acústica','ACU',0.52,0.15,330,'refinado'],['Sustentabilidade','SUS',0.66,0.13,125,'novo'],['Civil','CIV',0.54,0.08,65,'novo'],['Cliente','CLI',0.42,0.04,260,'novo'],['Construtora','CON',0.47,0.08,20,'novo'],['Locatário','LOC',0.7,0.11,350,'novo'],['Engenharia','ENG',0.42,0.08,235,'novo'],['Geral','GER',0.65,0.01,90,'novo']];
+    const disc = DISC.map(([n, code, L, Cc, H, ok]) => ({ n, code, ok, hex: okToHex(L, Cc, H) }));
+    const dc = Object.fromEntries(disc.map(d => [d.code, d.hex]));
+    const D = (code) => ({ code, hex: dc[code] });
+
+    const neutrals = [
+      { t:'--bg', hex:'#F4F3EF', use:'Fundo do app e da landing (papel)' },
+      { t:'--surface', hex:'#FFFFFF', use:'Painéis, listas, campos' },
+      { t:'--surface-2', hex:'#F9F8F5', use:'Hover, faixas, barras secundárias' },
+      { t:'--line', hex:'#E3E0D9', use:'Bordas e divisórias' },
+      { t:'--line-strong', hex:'#CFCBC2', use:'Bordas de botões e campos' },
+      { t:'--ink', hex:'#1C1E22', use:'Texto, botão primário' },
+      { t:'--ink-2', hex:'#5F6168', use:'Texto secundário, ícones' },
+      { t:'--ink-3', hex:'#8A8C92', use:'Placeholder, metadado não essencial' },
+      { t:'--accent', hex:'#3E5F66', use:'Foco, seleção, links, "hoje"' },
+      { t:'--accent-weak', hex:'#E6EEEF', use:'Linha selecionada, item de nav ativo' },
+      { t:'--success', hex:'#2F7A4F', use:'Concorda, aprovado' },
+      { t:'--warning', hex:'#9A6A12', use:'Ressalvas, impacto médio' },
+      { t:'--danger', hex:'#B3402F', use:'Discorda, erro, atrasado, impacto alto' },
+      { t:'--danger-weak', hex:'#F8E7E3', use:'Fundo de selo de erro ou atraso' }
+    ];
+    const types = [
+      { n:'Decisão', d:'Algo acordado. Tem por quê, consenso e impactos.' },
+      { n:'Ação', d:'Tarefa com responsável e prazo; pode ser concluída.' },
+      { n:'Tópico', d:'Discussão em aberto, ainda sem decisão.' },
+      { n:'Ideia', d:'Sugestão que vale lembrar.' },
+      { n:'Informação', d:'Fato ou referência compartilhada.' }
+    ].map(t => ({ ...t, icon: svg(18, defs[typeIcon[t.n]]()), iconSm: svg(12, defs[typeIcon[t.n]]()) }));
+    const sources = [{ n:'Reunião', icon:ic.video },{ n:'E-mail', icon:ic.mail },{ n:'Documento', icon:ic.file },{ n:'Entrada manual', icon:ic.pencil }];
+    const J = "'Plus Jakarta Sans', sans-serif", N = "'Newsreader', serif", M = "'IBM Plex Mono', monospace";
+    const scale = [
+      { token:'display', spec:'48 / 1.05 / 700 / -3.5%', f:J, size:'48px', w:700, ls:'-0.035em', lh:1.05, tt:'none', sample:'Anteprojeto' },
+      { token:'h1', spec:'28 / 1.2 / 600 / -2.5%', f:J, size:'28px', w:600, ls:'-0.025em', lh:1.2, tt:'none', sample:'Residential Tower Alpha' },
+      { token:'h2', spec:'20 / 1.3 / 600 / -1.5%', f:J, size:'20px', w:600, ls:'-0.015em', lh:1.3, tt:'none', sample:'Preservar árvores e cobertura verde no pódio' },
+      { token:'h3', spec:'15 / 1.4 / 600', f:J, size:'15px', w:600, ls:'0', lh:1.4, tt:'none', sample:'6 de fevereiro · sexta-feira' },
+      { token:'body', spec:'14 / 1.5 / 400–500', f:J, size:'14px', w:500, ls:'0', lh:1.5, tt:'none', sample:'Instalar sistema central de climatização com controle por zona' },
+      { token:'small', spec:'13 / 1.45 / 400', f:J, size:'13px', w:400, ls:'0', lh:1.45, tt:'none', sample:'Reunião · 45 min · Gabriela, Carlos, Lucia' },
+      { token:'label', spec:'11 / 1.3 / 600 / +6% / CAPS', f:J, size:'11px', w:600, ls:'0.06em', lh:1.3, tt:'uppercase', sample:'Consenso' },
+      { token:'reading', spec:'Newsreader 17 / 1.5', f:N, size:'17px', w:400, ls:'0', lh:1.5, tt:'none', sample:'Benefícios ambientais, exigência da comunidade e créditos LEED de águas pluviais.' },
+      { token:'mono', spec:'Plex Mono 12 / 1.4', f:M, size:'12px', w:400, ls:'0', lh:1.4, tt:'none', sample:'06/02/2026 · 00:08:30 · 21 itens' }
+    ];
+    const spacing = [['1',4],['2',8],['3',12],['4',16],['6',24],['8',32],['12',48],['16',64]].map(([t, v]) => ({ t:'space-'+t, px:v+'px', w:(v*3)+'px' }));
+    const cssVars = [':root {','  --bg: #F4F3EF;','  --surface: #FFFFFF;','  --surface-2: #F9F8F5;','  --line: #E3E0D9;','  --line-strong: #CFCBC2;','  --ink: #1C1E22;','  --ink-2: #5F6168;','  --ink-3: #8A8C92;','  --accent: #3E5F66;','  --accent-weak: #E6EEEF;','  --success: #2F7A4F;','  --warning: #9A6A12;','  --danger: #B3402F;','  --danger-weak: #F8E7E3;', ...disc.map(d => `  --disc-${d.code.toLowerCase()}: ${d.hex};`),'  --radius-sm: 3px; --radius-md: 4px; --radius-lg: 6px;','}'].join('\n');
+    const twConfig = ['// tailwind.config.ts','theme: {','  extend: {','    colors: {','      bg: "var(--bg)", surface: "var(--surface)",','      "surface-2": "var(--surface-2)",','      line: { DEFAULT: "var(--line)", strong: "var(--line-strong)" },','      ink: { DEFAULT: "var(--ink)", 2: "var(--ink-2)", 3: "var(--ink-3)" },','      accent: { DEFAULT: "var(--accent)", weak: "var(--accent-weak)" },','      success: "var(--success)", warning: "var(--warning)",','      danger: { DEFAULT: "var(--danger)", weak: "var(--danger-weak)" },','      disc: { arq: "var(--disc-arq)", est: "var(--disc-est)", /* … 15 */ },','    },','    fontFamily: {','      sans: ["Plus Jakarta Sans", "system-ui"],','      serif: ["Newsreader", "Georgia"],','      mono: ["IBM Plex Mono", "monospace"],','    },','    fontSize: {','      display: ["48px", { lineHeight: "1.05", letterSpacing: "-0.035em" }],','      h1: ["28px", { lineHeight: "1.2", letterSpacing: "-0.025em" }],','      h2: ["20px", { lineHeight: "1.3", letterSpacing: "-0.015em" }],','      h3: ["15px", "1.4"], body: ["14px", "1.5"], small: ["13px", "1.45"],','      label: ["11px", { lineHeight: "1.3", letterSpacing: "0.06em" }],','      reading: ["17px", "1.5"], mono: ["12px", "1.4"],','    },','    borderRadius: { sm: "3px", DEFAULT: "4px", lg: "6px" },','  },','}  // espaçamento: escala padrão do Tailwind (base 4px)'].join('\n');
+    const projects = [
+      { n:'Residential Tower Alpha', stage:'Anteprojeto · 2 de 4', news:'5 novos', newColor:'#3E5F66', when:'hoje', bg:'#E6EEEF' },
+      { n:'Commercial Plaza Beta', stage:'Estudo Preliminar · 1 de 4', news:'2 novos', newColor:'#3E5F66', when:'ontem', bg:'#FFFFFF' },
+      { n:'Casa Jardim Botânico', stage:'Projeto Executivo · 4 de 4', news:'—', newColor:'#8A8C92', when:'há 6 dias', bg:'#FFFFFF' },
+      { n:'Retrofit Edifício Sé', stage:'Projeto Legal · 3 de 4', news:'1 atrasada', newColor:'#8E3224', when:'há 2 dias', bg:'#FFFFFF' }
+    ];
+    const filters = [
+      { n:'Disciplina', count:'1', border:'#3E5F66', bg:'#E6EEEF' },
+      { n:'Tipo', count:'1', border:'#3E5F66', bg:'#E6EEEF' },
+      { n:'Fonte', count:'', border:'#E3E0D9', bg:'#FFFFFF' },
+      { n:'Quem', count:'', border:'#E3E0D9', bg:'#FFFFFF' },
+      { n:'Período', count:'', border:'#E3E0D9', bg:'#FFFFFF' }
+    ];
+    const row = (o) => ({ bg:'#FFFFFF', shadow:'none', iconColor:'#1C1E22', titleColor:'#1C1E22', deco:'none', due:'', dueBg:'#EFEDE8', dueColor:'#5F6168', src:ic.video, star:ic.star, starColor:'#CFCBC2', ...o });
+    const rows = [
+      row({ icon:ic.decision, t:'Concreto de alta resistência (C50) nos pilares principais', discs:[D('EST'),D('ARQ')], ini:'C', who:'Carlos', date:'06/02', star:ic.starFill, starColor:'#3E5F66' }),
+      row({ icon:ic.decision, t:'Vigas de transição no nível 5 para liberar o pódio comercial', discs:[D('EST')], ini:'C', who:'Carlos', date:'06/02', bg:'#F9F8F5', star:ic.starFill, starColor:'#3E5F66' }),
+      row({ icon:ic.decision, t:'Isoladores sísmicos nos pilares do térreo', discs:[D('EST'),D('CIV')], ini:'C', who:'Carlos', date:'06/02', bg:'#E6EEEF', shadow:'inset 2px 0 0 #3E5F66' }),
+      row({ icon:ic.action, t:'Enviar tabela de cargas revisada para toda a equipe', due:'até 13/02', discs:[D('EST')], ini:'C', who:'Carlos', date:'06/02' }),
+      row({ icon:ic.action, t:'Relatório de detecção de interferências MEP', due:'atrasada · 10/02', dueBg:'#F8E7E3', dueColor:'#8E3224', discs:[D('INS'),D('HID')], ini:'R', who:'Roberto', date:'06/02' }),
+      row({ icon:ic.actionDone, iconColor:'#8A8C92', titleColor:'#8A8C92', deco:'line-through', t:'Circular grelha de pilares atualizada', discs:[D('EST')], ini:'C', who:'Carlos', date:'06/02' }),
+      row({ icon:ic.topic, t:'Pé-direito do pódio precisa ficar acima de 4 m', discs:[D('ARQ'),D('CLI')], ini:'L', who:'Lucia', date:'06/02' })
+    ];
+    const OK = svg(14, defs.check()), MID = svg(14, defs.tilde()), NO = svg(14, defs.x());
+    const consensus = [
+      { n:'Paisagismo', hex:dc.PAI, state:'Concorda', icon:OK, color:'#2F7A4F' },
+      { n:'Estrutura', hex:dc.EST, state:'Concorda', icon:OK, color:'#2F7A4F' },
+      { n:'Cliente', hex:dc.CLI, state:'Concorda', icon:OK, color:'#2F7A4F' }
+    ];
+    const kpis = [
+      { label:'Itens capturados', v:'21', note:'+5 desde 27/02', noteColor:'#5F6168' },
+      { label:'Decisões', v:'11', note:'4 marcadas como marco', noteColor:'#5F6168' },
+      { label:'Ações em aberto', v:'3', note:'1 atrasada', noteColor:'#8E3224' },
+      { label:'Decisões com consenso total', v:'85%', note:'2 com ressalvas', noteColor:'#7A520C' }
+    ];
+    const TI = (t, code, d, type) => ({ t, code, hex:dc[code], d, icon: svg(16, defs[type||'decision']()) });
+    const stages = [
+      { name:'Estudo Preliminar', dates:'15/01 – 15/02/2026', status:'Concluída', statusColor:'#2F7A4F', nameColor:'#1C1E22', dot:'#1C1E22', line:'#1C1E22', items:[TI('Concreto C50 nos pilares principais','EST','06/02'), TI('Isoladores sísmicos nos pilares do térreo','EST','06/02'), TI('Climatização central com controle por zona','INS','06/02'), TI('Iluminação LED com controle inteligente','ELE','07/02'), TI('Nova especificação de impermeabilização das fundações','CIV','08/02','info')] },
+      { name:'Anteprojeto', dates:'16/02 – 31/03/2026', status:'Em andamento · faltam 28 dias', statusColor:'#3E5F66', nameColor:'#1C1E22', dot:'#FFFFFF', line:'#E3E0D9', today:true, items:[TI('Vigas de transição no nível 5','EST','18/02'), TI('Shaft de prumadas ampliado em 20 cm','INS','28/02')] },
+      { name:'Projeto Legal', dates:'01/04 – 15/05/2026', status:'', statusColor:'#5F6168', nameColor:'#5F6168', dot:'#FFFFFF', line:'#E3E0D9', items:[], empty:'Sem marcos ainda' },
+      { name:'Projeto Executivo', dates:'16/05 – 31/08/2026', status:'', statusColor:'#5F6168', nameColor:'#5F6168', dot:'#FFFFFF', line:'transparent', items:[], empty:'Sem marcos ainda' }
+    ];
+    const WARN = svg(14, defs.alert());
+    const turns = [
+      { ts:'05:32', who:'Carlos', whoColor:'#1C1E22', warn:null, flag:'', text:'Minha recomendação é concreto de alta resistência, C50, nos pilares principais. Reduzimos a seção e ganhamos área útil em todos os pavimentos.', item:'Concreto C50 nos pilares principais', bg:'#E6EEEF', shadow:'inset 2px 0 0 #3E5F66' },
+      { ts:'06:10', who:'Lucia', whoColor:'#1C1E22', warn:null, flag:'', text:'Do lado da arquitetura, ótima notícia. Pilares menores ajudam muito nas plantas residenciais.', item:'', bg:'#FFFFFF', shadow:'none' },
+      { ts:'22:45', who:'Gabriela ou Lucia', whoColor:'#7A520C', warn:WARN, flag:'Vozes sobrepostas: confirme quem falou', text:'Funciona para nós, desde que o pé-direito do pódio fique acima de quatro metros.', item:'', bg:'#FFFFFF', shadow:'none' }
+    ];
+    const inbox = [
+      { icon:ic.video, t:'Revisão de andamento com o cliente · Fase 1', meta:'Reunião · 01/03 às 14:00 · Fireflies · 52 min', sum:'O cliente pediu para antecipar o cronograma do fit-out do pódio comercial. A equipe concordou em avaliar o impacto na estrutura antes de confirmar.', proj:'Residential Tower Alpha', bg:'#F9F8F5', cbBorder:'#1C1E22', cbBg:'#1C1E22' },
+      { icon:ic.mail, t:'RE: Especificação de resistência ao fogo das vigas de transição', meta:'E-mail · 28/02 · james@firecon… · 3 destinatários', sum:'O consultor de incêndio recomenda elevar a resistência das vigas de transição de 2 h para 3 h, por causa da ocupação mista.', proj:'Residential Tower Alpha', bg:'#FFFFFF', cbBorder:'#CFCBC2', cbBg:'#FFFFFF' },
+      { icon:ic.file, t:'Structural-Peer-Review.pdf', meta:'Documento · 27/02 · Google Drive · 4,2 MB', sum:'O revisor apontou flecha das vigas de transição no nível 5 acima do limite L/360.', proj:'Residential Tower Alpha', bg:'#FFFFFF', cbBorder:'#CFCBC2', cbBg:'#FFFFFF' }
+    ];
+    const stageRows = [{ n:'Estudo Preliminar', d:'15/01 → 15/02/26' },{ n:'Anteprojeto', d:'16/02 → 31/03/26' },{ n:'Projeto Legal', d:'01/04 → 15/05/26' },{ n:'Projeto Executivo', d:'16/05 → 31/08/26' }];
+    const toasts = [
+      { icon:svg(16, defs.check()), color:'#7FC49B', t:'3 itens aprovados e enviados para a IA', action:'Desfazer' },
+      { icon:ic.starFill, color:'#A9C4C9', t:'Marcado como marco', action:'Desfazer' },
+      { icon:ic.alert, color:'#F0A493', t:'Não foi possível enviar o documento', action:'Tentar de novo' }
+    ];
+    return { ic, disc, dc, neutrals, types, sources, scale, spacing, cssVars, twConfig, projects, filters, rows, consensus, kpis, stages, turns, inbox, stageRows, toasts, skel:['78%','62%','85%','54%','70%'] };
+  }
+}
+</script>
+</body>
+</html>

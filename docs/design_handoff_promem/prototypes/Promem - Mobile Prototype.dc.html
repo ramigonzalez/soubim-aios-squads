@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#E9E8E4"><svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="800" fill="#E9E8E4"/><rect x="480" y="160" width="240" height="480" rx="36" fill="#1C1E22"/><rect x="494" y="174" width="212" height="452" rx="26" fill="#F4F3EF"/><rect x="540" y="330" width="120" height="120" rx="12" fill="#3E5F66"/><text x="600" y="420" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="84" fill="#FFFFFF">P</text></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#E9E8E4;font-family:'Plus Jakarta Sans',sans-serif;color:#1C1E22;-webkit-font-smoothing:antialiased}a{color:#3E5F66}a:hover{color:#2F4C52}*{box-sizing:border-box}input{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:32px 16px">
+  <div style="width:390px;height:844px;flex:none;border-radius:44px;background:#1C1E22;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.18)">
+    <div style="width:100%;height:100%;border-radius:36px;overflow:hidden;background:#F4F3EF;display:flex;flex-direction:column;position:relative">
+      <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:14px;font-weight:600;background:#FFFFFF"><span>9:41</span><span style="width:110px;height:28px;border-radius:14px;background:#1C1E22"></span><span style="font-size:12px">●●● ▮</span></div>
+
+      <sc-if value="{{ inDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;background:#FFFFFF">
+          <div style="height:52px;flex:none;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid #EFEDE8">
+            <button onClick="{{ closeDetail }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:26px;border:0;background:none;cursor:pointer;color:#1C1E22">‹</button>
+            <span style="font-size:14px;font-weight:600;flex:1">{{ det.kindLabel }}</span>
+            <button onClick="{{ toggleStar }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:none;cursor:pointer;color:{{ det.starColor }}">{{ det.starIcon }}</button>
+            <button onClick="{{ shareItem }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:none;cursor:pointer;color:#1C1E22">{{ ic.share }}</button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+            <h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;text-wrap:pretty;color:{{ det.tc }};text-decoration:{{ det.deco }}">{{ det.t }}</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;font-weight:500">
+              <sc-for list="{{ det.discs }}" as="d" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.name }}</span></sc-for>
+              <sc-if value="{{ det.high }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;background:#F8E7E3;color:#8E3224;font-size:11.5px;font-weight:600">Impacto alto</span></sc-if>
+              <sc-if value="{{ det.milestone }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;background:#E6EEEF;color:#2F4C52;font-size:11.5px;font-weight:600">★ Marco</span></sc-if>
+            </div>
+            <div style="display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px 10px;font-size:13.5px"><span style="color:#5F6168">Quem</span><span>{{ det.who }}</span><span style="color:#5F6168">Origem</span><span>{{ det.origin }}</span><span style="color:#5F6168">Etapa</span><span>{{ det.stage }}</span></div>
+            <button onClick="{{ togglePlay }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:1px solid #CFCBC2;border-radius:6px;background:{{ playBg }};font-family:inherit;font-size:14px;font-weight:500;color:#3E5F66;cursor:pointer">{{ playLabel }}</button>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Por quê</span><p style="margin:0;font-family:'Newsreader',serif;font-size:17px;line-height:1.5;text-wrap:pretty">{{ det.why }}</p></div>
+            <sc-if value="{{ det.isAction }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ toggleDone }}" style="height:44px;border-radius:6px;border:1px solid #1C1E22;background:{{ det.doneBg }};color:{{ det.doneFg }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">{{ det.doneLabel }}</button>
+            </sc-if>
+            <sc-if value="{{ det.hasCons }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Consenso</span><span style="font-size:12px;font-weight:600;color:#2F7A4F">{{ det.consLabel }}</span></span>
+                <sc-for list="{{ det.cons }}" as="c" hint-placeholder-count="3"><span style="display:flex;justify-content:space-between;align-items:center;height:40px;border-bottom:1px solid #EFEDE8;font-size:14px"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:2px;background:{{ c.hex }}"></span>{{ c.name }}</span><span style="font-size:12.5px;font-weight:600;color:#2F7A4F">✓ Concorda</span></span></sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="flex:none;display:flex;gap:8px;padding:12px 16px 28px;border-top:1px solid #EFEDE8">
+            <button onClick="{{ prevItem }}" style="flex:1;height:44px;border:1px solid #CFCBC2;border-radius:6px;background:#FFFFFF;font-family:inherit;font-size:14px;font-weight:500;color:{{ prevColor }};cursor:pointer">↑ Anterior</button>
+            <button onClick="{{ nextItem }}" style="flex:1;height:44px;border:1px solid #CFCBC2;border-radius:6px;background:#FFFFFF;font-family:inherit;font-size:14px;font-weight:500;color:{{ nextColor }};cursor:pointer">Próximo ↓</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ inMain }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:none;padding:6px 16px 10px;display:flex;align-items:center;gap:10px;background:#FFFFFF;border-bottom:1px solid #E3E0D9">
+          <button onClick="{{ openProjects }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;padding:0;font-family:inherit;color:#1C1E22;cursor:pointer;text-align:left"><span style="display:flex;align-items:center;gap:6px;max-width:100%;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ proj.name }} <span style="font-size:12px;color:#5F6168">▾</span></span><span style="font-size:12px;color:#5F6168">{{ proj.sub }}</span></button>
+          <button onClick="{{ goSearch }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:22px;background:none;color:#5F6168;cursor:pointer">{{ ic.search }}</button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+
+          <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ goMarcos }}" style="flex:none;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid #E3E0D9;border-radius:6px;background:#FFFFFF;font-family:inherit;color:#1C1E22;text-align:left;cursor:pointer">
+              <span style="display:flex;justify-content:space-between;align-items:baseline;width:100%"><span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Etapas do projeto</span><span style="font-size:12px;font-weight:600;color:#3E5F66">Ver marcos ›</span></span>
+              <span style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;width:100%">
+                <span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="height:6px;border-radius:1px;background:#1C1E22"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5F6168">01 ✓</span><span style="font-size:11.5px;font-weight:500;color:#1C1E22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Estudo</span></span>
+                <span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="position:relative;height:6px;border-radius:1px;background:linear-gradient(90deg,#3E5F66 0 36%,#D6D2CA 36%)"><span style="position:absolute;left:36%;top:-4px;width:2px;height:14px;background:#3E5F66"></span></span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;color:#3E5F66">02 · atual</span><span style="font-size:11.5px;font-weight:700;color:#1C1E22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anteprojeto</span></span>
+                <span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="height:6px;border-radius:1px;background:#E3E0D9"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8A8C92">03</span><span style="font-size:11.5px;font-weight:500;color:#5F6168;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Legal</span></span>
+                <span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="height:6px;border-radius:1px;background:#E3E0D9"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8A8C92">04</span><span style="font-size:11.5px;font-weight:500;color:#5F6168;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Executivo</span></span>
+              </span>
+              <span style="font-size:12px;color:#5F6168">Hoje 03/03 · 36% da etapa · entrega em 31/03</span>
+            </button>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none">
+              <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.go }}" style="padding:10px;border:1px solid {{ t.border }};border-radius:6px;background:#FFFFFF;box-shadow:{{ t.sh }};display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:76px;font-family:inherit;color:#1C1E22;cursor:pointer;text-align:left"><span style="font-size:22px;font-weight:600;letter-spacing:-0.03em;line-height:1.1">{{ t.v }}</span><span style="font-size:12px;font-weight:600;line-height:1.25">{{ t.l }}</span><span style="font-size:11px;font-weight:600;color:{{ t.nc }}">{{ t.note }}</span></button></sc-for>
+            </div>
+            <span style="font-size:15px;font-weight:600">Desde sua última visita</span>
+            <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden;flex:none">
+              <sc-for list="{{ newRows }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.open }}" style="width:100%;display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;padding:12px 14px;min-height:56px;border:0;border-bottom:1px solid #EFEDE8;background:#FFFFFF;font-family:inherit;text-align:left;cursor:pointer;color:{{ r.ic }}"><span style="display:flex;padding-top:2px">{{ r.icon }}</span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:14.5px;font-weight:500;line-height:1.35;text-wrap:pretty;color:{{ r.tc }};text-decoration:{{ r.deco }}">{{ r.t }}</span><span style="display:flex;gap:8px;font-size:12px;color:#5F6168"><sc-for list="{{ r.discs }}" as="d" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.code }}</span></sc-for><span>{{ r.meta }}</span></span></span></button></sc-for>
+            </div>
+            <span style="font-size:15px;font-weight:600">Marcos da etapa atual</span>
+            <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:4px 14px;flex:none">
+              <sc-for list="{{ curMarcos }}" as="m" hint-placeholder-count="1"><button onClick="{{ m.open }}" style="width:100%;display:flex;align-items:center;gap:10px;min-height:48px;border:0;background:none;padding:0;font-family:inherit;font-size:14px;font-weight:500;color:#1C1E22;text-align:left;cursor:pointer"><span style="color:#3E5F66;display:flex">{{ ic.starFill }}</span>{{ m.t }}<span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ m.date }}</span></button></sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isMarcos }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;font-weight:600">Marcos</span><button onClick="{{ shareTimeline }}" style="height:36px;padding:0 12px;display:flex;align-items:center;border:1px solid #CFCBC2;border-radius:18px;background:#FFFFFF;font-family:inherit;font-size:13px;font-weight:500;color:#1C1E22;cursor:pointer">Compartilhar</button></div>
+            <sc-for list="{{ mStages }}" as="st" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:12px">
+                <div style="display:flex;flex-direction:column;align-items:center"><span style="width:12px;height:12px;margin-top:4px;border-radius:50%;border:2px solid #1C1E22;background:{{ st.dot }}"></span><span style="flex:1;width:2px;background:{{ st.line }}"></span></div>
+                <div style="display:flex;flex-direction:column;gap:2px;padding-bottom:14px;min-width:0">
+                  <span style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:15px;font-weight:600">{{ st.name }}</span><span style="font-size:11.5px;font-weight:600;color:{{ st.sc }};white-space:nowrap">{{ st.status }}</span></span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ st.dates }}</span>
+                  <sc-for list="{{ st.items }}" as="it" hint-placeholder-count="2"><button onClick="{{ it.open }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 0;min-height:48px;border:0;border-bottom:1px solid #E3E0D9;background:none;font-family:inherit;color:#1C1E22;text-align:left;cursor:pointer"><span style="font-size:14px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ it.t }}</span><span style="display:flex;gap:8px;font-size:11.5px;color:#5F6168"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ it.hex }}"></span>{{ it.code }}</span>{{ it.date }}</span></button></sc-for>
+                  <sc-if value="{{ st.today }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:#3E5F66;color:#FFFFFF">Hoje · 03/03</span></sc-if>
+                  <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:12.5px;color:#8A8C92;padding-top:4px">Sem marcos ainda</span></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </sc-if>
+
+          <sc-if value="{{ isHist }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;flex:none"><label style="flex:1;min-width:0;height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #E3E0D9;border-radius:6px;background:#FFFFFF;color:#8A8C92"><span style="display:flex;flex:none">{{ ic.search }}</span><input ref="{{ searchRef }}" value="{{ query }}" onChange="{{ onQuery }}" placeholder="{{ searchPh }}" style="flex:1;min-width:0;border:0;outline:none;background:none;font-size:14px;color:#1C1E22"></input></label><button onClick="{{ openFilters }}" style="height:44px;padding:0 14px;display:flex;align-items:center;border:1px solid {{ fBtnBorder }};border-radius:6px;background:{{ fBtnBg }};font-family:inherit;font-size:13.5px;font-weight:600;color:#1C1E22;white-space:nowrap;cursor:pointer">{{ fBtnLabel }}</button></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;flex:none">
+              <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="1"><button onClick="{{ c.remove }}" style="height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;border:1px solid #E3E0D9;border-radius:16px;background:#FFFFFF;font-family:inherit;font-size:12.5px;font-weight:500;color:#1C1E22;white-space:nowrap;cursor:pointer"><span style="width:8px;height:8px;border-radius:2px;background:{{ c.hex }}"></span>{{ c.name }} ✕</button></sc-for>
+            </div>
+            <sc-for list="{{ histGroups }}" as="g" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:600">{{ g.date }}</span><span style="font-size:12.5px;color:#5F6168">{{ g.dow }}</span></span>
+                <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+                  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F9F8F5;border-bottom:1px solid #E3E0D9"><span style="width:30px;height:30px;flex:none;border-radius:6px;background:#1C1E22;color:#FFFFFF;display:flex;align-items:center;justify-content:center">{{ g.srcIcon }}</span><span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.src }}</span><span style="font-size:11.5px;color:#5F6168">{{ g.srcMeta }}</span></span></div>
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.open }}" style="width:100%;display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;padding:11px 12px;min-height:56px;border:0;border-bottom:1px solid #EFEDE8;background:#FFFFFF;font-family:inherit;text-align:left;cursor:pointer;color:{{ r.ic }}"><span style="display:flex;padding-top:2px">{{ r.icon }}</span><span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:14px;font-weight:500;line-height:1.35;color:{{ r.tc }};text-decoration:{{ r.deco }};text-wrap:pretty">{{ r.t }}</span><span style="display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:#5F6168"><sc-for list="{{ r.discs }}" as="d" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ d.hex }}"></span>{{ d.code }}</span></sc-for><span>{{ r.meta }}</span></span></span></button></sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ histEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 12px;text-align:center"><span style="font-size:15px;font-weight:600">Nada encontrado</span><button onClick="{{ clearFilters }}" style="height:40px;padding:0 14px;border:1px solid #CFCBC2;border-radius:6px;background:#FFFFFF;font-family:inherit;font-size:13.5px;font-weight:500;color:#1C1E22;cursor:pointer">Limpar busca e filtros</button></div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ isMore }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ moreMenu }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size:18px;font-weight:600">Mais</span>
+              <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;overflow:hidden">
+                <sc-for list="{{ moreRows }}" as="m" hint-placeholder-count="4"><button onClick="{{ m.go }}" style="width:100%;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 14px;border:0;border-bottom:1px solid #EFEDE8;background:#FFFFFF;font-family:inherit;font-size:14.5px;font-weight:500;color:#1C1E22;text-align:left;cursor:pointer"><span style="flex:1">{{ m.n }}</span><span style="font-size:12px;font-weight:600;color:{{ m.bc }}">{{ m.badge }}</span><span style="color:#8A8C92;font-size:18px">›</span></button></sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ moreApprovals }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:4px;margin-left:-12px"><button onClick="{{ backMore }}" style="width:44px;height:44px;border:0;background:none;font-size:26px;color:#1C1E22;cursor:pointer">‹</button><span style="font-size:18px;font-weight:600">Aguardando aprovação</span></div>
+              <sc-for list="{{ pending }}" as="p" hint-placeholder-count="3">
+                <div style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <span style="font-size:11.5px;font-weight:600;color:#5F6168">{{ p.src }}</span>
+                  <span style="font-size:14.5px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ p.t }}</span>
+                  <span style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:#5F6168"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:500"><span style="width:7px;height:7px;border-radius:2px;background:{{ p.hex }}"></span>{{ p.code }}</span>Confiança {{ p.conf }}</span>
+                  <div style="display:flex;gap:8px"><button onClick="{{ p.reject }}" style="flex:1;height:44px;border:1px solid #CFCBC2;border-radius:6px;background:#FFFFFF;font-family:inherit;font-size:14px;font-weight:500;color:#1C1E22;cursor:pointer">Descartar</button><button onClick="{{ p.approve }}" style="flex:1;height:44px;border:0;border-radius:6px;background:#1C1E22;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer">Aprovar</button></div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}"><div style="padding:40px 12px;text-align:center;font-size:15px;font-weight:600">Tudo aprovado.</div></sc-if>
+            </sc-if>
+          </sc-if>
+        </div>
+        <nav style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px 26px;background:#FFFFFF;border-top:1px solid #E3E0D9">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.go }}" style="height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;font-family:inherit;font-size:11px;font-weight:{{ t.w }};color:{{ t.c }};cursor:pointer"><span style="display:flex">{{ t.icon }}</span>{{ t.n }}</button></sc-for>
+        </nav>
+      </sc-if>
+
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(28,30,34,.4);display:flex;flex-direction:column;justify-content:flex-end">
+          <div onClick="{{ stop }}" style="background:#FFFFFF;border-radius:16px 16px 0 0;padding:8px 16px 32px;display:flex;flex-direction:column;gap:14px;max-height:80%;overflow-y:auto">
+            <span style="align-self:center;width:36px;height:4px;border-radius:2px;background:#CFCBC2"></span>
+            <sc-if value="{{ isFilterSheet }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:17px;font-weight:600">Filtros</span><button onClick="{{ clearDiscs }}" style="height:36px;border:0;background:none;font-family:inherit;font-size:13.5px;font-weight:500;color:#3E5F66;cursor:pointer">Limpar</button></div>
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Disciplina</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ discChips }}" as="c" hint-placeholder-count="6"><button onClick="{{ c.toggle }}" style="height:40px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;border:1px solid {{ c.border }};border-radius:20px;background:{{ c.bg }};font-family:inherit;font-size:13.5px;font-weight:500;color:#1C1E22;cursor:pointer"><span style="width:9px;height:9px;border-radius:2px;background:{{ c.hex }}"></span>{{ c.name }}</button></sc-for>
+              </div>
+              <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Tipo</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ kindChips }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.toggle }}" style="height:40px;padding:0 12px;border:1px solid {{ c.border }};border-radius:20px;background:{{ c.bg }};font-family:inherit;font-size:13.5px;font-weight:500;color:#1C1E22;cursor:pointer">{{ c.name }}</button></sc-for>
+              </div>
+              <button onClick="{{ closeSheet }}" style="height:48px;border:0;border-radius:6px;background:#1C1E22;font-family:inherit;font-size:15px;font-weight:600;color:#FFFFFF;cursor:pointer">{{ applyLabel }}</button>
+            </sc-if>
+            <sc-if value="{{ isProjSheet }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:17px;font-weight:600">Trocar projeto</span>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ projRows }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 4px;border:0;border-bottom:1px solid #EFEDE8;background:none;font-family:inherit;text-align:left;cursor:pointer;color:#1C1E22"><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:{{ p.w }}">{{ p.name }}</span><span style="font-size:12px;color:#5F6168">{{ p.sub }}</span></span><span style="color:#3E5F66;font-weight:700">{{ p.check }}</span></button></sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:16px;right:16px;bottom:100px;padding:12px 14px;border-radius:6px;background:#1C1E22;color:#FFFFFF;font-size:13.5px;font-weight:500">{{ toast }}</div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab:'overview', detailId:null, ctx:[], sheet:null, discs:['EST'], kinds:[], query:'', starred:{}, done:{ a3:true }, playing:false, toast:null, proj:0, more:'menu', pending:[
+    { id:'p1', src:'Reunião · Coordenação MEP · 03/03', t:'Reservar 40 cm acima do forro para dutos no 3º pavimento', code:'INS', conf:'alta' },
+    { id:'p2', src:'E-mail · Carlos → Lucia · 02/03', t:'Revisar detalhe da ligação viga-pilar no eixo C', code:'EST', conf:'média' },
+    { id:'p3', src:'Reunião · Coordenação MEP · 03/03', t:'Quadro elétrico do térreo muda para a sala técnica B', code:'ELE', conf:'alta' }
+  ] };
+  searchRef = React.createRef();
+  componentWillUnmount() { clearTimeout(this._t); }
+  flash(msg) { clearTimeout(this._t); this.setState({ toast: msg }); this._t = setTimeout(() => this.setState({ toast: null }), 2000); }
+  renderVals() {
+    const h = React.createElement, s = this.state;
+    const svg = (size, kids, extra) => h('svg', { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.75, strokeLinecap:'round', strokeLinejoin:'round', ...(extra||{}) }, ...kids);
+    const P = (d) => h('path', { d }); const C = (cx, cy, r) => h('circle', { cx, cy, r }); const R = (x, y, w, hh, rx) => h('rect', { x, y, width:w, height:hh, rx });
+    const starD = 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z';
+    const D = {
+      d: () => [C(12,12,10), P('m9 12 2 2 4-4')], a: () => [R(3,3,18,18,2)], ad: () => [R(3,3,18,18,2), P('m9 12 2 2 4-4')], t: () => [P('M7.9 20A9 9 0 1 0 4 16.1L2 22Z')],
+      search: () => [C(11,11,8), P('m21 21-4.3-4.3')], video: () => [P('m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5'), R(2,6,14,12,2)], mail: () => [R(2,4,20,16,2), P('m22 7-10 6L2 7')],
+      share: () => [P('M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'), P('M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71')],
+      overview: () => [R(3,3,7,9,1), R(14,3,7,5,1), R(14,12,7,9,1), R(3,16,7,5,1)], timeline: () => [P('M12 3v6'), C(12,12,3), P('M12 15v6')], history: () => [P('M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'), P('M3 3v5h5'), P('M12 7v5l4 2')], more: () => [C(5,12,1), C(12,12,1), C(19,12,1)]
+    };
+    const ic = { starFill: svg(18, [P(starD)], { fill:'currentColor' }), star: svg(18, [P(starD)]), search: svg(18, D.search()), share: svg(18, D.share()) };
+    const X = { ARQ:['#3D7DD8','Arquitetura'], EST:['#7C5AD6','Estrutura'], INS:['#E67A3A','Instalações'], ELE:['#E2A92A','Elétrica'], CIV:['#8D6B45','Civil'], INC:['#D9423A','Incêndio'], PAI:['#2E9E73','Paisagismo'], CLI:['#4F5768','Cliente'] };
+    const ds = (arr) => arr.map(c => ({ code:c, hex:X[c][0], name:X[c][1] }));
+    const KL = { d:'Decisão', a:'Ação', t:'Discussão' };
+    const items = [
+      { id:'d1', k:'d', t:'Concreto de alta resistência (C50) nos pilares principais', discs:['EST','ARQ'], who:'Carlos · Estrutural', origin:'Revisão do projeto estrutural · 06/02', stage:'Estudo Preliminar', date:'06/02', ms:true, why:'Reduz a seção dos pilares em 15% e libera área útil nas vagas do subsolo.', cons:['EST','ARQ','CLI'], g:'g1', ts:'00:12:40' },
+      { id:'d2', k:'d', t:'Vigas de transição no nível 5 para liberar o pódio', discs:['EST','ARQ'], who:'Carlos · Estrutural', origin:'Revisão do projeto estrutural · 06/02', stage:'Estudo Preliminar', date:'06/02', ms:true, high:true, why:'O pódio comercial precisa de vão livre; os pilares da torre param no nível 5.', cons:['EST','ARQ'], g:'g1', ts:'00:21:05' },
+      { id:'d3', k:'d', t:'Isoladores sísmicos nos pilares do térreo', discs:['EST','CIV'], who:'Carlos · Estrutural', origin:'Revisão do projeto estrutural · 06/02', stage:'Estudo Preliminar', date:'06/02', ms:true, why:'Exigência da análise de risco do terreno; custo absorvido pela redução de armadura.', g:'g1', ts:'00:30:12' },
+      { id:'a3', k:'a', t:'Enviar tabela de cargas revisada', discs:['EST'], who:'Carlos · Estrutural', origin:'Revisão do projeto estrutural · 06/02', stage:'Estudo Preliminar', date:'06/02', why:'Instalações precisa das cargas para dimensionar os shafts.', g:'g1', ts:'00:38:50' },
+      { id:'d4', k:'d', t:'Coordenação BIM nível 3 para as ligações', discs:['ARQ','EST'], who:'Lucia · Coordenação BIM', origin:'Revisão do projeto estrutural · 06/02', stage:'Estudo Preliminar', date:'06/02', why:'Evita retrabalho nas interferências entre armaduras e insertos metálicos.', g:'g1', ts:'00:41:30' },
+      { id:'d5', k:'d', t:'Preservar as árvores existentes e instalar cobertura verde no pódio', discs:['PAI','EST'], who:'Gabriela · Diretora', origin:'Revisão de paisagismo · 07/02', stage:'Estudo Preliminar', date:'07/02', high:true, why:'Benefícios ambientais, exigência da comunidade e créditos LEED de águas pluviais.', cons:['PAI','EST','CLI'], g:'g2', ts:'00:08:30' },
+      { id:'d6', k:'d', t:'Iluminação LED com controle inteligente', discs:['ELE'], who:'Rafael · Elétrica', origin:'Revisão de paisagismo · 07/02', stage:'Estudo Preliminar', date:'07/02', ms:true, why:'Reduz o consumo das áreas comuns e atende à meta de eficiência do cliente.', g:'g2', ts:'00:19:10' },
+      { id:'d7', k:'d', t:'Shaft de prumadas ampliado em 20 cm', discs:['INS','EST'], who:'Marina · Instalações', origin:'Coordenação MEP · 28/02', stage:'Anteprojeto', date:'28/02', ms:true, why:'As prumadas de esgoto e ventilação não cabiam com a nova tabela de cargas.', cons:['INS','EST'], g:'g3', ts:'00:16:45', isNew:true },
+      { id:'t1', k:'t', t:'Elevar a resistência ao fogo das vigas de transição de 2 h para 3 h', discs:['INC','EST'], who:'Bombeiros · consultoria', origin:'E-mail · 28/02', stage:'Anteprojeto', date:'28/02', why:'Recomendação da consultoria; aguardando posição do estrutural sobre custo.', g:'g4', isNew:true },
+      { id:'a1', k:'a', t:'Avaliar impacto estrutural da antecipação do fit-out do pódio', discs:['EST'], who:'Carlos · até 06/03', origin:'Coordenação MEP · 28/02', stage:'Anteprojeto', date:'28/02', why:'O cliente quer abrir o comercial antes da torre; precisa confirmar escoramento.', g:'g3', ts:'00:33:20', isNew:true }
+    ];
+    const byId = Object.fromEntries(items.map(i => [i.id, i]));
+    const groups = [
+      { id:'g3', date:'28 de fevereiro', dow:'sábado', src:'Coordenação MEP', srcMeta:'Reunião · 50 min', icon:'video' },
+      { id:'g4', date:'28 de fevereiro', dow:'sábado', src:'Resistência ao fogo das vigas', srcMeta:'E-mail · 3 mensagens', icon:'mail' },
+      { id:'g2', date:'7 de fevereiro', dow:'sábado', src:'Revisão de paisagismo', srcMeta:'Reunião · 30 min', icon:'video' },
+      { id:'g1', date:'6 de fevereiro', dow:'sexta-feira', src:'Revisão do projeto estrutural', srcMeta:'Reunião · 45 min', icon:'video' }
+    ];
+    const kOf = (it) => it.k === 'a' && s.done[it.id] ? 'ad' : it.k;
+    const open = (id, ctx) => () => this.setState({ detailId:id, ctx, playing:false });
+    const row = (it, ctx, meta) => { const done = it.k === 'a' && s.done[it.id]; return { t:it.t, icon: svg(18, D[kOf(it)]()), discs: ds(it.discs), meta: meta ?? (it.who.split(' · ')[0] + (it.ms ? ' · ★ marco' : '') + (done ? ' · concluída' : '')), ic: done ? '#8A8C92' : '#1C1E22', tc: done ? '#8A8C92' : '#1C1E22', deco: done ? 'line-through' : 'none', open: open(it.id, ctx) }; };
+
+    // filters
+    const q = s.query.trim().toLowerCase();
+    const filtered = items.filter(i => (!s.discs.length || i.discs.some(c => s.discs.includes(c))) && (!s.kinds.length || s.kinds.includes(i.k)) && (!q || i.t.toLowerCase().includes(q)));
+    const fIds = filtered.map(i => i.id);
+    const histGroups = groups.map(g => ({ ...g, srcIcon: svg(15, D[g.icon]()), rows: filtered.filter(i => i.g === g.id).map(i => row(i, fIds)) })).filter(g => g.rows.length);
+    const nF = s.discs.length + s.kinds.length;
+
+    const newIds = ['a1','t1','d7'];
+    const newRows = newIds.map(id => row(byId[id], newIds, byId[id].who.split(' · ')[0] + ' · ' + byId[id].origin.split(' · ').pop()));
+    newRows[0].meta = 'Carlos · até 06/03';
+    const msIds = items.filter(i => i.ms).map(i => i.id);
+    const curMarcos = items.filter(i => i.ms && i.stage === 'Anteprojeto').map(i => ({ t:i.t, date:i.date, open: open(i.id, msIds) }));
+    const mi = (i) => ({ t:i.t, code:i.discs[0], hex:X[i.discs[0]][0], date:i.date, open: open(i.id, msIds) });
+    const mStages = [
+      { name:'Estudo Preliminar', dates:'15/01 – 15/02', status:'Concluída', sc:'#2F7A4F', dot:'#1C1E22', line:'#1C1E22', items: items.filter(i => i.ms && i.stage === 'Estudo Preliminar').map(mi) },
+      { name:'Anteprojeto', dates:'16/02 – 31/03', status:'Em andamento', sc:'#3E5F66', dot:'#FFFFFF', line:'#E3E0D9', today:true, items: items.filter(i => i.ms && i.stage === 'Anteprojeto').map(mi) },
+      { name:'Projeto Legal', dates:'01/04 – 15/05', status:'', sc:'#5F6168', dot:'#FFFFFF', line:'transparent', items:[], empty:true }
+    ];
+    const openA = items.filter(i => i.k === 'a' && !s.done[i.id]).length;
+    const goTab = (tab) => () => this.setState({ tab, more: tab === 'more' ? 'menu' : s.more });
+    const tiles = [
+      { v:'3', l:'novos desde 27/02', note:'', border:'#1C1E22', sh:'inset 0 -3px 0 #1C1E22', nc:'#5F6168', go: () => {} },
+      { v:String(openA), l:'em aberto', note: openA ? '1 atrasada' : '', border:'#E3E0D9', sh:'none', nc:'#8E3224', go: () => this.setState({ tab:'history', kinds:['a'], discs:[], query:'' }) },
+      { v:String(s.pending.length), l:'aguardando aprovação', note:'', border:'#E3E0D9', sh:'none', nc:'#5F6168', go: () => this.setState({ tab:'more', more:'approvals' }) }
+    ];
+    const tabs = [['overview','Visão geral'],['timeline','Marcos'],['history','Histórico'],['more','Mais']].map(([i, n]) => ({ n, icon: svg(22, D[i]()), w: i === s.tab ? 700 : 500, c: i === s.tab ? '#1C1E22' : '#8A8C92', go: goTab(i) }));
+
+    const projs = [{ name:'Residential Tower Alpha', sub:'Anteprojeto · 2 de 4 · faltam 28 dias' }, { name:'Clínica Jardim Botânico', sub:'Projeto Legal · 3 de 4 · faltam 12 dias' }, { name:'Escola Municipal Vila Nova', sub:'Estudo Preliminar · 1 de 4 · faltam 40 dias' }];
+
+    // detail
+    let det = {}, prevColor = '#8A8C92', nextColor = '#8A8C92', prevItem = () => {}, nextItem = () => {};
+    const d = s.detailId && byId[s.detailId];
+    if (d) {
+      const done = d.k === 'a' && !!s.done[d.id], star = s.starred[d.id] ?? !!d.ms;
+      det = { t:d.t, kindLabel: KL[d.k], discs: ds(d.discs), high: !!d.high, milestone: star, who:d.who, origin:d.origin, stage:d.stage, why:d.why,
+        starIcon: star ? ic.starFill : ic.star, starColor: star ? '#3E5F66' : '#5F6168', tc: done ? '#8A8C92' : '#1C1E22', deco: done ? 'line-through' : 'none',
+        isAction: d.k === 'a', doneLabel: done ? '✓ Concluída · desfazer' : 'Marcar como concluída', doneBg: done ? '#FFFFFF' : '#1C1E22', doneFg: done ? '#1C1E22' : '#FFFFFF',
+        hasCons: !!d.cons, cons: d.cons ? ds(d.cons) : [], consLabel: d.cons ? `${d.cons.length} de ${d.cons.length} concordam` : '' };
+      const idx = s.ctx.indexOf(d.id);
+      if (idx > 0) { prevColor = '#1C1E22'; prevItem = () => this.setState({ detailId: s.ctx[idx - 1], playing:false }); }
+      if (idx > -1 && idx < s.ctx.length - 1) { nextColor = '#1C1E22'; nextItem = () => this.setState({ detailId: s.ctx[idx + 1], playing:false }); }
+    }
+    const toggle = (key, v) => () => this.setState(st => ({ [key]: st[key].includes(v) ? st[key].filter(x => x !== v) : [...st[key], v] }));
+    const chip = (on) => ({ border: on ? '#3E5F66' : '#E3E0D9', bg: on ? '#E6EEEF' : '#FFFFFF' });
+
+    return {
+      goMarcos: () => this.setState({ tab:'timeline' }),
+      ic, tabs, tiles, newRows, curMarcos, mStages, histGroups, det,
+      inDetail: !!d, inMain: !d,
+      isOverview: s.tab === 'overview', isMarcos: s.tab === 'timeline', isHist: s.tab === 'history', isMore: s.tab === 'more',
+      moreMenu: s.more === 'menu', moreApprovals: s.more === 'approvals',
+      proj: projs[s.proj],
+      closeDetail: () => this.setState({ detailId:null, playing:false }),
+      toggleStar: () => { const v = !(s.starred[d.id] ?? !!d.ms); this.setState(st => ({ starred: { ...st.starred, [d.id]: v } })); this.flash(v ? 'Marcado como marco' : 'Removido dos marcos'); },
+      shareItem: () => this.flash('Link copiado'),
+      shareTimeline: () => this.flash('Link da linha do tempo copiado'),
+      toggleDone: () => this.setState(st => ({ done: { ...st.done, [d.id]: !st.done[d.id] } })),
+      togglePlay: () => this.setState(st => ({ playing: !st.playing })),
+      playLabel: s.playing ? '❚❚ Pausar · ' + (d && d.ts || '') : (d && d.ts ? '▶ Ouvir trecho · ' + d.ts : '▶ Ver origem'),
+      playBg: s.playing ? '#E6EEEF' : '#FFFFFF',
+      prevItem, nextItem, prevColor, nextColor,
+      openProjects: () => this.setState({ sheet:'proj' }),
+      goSearch: () => { this.setState({ tab:'history' }, () => this.searchRef.current && this.searchRef.current.focus()); },
+      searchRef: this.searchRef, query: s.query, searchPh: `Buscar em ${items.length} itens`,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      openFilters: () => this.setState({ sheet:'filter' }),
+      fBtnLabel: nF ? `Filtros · ${nF}` : 'Filtros', fBtnBorder: nF ? '#3E5F66' : '#E3E0D9', fBtnBg: nF ? '#E6EEEF' : '#FFFFFF',
+      activeChips: [...s.discs.map(c => ({ name:X[c][1], hex:X[c][0], remove: toggle('discs', c) })), ...s.kinds.map(k => ({ name:KL[k], hex:'#1C1E22', remove: toggle('kinds', k) }))],
+      histEmpty: !histGroups.length,
+      clearFilters: () => this.setState({ discs:[], kinds:[], query:'' }),
+      sheetOpen: !!s.sheet, isFilterSheet: s.sheet === 'filter', isProjSheet: s.sheet === 'proj',
+      closeSheet: () => this.setState({ sheet:null }), stop: (e) => e.stopPropagation(),
+      clearDiscs: () => this.setState({ discs:[], kinds:[] }),
+      discChips: Object.keys(X).map(c => ({ name:X[c][1], hex:X[c][0], toggle: toggle('discs', c), ...chip(s.discs.includes(c)) })),
+      kindChips: Object.keys(KL).map(k => ({ name:KL[k], toggle: toggle('kinds', k), ...chip(s.kinds.includes(k)) })),
+      applyLabel: `Ver ${filtered.length} itens`,
+      projRows: projs.map((p, i) => ({ ...p, w: i === s.proj ? 700 : 500, check: i === s.proj ? '✓' : '', pick: () => { this.setState({ proj:i, sheet:null }); if (i !== s.proj) this.flash('Projeto trocado · dados de exemplo'); } })),
+      moreRows: [
+        { n:'Aguardando aprovação', badge: s.pending.length ? String(s.pending.length) : '', bc:'#8E3224', go: () => this.setState({ more:'approvals' }) },
+        { n:'Trocar projeto', badge:'', bc:'#5F6168', go: () => this.setState({ sheet:'proj' }) },
+        { n:'Compartilhar com o cliente', badge:'', bc:'#5F6168', go: () => this.flash('Link da visão do cliente copiado') },
+        { n:'Notificações', badge:'', bc:'#5F6168', go: () => this.flash('Disponível no app completo') }
+      ],
+      backMore: () => this.setState({ more:'menu' }),
+      pending: s.pending.map(p => ({ ...p, hex:X[p.code][0], approve: () => { this.setState(st => ({ pending: st.pending.filter(x => x.id !== p.id) })); this.flash('Aprovado e adicionado ao histórico'); }, reject: () => { this.setState(st => ({ pending: st.pending.filter(x => x.id !== p.id) })); this.flash('Descartado'); } })),
+      noPending: !s.pending.length,
+      toastOn: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

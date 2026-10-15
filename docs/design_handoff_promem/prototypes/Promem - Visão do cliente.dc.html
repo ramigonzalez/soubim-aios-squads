@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F4F3EF;font-family:'Plus Jakarta Sans',sans-serif;color:#1C1E22;-webkit-font-smoothing:antialiased}a{color:#3E5F66}a:hover{color:#2F4C52}*{box-sizing:border-box}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+  <header style="background:#FFFFFF;border-bottom:1px solid #E3E0D9">
+    <div style="max-width:980px;margin:0 auto;padding:14px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border:1px dashed #CFCBC2;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#8A8C92;text-align:center;line-height:1.1">LOGO DO<br>ESCRIT.</div>
+        <div style="display:flex;flex-direction:column;line-height:1.25"><span style="font-size:15px;font-weight:600">Escritório Exemplo</span><span style="font-size:12px;color:#5F6168">Arquitetura e coordenação de projetos</span></div>
+      </div>
+      <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;background:#EFEDE8;font-size:12px;font-weight:500;color:#3A3C42;white-space:nowrap">Somente leitura · atualizado em 03/03/2026</span>
+      <sc-if value="{{ active }}" hint-placeholder-val="{{ true }}"><button style="display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #CFCBC2;border-radius:4px;background:#FFFFFF;font:inherit;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap">↓ Baixar PDF</button></sc-if>
+    </div>
+  </header>
+
+  <sc-if value="{{ active }}" hint-placeholder-val="{{ true }}">
+    <main style="flex:1;max-width:980px;width:100%;margin:0 auto;padding:40px 24px 56px;display:flex;flex-direction:column;gap:32px">
+      <section style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#5F6168">Linha do tempo de marcos</span>
+        <h1 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-0.035em;line-height:1.08;text-wrap:balance">Residential Tower Alpha</h1>
+        <p style="margin:0;font-size:16px;color:#5F6168;text-wrap:pretty">Torre residencial de 50 pavimentos no centro · Cliente: Incorporadora Alfa</p>
+      </section>
+
+      <section style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:8px 28px;font-size:14px">
+          <span><span style="color:#5F6168">Etapa atual </span><b>Anteprojeto</b><span style="color:#5F6168"> · 2 de 4</span></span>
+          <span><span style="color:#5F6168">Próxima </span><b>Projeto Legal</b><span style="color:#5F6168"> em 01/04/2026</span></span>
+          <span><span style="color:#5F6168">Marcos registrados </span><b>7</b></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:grid;grid-template-columns:31fr 44fr 45fr 108fr;gap:4px;position:relative">
+            <span style="height:8px;border-radius:1px;background:#1C1E22"></span>
+            <span style="height:8px;border-radius:1px;background:linear-gradient(90deg,#1C1E22 0 36%,#D6D2CA 36%)"></span>
+            <span style="height:8px;border-radius:1px;background:#E3E0D9"></span>
+            <span style="height:8px;border-radius:1px;background:#E3E0D9"></span>
+            <span style="position:absolute;left:20.6%;top:-6px;width:2px;height:20px;background:#3E5F66"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:31fr 44fr 45fr 108fr;gap:4px;font-size:12px">
+            <sc-for list="{{ stageLegend }}" as="s" hint-placeholder-count="4"><span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:600;color:{{ s.color }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.n }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8C92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.d }}</span></span></sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:32px 32px 8px;display:flex;flex-direction:column">
+        <sc-for list="{{ stages }}" as="st" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(110px,170px) 22px minmax(0,1fr);gap:0 16px">
+            <div style="display:flex;flex-direction:column;gap:2px;padding:1px 0 28px;text-align:right">
+              <span style="font-size:15px;font-weight:600;color:{{ st.nameColor }}">{{ st.name }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5F6168">{{ st.dates }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:{{ st.statusColor }}">{{ st.status }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center"><span style="width:13px;height:13px;margin-top:4px;border-radius:50%;border:2px solid #1C1E22;background:{{ st.dot }};flex:none"></span><span style="flex:1;width:2px;background:{{ st.line }}"></span></div>
+            <div style="display:flex;flex-direction:column;padding-bottom:28px;min-width:0">
+              <sc-for list="{{ st.items }}" as="it" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:4px;padding:10px 0 12px;border-bottom:1px solid #EFEDE8">
+                  <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px"><span style="font-size:15px;font-weight:600;line-height:1.35;flex:1 1 260px;text-wrap:pretty">{{ it.t }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5F6168">{{ it.d }}</span></div>
+                  <span style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#5F6168"><span style="font-weight:600;color:#3A3C42">{{ it.type }}</span><sc-for list="{{ it.discs }}" as="x" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:2px;background:{{ x.hex }}"></span>{{ x.n }}</span></sc-for></span>
+                  <sc-if value="{{ it.why }}" hint-placeholder-val="{{ false }}"><p style="margin:2px 0 0;font-family:'Newsreader',serif;font-size:15.5px;line-height:1.5;color:#3A3C42;text-wrap:pretty">{{ it.why }}</p></sc-if>
+                </div>
+              </sc-for>
+              <sc-if value="{{ st.today }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;margin:14px 0 0 -30px"><span style="width:20px;height:2px;background:#3E5F66"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:#3E5F66;color:#FFFFFF;white-space:nowrap">Hoje · 03/03</span><span style="flex:1;height:1px;background:repeating-linear-gradient(90deg,#3E5F66 0 4px,transparent 4px 8px)"></span></div></sc-if>
+              <sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:#8A8C92;padding-top:3px">Ainda sem marcos</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ expired }}" hint-placeholder-val="{{ false }}">
+    <main style="flex:1;display:flex;align-items:center;justify-content:center;padding:64px 24px">
+      <div style="max-width:440px;background:#FFFFFF;border:1px solid #E3E0D9;border-radius:6px;padding:32px;display:flex;flex-direction:column;gap:10px;text-align:center">
+        <span style="font-size:18px;font-weight:600">Este link expirou</span>
+        <span style="font-size:14px;line-height:1.5;color:#5F6168;text-wrap:pretty">O acesso à linha do tempo de Residential Tower Alpha terminou em 04/11/2026. Peça um novo link ao Escritório Exemplo.</span>
+        <span style="font-size:13px;color:#3E5F66;font-weight:600">contato@escritorioexemplo.com.br</span>
+      </div>
+    </main>
+  </sc-if>
+
+  <footer style="border-top:1px solid #E3E0D9;background:#FFFFFF">
+    <div style="max-width:980px;margin:0 auto;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:12px;color:#5F6168">
+      <span>Compartilhado por Gabriela · Escritório Exemplo</span><span>Link válido até 04/11/2026</span>
+      <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;white-space:nowrap">Feito com <span style="display:inline-flex;align-items:center;font-weight:700;font-size:13px;letter-spacing:-0.04em;color:#1C1E22">pro<span style="width:1.5px;height:12px;background:#3E5F66;margin:0 1px"></span><span style="font-weight:500">mem</span></span></span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;linkState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ativo&quot;,&quot;expirado&quot;],&quot;default&quot;:&quot;ativo&quot;,&quot;tsType&quot;:&quot;'ativo' | 'expirado'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const H = { ARQ:['Arquitetura','#3D7DD8'], EST:['Estrutura','#7C5AD6'], INS:['Instalações','#E67A3A'], ELE:['Elétrica','#E2A92A'], CIV:['Civil','#8D6B45'] };
+    const I = (t, type, ds, d, why) => ({ t, type, d, why: why || '', discs: ds.map(c => ({ n:H[c][0], hex:H[c][1] })) });
+    const stages = [
+      { name:'Estudo Preliminar', dates:'15/01 – 15/02/2026', status:'Concluída', statusColor:'#2F7A4F', nameColor:'#1C1E22', dot:'#1C1E22', line:'#1C1E22', items:[
+        I('Concreto de alta resistência (C50) nos pilares principais','Decisão',['EST','ARQ'],'06/02','Reduz a seção dos pilares e libera área útil em todos os pavimentos.'),
+        I('Isoladores sísmicos nos pilares do térreo','Decisão',['EST','CIV'],'06/02'),
+        I('Climatização central com controle de temperatura por zona','Decisão',['INS'],'06/02'),
+        I('Vigas de transição no nível 5 para liberar o pódio comercial','Decisão',['EST','ARQ'],'06/02','Libera o pódio das vitrines por completo, com pé-direito acima de 4 m.'),
+        I('Iluminação LED com controles inteligentes','Decisão',['ELE'],'07/02'),
+        I('Nova especificação de impermeabilização das fundações','Informação',['EST','ARQ'],'08/02') ] },
+      { name:'Anteprojeto', dates:'16/02 – 31/03/2026', status:'Em andamento', statusColor:'#3E5F66', nameColor:'#1C1E22', dot:'#FFFFFF', line:'#E3E0D9', today:true, items:[
+        I('Shaft de prumadas ampliado em 20 cm','Decisão',['INS','EST'],'28/02','Os dutos de climatização cabem sem desvio, sem afetar as vigas.') ] },
+      { name:'Projeto Legal', dates:'01/04 – 15/05/2026', status:'', statusColor:'#5F6168', nameColor:'#5F6168', dot:'#FFFFFF', line:'#E3E0D9', items:[], empty:true },
+      { name:'Projeto Executivo', dates:'16/05 – 31/08/2026', status:'', statusColor:'#5F6168', nameColor:'#5F6168', dot:'#FFFFFF', line:'transparent', items:[], empty:true }
+    ];
+    const stageLegend = stages.map((s, i) => ({ n: s.name, d: s.dates.replace('/2026','').replace('/2026',''), color: i < 2 ? '#1C1E22' : '#5F6168' }));
+    const expired = (this.props.linkState ?? 'ativo') === 'expirado';
+    return { stages, stageLegend, active: !expired, expired };
+  }
+}
+</script>
+</body>
+</html>
