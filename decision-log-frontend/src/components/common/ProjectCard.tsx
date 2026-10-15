@@ -1,4 +1,4 @@
-import { Users, FileText, Calendar } from 'lucide-react'
+import { Users, FileText, Calendar, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { StagePill } from '../molecules/StagePill'
 import { dateLocale } from '../../i18n'
@@ -14,14 +14,17 @@ interface ProjectCardProject {
   item_count?: number
   decision_count?: number
   created_at: string
+  can_manage?: boolean  // Story 12.7: owning organization's owner/admin
 }
 
 interface ProjectCardProps {
   project: ProjectCardProject
   onClick: (projectId: string) => void
+  /** Shown only when the user can manage the project. */
+  onEdit?: (projectId: string) => void
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onClick, onEdit }: ProjectCardProps) {
   const { t } = useTranslation('projects')
   const createdDate = new Date(project.created_at).toLocaleDateString(dateLocale(), {
     year: 'numeric',
@@ -90,8 +93,23 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       </div>
 
       {/* CTA */}
-      <div className="pt-4 border-t border-gray-200">
+      <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
         <p className="text-xs text-blue-600 font-medium">{t('card.viewDetails')}</p>
+        {onEdit && project.can_manage && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit(project.id)
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            aria-label={t('card.editLabel', { name: project.name })}
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            {t('card.edit')}
+          </button>
+        )}
       </div>
     </div>
   )

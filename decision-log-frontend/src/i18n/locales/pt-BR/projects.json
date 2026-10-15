@@ -26,7 +26,9 @@
     "items_one": "{{count}} item",
     "items_other": "{{count}} itens",
     "created": "Criado em {{date}}",
-    "viewDetails": "Ver detalhes →"
+    "viewDetails": "Ver detalhes →",
+    "edit": "Editar",
+    "editLabel": "Editar {{name}}"
   },
   "detail": {
     "invalidId": "ID de projeto inválido",
