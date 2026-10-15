@@ -64,11 +64,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     for table in ('project_items', 'sources'):
         op.drop_column(table, 'created_by')
-    op.execute(
-        "DELETE FROM project_members pm USING organization_members om, projects p "
-        "WHERE om.role = 'external' AND om.user_id = pm.user_id AND p.id = pm.project_id "
-        "AND p.owner_organization_id = om.organization_id"
-    )
+    # Only external-only rows; a row a shared organization also assigned (role 'member') stays.
+    op.execute("DELETE FROM project_members WHERE role = 'external'")
     op.execute("DELETE FROM organization_members WHERE role = 'external'")
     op.execute("DELETE FROM organization_invitations WHERE role = 'external' OR project_id IS NOT NULL")
     op.drop_index('idx_organization_invitations_project', table_name='organization_invitations')
