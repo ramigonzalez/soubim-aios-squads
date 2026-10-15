@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request,
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.services.access import ADMIN, require_platform_admin, require_source_access
+from app.services.access import ADMIN, require_platform_operator, require_source_access
 from app.services.source_curation import SourceCurationService
 
 router = APIRouter()
@@ -55,9 +55,9 @@ async def trigger_curation_sync(
 ):
     """Manually trigger a curation sync poll for all uploaded sources.
 
-    Platform admins only (polls the sources of every organization). Runs in background.
+    Platform operator only (polls the sources of every organization). Runs in background.
     """
-    require_platform_admin(db, _get_user(request))  # Story 12.2
+    require_platform_operator(db, _get_user(request))  # Story 12.13
 
     def _run_sync():
         from app.database.session import SessionLocal

@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useAuthStore } from '../../store/authStore'
 import { ingestionService } from '../../services/ingestionService'
-import { LogOut, Home, Settings } from 'lucide-react'
+import { LogOut, Home, Settings, KeyRound } from 'lucide-react'
 import { OrganizationSwitcher } from '../molecules/OrganizationSwitcher'
 import { useActiveOrganization } from '../../hooks/useOrganizations'
 import { useTranslation } from 'react-i18next'
@@ -70,6 +70,13 @@ export function Navigation() {
           {/* Ingestion Link — Story 12.7: organization owner/admin/reviewer (not the legacy users.role) */}
           {canReviewSomewhere && <IngestionNavLink />}
 
+          {/* Story 12.13: the platform page, only for the platform operator */}
+          {user?.is_platform_operator && (
+            <Link to="/platform" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition">
+              {t('platform')}
+            </Link>
+          )}
+
           {/* Active organization + team management (Story 12.5; owner/admin of the active organization) */}
           <OrganizationSwitcher />
           {isOrganizationAdmin && (
@@ -87,6 +94,16 @@ export function Navigation() {
                 <p className="text-xs text-gray-500">{t(`roles.${user.role}`, { defaultValue: user.role })}</p>
               </div>
             )}
+
+            {/* Story 12.13: change your own password */}
+            <Link
+              to="/settings/password"
+              className="p-2 text-gray-600 hover:text-blue-600 rounded-lg hover:bg-gray-100 transition-colors"
+              title={t('changePassword')}
+              aria-label={t('changePassword')}
+            >
+              <KeyRound className="w-4 h-4" />
+            </Link>
 
             {/* Settings → Integrations (Story 13.3) */}
             <Link

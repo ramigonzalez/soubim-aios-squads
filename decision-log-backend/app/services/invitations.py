@@ -21,7 +21,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Organization, OrganizationInvitation, OrganizationMember, User
 from app.services.email_sender import EmailSender, get_email_sender
-from app.services.organizations import ROLES, can_manage_role, get_role
+from app.services.organizations import BLOCKED, ORGANIZATION_BLOCKED, ROLES, can_manage_role, get_role
+
+OPERATOR_CANNOT_JOIN = "operator_cannot_join"  # Story 12.13: the platform operator belongs to no organization
 from app.utils.security import hash_password, normalize_email  # noqa: F401  (normalize_email re-exported)
 
 
@@ -153,6 +155,25 @@ def find_by_token(db: Session, token: str) -> OrganizationInvitation:
     return invitation
 
 
+def ensure_can_accept(db: Session, invitation: OrganizationInvitation, user: Optional[User] = None) -> None:
+    """Story 12.13: refuse an acceptance before any account or membership is created (403).
+
+    - ``organization_blocked``: the invitation's organization is blocked (new-company invitations,
+      without an organization yet, are not affected);
+    - ``operator_cannot_join``: the accepting user, or the account of the invited email, is the
+      platform operator (it belongs to no organization).
+    """
+    if invitation.organization is not None and invitation.organization.status == BLOCKED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ORGANIZATION_BLOCKED)
+    if user is not None and user.is_platform_operator:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=OPERATOR_CANNOT_JOIN)
+    operator = db.query(User.id).filter(
+        func.lower(User.email) == normalize_email(invitation.email), User.is_platform_operator.is_(True)
+    )
+    if operator.first() is not None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=OPERATOR_CANNOT_JOIN)
+
+
 def invitation_org_name(invitation: OrganizationInvitation) -> str:
     return invitation.organization.name if invitation.organization is not None else invitation.organization_name
 
@@ -211,6 +232,7 @@ def accept_for_user(db: Session, invitation: OrganizationInvitation, user: User)
     """Accept a pending invitation for an existing user with the invited email. Commits."""
     if normalize_email(user.email) != normalize_email(invitation.email):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This invitation was sent to another email")
+    ensure_can_accept(db, invitation, user)  # Story 12.13
     _claim(db, invitation)
     return _join(db, invitation, user)
 
@@ -226,6 +248,7 @@ def _email_taken(db: Session, email: str) -> bool:
 
 def accept_as_new_user(db: Session, token: str, name: str, password: str) -> Tuple[User, Organization]:
     invitation = find_by_token(db, token)
+    ensure_can_accept(db, invitation)  # Story 12.13 (before the "account exists" answer)
     if _email_taken(db, invitation.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists: log in to accept")
     if len(password) < PASSWORD_MIN_LENGTH:
@@ -244,16 +267,17 @@ def accept_as_new_user(db: Session, token: str, name: str, password: str) -> Tup
 
 
 def create_invited_user(
-    db: Session, invitation: OrganizationInvitation, name: str, password_hash: str
+    db: Session, invitation: OrganizationInvitation, name: str, password_hash: str, has_password: bool = True
 ) -> Tuple[User, Organization]:
     """Claim the invitation, create the invitee's account and membership. Commits.
 
     The caller has checked that no account uses the invited email and validated ``name``
     (password accept above; Google sign-in, Story 12.8, with an unusable random password).
     """
+    ensure_can_accept(db, invitation)  # Story 12.13
     _claim(db, invitation)
     # users.role is legacy (not used for authorization since 12.2); invitees get the least privileged value
-    user = User(email=invitation.email, password_hash=password_hash, name=name, role="client")
+    user = User(email=invitation.email, password_hash=password_hash, name=name, role="client", has_password=has_password)
     db.add(user)
     try:
         db.flush()

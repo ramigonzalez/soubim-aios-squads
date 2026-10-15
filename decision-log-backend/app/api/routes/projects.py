@@ -9,7 +9,7 @@ from typing import Optional
 from uuid import UUID
 
 from app.database.session import get_db
-from app.services.access import ADMIN, admin_organization, is_platform_admin, require_project_access
+from app.services.access import ADMIN, admin_organization, require_project_access
 from app.database.models import Project, ProjectMember
 from app.services.organizations import active_organization_id
 from app.services.project_sharing import add_owner_row
@@ -47,7 +47,8 @@ router = APIRouter()
 
 
 def _require_drive_folder_permission(db: Session, user, new_value, current_value=None) -> None:
-    """Story 12.2 security review: only platform admins may set or change ``drive_folder_id``.
+    """Story 12.2 security review: only the platform may set or change ``drive_folder_id``.
+    Story 12.13: the platform operator (``users.is_platform_operator``), no longer souBIM's admins.
 
     The Drive monitor and curation upload use the platform's (souBIM) Drive service account, so a
     folder id set by another organization would ingest souBIM's files into that organization's
@@ -55,10 +56,10 @@ def _require_drive_folder_permission(db: Session, user, new_value, current_value
     """
     if (new_value or None) == (current_value or None):
         return
-    if not is_platform_admin(db, user):
+    if not getattr(user, "is_platform_operator", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only platform admins can configure the Drive folder",
+            detail="Only the platform operator can configure the Drive folder",
         )
 
 

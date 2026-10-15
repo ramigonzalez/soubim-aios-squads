@@ -104,20 +104,9 @@ describe('TeamSettings (Story 12.5)', () => {
     expect(del).toHaveBeenCalledWith('/organizations/org-1/members/u2/projects/p1')
   })
 
-  it('only the platform organization can invite a new company', async () => {
-    setup('admin', 'acme')
-    await screen.findByText('Bia Member')
-    expect(screen.queryByLabelText(/company that is not on DecisionLog/)).not.toBeInTheDocument()
-  })
-
-  it('platform admin invites a company: sends the name, not the organization id', async () => {
-    const post = vi.spyOn(api, 'post').mockResolvedValue({ data: { id: 'i', email: 'c@x.com', role: 'owner', invite_url: 'http://app/invite/z' } })
+  it('Story 12.13: no organization can invite a new company here, souBIM included (moved to /platform)', async () => {
     setup('admin', 'soubim')
-    await userEvent.click(await screen.findByLabelText(/company that is not on DecisionLog/))
-    await userEvent.type(screen.getByLabelText('Company name'), 'NewCo')
-    await userEvent.type(screen.getByLabelText('Email'), 'c@x.com')
-    await userEvent.click(screen.getByRole('button', { name: 'Send invitation' }))
-    await screen.findByDisplayValue('http://app/invite/z')
-    expect(post).toHaveBeenCalledWith('/invitations', { email: 'c@x.com', role: 'member', organization_name: 'NewCo' })
+    await screen.findByText('Bia Member')
+    expect(screen.queryByLabelText(/company/i)).not.toBeInTheDocument()
   })
 })

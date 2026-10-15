@@ -8,6 +8,8 @@ import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
 import { MeetingViewer } from './pages/MeetingViewer'
 import { Navigation } from './components/common/Navigation'
+import { HomeRedirect, PlatformRoute } from './components/common/PlatformRoute'
+import { PaymentPendingBanner } from './components/molecules/PaymentPendingBanner'
 import { useAuthStore } from './store/authStore'
 import { useTranslation } from 'react-i18next'
 
@@ -19,6 +21,8 @@ const FathomMeetings = lazy(() => import('./pages/FathomMeetings'))
 const TeamSettings = lazy(() => import('./pages/TeamSettings'))
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
 const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
+const Platform = lazy(() => import('./pages/Platform'))
+const ChangePassword = lazy(() => import('./pages/ChangePassword'))
 
 const queryClient = new QueryClient()
 
@@ -39,6 +43,7 @@ function AppRoutes() {
   return (
     <>
       {isAuthenticated && <Navigation />}
+      {isAuthenticated && <PaymentPendingBanner />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/shared/milestones/:token" element={<SharedMilestoneTimeline />} />
@@ -125,6 +130,26 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/settings/password"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <ChangePassword />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform"
+          element={
+            <PlatformRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <Platform />
+              </Suspense>
+            </PlatformRoute>
+          }
+        />
+        <Route
           path="/invite/:token"
           element={
             <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
@@ -140,7 +165,7 @@ function AppRoutes() {
             </Suspense>
           }
         />
-        <Route path="/" element={<Navigate to="/projects" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
       </Routes>
     </>
   )

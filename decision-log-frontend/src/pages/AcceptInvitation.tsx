@@ -66,6 +66,13 @@ export default function AcceptInvitation() {
   const sameEmail = user?.email.toLowerCase() === inv.email.toLowerCase()
   const error = createAccount.error ?? acceptExisting.error
   const errorDetail = (error as { response?: { data?: { detail?: string } } } | null)?.response?.data?.detail
+  // Story 12.13: refusals with a stable code get a translated message
+  const errorMessage =
+    errorDetail === 'organization_blocked'
+      ? t('accept.organizationBlocked')
+      : errorDetail === 'operator_cannot_join'
+        ? t('accept.operatorCannotJoin')
+        : errorDetail
 
   return shell(
     <>
@@ -153,7 +160,7 @@ export default function AcceptInvitation() {
 
       {error && (
         <p role="alert" className="text-sm text-red-700">
-          {statusOf(error) === 429 ? t('accept.rateLimited') : errorDetail || t('accept.error')}
+          {statusOf(error) === 429 ? t('accept.rateLimited') : errorMessage || t('accept.error')}
         </p>
       )}
     </>

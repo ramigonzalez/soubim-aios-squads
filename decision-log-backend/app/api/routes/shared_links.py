@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.services.extraction_runs import active_items_filter
-from app.database.models import SharedLink, Project, ProjectItem, ProjectStage
+from app.database.models import Organization, SharedLink, Project, ProjectItem, ProjectStage
 from app.services.access import ADMIN, public_items_filter, require_project_access
+from app.services.organizations import BLOCKED
 
 
 router = APIRouter()
@@ -213,7 +214,16 @@ async def view_shared_timeline(
         .first()
     )
 
-    if not link:
+    # Story 12.13: a blocked organization's public links stop working (same answer as a revoked link)
+    owner_blocked = (
+        link is not None
+        and db.query(Organization.id)
+        .join(Project, Project.owner_organization_id == Organization.id)
+        .filter(Project.id == link.project_id, Organization.status == BLOCKED)
+        .first()
+        is not None
+    )
+    if not link or owner_blocked:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This link has expired or been revoked",

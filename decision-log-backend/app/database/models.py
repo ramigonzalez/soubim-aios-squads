@@ -96,6 +96,12 @@ class User(Base):
     # Google sign-ins must present the same ``sub`` (never overwritten silently). Unique: one
     # Google account signs in to one DecisionLog account.
     google_sub = Column(String(255))
+    # Story 12.13: the platform operator (runs /platform). Set only by
+    # scripts/create_platform_operator.py, never through the API. Grants no access to tenant data.
+    is_platform_operator = Column(Boolean, nullable=False, default=False, server_default=sql_false())
+    # Story 12.13: false for accounts created with an unusable random password (Google sign-in,
+    # create_platform_operator --no-password); they cannot use "change password" (setting a first one is phase 2)
+    has_password = Column(Boolean, nullable=False, default=True, server_default=text("true"))
 
     __table_args__ = (
         CheckConstraint("role IN ('director', 'architect', 'client')", name="ck_user_role"),
@@ -126,8 +132,15 @@ class Organization(Base):
     name = Column(String(255), nullable=False)
     slug = Column(String(100), unique=True, nullable=False)
     created_at = Column(DateTime, nullable=False, default=func.now())
+    # Story 12.13: set by the platform operator. ``payment_pending`` keeps access (banner);
+    # ``blocked`` makes every membership of the organization grant nothing.
+    status = Column(String(20), nullable=False, default="active", server_default="active")
 
     members = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("status IN ('active', 'payment_pending', 'blocked')", name="ck_organization_status"),
+    )
 
 
 class OrganizationMember(Base):

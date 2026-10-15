@@ -2,6 +2,7 @@
 
 Story 7.4: Backend Gmail API Poller
 Story 12.2: platform admins (owner/admin of the platform organization) instead of the director role.
+Story 12.13: the platform operator (``users.is_platform_operator``) instead of the platform organization.
 """
 
 from fastapi import APIRouter, Depends
@@ -10,18 +11,18 @@ from sqlalchemy.orm import Session
 from app.api.middleware.auth import get_current_user
 from app.database.session import get_db
 from app.scheduler import app_scheduler
-from app.services.access import require_platform_admin
+from app.services.access import require_platform_operator
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
-def require_platform_admin_user(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    """Dependency that enforces platform-admin access (Story 12.2)."""
-    require_platform_admin(db, current_user)
+def require_platform_operator_user(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Dependency that enforces platform-operator access (Story 12.13)."""
+    require_platform_operator(db, current_user)
     return current_user
 
 
 @router.get("/scheduler/status")
-async def get_scheduler_status(current_user=Depends(require_platform_admin_user)):
-    """Return background scheduler status. Platform admins only."""
+async def get_scheduler_status(current_user=Depends(require_platform_operator_user)):
+    """Return background scheduler status. Platform operator only."""
     return app_scheduler.get_status()

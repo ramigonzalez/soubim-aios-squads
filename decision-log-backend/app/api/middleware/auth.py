@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.utils.security import decode_access_token
 from app.services.auth_service import get_user_by_id, UserNotFoundError
-from app.services.organizations import ACTIVE_ORGANIZATION_HEADER, validate_active_organization
+from app.services.organizations import (
+    ACTIVE_ORGANIZATION_HEADER,
+    ORGANIZATION_BLOCKED,
+    is_account_blocked,
+    validate_active_organization,
+)
 from app.database.session import SessionLocal
 
 
@@ -71,6 +76,10 @@ async def auth_middleware(request: Request, call_next):
     db = SessionLocal()
     try:
         user = get_user_by_id(db, payload.get("user_id"))
+        # Story 12.13: every organization of the user is blocked → tokens issued before stop working
+        # (the frontend logs out on this code and shows "conta suspensa")
+        if is_account_blocked(db, user):
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": ORGANIZATION_BLOCKED})
         request.state.user = user
         # Story 12.5: active organization (X-Organization-Id) — the user must belong to it.
         # /organizations/me lists the memberships, so a stale id must not lock the client out of it.

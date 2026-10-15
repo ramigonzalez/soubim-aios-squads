@@ -120,7 +120,7 @@ class TestMyOrganizationsEndpoint:
         db_session.commit()
 
         data = asyncio.run(my_organizations(db=db_session, user=people.director))
-        assert data == [{"id": str(org.id), "name": "souBIM", "slug": "soubim", "role": "admin"}]
+        assert data == [{"id": str(org.id), "name": "souBIM", "slug": "soubim", "role": "admin", "status": "active"}]
 
     def test_user_without_organization_gets_empty_list(self, db_session: Session, people):
         assert asyncio.run(my_organizations(db=db_session, user=people.director)) == []

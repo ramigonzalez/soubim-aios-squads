@@ -1,4 +1,11 @@
-"""Organizations and memberships (Story 12.1); members and active organization (Story 12.5)."""
+"""Organizations and memberships (Story 12.1); members and active organization (Story 12.5).
+
+Story 12.13 — organization status (set by the platform operator): ``active``, ``payment_pending``
+(access unchanged, the frontend shows a banner) and ``blocked``. A membership in a ``blocked``
+organization grants nothing: every membership lookup used for authorization goes through
+``get_memberships`` / ``get_role`` / ``user_organization_ids`` here (and ``access.organization_roles``),
+which leave blocked organizations out.
+"""
 
 import uuid
 from typing import List, Optional
@@ -24,6 +31,45 @@ ADMIN_ROLES = ("owner", "admin")
 ASSIGNED_ROLES = ("reviewer", "member")
 SHARED_ACCESS = ("contributor", "viewer")
 ACTIVE_ORGANIZATION_HEADER = "X-Organization-Id"
+# Story 12.13: organization status
+ACTIVE, PAYMENT_PENDING, BLOCKED = "active", "payment_pending", "blocked"
+ORGANIZATION_STATUSES = (ACTIVE, PAYMENT_PENDING, BLOCKED)
+ORGANIZATION_BLOCKED = "organization_blocked"  # error code: login refused / session ended
+
+
+def usable_organization_ids():
+    """Subquery of the organizations whose memberships grant access (Story 12.13: not ``blocked``)."""
+    return select(Organization.id).where(Organization.status != BLOCKED)
+
+
+def user_organization_ids(user_id, roles=None):
+    """Subquery of the organizations the user belongs to (with one of ``roles``, if given) that are
+    not blocked — the base of every SQL access filter."""
+    query = select(OrganizationMember.organization_id).where(
+        OrganizationMember.user_id == str(user_id),
+        OrganizationMember.organization_id.in_(usable_organization_ids()),
+    )
+    if roles is not None:
+        query = query.where(OrganizationMember.role.in_(tuple(roles)))
+    return query
+
+
+def is_account_blocked(db: Session, user: User) -> bool:
+    """Story 12.13: the user belongs to at least one organization and every one of them is blocked.
+
+    Such a user cannot log in and their tokens stop working. The platform operator is never blocked;
+    a user without any organization keeps the previous behaviour (logs in, sees nothing).
+    """
+    if getattr(user, "is_platform_operator", False):
+        return False
+    statuses = [
+        s
+        for (s,) in db.query(Organization.status)
+        .join(OrganizationMember, OrganizationMember.organization_id == Organization.id)
+        .filter(OrganizationMember.user_id == user.id)
+        .all()
+    ]
+    return bool(statuses) and all(s == BLOCKED for s in statuses)
 
 
 def membership_role_for(user_role: str) -> str:
@@ -32,11 +78,16 @@ def membership_role_for(user_role: str) -> str:
 
 
 def get_memberships(db: Session, user: User) -> List[OrganizationMember]:
-    """The user's memberships: oldest first; ties (same transaction) by strongest role, then id."""
+    """The user's memberships: oldest first; ties (same transaction) by strongest role, then id.
+
+    Story 12.13: memberships of blocked organizations are left out (they grant nothing)."""
     role_rank = case({role: rank for rank, role in enumerate(ROLES)}, value=OrganizationMember.role, else_=len(ROLES))
     return (
         db.query(OrganizationMember)
-        .filter(OrganizationMember.user_id == user.id)
+        .filter(
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.organization_id.in_(usable_organization_ids()),
+        )
         .order_by(OrganizationMember.created_at, role_rank, OrganizationMember.organization_id)
         .all()
     )
@@ -64,7 +115,8 @@ def ensure_default_organization(
         db.flush()
 
     members = {m.user_id for m in db.query(OrganizationMember.user_id).all()}
-    for user in db.query(User).filter(User.deleted_at.is_(None)).all():
+    # Story 12.13: the platform operator belongs to no organization
+    for user in db.query(User).filter(User.deleted_at.is_(None), User.is_platform_operator.is_(False)).all():
         if user.id not in members:
             db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=membership_role_for(user.role)))
 
@@ -79,10 +131,14 @@ def ensure_default_organization(
 
 
 def get_role(db: Session, user: User, organization_id) -> Optional[str]:
-    """The user's role in the organization, None if not a member."""
+    """The user's role in the organization, None if not a member (Story 12.13: or if it is blocked)."""
     return (
         db.query(OrganizationMember.role)
-        .filter(OrganizationMember.user_id == user.id, OrganizationMember.organization_id == str(organization_id))
+        .filter(
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.organization_id == str(organization_id),
+            OrganizationMember.organization_id.in_(usable_organization_ids()),
+        )
         .scalar()
     )
 
@@ -242,6 +298,7 @@ def _other_granting_organizations(db: Session, organization_id, user_id, project
         OrganizationMember.user_id == str(user_id),
         OrganizationMember.organization_id != str(organization_id),
         OrganizationMember.role.in_(ASSIGNED_ROLES),
+        OrganizationMember.organization_id.in_(usable_organization_ids()),  # Story 12.13
         or_(
             OrganizationMember.organization_id == str(project.owner_organization_id),
             OrganizationMember.organization_id.in_(shared_with),

@@ -321,16 +321,21 @@ class TestShareLinksIsolation:
         assert b.link.revoked_at is None
 
 
-class TestPlatformAdmin:
-    def test_only_platform_organization_admins(self, db_session, world):
-        assert access.is_platform_admin(db_session, world.a_admin)
-        assert not access.is_platform_admin(db_session, world.a_member)
-        assert not access.is_platform_admin(db_session, world.b_admin)
-        with pytest.raises(HTTPException) as exc:
-            admin.require_platform_admin_user(world.b_admin, db=db_session)
-        assert exc.value.status_code == 403
-        assert status_of(source_curation.trigger_curation_sync(req(world.b_admin), background_tasks=None,
-                                                               db=db_session)) == 403
+class TestPlatformOperator:
+    """Story 12.13: platform-wide operations need ``users.is_platform_operator``; the souBIM slug is not special."""
+
+    def test_only_the_platform_operator(self, db_session, world):
+        # an admin of the organization with the ``soubim`` slug is a normal tenant admin now
+        for user in (world.a_admin, world.a_member, world.b_admin):
+            with pytest.raises(HTTPException) as exc:
+                admin.require_platform_operator_user(user, db=db_session)
+            assert exc.value.status_code == 403
+            assert status_of(source_curation.trigger_curation_sync(req(user), background_tasks=None,
+                                                                   db=db_session)) == 403
+        operator = _user(db_session, "operator@platform.com")
+        operator.is_platform_operator = True
+        db_session.flush()
+        assert admin.require_platform_operator_user(operator, db=db_session) is operator
 
 
 class TestNoOrganization:
@@ -438,7 +443,7 @@ class TestSharedPlatformChannels:
         assert matcher.match_project(db_session, ["project/project-b"], "Hi", "x@y.com") is None
         assert matcher.match_project(db_session, [], "Re: Project A weekly", "x@y.com") == str(world.a.project.id)
 
-    def test_drive_folder_only_set_by_platform_admins(self, db_session, world):
+    def test_drive_folder_only_set_by_the_platform_operator(self, db_session, world):
         b = world.b
         r = req(world.b_admin)
         assert status_of(projects.update_project(b.project.id, projects.ProjectUpdate(drive_folder_id="soubim-folder"),
@@ -450,11 +455,11 @@ class TestSharedPlatformChannels:
         # Re-sending the current value (the edit form sends every field) is fine
         run(projects.update_project(b.project.id, projects.ProjectUpdate(name="B2", drive_folder_id=None), r,
                                     db=db_session))
-        # Platform admins configure folders as before
-        run(projects.update_project(world.a.project.id, projects.ProjectUpdate(drive_folder_id="folder-a"),
-                                    req(world.a_admin), db=db_session))
+        # Story 12.13: souBIM's admins are not special anymore
+        assert status_of(projects.update_project(world.a.project.id, projects.ProjectUpdate(drive_folder_id="folder-a"),
+                                                 req(world.a_admin), db=db_session)) == 403
         db_session.refresh(world.a.project)
-        assert world.a.project.drive_folder_id == "folder-a"
+        assert world.a.project.drive_folder_id is None
 
     def test_webhook_id_of_other_organization_is_not_revealed(self, db_session, world):
         world.b.pending.webhook_id = "wh-b"

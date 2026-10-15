@@ -30,9 +30,6 @@
     "title": "Convidar alguém",
     "email": "E-mail",
     "role": "Papel",
-    "companyToggle": "Convidar uma empresa que ainda não está no DecisionLog",
-    "companyName": "Nome da empresa",
-    "companyHint": "A organização é criada quando o convite é aceito e quem foi convidado se torna proprietário(a).",
     "submit": "Enviar convite",
     "sending": "Enviando...",
     "created": "Convite criado para {{email}}. Envie este link (ele é exibido apenas uma vez):",
@@ -63,6 +60,8 @@
     "wrongAccount": "Você está conectado como {{current}}, mas este convite é para {{email}}. Saia e entre com o e-mail convidado.",
     "logout": "Sair",
     "error": "Não foi possível aceitar o convite.",
-    "rateLimited": "Muitas requisições. Aguarde um minuto e tente novamente."
+    "rateLimited": "Muitas requisições. Aguarde um minuto e tente novamente.",
+    "organizationBlocked": "Esta organização está suspensa. Fale com quem enviou o convite.",
+    "operatorCannotJoin": "A conta do operador da plataforma não pode entrar em organizações."
   }
 }

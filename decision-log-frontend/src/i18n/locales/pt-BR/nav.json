@@ -11,5 +11,8 @@
     "director": "diretor(a)",
     "architect": "arquiteto(a)",
     "client": "cliente"
-  }
+  },
+  "platform": "Plataforma",
+  "paymentPending": "Pagamento pendente. Fale com o suporte para regularizar o acesso de {{organization}}.",
+  "changePassword": "Alterar senha"
 }

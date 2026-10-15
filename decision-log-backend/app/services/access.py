@@ -61,7 +61,12 @@ from app.database.models import (
     ProjectOrganization,
     Source,
 )
-from app.services.organizations import ASSIGNED_ROLES, DEFAULT_ORGANIZATION_SLUG, get_memberships
+from app.services.organizations import (
+    ASSIGNED_ROLES,
+    get_memberships,
+    usable_organization_ids,
+    user_organization_ids,
+)
 
 NONE, READ, WRITE, REVIEW, ADMIN = "none", "read", "write", "review", "admin"
 _RANK = {NONE: 0, READ: 1, WRITE: 2, REVIEW: 3, ADMIN: 4}
@@ -83,9 +88,12 @@ def _user_id(user) -> str:
 
 
 def organization_roles(db: Session, user) -> Dict[str, str]:
-    """The user's role in each of their organizations, keyed by organization id (str)."""
+    """The user's role in each of their organizations, keyed by organization id (str).
+
+    Story 12.13: blocked organizations are left out, so they grant nothing anywhere."""
     rows = db.query(OrganizationMember.organization_id, OrganizationMember.role).filter(
-        OrganizationMember.user_id == _user_id(user)
+        OrganizationMember.user_id == _user_id(user),
+        OrganizationMember.organization_id.in_(usable_organization_ids()),
     )
     return {str(org_id): role for org_id, role in rows}
 
@@ -164,12 +172,8 @@ def has_access(level: str, required: str) -> bool:
 def accessible_projects_filter(user):
     """SQL condition on ``Project`` matching the projects the user can at least read."""
     uid = _user_id(user)
-    admin_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
-    )
-    member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
-    )
+    admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
+    member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     shared = ProjectOrganization.access.in_(tuple(SHARED_ACCESS_LEVELS))
     shared_with_admin_orgs = select(ProjectOrganization.project_id).where(
@@ -204,12 +208,8 @@ def _org_grants_access(user, org_col, project_col):
     a ``Project`` joined in the outer query.
     """
     uid = _user_id(user)
-    admin_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
-    )
-    member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
-    )
+    admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
+    member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     owned_project = aliased(Project)
     share = aliased(ProjectOrganization)
@@ -242,12 +242,8 @@ def review_visible_filter(user, include_rejected: bool = False):
     ``include_rejected``, ``rejected``) items for users who reach the project through its owning
     organization. Shared organizations only ever see approved items."""
     uid = _user_id(user)
-    admin_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ADMIN_ROLES)
-    )
-    member_orgs = select(OrganizationMember.organization_id).where(
-        OrganizationMember.user_id == uid, OrganizationMember.role.in_(ASSIGNED_ROLES)
-    )
+    admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
+    member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
     assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
     # projects the user reaches through the organization that owns them (not through a share)
     owned_as_admin = select(Project.id).where(Project.owner_organization_id.in_(admin_orgs))
@@ -421,16 +417,9 @@ def admin_organization(db: Session, user) -> Optional[Organization]:
     return None
 
 
-def is_platform_admin(db: Session, user) -> bool:
-    """Owner/admin of the platform operator organization (souBIM).
-
-    For platform-wide operations that are not scoped to one project (scheduler status,
-    curation sync of all sources).
-    """
-    org = db.query(Organization).filter(Organization.slug == DEFAULT_ORGANIZATION_SLUG).first()
-    return org is not None and organization_roles(db, user).get(str(org.id)) in ADMIN_ROLES
-
-
-def require_platform_admin(db: Session, user) -> None:
-    if not is_platform_admin(db, user):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Platform admin access required")
+def require_platform_operator(db: Optional[Session], user) -> None:
+    """Story 12.13: platform-wide operations (``/api/platform/*``, scheduler status, curation sync of
+    every organization, new-company invitations, Drive folder). Only ``users.is_platform_operator``;
+    no organization (souBIM included) is special. 403 otherwise."""
+    if not getattr(user, "is_platform_operator", False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Platform operator access required")
