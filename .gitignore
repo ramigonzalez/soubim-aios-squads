@@ -4,6 +4,7 @@
 .env
 .env.local
 .env.development
+.env.prod
 
 # SQLite development database
 decisionlog_dev.db
