@@ -5,6 +5,8 @@
  * Story 12.3: Organizations with access (sharing section)
  * Story 13.16: Fathom routing rules (admins and reviewers of the project)
  * Story 12.9: Google Drive folder (shared with the service account)
+ * Story 12.15: external people; layout in boxes — only "Dados do projeto" is saved by its button, the
+ * other boxes save automatically (and say so). Admin-only boxes are not rendered for other users.
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -20,6 +22,8 @@ import { ParticipantRow } from '../components/organisms/ParticipantRoster'
 import ProjectSharing from '../components/organisms/ProjectSharing'
 import FathomRulesSection from '../components/organisms/FathomRulesSection'
 import DriveFolderSection from '../components/organisms/DriveFolderSection'
+import ExternalPeopleSection from '../components/organisms/ExternalPeopleSection'
+import { SETTINGS_CARD_CLASS } from '../components/molecules/SettingsCard'
 import api from '../services/api'
 
 export default function ProjectEdit() {
@@ -120,27 +124,33 @@ export default function ProjectEdit() {
               {error}
             </div>
           )}
-          {/* Story 13.16: reviewers who are not admins only see the Fathom rules */}
-          {project.can_manage && (
-            <>
-              <ProjectForm
-                initialData={{
-                  id: project.id,
-                  name: project.name,
-                  description: project.description || '',
-                  project_type: project.project_type || '',
-                  stages: initialStages,
-                  participants: initialParticipants,
-                }}
-                onSubmit={handleSubmit}
-                onCancel={() => navigate(`/projects/${id}`)}
-                isLoading={isSaving}
-              />
-              <ProjectSharing projectId={project.id} />
-              <DriveFolderSection projectId={project.id} />
-            </>
-          )}
-          <FathomRulesSection projectId={project.id} />
+          <div className="space-y-6">
+            {/* Story 13.16: reviewers who are not admins only see the Fathom rules */}
+            {project.can_manage && (
+              <>
+                <div className={SETTINGS_CARD_CLASS}>
+                  <ProjectForm
+                    initialData={{
+                      id: project.id,
+                      name: project.name,
+                      description: project.description || '',
+                      project_type: project.project_type || '',
+                      stages: initialStages,
+                      participants: initialParticipants,
+                    }}
+                    onSubmit={handleSubmit}
+                    onCancel={() => navigate(`/projects/${id}`)}
+                    isLoading={isSaving}
+                  />
+                </div>
+                <ProjectSharing projectId={project.id} />
+                <ExternalPeopleSection projectId={project.id} />
+                <DriveFolderSection projectId={project.id} />
+              </>
+            )}
+            {/* Story 12.15: never for external people (no review access; the API answers 403 anyway) */}
+            {!project.is_external && <FathomRulesSection projectId={project.id} />}
+          </div>
         </div>
       </div>
     </div>

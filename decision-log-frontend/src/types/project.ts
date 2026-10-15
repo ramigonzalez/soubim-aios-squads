@@ -3,6 +3,8 @@ export interface ProjectMember {
   name: string
   email: string
   role: string
+  /** Story 12.15: "Externo" badge */
+  is_external?: boolean
 }
 
 export interface ProjectStats {

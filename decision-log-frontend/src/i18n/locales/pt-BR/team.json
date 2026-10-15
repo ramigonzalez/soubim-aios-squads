@@ -6,7 +6,8 @@
     "owner": "Proprietário(a)",
     "admin": "Administrador(a)",
     "reviewer": "Revisor(a)",
-    "member": "Membro"
+    "member": "Membro",
+    "external": "Externo"
   },
   "members": {
     "title": "Membros",
@@ -24,7 +25,8 @@
     "toggle": "Projetos atribuídos: {{n}}",
     "empty": "Nenhum projeto nesta organização.",
     "shared": "compartilhado",
-    "error": "Não foi possível atualizar o acesso ao projeto."
+    "error": "Não foi possível atualizar o acesso ao projeto.",
+    "external": "Acesso apenas aos projetos para os quais foi convidado(a) (gerenciado nas configurações de cada projeto)."
   },
   "invite": {
     "title": "Convidar alguém",
@@ -62,6 +64,11 @@
     "error": "Não foi possível aceitar o convite.",
     "rateLimited": "Muitas requisições. Aguarde um minuto e tente novamente.",
     "organizationBlocked": "Esta organização está suspensa. Fale com quem enviou o convite.",
-    "operatorCannotJoin": "A conta do operador da plataforma não pode entrar em organizações."
+    "operatorCannotJoin": "A conta do operador da plataforma não pode entrar em organizações.",
+    "projectTitle": "{{organization}} convida você para o projeto {{project}}",
+    "projectInvitedAs": "Convite para {{email}}, com acesso externo somente a este projeto.",
+    "reject": "Recusar convite",
+    "rejected": "Convite recusado. Você pode fechar esta página.",
+    "alreadyMember": "Você já é membro desta organização."
   }
 }

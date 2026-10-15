@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import OrganizationMember, Project, User
 from app.services.drive_client import DriveClient, service_account_email
+from app.services.organizations import EXTERNAL
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,11 @@ def _member_emails(db: Session, organization_id) -> set:
     rows = (
         db.query(func.lower(User.email))
         .join(OrganizationMember, OrganizationMember.user_id == User.id)
-        .filter(OrganizationMember.organization_id == organization_id, User.deleted_at.is_(None))
+        .filter(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.role != EXTERNAL,  # Story 12.15: an external person's folders are not the organization's
+            User.deleted_at.is_(None),
+        )
         .all()
     )
     return {email for (email,) in rows if email}

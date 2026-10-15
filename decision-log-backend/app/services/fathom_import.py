@@ -131,7 +131,7 @@ def import_visible(db: Session, user, imp: Optional[FathomImport]) -> bool:
         return False
     if imp.source is not None:
         return source_visible(db, user, imp.source)
-    return owned_object_visible(db, user, imp.project, imp.owner_organization_id, imp.visibility)
+    return owned_object_visible(db, user, imp.project, imp.owner_organization_id, imp.visibility, imp.user_id)
 
 
 def import_state(imp: FathomImport) -> str:
@@ -318,6 +318,7 @@ def _run(db: Session, import_id: uuid.UUID) -> None:
         recording_url=summary["share_url"],
         # Story 12.4: owner/visibility chosen at import (None owner → project owner on flush)
         owner_organization_id=imp.owner_organization_id,
+        created_by=imp.user_id,  # Story 12.15: the importer
         visibility=imp.visibility or INTERNAL,
         ingestion_status="pending",
         included=False,

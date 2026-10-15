@@ -15,6 +15,7 @@ import {
   useShareProject,
   useUpdateProjectShare,
 } from '../../hooks/useProjectOrganizations'
+import { SettingsCard } from '../molecules/SettingsCard'
 
 const SHARE_ACCESS: ShareAccess[] = ['viewer', 'contributor']
 
@@ -63,13 +64,7 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
   }
 
   return (
-    <section className="mt-10 pt-6 border-t border-gray-200 space-y-4" aria-labelledby="project-sharing-title">
-      <div>
-        <h2 id="project-sharing-title" className="text-lg font-medium text-gray-900">
-          {t('sharing.title')}
-        </h2>
-        <p className="text-sm text-gray-500">{t('sharing.description')}</p>
-      </div>
+    <SettingsCard titleId="project-sharing-title" title={t('sharing.title')} description={t('sharing.description')} autoSaved>
 
       {error && (
         <div role="alert" className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
@@ -151,6 +146,6 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
           {t('sharing.invite')}
         </button>
       </form>
-    </section>
+    </SettingsCard>
   )
 }

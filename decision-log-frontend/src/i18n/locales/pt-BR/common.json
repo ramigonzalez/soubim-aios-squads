@@ -15,5 +15,9 @@
     "shared": "Compartilhada",
     "internalHint": "Visível só para a organização dona da reunião",
     "sharedHint": "Visível para todas as organizações do projeto"
+  },
+  "external": {
+    "badge": "Externo",
+    "hint": "Pessoa de fora da organização, convidada para projetos específicos"
   }
 }

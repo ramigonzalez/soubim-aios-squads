@@ -6,7 +6,8 @@
     "owner": "Owner",
     "admin": "Admin",
     "reviewer": "Reviewer",
-    "member": "Member"
+    "member": "Member",
+    "external": "External"
   },
   "members": {
     "title": "Members",
@@ -24,7 +25,8 @@
     "toggle": "Assigned projects: {{n}}",
     "empty": "No projects in this organization.",
     "shared": "shared",
-    "error": "Could not update project access."
+    "error": "Could not update project access.",
+    "external": "Access only to the projects they were invited to (managed in each project's settings)."
   },
   "invite": {
     "title": "Invite someone",
@@ -62,6 +64,11 @@
     "error": "Could not accept the invitation.",
     "rateLimited": "Too many requests. Please wait a minute and try again.",
     "organizationBlocked": "This organization is suspended. Contact the person who invited you.",
-    "operatorCannotJoin": "The platform operator account cannot join organizations."
+    "operatorCannotJoin": "The platform operator account cannot join organizations.",
+    "projectTitle": "{{organization}} invites you to the project {{project}}",
+    "projectInvitedAs": "Invitation for {{email}}, with external access to this project only.",
+    "reject": "Decline invitation",
+    "rejected": "Invitation declined. You can close this page.",
+    "alreadyMember": "You are already a member of this organization."
   }
 }

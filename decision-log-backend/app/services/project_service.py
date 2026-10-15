@@ -17,6 +17,7 @@ from app.services.access import (
     visible_items_filter,
 )
 from app.services.organizations import active_organization_projects_filter
+from app.services.project_externals import external_user_ids
 
 # Backward compatibility alias
 Decision = ProjectItem
@@ -154,12 +155,14 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
         .all()
     )
 
+    externals = external_user_ids(db, project)  # Story 12.15: "Externo" badge
     member_list = [
         {
             "user_id": str(pm.ProjectMember.user_id),
             "name": pm.User.name,
             "email": pm.User.email,
             "role": pm.ProjectMember.role,
+            "is_external": str(pm.ProjectMember.user_id) in externals,
         }
         for pm in members
     ]

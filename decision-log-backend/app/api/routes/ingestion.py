@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
@@ -21,8 +21,10 @@ from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     ADMIN,
     REVIEW,
+    guest_project_ids,
     has_access,
     project_access_level,
+    project_capabilities,
     require_source_access,
     source_visible,
     visible_items_filter,
@@ -72,10 +74,35 @@ def _capabilities(db: Session, user):
     return of
 
 
+# Story 12.15: ingestion states an external person may see (not pending / rejected / failed review work)
+GUEST_STATUSES = ("approved", "processed")
+# Story 12.15: who reviewed and why it failed are the owning organization's business
+_GUEST_HIDDEN = ("approved_by_name", "rejected_by_name", "extraction_error", "job")
+
+
 def _visible_sources(user):
     """Story 12.2: sources of projects the user can access; Story 12.4: minus other organizations'
-    internal sources."""
-    return visible_sources_filter(user)
+    internal sources. Story 12.15: on projects reached only as an external person, only meetings past
+    review (approved / processed)."""
+    return and_(
+        visible_sources_filter(user),
+        or_(Source.project_id.notin_(guest_project_ids(user)), Source.ingestion_status.in_(GUEST_STATUSES)),
+    )
+
+
+def _guest_redaction(db: Session, user):
+    """Story 12.15: drops reviewer-only fields from a source row on a project reached only as an external person."""
+    cache: dict = {}
+
+    def redact(source, row: dict) -> dict:
+        key = str(source.project_id)
+        if key not in cache:
+            cache[key] = bool(project_capabilities(db, user, source.project)["is_external"])
+        if cache[key]:
+            row.update({field: None for field in _GUEST_HIDDEN})
+        return row
+
+    return redact
 
 
 def _format_job(job) -> dict | None:
@@ -212,9 +239,10 @@ async def list_sources(
 
     # Format response to match frontend TypeScript contract
     capabilities = _capabilities(db, user)
+    redact = _guest_redaction(db, user)  # Story 12.15
     sources_list = []
     for source, project_name in rows:
-        sources_list.append({**_format_source(source, project_name), **capabilities(source)})
+        sources_list.append(redact(source, {**_format_source(source, project_name), **capabilities(source)}))
 
     return {
         "sources": sources_list,
@@ -294,13 +322,14 @@ async def list_history(
     rows = query.all()
 
     capabilities = _capabilities(db, user)
+    redact = _guest_redaction(db, user)  # Story 12.15
     sources_list = []
     for source, project_name, item_count, approved_name, rejected_name in rows:
         job = latest_job_for_source(db, source.id) if source.ingestion_status in ("approved", "failed") else None
-        sources_list.append({
+        sources_list.append(redact(source, {
             **_format_source(source, project_name, item_count, approved_name, rejected_name, job),
             **capabilities(source),  # Story 12.7
-        })
+        }))
 
     return {
         "sources": sources_list,

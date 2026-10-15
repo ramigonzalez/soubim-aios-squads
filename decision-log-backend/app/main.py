@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.config import settings
-from app.api.routes import admin, auth, drive_folder, fathom, fathom_rules, health, ingestion, meetings, organizations, participants, platform, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, source_curation, stages, uploads, webhooks
+from app.api.routes import admin, auth, drive_folder, fathom, fathom_rules, health, ingestion, meetings, organizations, participants, platform, project_externals, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, source_curation, stages, uploads, webhooks
 from app.api.routes.shared_links import router as shared_links_router
 from app.api.middleware.auth import auth_middleware
 from app.api.middleware.rate_limit import setup_rate_limiting
@@ -96,6 +96,7 @@ app.include_router(source_curation.router, prefix="/api", tags=["source-curation
 app.include_router(meetings.router, prefix="/api", tags=["meetings"])
 app.include_router(organizations.router, prefix="/api", tags=["organizations"])
 app.include_router(project_organizations.router, prefix="/api", tags=["project-sharing"])
+app.include_router(project_externals.router, prefix="/api", tags=["project-sharing"])  # Story 12.15
 app.include_router(fathom.router, prefix="/api", tags=["integrations"])
 app.include_router(fathom_rules.router, prefix="/api", tags=["integrations"])
 app.include_router(drive_folder.router, prefix="/api", tags=["integrations"])  # Story 12.9

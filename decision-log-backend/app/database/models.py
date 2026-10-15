@@ -144,7 +144,10 @@ class Organization(Base):
 
 
 class OrganizationMember(Base):
-    """A user's membership and role in an organization (Story 12.1)."""
+    """A user's membership and role in an organization (Story 12.1).
+
+    Story 12.15: ``external`` — a person invited to one or more of the organization's projects only
+    (``project_members`` rows with ``access``). Never a regular member: see ``app/services/access.py``."""
 
     __tablename__ = "organization_members"
 
@@ -156,7 +159,9 @@ class OrganizationMember(Base):
     organization = relationship("Organization", back_populates="members")
 
     __table_args__ = (
-        CheckConstraint("role IN ('owner', 'admin', 'reviewer', 'member')", name="ck_organization_member_role"),
+        CheckConstraint(
+            "role IN ('owner', 'admin', 'reviewer', 'member', 'external')", name="ck_organization_member_role"
+        ),
         Index("idx_organization_members_org", "organization_id"),
     )
 
@@ -167,6 +172,9 @@ class OrganizationInvitation(Base):
     Only the SHA-256 of the token is stored; the raw token exists in the invite link only.
     ``organization_id`` is NULL for a company that has no organization yet: the organization
     named ``organization_name`` is created on acceptance and the invitee becomes its ``owner``.
+
+    Story 12.15: ``project_id`` set → project invitation: role ``external``, the invitee is assigned to
+    that project only (``project_members.access`` = ``viewer``). ``rejected_at``: the invitee said no.
     """
 
     __tablename__ = "organization_invitations"
@@ -182,16 +190,22 @@ class OrganizationInvitation(Base):
     accepted_at = Column(DateTime)
     revoked_at = Column(DateTime)
     created_at = Column(DateTime, nullable=False, default=func.now())
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"))  # Story 12.15
+    rejected_at = Column(DateTime)  # Story 12.15
 
     organization = relationship("Organization")
+    project = relationship("Project")
 
     __table_args__ = (
-        CheckConstraint("role IN ('owner', 'admin', 'reviewer', 'member')", name="ck_organization_invitation_role"),
+        CheckConstraint(
+            "role IN ('owner', 'admin', 'reviewer', 'member', 'external')", name="ck_organization_invitation_role"
+        ),
         CheckConstraint(
             "organization_id IS NOT NULL OR organization_name IS NOT NULL", name="ck_organization_invitation_target"
         ),
         Index("idx_organization_invitations_org", "organization_id"),
         Index("idx_organization_invitations_email", "email"),
+        Index("idx_organization_invitations_project", "project_id"),
     )
 
 
@@ -237,9 +251,12 @@ class ProjectMember(Base):
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     role = Column(String(50), nullable=False)
     created_at = Column(DateTime, nullable=False, default=func.now())
+    # Story 12.15: an external person's level on the project ('viewer' / 'contributor'); NULL for members
+    access = Column(String(20))
 
     __table_args__ = (
         Index("idx_project_members_user", "user_id"),
+        CheckConstraint("access IS NULL OR access IN ('viewer', 'contributor')", name="ck_project_member_access"),
     )
 
 
@@ -358,6 +375,8 @@ class Source(Base):
     webhook_id = Column(String(255))
     recording_url = Column(String(1000))  # Story 7.13: external recording link (e.g. Fathom share URL)
     thumbnail_key = Column(String(500))  # Story 13.12: storage key of the generated thumbnail (JPEG), None until made
+    # Story 12.15: user who added the meeting (upload, transcript, Fathom import); NULL for platform ingestion
+    created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
 
     # Email-specific
     email_from = Column(String(500))
@@ -386,6 +405,7 @@ class Source(Base):
     # Relationships
     project = relationship("Project", back_populates="sources")
     items = relationship("ProjectItem", back_populates="source")
+    creator = relationship("User", foreign_keys=[created_by])  # Story 12.15
 
     __table_args__ = (
         CheckConstraint(
@@ -697,6 +717,8 @@ class ProjectItem(Base):
     # Story 13.7: extraction run that produced the item; NULL = not produced by a versioned
     # extraction (manual items, email/document items) and always shown
     extraction_run_id = Column(GUID(), ForeignKey("extraction_runs.id", ondelete="CASCADE"))
+    # Story 12.15: user who added the item by hand; NULL for extracted / imported items
+    created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
 
     # Story 12.6: review by role. Extracted items start 'pending' (set by the extraction code);
     # existing / manual items are 'approved'. ``original`` keeps the AI's values the first time a
@@ -748,6 +770,7 @@ class ProjectItem(Base):
     project = relationship("Project", back_populates="items")
     source = relationship("Source", back_populates="items")
     reviewer = relationship("User", foreign_keys=[reviewed_by])
+    creator = relationship("User", foreign_keys=[created_by])  # Story 12.15
 
     __table_args__ = (
         CheckConstraint("confidence BETWEEN 0 AND 1", name="ck_project_items_confidence_range"),

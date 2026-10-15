@@ -153,6 +153,7 @@ async def upload_document(
         id=source_id,
         project_id=project_id,
         owner_organization_id=acting_organization_id(db, user, project),  # Story 12.4: internal by default
+        created_by=user.id,  # Story 12.15
         source_type="document",
         title=title or file.filename,
         raw_content=raw_text,

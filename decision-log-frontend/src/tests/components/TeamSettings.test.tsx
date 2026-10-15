@@ -22,10 +22,10 @@ const ASSIGNMENTS = {
   assignments: [{ user_id: 'u2', project_id: 'p1' }],
 }
 
-function setup(role: 'owner' | 'admin' | 'member', slug = 'acme') {
+function setup(role: 'owner' | 'admin' | 'member', slug = 'acme', members: Array<Record<string, string>> = MEMBERS) {
   vi.spyOn(api, 'get').mockImplementation(async (url: string) => {
     if (url === '/organizations/me') return { data: [{ id: 'org-1', name: 'Acme', slug, role }] }
-    if (url.endsWith('/members')) return { data: { members: MEMBERS } }
+    if (url.endsWith('/members')) return { data: { members } }
     if (url.endsWith('/project-assignments')) return { data: ASSIGNMENTS }
     if (url.endsWith('/invitations')) return { data: { invitations: [] } }
     return { data: {} }
@@ -46,6 +46,16 @@ describe('TeamSettings (Story 12.5)', () => {
     localStorage.clear()
     useOrganizationStore.setState({ activeOrganizationId: null })
     useAuthStore.getState().setAuth({ id: 'u1', email: 'ana@x.com', name: 'Ana', role: 'client' }, 'jwt')
+  })
+
+  it('Story 12.15: an external person has the badge, no role select and no project checkboxes', async () => {
+    const guest = { user_id: 'u3', name: 'Gina Guest', email: 'gina@client.com', role: 'external', joined_at: '2026-01-03T00:00:00Z' }
+    setup('owner', 'acme', [...MEMBERS, guest])
+    expect(await screen.findByText('Gina Guest')).toBeInTheDocument()
+    expect(screen.getByTestId('external-badge')).toHaveTextContent('External')
+    expect(screen.queryByLabelText('Role Gina Guest')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Role Bia Member')).toBeInTheDocument()
+    expect(screen.getByText(/Access only to the projects they were invited to/)).toBeInTheDocument()
   })
 
   it('members get a notice and no data requests', async () => {

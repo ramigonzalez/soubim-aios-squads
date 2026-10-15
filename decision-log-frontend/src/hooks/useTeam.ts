@@ -101,6 +101,11 @@ export const invitationService = {
     (await api.post<InvitationPreview>('/invitations/public/preview', { token })).data,
   acceptNewUser: async (token: string, name: string, password: string): Promise<TokenResponse> =>
     (await api.post<TokenResponse>('/invitations/public/accept', { token, name, password })).data,
-  acceptExisting: async (token: string): Promise<{ id: string; name: string; slug: string }> =>
+  acceptExisting: async (
+    token: string
+  ): Promise<{ id: string; name: string; slug: string; project_id?: string | null }> =>
     (await api.post('/invitations/accept', { token })).data,
+  /** Story 12.15: reject a project invitation (no account needed) */
+  reject: async (token: string): Promise<{ status: string }> =>
+    (await api.post('/invitations/public/reject', { token })).data,
 }

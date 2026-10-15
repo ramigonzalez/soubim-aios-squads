@@ -45,6 +45,16 @@ describe('ProjectItemRow', () => {
     expect(screen.getByTitle('Decision')).toBeInTheDocument()
   })
 
+  it('Story 12.15: shows who added the item with the External badge when they are external', () => {
+    const { rerender } = render(<ProjectItemRow item={makeItem({ created_by_name: 'Gina Guest' })} onClick={mockOnClick} />)
+    expect(screen.queryByTestId('external-badge')).not.toBeInTheDocument()
+    rerender(
+      <ProjectItemRow item={makeItem({ created_by_name: 'Gina Guest', created_by_external: true })} onClick={mockOnClick} />
+    )
+    expect(screen.getByTestId('external-badge')).toHaveTextContent('External')
+    expect(screen.getByText('Gina Guest')).toBeInTheDocument()
+  })
+
   it('shows the meeting date of a V2 source item, not its import date', () => {
     const item = makeItem({
       created_at: '2026-10-04T03:00:00Z',

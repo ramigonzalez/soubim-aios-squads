@@ -31,6 +31,7 @@ export const GOOGLE_ERROR_REASONS = [
   'google_account_in_use',
   'organization_blocked', // Story 12.13
   'operator_cannot_join', // Story 12.13
+  'already_member', // Story 12.15: project invitation, already a member of the organization
 ] as const
 
 function reasonKey(reason: string | undefined): string {

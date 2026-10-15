@@ -45,5 +45,6 @@
     "by": "por {{name}}",
     "note": "Somente os itens da versão ativa aparecem no projeto. Edições e revisões pertencem à versão em que foram feitas.",
     "error": "Não foi possível atualizar as versões."
-  }
+  },
+  "addedBy": "Adicionada por {{name}}"
 }
