@@ -252,7 +252,9 @@ def _accept_invitation(
             raise GoogleLoginError("account_disabled", 403)  # soft-deleted: never revived
         _check_sub(db, None, sub)
         unusable_password = hash_password(secrets.token_urlsafe(32))  # Google-only account: no known password
-        user, org = inv.create_invited_user(db, invitation, name or email.split("@", 1)[0], unusable_password)
+        user, org = inv.create_invited_user(
+            db, invitation, name or email.split("@", 1)[0], unusable_password, has_password=False
+        )
         _bind_sub(db, user, sub)
         return LoginResult(user=user, organization=org)
     _check_sub(db, user, sub)

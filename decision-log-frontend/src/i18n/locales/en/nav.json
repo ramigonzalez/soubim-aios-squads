@@ -13,5 +13,6 @@
     "client": "client"
   },
   "platform": "Platform",
-  "paymentPending": "Payment pending. Please contact support to keep access to {{organization}}."
+  "paymentPending": "Payment pending. Please contact support to keep access to {{organization}}.",
+  "changePassword": "Change password"
 }

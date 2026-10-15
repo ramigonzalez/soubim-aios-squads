@@ -99,6 +99,9 @@ class User(Base):
     # Story 12.13: the platform operator (runs /platform). Set only by
     # scripts/create_platform_operator.py, never through the API. Grants no access to tenant data.
     is_platform_operator = Column(Boolean, nullable=False, default=False, server_default=sql_false())
+    # Story 12.13: false for accounts created with an unusable random password (Google sign-in,
+    # create_platform_operator --no-password); they cannot use "change password" (setting a first one is phase 2)
+    has_password = Column(Boolean, nullable=False, default=True, server_default=text("true"))
 
     __table_args__ = (
         CheckConstraint("role IN ('director', 'architect', 'client')", name="ck_user_role"),

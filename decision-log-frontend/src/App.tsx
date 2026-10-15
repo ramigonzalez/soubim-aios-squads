@@ -22,6 +22,7 @@ const TeamSettings = lazy(() => import('./pages/TeamSettings'))
 const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
 const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
 const Platform = lazy(() => import('./pages/Platform'))
+const ChangePassword = lazy(() => import('./pages/ChangePassword'))
 
 const queryClient = new QueryClient()
 
@@ -124,6 +125,16 @@ function AppRoutes() {
             <ProtectedRoute>
               <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
                 <TeamSettings />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/password"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="flex justify-center py-16">{t('loading')}</div>}>
+                <ChangePassword />
               </Suspense>
             </ProtectedRoute>
           }

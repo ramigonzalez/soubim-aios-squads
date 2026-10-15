@@ -61,6 +61,7 @@ def ensure_operator(
             password_hash=hash_password(password or secrets.token_urlsafe(32)),
             role="client",  # legacy column, not used for authorization
             is_platform_operator=True,
+            has_password=password is not None,
         )
         db.add(user)
         db.commit()
@@ -74,6 +75,7 @@ def ensure_operator(
     if reset_password:
         password = secrets.token_urlsafe(PASSWORD_BYTES)
         user.password_hash = hash_password(password)
+        user.has_password = True
     db.commit()
     db.refresh(user)
     return Result(user=user, created=False, promoted=promoted, password=password)

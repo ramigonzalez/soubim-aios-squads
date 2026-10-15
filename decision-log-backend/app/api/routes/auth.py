@@ -17,8 +17,11 @@ from app.services import google_login
 from app.utils.security import create_access_token
 from app.services.auth_service import (
     authenticate_user,
+    change_password as change_user_password,
+    get_user_by_id,
     user_response,
     AuthenticationError,
+    ChangePasswordError,
     UserNotFoundError,
 )
 from app.services.organizations import ORGANIZATION_BLOCKED, is_account_blocked
@@ -109,6 +112,33 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
 
     # Story 12.13: a blocked account never gets here (the auth middleware answers 403 organization_blocked)
     return user_response(db, user)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., max_length=1024)
+    new_password: str = Field(..., max_length=1024)
+
+
+@router.post("/change-password", status_code=204)
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Story 12.13: the logged-in user changes their own password.
+
+    RATE LIMITED like the login (Story 13.11): per IP in the middleware and per email here (the same
+    ``login_email`` bucket, so it cannot be used to guess the password faster than the login).
+    400 with a stable code (see ``auth_service.change_password``). Other sessions keep working: JWTs are
+    stateless and there is no revocation mechanism yet (story 12.13, Assumptions & gaps).
+    """
+    await enforce_login_email_limit(current_user.email)
+    user = get_user_by_id(db, str(current_user.id))
+    try:
+        change_user_password(db, user, body.current_password, body.new_password)
+    except ChangePasswordError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.code)
+    logger.info("Password changed for user %s", user.id)
 
 
 @router.post("/logout", status_code=204)

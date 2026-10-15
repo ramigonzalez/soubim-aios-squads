@@ -267,7 +267,7 @@ def accept_as_new_user(db: Session, token: str, name: str, password: str) -> Tup
 
 
 def create_invited_user(
-    db: Session, invitation: OrganizationInvitation, name: str, password_hash: str
+    db: Session, invitation: OrganizationInvitation, name: str, password_hash: str, has_password: bool = True
 ) -> Tuple[User, Organization]:
     """Claim the invitation, create the invitee's account and membership. Commits.
 
@@ -277,7 +277,7 @@ def create_invited_user(
     ensure_can_accept(db, invitation)  # Story 12.13
     _claim(db, invitation)
     # users.role is legacy (not used for authorization since 12.2); invitees get the least privileged value
-    user = User(email=invitation.email, password_hash=password_hash, name=name, role="client")
+    user = User(email=invitation.email, password_hash=password_hash, name=name, role="client", has_password=has_password)
     db.add(user)
     try:
         db.flush()

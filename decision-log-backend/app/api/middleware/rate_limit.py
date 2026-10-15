@@ -105,7 +105,8 @@ def _select_rule(request: Request) -> Optional[Rule]:
     path = request.url.path
     if path.startswith(_EXEMPT_PREFIXES) or request.method == "OPTIONS":
         return None
-    if path == "/api/auth/login" and request.method == "POST":
+    # Story 12.13: change-password checks the current password, so it gets the login's per-IP limit
+    if path in ("/api/auth/login", "/api/auth/change-password") and request.method == "POST":
         return _LOGIN
     for prefix, rule in _PUBLIC_RULES:
         if path.startswith(prefix):

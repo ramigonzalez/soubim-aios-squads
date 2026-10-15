@@ -18,6 +18,47 @@ class UserNotFoundError(Exception):
     pass
 
 
+class ChangePasswordError(Exception):
+    """Story 12.13: change-password refused; ``code`` is a stable reason the frontend translates."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+def _password_matches(password: str, password_hash: str) -> bool:
+    """``verify_password`` that answers False instead of raising (bcrypt 5 raises above 72 bytes,
+    malformed hashes raise too)."""
+    try:
+        return verify_password(password, password_hash)
+    except ValueError:
+        return False
+
+
+def change_password(db: Session, user: User, current_password: str, new_password: str) -> None:
+    """Story 12.13: the logged-in user changes their own password. Commits.
+
+    Raises ChangePasswordError: ``no_password_set`` (account without a usable password: Google sign-in /
+    ``--no-password``), ``invalid_current_password`` (nothing else is revealed), ``password_too_short`` /
+    ``password_too_long`` (same rules as the invitation accept, Story 12.5), ``password_unchanged``.
+    Passwords are never logged.
+    """
+    from app.services.invitations import PASSWORD_MAX_BYTES, PASSWORD_MIN_LENGTH
+
+    if not user.has_password:
+        raise ChangePasswordError("no_password_set")
+    if not _password_matches(current_password, user.password_hash):
+        raise ChangePasswordError("invalid_current_password")
+    if len(new_password) < PASSWORD_MIN_LENGTH:
+        raise ChangePasswordError("password_too_short")
+    if len(new_password.encode("utf-8")) > PASSWORD_MAX_BYTES:
+        raise ChangePasswordError("password_too_long")
+    if new_password == current_password:
+        raise ChangePasswordError("password_unchanged")
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+
 def authenticate_user(db: Session, email: str, password: str) -> User:
     """
     Authenticate user by email and password.
