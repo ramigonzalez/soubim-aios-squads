@@ -18,6 +18,13 @@ export default function ChangePassword() {
   const [done, setDone] = useState(false)
   const change = useChangePassword()
 
+  // editing a field hides the previous validation or API error
+  const edit = (setter: (value: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value)
+    setLocalError(null)
+    if (change.isError) change.reset()
+  }
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     setDone(false)
@@ -60,7 +67,7 @@ export default function ChangePassword() {
               autoComplete="current-password"
               required
               value={current}
-              onChange={e => setCurrent(e.target.value)}
+              onChange={edit(setCurrent)}
               className={field}
             />
           </div>
@@ -74,7 +81,7 @@ export default function ChangePassword() {
               autoComplete="new-password"
               required
               value={next}
-              onChange={e => setNext(e.target.value)}
+              onChange={edit(setNext)}
               className={field}
             />
             <p className="mt-1 text-xs text-gray-500">{t('changePassword.hint', { n: PASSWORD_MIN_LENGTH })}</p>
@@ -89,7 +96,7 @@ export default function ChangePassword() {
               autoComplete="new-password"
               required
               value={confirm}
-              onChange={e => setConfirm(e.target.value)}
+              onChange={edit(setConfirm)}
               className={field}
             />
           </div>
