@@ -1,16 +1,15 @@
 """AI summary generation service for ingested sources.
 
-Uses Anthropic Claude API to generate one-line summaries from source content.
+Uses Claude (via the configured LLM provider, Story 13.17) to generate one-line summaries from source content.
 Runs as a background task — creates its own DB session.
 """
 
 import logging
 
-from anthropic import Anthropic
-
 from app.config import settings
 from app.database.models import Source
 from app.database.session import SessionLocal
+from app.services.llm_client import get_llm_client
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ def generate_ai_summary(source_id: str) -> None:
         text_preview = source.raw_content[:2000]
         prompt = f"Summarize this meeting transcript in ONE sentence (max 100 words):\n\n{text_preview}"
 
-        client = Anthropic(api_key=settings.anthropic_api_key)
+        client = get_llm_client()
         response = client.messages.create(
             model=settings.llm_model,
             max_tokens=150,

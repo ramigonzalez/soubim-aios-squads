@@ -15,7 +15,6 @@ from html.parser import HTMLParser
 from typing import Optional
 from uuid import uuid4
 
-from anthropic import Anthropic
 from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session
 
@@ -23,6 +22,7 @@ from app.config import settings
 from app.database.models import Source
 from app.database.session import SessionLocal
 from app.services.email_matcher import email_matcher_service
+from app.services.llm_client import get_llm_client
 from app.services.gmail_auth import gmail_auth_service
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ class GmailPollerService:
     """
 
     def __init__(self):
-        self.anthropic = Anthropic(api_key=settings.anthropic_api_key)
+        self.anthropic = get_llm_client()
         self._api_call_count = 0
 
     def run_poll_cycle(self) -> dict:

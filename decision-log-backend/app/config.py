@@ -1,7 +1,10 @@
 """Application configuration using Pydantic Settings."""
 
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 from typing import Optional, List, Dict
+
+from app.services.llm_client import DEFAULT_OPENROUTER_BASE_URL, check_provider_key
 
 
 class Settings(BaseSettings):
@@ -15,11 +18,14 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 10080  # 7 days
 
-    # Anthropic API
-    anthropic_api_key: str
-    # Story 13.17: OpenRouter key (declared so .env files can hold it; the client switch comes with 13.17)
+    # LLM provider (Story 13.17): "anthropic" (Claude API, ANTHROPIC_API_KEY) or "openrouter"
+    # (OpenRouter's Anthropic-compatible endpoint, OPENROUTER_API_KEY). Only the chosen provider's key is required.
+    llm_provider: str = "anthropic"
+    anthropic_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
-    # Story 7.11: one model setting for every Claude call (extraction, summaries, email, documents)
+    openrouter_base_url: str = DEFAULT_OPENROUTER_BASE_URL
+    # Story 7.11: one model setting for every Claude call (extraction, summaries, email, documents).
+    # With LLM_PROVIDER=openrouter use the OpenRouter id, e.g. anthropic/claude-opus-5.5 (13.17).
     llm_model: str = "claude-opus-5-5"
     extraction_max_tokens: int = 64000  # streamed; a 98-min meeting needed ~11k output tokens
     extraction_effort: str = "high"
@@ -113,10 +119,23 @@ class Settings(BaseSettings):
     rate_limit_public_link: str = "60/minute"
     rate_limit_default: str = "600/minute"
 
+    @field_validator("llm_provider", mode="before")
+    @classmethod
+    def _normalize_llm_provider(cls, value):
+        return value.strip().lower() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def _require_llm_provider_key(self):
+        # Story 13.17: fail at startup (API and worker) when the chosen provider has no key.
+        check_provider_key(self.llm_provider, self.anthropic_api_key, self.openrouter_api_key)
+        return self
+
     class Config:
         # Load from .env.development first (for development), then fall back to .env
         env_file = ".env.development"
         case_sensitive = False
+        # Startup errors (e.g. missing LLM key, 13.17) go to logs: never echo setting values (secrets).
+        hide_input_in_errors = True
 
 
 # Try to load settings, falling back to .env if .env.development doesn't exist

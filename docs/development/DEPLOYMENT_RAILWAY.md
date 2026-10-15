@@ -49,7 +49,10 @@ Set on **both** `api` and `worker` unless noted.
 
 - Database: `DATABASE_URL` -> reference the Postgres service: `${{postgres.DATABASE_URL}}` (use the private-network URL)
 - Auth: `JWT_SECRET_KEY` (>= 32 random chars: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`), `JWT_ALGORITHM`, `JWT_EXPIRATION_MINUTES`
-- LLM: `ANTHROPIC_API_KEY` (**the rotated one**), `LLM_MODEL`, `EXTRACTION_MAX_TOKENS`, `EXTRACTION_EFFORT`
+- LLM (13.17), on **both** `api` and `worker` (the worker runs extraction): `LLM_PROVIDER=openrouter`, `OPENROUTER_API_KEY` (secret), `LLM_MODEL=anthropic/claude-opus-5.5`, plus `EXTRACTION_MAX_TOKENS`, `EXTRACTION_EFFORT`. `OPENROUTER_BASE_URL` is optional (default `https://openrouter.ai/api`).
+  - Only the chosen provider's key is required: with `LLM_PROVIDER=openrouter`, `ANTHROPIC_API_KEY` may stay unset or keep its placeholder (`not-set-until-story-13.17`); it is ignored.
+  - Startup (API and worker) fails with `LLM_PROVIDER=<p> needs <KEY>, which is not set` when the chosen provider has no key.
+  - Direct Claude API instead: `LLM_PROVIDER=anthropic` (the default), `ANTHROPIC_API_KEY`, `LLM_MODEL=claude-opus-5-5`.
 - Webhooks: `TACTIQ_WEBHOOK_SECRET` (currently required by `Settings`)
 - Fathom (13.3): `FATHOM_CLIENT_ID`, `FATHOM_CLIENT_SECRET`, `FATHOM_REDIRECT_URI` (both: the worker refreshes tokens for 13.4 imports); `FRONTEND_URL` (API: the frontend origin the OAuth callback redirects back to)
 - Google sign-in (12.8, API only, optional): `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` = `https://<api-domain>/api/auth/google/callback` (identical to an Authorized redirect URI of the Google OAuth client); uses `FRONTEND_URL` too

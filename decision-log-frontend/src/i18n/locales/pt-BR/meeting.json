@@ -40,6 +40,7 @@
     "items_other": "{{count}} itens",
     "tokens": "{{input}} tokens de entrada / {{output}} de saída",
     "cost": "${{cost}} (estimado)",
+    "costUnknown": "custo desconhecido",
     "unknownModel": "Importada",
     "by": "por {{name}}",
     "note": "Somente os itens da versão ativa aparecem no projeto. Edições e revisões pertencem à versão em que foram feitas.",

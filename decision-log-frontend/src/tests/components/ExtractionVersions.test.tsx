@@ -55,6 +55,15 @@ describe('ExtractionVersions (Story 13.7)', () => {
     expect(screen.getAllByText('Active')).toHaveLength(1)
   })
 
+  it('shows the estimated cost, or "cost unknown" for a model without a price (Story 13.17)', async () => {
+    respond({ runs: [{ ...run(2, true, 5), estimated_cost_usd: 0.0138 }, { ...run(1, false, 3), estimated_cost_usd: null }] })
+    render(<ExtractionVersions sourceId="s1" />)
+    await userEvent.click(screen.getByRole('button', { name: /Versions/ }))
+
+    expect(screen.getByText('$0.0138 (estimated)')).toBeInTheDocument()
+    expect(screen.getAllByText('cost unknown')).toHaveLength(1)
+  })
+
   it('an admin switches to another version after confirming', async () => {
     respond()
     render(<ExtractionVersions sourceId="s1" />)
