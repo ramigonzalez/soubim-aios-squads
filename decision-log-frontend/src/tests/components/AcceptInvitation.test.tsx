@@ -111,4 +111,20 @@ describe('AcceptInvitation (Story 12.5)', () => {
     expect(await screen.findByRole('button', { name: 'Accept invitation' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument()
   })
+
+  it.each([
+    ['organization_blocked', 'This organization is suspended. Contact the person who invited you.'],
+    ['operator_cannot_join', 'The platform operator account cannot join organizations.'],
+  ])('Story 12.13: a refused accept (%s) shows a translated message', async (detail, message) => {
+    vi.spyOn(api, 'post').mockImplementation(async (url: string) => {
+      if (url === '/invitations/public/preview') return preview()
+      throw { response: { status: 403, data: { detail } } }
+    })
+    renderPage()
+    await userEvent.type(await screen.findByPlaceholderText('Your name'), 'New Person')
+    await userEvent.type(screen.getByPlaceholderText(/Password/), 'password123')
+    await userEvent.click(screen.getByRole('button', { name: 'Create account and join' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(useAuthStore.getState().isAuthenticated).toBe(false)
+  })
 })

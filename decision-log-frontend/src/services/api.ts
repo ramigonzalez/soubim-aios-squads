@@ -29,8 +29,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (isOrganizationBlocked(error) && error.config?.url !== '/auth/login') {
-      // Story 12.13: the session ends; the login page shows "conta suspensa"
+    // Story 12.13: the session ends; the login page shows "conta suspensa". Not for the login itself or an
+    // invitation refused because its organization is blocked (the page shows the message, the session is fine).
+    const url = error.config?.url ?? ''
+    if (isOrganizationBlocked(error) && url !== '/auth/login' && !url.startsWith('/invitations')) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('auth_user')
       localStorage.removeItem(ACTIVE_ORGANIZATION_KEY)

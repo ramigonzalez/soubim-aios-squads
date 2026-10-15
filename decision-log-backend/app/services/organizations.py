@@ -115,7 +115,8 @@ def ensure_default_organization(
         db.flush()
 
     members = {m.user_id for m in db.query(OrganizationMember.user_id).all()}
-    for user in db.query(User).filter(User.deleted_at.is_(None)).all():
+    # Story 12.13: the platform operator belongs to no organization
+    for user in db.query(User).filter(User.deleted_at.is_(None), User.is_platform_operator.is_(False)).all():
         if user.id not in members:
             db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=membership_role_for(user.role)))
 

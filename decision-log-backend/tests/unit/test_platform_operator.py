@@ -273,6 +273,125 @@ class TestBlocked:
         assert client.get("/api/platform/organizations", headers=auth(world["operator"])).status_code == 200
 
 
+def invite_to(client, world, email):
+    r = client.post("/api/invitations", json={"email": email, "organization_id": str(world["acme"].id)},
+                    headers=auth(world["admin"]))
+    assert r.status_code == 201
+    return r.json()["invite_url"].rsplit("/invite/", 1)[1]
+
+
+def pending_invitation(db, email):
+    db.expire_all()
+    return db.query(OrganizationInvitation).filter(OrganizationInvitation.email == email).one()
+
+
+class TestSecurityReviewFixes:
+    """Story 12.13 security review (Low findings 1-4)."""
+
+    # 1. accepting an invitation into a blocked organization
+    def test_new_user_cannot_join_a_blocked_organization(self, client, world):
+        token = invite_to(client, world, "new@x.com")
+        set_status(world["db"], world["acme"], "blocked")
+        r = client.post("/api/invitations/public/accept", json={"token": token, "name": "N", "password": PASSWORD})
+        assert r.status_code == 403 and r.json()["detail"] == "organization_blocked"
+        world["db"].expire_all()
+        assert world["db"].query(User).filter(User.email == "new@x.com").count() == 0
+        assert pending_invitation(world["db"], "new@x.com").accepted_at is None
+
+    def test_existing_user_cannot_join_a_blocked_organization(self, client, world):
+        lonely = make_user(world["db"], "lonely@x.com")
+        world["db"].commit()
+        token = invite_to(client, world, "lonely@x.com")
+        set_status(world["db"], world["acme"], "blocked")
+        r = client.post("/api/invitations/accept", json={"token": token}, headers=auth(lonely))
+        assert r.status_code == 403 and r.json()["detail"] == "organization_blocked"
+        world["db"].expire_all()
+        assert world["db"].query(OrganizationMember).filter(OrganizationMember.user_id == lonely.id).count() == 0
+
+    def test_google_cannot_join_a_blocked_organization(self, client, world):
+        invite_to(client, world, "new@x.com")
+        set_status(world["db"], world["acme"], "blocked")
+        invitation = pending_invitation(world["db"], "new@x.com")
+        with pytest.raises(google_login.GoogleLoginError) as exc:
+            google_login._accept_invitation(world["db"], invitation, "new@x.com", "New", "sub-1")
+        assert (exc.value.reason, exc.value.status) == ("organization_blocked", 403)
+        world["db"].expire_all()
+        assert world["db"].query(User).filter(User.email == "new@x.com").count() == 0
+
+    def test_new_company_invitations_are_not_affected(self, client, world):
+        set_status(world["db"], world["acme"], "blocked")
+        r = client.post("/api/platform/invitations", json={"email": "ceo@newco.com", "organization_name": "NewCo"},
+                        headers=auth(world["operator"]))
+        token = r.json()["invite_url"].rsplit("/invite/", 1)[1]
+        done = client.post("/api/invitations/public/accept", json={"token": token, "name": "C", "password": PASSWORD})
+        assert done.status_code == 200
+
+    # 2. public share links of a blocked organization
+    def test_share_link_of_a_blocked_organization_is_404(self, client, world):
+        from datetime import timedelta
+
+        from app.database.models import SharedLink
+
+        db = world["db"]
+        db.add(SharedLink(project_id=world["project"].id, share_token="tok-acme",
+                          expires_at=datetime.utcnow() + timedelta(days=30)))
+        db.commit()
+        assert client.get("/api/shared/milestones/tok-acme").status_code == 200
+        set_status(db, world["acme"], "payment_pending")
+        assert client.get("/api/shared/milestones/tok-acme").status_code == 200
+        set_status(db, world["acme"], "blocked")
+        r = client.get("/api/shared/milestones/tok-acme")
+        assert r.status_code == 404 and "Acme Tower" not in r.text
+
+    # 4. the platform operator never joins an organization
+    def test_operator_email_cannot_accept_as_new_user(self, client, world):
+        token = invite_to(client, world, "operator@platform.com")
+        r = client.post("/api/invitations/public/accept", json={"token": token, "name": "N", "password": PASSWORD})
+        assert r.status_code == 403 and r.json()["detail"] == "operator_cannot_join"
+
+    def test_logged_in_operator_cannot_accept(self, client, world):
+        token = invite_to(client, world, "operator@platform.com")
+        r = client.post("/api/invitations/accept", json={"token": token}, headers=auth(world["operator"]))
+        assert r.status_code == 403 and r.json()["detail"] == "operator_cannot_join"
+        world["db"].expire_all()
+        assert world["db"].query(OrganizationMember).filter(
+            OrganizationMember.user_id == world["operator"].id).count() == 0
+        assert pending_invitation(world["db"], "operator@platform.com").accepted_at is None
+
+    def test_operator_cannot_accept_with_google(self, client, world):
+        invite_to(client, world, "operator@platform.com")
+        invitation = pending_invitation(world["db"], "operator@platform.com")
+        with pytest.raises(google_login.GoogleLoginError) as exc:
+            google_login._accept_invitation(world["db"], invitation, "operator@platform.com", "Op", "sub-op")
+        assert (exc.value.reason, exc.value.status) == ("operator_cannot_join", 403)
+        world["db"].expire_all()
+        assert world["db"].query(User).filter(User.email == "operator@platform.com").one().google_sub is None
+
+    def test_operator_cannot_accept_a_new_company_invitation(self, client, world):
+        r = client.post("/api/platform/invitations",
+                        json={"email": "operator@platform.com", "organization_name": "Op Co"},
+                        headers=auth(world["operator"]))
+        token = r.json()["invite_url"].rsplit("/invite/", 1)[1]
+        r = client.post("/api/invitations/accept", json={"token": token}, headers=auth(world["operator"]))
+        assert r.status_code == 403 and r.json()["detail"] == "operator_cannot_join"
+        world["db"].expire_all()
+        assert world["db"].query(Organization).filter(Organization.name == "Op Co").count() == 0
+
+
+class TestDemoSeed:
+    # 3. the demo seed / backfill never puts the operator in the default organization
+    def test_default_organization_skips_the_operator(self, db_session):
+        from app.services.organizations import ensure_default_organization
+
+        operator = User(email="op@x.com", password_hash="x", name="Op", role="client", is_platform_operator=True)
+        someone = User(email="someone@x.com", password_hash="x", name="S", role="director")
+        db_session.add_all([operator, someone])
+        db_session.flush()
+        ensure_default_organization(db_session)
+        members = {m.user_id for m in db_session.query(OrganizationMember).all()}
+        assert someone.id in members and operator.id not in members
+
+
 class TestCompanyInvitations:
     def test_create_list_and_revoke(self, client, world):
         h = auth(world["operator"])
