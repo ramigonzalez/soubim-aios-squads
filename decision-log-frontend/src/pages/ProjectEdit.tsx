@@ -4,6 +4,7 @@
  * Story 6.5: Load stages/participants, orchestrate update
  * Story 12.3: Organizations with access (sharing section)
  * Story 13.16: Fathom routing rules (admins and reviewers of the project)
+ * Story 12.9: Google Drive folder (shared with the service account)
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -18,6 +19,7 @@ import { StageRow } from '../components/organisms/StageScheduleBuilder'
 import { ParticipantRow } from '../components/organisms/ParticipantRoster'
 import ProjectSharing from '../components/organisms/ProjectSharing'
 import FathomRulesSection from '../components/organisms/FathomRulesSection'
+import DriveFolderSection from '../components/organisms/DriveFolderSection'
 import api from '../services/api'
 
 export default function ProjectEdit() {
@@ -75,7 +77,6 @@ export default function ProjectEdit() {
         title: data.name,
         description: data.description,
         project_type: data.project_type,
-        drive_folder_id: data.drive_folder_id,
       })
 
       // Step 2: Replace all stages
@@ -128,7 +129,6 @@ export default function ProjectEdit() {
                   name: project.name,
                   description: project.description || '',
                   project_type: project.project_type || '',
-                  drive_folder_id: project.drive_folder_id || '',
                   stages: initialStages,
                   participants: initialParticipants,
                 }}
@@ -137,6 +137,7 @@ export default function ProjectEdit() {
                 isLoading={isSaving}
               />
               <ProjectSharing projectId={project.id} />
+              <DriveFolderSection projectId={project.id} />
             </>
           )}
           <FathomRulesSection projectId={project.id} />

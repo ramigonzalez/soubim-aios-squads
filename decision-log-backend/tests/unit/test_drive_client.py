@@ -9,6 +9,9 @@ from unittest.mock import MagicMock, patch
 
 from app.services.drive_client import DriveClient, SUPPORTED_MIME_TYPES
 
+# Story 12.9: the key may be the JSON itself (Railway) instead of a file path
+FAKE_KEY = '{"client_email": "robot@example.iam.gserviceaccount.com"}'
+
 
 # Patch targets: the actual module paths for lazy imports inside DriveClient.__init__
 _CREDS_PATH = 'google.oauth2.service_account.Credentials'
@@ -46,17 +49,18 @@ class TestDriveClientInit:
     @patch(_CREDS_PATH)
     def test_init_with_valid_credentials(self, mock_creds_cls, mock_build):
         """DriveClient initializes successfully with service account key."""
-        mock_creds_cls.from_service_account_file.return_value = MagicMock()
+        mock_creds_cls.from_service_account_info.return_value = MagicMock()
         mock_build.return_value = MagicMock()
 
-        with patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': '/fake/key.json'}):
+        with patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': FAKE_KEY}):
             client = DriveClient()
             assert client.service is not None
 
-        mock_creds_cls.from_service_account_file.assert_called_once()
+        mock_creds_cls.from_service_account_info.assert_called_once()
         mock_build.assert_called_once_with(
             'drive', 'v3',
-            credentials=mock_creds_cls.from_service_account_file.return_value,
+            credentials=mock_creds_cls.from_service_account_info.return_value,
+            cache_discovery=False,
         )
 
 
@@ -67,8 +71,8 @@ class TestDriveClientListFiles:
         """Helper to create a DriveClient with mocked credentials."""
         with patch(_BUILD_PATH) as mock_build, \
              patch(_CREDS_PATH) as mock_creds_cls, \
-             patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': '/fake/key.json'}):
-            mock_creds_cls.from_service_account_file.return_value = MagicMock()
+             patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': FAKE_KEY}):
+            mock_creds_cls.from_service_account_info.return_value = MagicMock()
             mock_service = MagicMock()
             mock_build.return_value = mock_service
             client = DriveClient()
@@ -111,8 +115,8 @@ class TestDriveClientVerifyAccess:
         """Helper to create a DriveClient with mocked credentials."""
         with patch(_BUILD_PATH) as mock_build, \
              patch(_CREDS_PATH) as mock_creds_cls, \
-             patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': '/fake/key.json'}):
-            mock_creds_cls.from_service_account_file.return_value = MagicMock()
+             patch.dict(os.environ, {'GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY': FAKE_KEY}):
+            mock_creds_cls.from_service_account_info.return_value = MagicMock()
             mock_service = MagicMock()
             mock_build.return_value = mock_service
             client = DriveClient()

@@ -115,11 +115,6 @@
         "infrastructure": "Infraestrutura"
       }
     },
-    "drive": {
-      "label": "ID da pasta do Google Drive",
-      "placeholder": "ex.: 1a2b3c4d5e6f7g8h9i0j",
-      "help": "Cole o ID da pasta do Google Drive para ativar o monitoramento automático de documentos"
-    },
     "cancel": "Cancelar",
     "saving": "Salvando...",
     "update": "Salvar alterações",
@@ -163,6 +158,41 @@
       "invalid": "Confira o valor: não pode ficar vazio nem passar de 200 caracteres, um e-mail precisa de @ e um domínio não tem @.",
       "duplicate": "Esta regra já existe.",
       "generic": "Não foi possível salvar a regra. Tente novamente."
+    }
+  },
+  "driveFolder": {
+    "title": "Pasta do Google Drive",
+    "description": "Os documentos (PDF e DOCX) que entrarem nesta pasta, inclusive depois, aparecem em Ingestão para revisão.",
+    "notConfigured": "O Google Drive ainda não está ativado neste servidor.",
+    "howTo": {
+      "title": "Como conectar uma pasta",
+      "step1": "Abra a pasta no Google Drive e clique em Compartilhar.",
+      "step2": "Adicione este e-mail como Leitor:",
+      "step3": "Volte aqui, clique em “Atualizar lista” e escolha a pasta.",
+      "note": "Só aparecem as pastas compartilhadas por pessoas da sua organização."
+    },
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "refresh": "Atualizar lista",
+    "loadingOptions": "Buscando pastas…",
+    "select": "Pasta",
+    "selectPlaceholder": "Escolha uma pasta",
+    "save": "Usar esta pasta",
+    "saving": "Salvando…",
+    "noOptions": "Nenhuma pasta compartilhada ainda. Compartilhe a pasta com o e-mail acima e clique em “Atualizar lista”.",
+    "sharedBy": "compartilhada por {{email}}",
+    "current": "Pasta atual: {{name}}",
+    "lastChecked": "Última verificação: {{date}}",
+    "notCheckedYet": "Ainda não verificada.",
+    "open": "Abrir no Drive",
+    "remove": "Remover pasta",
+    "removeConfirm": "Parar de monitorar esta pasta? Os documentos já importados continuam no projeto.",
+    "errors": {
+      "folder_not_accessible": "Não conseguimos acessar a pasta. Ela ainda está compartilhada com o e-mail acima?",
+      "poll_failed": "A última verificação da pasta falhou. Tentaremos de novo automaticamente.",
+      "folder_not_shared_by_organization": "Esta pasta não foi compartilhada por alguém da sua organização.",
+      "drive_unavailable": "O Google Drive não respondeu. Tente de novo em instantes.",
+      "generic": "Não foi possível concluir. Tente de novo."
     }
   }
 }

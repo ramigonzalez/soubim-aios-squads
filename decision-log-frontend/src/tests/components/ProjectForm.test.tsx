@@ -31,20 +31,8 @@ describe('ProjectForm Component', () => {
     expect(screen.getByLabelText('Project Name')).toBeInTheDocument()
     expect(screen.getByLabelText('Description')).toBeInTheDocument()
     expect(screen.getByLabelText('Project Type')).toBeInTheDocument()
-    expect(screen.getByLabelText('Google Drive Folder ID')).toBeInTheDocument()
-  })
-
-  it('renders Google Drive Folder ID help text', () => {
-    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
-    expect(
-      screen.getByText(/Paste the folder ID from Google Drive/)
-    ).toBeInTheDocument()
-  })
-
-  it('renders Google Drive Folder ID placeholder', () => {
-    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
-    const input = screen.getByLabelText('Google Drive Folder ID')
-    expect(input).toHaveAttribute('placeholder', 'e.g., 1a2b3c4d5e6f7g8h9i0j')
+    // Story 12.9: the Drive folder moved to its own section (DriveFolderSection)
+    expect(screen.queryByLabelText('Google Drive Folder ID')).not.toBeInTheDocument()
   })
 
   it('shows "Create Project" button when no initialData', () => {
@@ -74,7 +62,6 @@ describe('ProjectForm Component', () => {
           name: 'Test Project',
           description: 'A description',
           project_type: 'residential',
-          drive_folder_id: 'folder-abc',
         }}
         onSubmit={mockOnSubmit}
       />
@@ -83,37 +70,20 @@ describe('ProjectForm Component', () => {
     expect(screen.getByLabelText('Project Name')).toHaveValue('Test Project')
     expect(screen.getByLabelText('Description')).toHaveValue('A description')
     expect(screen.getByLabelText('Project Type')).toHaveValue('residential')
-    expect(screen.getByLabelText('Google Drive Folder ID')).toHaveValue('folder-abc')
   })
 
-  it('submits form data including drive_folder_id', async () => {
+  it('submits form data', async () => {
     const user = userEvent.setup()
     renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
 
     await user.type(screen.getByLabelText('Project Name'), 'New Project')
     await user.type(screen.getByLabelText('Description'), 'Some description')
-    await user.type(screen.getByLabelText('Google Drive Folder ID'), 'folder-xyz')
     await user.click(screen.getByText('Create Project'))
 
     expect(mockOnSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'New Project',
         description: 'Some description',
-        drive_folder_id: 'folder-xyz',
-      })
-    )
-  })
-
-  it('submits undefined drive_folder_id when empty', async () => {
-    const user = userEvent.setup()
-    renderWithProviders(<ProjectForm onSubmit={mockOnSubmit} />)
-
-    await user.type(screen.getByLabelText('Project Name'), 'Project')
-    await user.click(screen.getByText('Create Project'))
-
-    expect(mockOnSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        drive_folder_id: undefined,
       })
     )
   })

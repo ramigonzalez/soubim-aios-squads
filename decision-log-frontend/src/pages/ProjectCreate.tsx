@@ -27,7 +27,6 @@ export default function ProjectCreate() {
         title: data.name,
         description: data.description,
         project_type: data.project_type,
-        drive_folder_id: data.drive_folder_id,
       }) as { id: string }
 
       const projectId = project?.id

@@ -12,11 +12,17 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.database.models import Source, Project
+from app.database.models import Organization, Source, Project
 from app.services.drive_client import DriveClient, SUPPORTED_MIME_TYPES
 from app.services.document_processor import DocumentProcessor
 
 logger = logging.getLogger(__name__)
+
+
+def _poll_error_code(exc: Exception) -> str:
+    """``folder_not_accessible`` when Google answers 403/404 (folder unshared or deleted), else ``poll_failed``."""
+    status = getattr(getattr(exc, "resp", None), "status", None)
+    return "folder_not_accessible" if str(status) in ("403", "404") else "poll_failed"
 
 
 class DriveMonitor:
@@ -28,17 +34,30 @@ class DriveMonitor:
         self.processor = DocumentProcessor()
 
     def poll_all_projects(self):
-        """Poll all projects with configured Drive folders."""
-        projects = self.db.query(Project).filter(
-            Project.drive_folder_id.isnot(None)
-        ).all()
+        """Poll all projects with configured Drive folders.
+
+        Story 12.9: only projects of active organizations (not blocked / payment pending), and a failing
+        project records why in ``drive_poll_error`` (shown in its settings) instead of only logging it.
+        """
+        projects = (
+            self.db.query(Project)
+            .join(Organization, Organization.id == Project.owner_organization_id)
+            .filter(Project.drive_folder_id.isnot(None), Organization.status == "active")
+            .all()
+        )
         logger.info(f"Polling {len(projects)} project folders")
 
         for project in projects:
             try:
                 self._poll_project(project)
+                if project.drive_poll_error is not None:
+                    project.drive_poll_error = None
+                    self.db.commit()
             except Exception as e:
                 logger.error(f"Failed to poll project {project.id}: {e}")
+                self.db.rollback()
+                project.drive_poll_error = _poll_error_code(e)
+                self.db.commit()
 
     def _poll_project(self, project: Project):
         """Poll a single project's Drive folder for new files."""

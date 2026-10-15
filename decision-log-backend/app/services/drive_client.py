@@ -5,8 +5,10 @@ Story 7.7: Source Curation Workflow — upload and sync capabilities
 """
 
 import io
+import json
 import logging
 import os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,36 @@ SUPPORTED_MIME_TYPES = {
 }
 
 
+FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
+
+
+def service_account_info() -> Optional[dict]:
+    """The service account key as a dict, or None when not configured.
+
+    Story 12.9: ``GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY`` holds either the key JSON itself (Railway variables)
+    or the path to the key file (local development, Story 10.3).
+    """
+    from app.config import settings
+
+    value = (settings.google_drive_service_account_key or os.getenv('GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY') or '').strip()
+    if not value:
+        return None
+    if value.startswith('{'):
+        return json.loads(value)
+    with open(value) as f:
+        return json.load(f)
+
+
+def service_account_email() -> Optional[str]:
+    """The e-mail organizations share their folders with (Story 12.9), or None when not configured."""
+    try:
+        info = service_account_info()
+    except (OSError, ValueError):
+        logger.exception("Drive service account key could not be read")
+        return None
+    return info.get('client_email') if info else None
+
+
 class DriveClient:
     """Google Drive API client using service account credentials."""
 
@@ -30,11 +62,34 @@ class DriveClient:
         from google.oauth2.service_account import Credentials
         from googleapiclient.discovery import build
 
-        key_path = os.getenv('GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY')
-        if not key_path:
+        info = service_account_info()
+        if not info:
             raise ValueError("GOOGLE_DRIVE_SERVICE_ACCOUNT_KEY not configured")
-        credentials = Credentials.from_service_account_file(key_path, scopes=SCOPES)
-        self.service = build('drive', 'v3', credentials=credentials)
+        credentials = Credentials.from_service_account_info(info, scopes=SCOPES)
+        self.service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
+
+    def list_shared_folders(self) -> list[dict]:
+        """Folders shared with the service account, with who shared them (Story 12.9).
+
+        Returns:
+            List of dicts with keys: id, name, sharingUser ({emailAddress, displayName}),
+            sharedWithMeTime, webViewLink.
+        """
+        folders: list[dict] = []
+        page_token = None
+        while True:
+            results = self.service.files().list(
+                q=f"sharedWithMe and mimeType = '{FOLDER_MIME_TYPE}' and trashed = false",
+                fields="nextPageToken, files(id, name, sharingUser(emailAddress, displayName), "
+                       "sharedWithMeTime, webViewLink)",
+                orderBy="sharedWithMeTime desc",
+                pageSize=200,
+                pageToken=page_token,
+            ).execute()
+            folders.extend(results.get('files', []))
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                return folders
 
     def list_new_files(
         self,

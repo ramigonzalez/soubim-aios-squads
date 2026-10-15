@@ -212,6 +212,8 @@ class Project(Base):
 
     # Google Drive monitoring (Story 10.3)
     drive_folder_id = Column(String(255))
+    drive_folder_name = Column(String(255))  # Story 12.9: name when chosen
+    drive_poll_error = Column(String(255))  # Story 12.9: last poll failure, NULL when it worked
     last_drive_poll = Column(DateTime)
 
     # Relationships

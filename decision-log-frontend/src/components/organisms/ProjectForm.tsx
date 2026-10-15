@@ -8,7 +8,6 @@ export interface ProjectFormData {
   name: string
   description: string
   project_type: string
-  drive_folder_id?: string
   stages: StageRow[]
   participants: ParticipantRow[]
 }
@@ -23,7 +22,7 @@ interface ProjectFormProps {
 /**
  * Project create/edit form component.
  *
- * Story 10.3: Includes optional Google Drive Folder ID field
+ * Story 12.9: the Google Drive folder is chosen in DriveFolderSection, not here
  * Story 6.5: Integrated StageScheduleBuilder and ParticipantRoster sections
  */
 export function ProjectForm({
@@ -36,7 +35,6 @@ export function ProjectForm({
   const [name, setName] = useState(initialData?.name || '')
   const [description, setDescription] = useState(initialData?.description || '')
   const [projectType, setProjectType] = useState(initialData?.project_type || '')
-  const [driveFolderId, setDriveFolderId] = useState(initialData?.drive_folder_id || '')
   const [stages, setStages] = useState<StageRow[]>(initialData?.stages || [])
   const [participants, setParticipants] = useState<ParticipantRow[]>(initialData?.participants || [])
 
@@ -46,7 +44,6 @@ export function ProjectForm({
       name: name.trim(),
       description: description.trim(),
       project_type: projectType.trim() || undefined as unknown as string,
-      drive_folder_id: driveFolderId.trim() || undefined,
       stages,
       participants,
     })
@@ -109,23 +106,6 @@ export function ProjectForm({
           </select>
         </div>
 
-        {/* Google Drive Folder ID (Story 10.3) */}
-        <div>
-          <label htmlFor="driveFolderId" className="block text-sm font-medium text-gray-700">
-            {t('form.drive.label')}
-          </label>
-          <input
-            id="driveFolderId"
-            type="text"
-            value={driveFolderId}
-            onChange={(e) => setDriveFolderId(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-            placeholder={t('form.drive.placeholder')}
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            {t('form.drive.help')}
-          </p>
-        </div>
       </div>
 
       {/* Stage Schedule (Story 6.5) */}
