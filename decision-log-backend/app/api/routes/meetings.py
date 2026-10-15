@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.middleware.auth import get_current_user
 from app.database.session import get_db
 from app.services.access import can_change_visibility, require_source_access
+from app.services.project_externals import external_user_ids
 from app.services.thumbnails import thumbnail_url
 from app.services.recordings import (
     org_id_for_source,
@@ -55,6 +56,10 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
         # Story 12.4
         "visibility": source.visibility,
         "can_change_visibility": can_change_visibility(db, user, source),
+        # Story 12.15: who added the meeting; "Externo" badge when they are an external person
+        "created_by_name": source.creator.name if source.creator else None,
+        "created_by_external": source.created_by is not None
+        and str(source.created_by) in external_user_ids(db, source.project),
     }
 
 

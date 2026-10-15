@@ -54,6 +54,15 @@ describe('Organization switcher (Story 12.5)', () => {
     expect(localStorage.getItem(ACTIVE_ORGANIZATION_KEY)).toBe('org-2')
   })
 
+  it('Story 12.15: an organization where the user is external is marked External', async () => {
+    renderNav([ORGS[0], { id: 'org-3', name: 'Client Co', slug: 'client-co', role: 'external' }])
+    const select = await screen.findByRole('combobox', { name: /organization/i })
+    expect(screen.getByRole('option', { name: 'Client Co (External)' })).toBeInTheDocument()
+    expect(screen.queryByTestId('external-badge')).not.toBeInTheDocument()
+    await userEvent.selectOptions(select, 'org-3')
+    expect(await screen.findByTestId('external-badge')).toBeInTheDocument()
+  })
+
   it('shows only the name for a single organization', async () => {
     renderNav([ORGS[0]])
     expect(await screen.findByText('souBIM')).toBeInTheDocument()

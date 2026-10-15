@@ -5,6 +5,12 @@ expires) is put in a link → the invitee opens it → existing user: logs in an
 new user: sets name + password and the account is created → membership created.
 A company without an organization is invited by a platform admin with ``organization_name``;
 the organization is created on acceptance and the invitee becomes its ``owner``.
+
+Story 12.15 — project invitation (``project_id`` set, role ``external``): an owner/admin of the project's
+owning organization invites any email to that one project. Accepting makes the invitee an ``external``
+member of the organization (unless they already are, for another project) assigned to the project with
+``project_members.access = 'viewer'``. Same token / expiry / single use / revoke as above; the invitee may
+also reject it (``rejected_at``, shown as "recusado"). One live invitation per email and project.
 """
 
 import hashlib
@@ -14,16 +20,27 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
 from fastapi import HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database.models import Organization, OrganizationInvitation, OrganizationMember, User
+from app.database.models import Organization, OrganizationInvitation, OrganizationMember, Project, ProjectMember, User
 from app.services.email_sender import EmailSender, get_email_sender
-from app.services.organizations import BLOCKED, ORGANIZATION_BLOCKED, ROLES, can_manage_role, get_role
+from app.services.organizations import (
+    BLOCKED,
+    EXTERNAL,
+    ORGANIZATION_BLOCKED,
+    ROLES,
+    can_manage_role,
+    get_role,
+)
 
 OPERATOR_CANNOT_JOIN = "operator_cannot_join"  # Story 12.13: the platform operator belongs to no organization
+# Story 12.15: project invitation conflicts
+ALREADY_MEMBER = "already_member"  # a regular member of the owning organization (already reaches its projects)
+ALREADY_INVITED = "already_invited"  # already an external person on this project
+EXTERNAL_VIEWER = "viewer"  # access given on acceptance
 from app.utils.security import hash_password, normalize_email  # noqa: F401  (normalize_email re-exported)
 
 
@@ -44,6 +61,8 @@ def status_of(invitation: OrganizationInvitation) -> str:
         return "accepted"
     if invitation.revoked_at is not None:
         return "revoked"
+    if invitation.rejected_at is not None:  # Story 12.15
+        return "rejected"
     if invitation.expires_at <= now():
         return "expired"
     return "pending"
@@ -95,7 +114,9 @@ def create_invitation(
         )
         if already:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already a member")
-        target = OrganizationInvitation.organization_id == organization.id
+        target = and_(  # Story 12.15: project invitations are separate targets
+            OrganizationInvitation.organization_id == organization.id, OrganizationInvitation.project_id.is_(None)
+        )
         org_name = organization.name
     else:
         name = (organization_name or "").strip()
@@ -140,6 +161,114 @@ def create_invitation(
         body=f"{inviter.name} invited you to join {org_name} as {role}.\nAccept: {invite_url(token)}",
     )
     return invitation, token
+
+
+def _membership(db: Session, organization_id, email: str) -> Optional[OrganizationMember]:
+    """Membership of the (active) account with ``email`` in the organization, if any."""
+    return (
+        db.query(OrganizationMember)
+        .join(User, User.id == OrganizationMember.user_id)
+        .filter(
+            OrganizationMember.organization_id == str(organization_id),
+            func.lower(User.email) == normalize_email(email),
+            User.deleted_at.is_(None),
+        )
+        .first()
+    )
+
+
+def _is_external_on(db: Session, project_id, user_id) -> bool:
+    """The user has an external assignment (``access`` set) on the project."""
+    return (
+        db.query(ProjectMember.user_id)
+        .filter(
+            ProjectMember.project_id == str(project_id),
+            ProjectMember.user_id == str(user_id),
+            ProjectMember.access.isnot(None),
+        )
+        .first()
+        is not None
+    )
+
+
+def _check_project_invitee(db: Session, project: Project, email: str) -> None:
+    """Story 12.15: 409 ``already_member`` (regular member of the owning organization) /
+    ``already_invited`` (already external on this project)."""
+    membership = _membership(db, project.owner_organization_id, email)
+    if membership is None:
+        return
+    if membership.role != EXTERNAL:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ALREADY_MEMBER)
+    if _is_external_on(db, project.id, membership.user_id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ALREADY_INVITED)
+
+
+def create_project_invitation(
+    db: Session, inviter: User, project: Project, email: str, sender: Optional[EmailSender] = None
+) -> Tuple[OrganizationInvitation, str]:
+    """Story 12.15: invite ``email`` to ``project`` as an external person (viewer). Revokes earlier live
+    (pending or rejected) invitations of the same email to the project. Authorization (owning organization's
+    owner/admin) is the route's job. Returns ``(invitation, raw_token)``."""
+    email = normalize_email(email)
+    _check_project_invitee(db, project, email)
+    for old in (
+        db.query(OrganizationInvitation)
+        .filter(
+            func.lower(OrganizationInvitation.email) == email,
+            OrganizationInvitation.project_id == project.id,
+            OrganizationInvitation.accepted_at.is_(None),
+            OrganizationInvitation.revoked_at.is_(None),
+        )
+        .all()
+    ):
+        old.revoked_at = now()
+
+    token = secrets.token_urlsafe(32)
+    invitation = OrganizationInvitation(
+        organization_id=project.owner_organization_id,
+        project_id=project.id,
+        email=email,
+        role=EXTERNAL,
+        token_hash=hash_token(token),
+        invited_by=inviter.id,
+        expires_at=now() + timedelta(days=settings.invitation_expire_days),
+    )
+    db.add(invitation)
+    db.commit()
+    db.refresh(invitation)
+
+    org_name = invitation.organization.name
+    (sender or get_email_sender()).send(
+        to=email,
+        subject=f"{org_name} invited you to the project {project.name} on DecisionLog",
+        body=f"{inviter.name} invited you to follow the project {project.name} of {org_name}.\n"
+        f"Accept: {invite_url(token)}",
+    )
+    return invitation, token
+
+
+def reject_invitation(db: Session, token: str) -> OrganizationInvitation:
+    """Story 12.15: the invitee rejects a pending project invitation (the token identifies them). Commits.
+    Organization invitations cannot be rejected (404, as if unknown)."""
+    invitation = find_by_token(db, token)
+    if invitation.project_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+    rejected = (
+        db.query(OrganizationInvitation)
+        .filter(
+            OrganizationInvitation.id == invitation.id,
+            OrganizationInvitation.accepted_at.is_(None),
+            OrganizationInvitation.revoked_at.is_(None),
+            OrganizationInvitation.rejected_at.is_(None),
+        )
+        .update({OrganizationInvitation.rejected_at: now()}, synchronize_session=False)
+    )
+    if rejected != 1:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="Invitation no longer valid")
+    db.commit()
+    db.refresh(invitation)
+    return invitation
 
 
 def find_by_token(db: Session, token: str) -> OrganizationInvitation:
@@ -196,6 +325,7 @@ def _claim(db: Session, invitation: OrganizationInvitation) -> None:
             OrganizationInvitation.id == invitation.id,
             OrganizationInvitation.accepted_at.is_(None),
             OrganizationInvitation.revoked_at.is_(None),
+            OrganizationInvitation.rejected_at.is_(None),  # Story 12.15
             OrganizationInvitation.expires_at > now(),
         )
         .update({OrganizationInvitation.accepted_at: now()}, synchronize_session=False)
@@ -217,11 +347,42 @@ def _join(db: Session, invitation: OrganizationInvitation, user: User) -> Organi
         .filter(OrganizationMember.organization_id == org.id, OrganizationMember.user_id == user.id)
         .first()
     )
-    if existing is None:
+    if invitation.project_id is not None:  # Story 12.15: external person on one project
+        if existing is not None and existing.role != EXTERNAL:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ALREADY_MEMBER)
+        if existing is None:
+            db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=EXTERNAL))
+        assignment = (
+            db.query(ProjectMember)
+            .filter(ProjectMember.project_id == invitation.project_id, ProjectMember.user_id == user.id)
+            .first()
+        )
+        if assignment is None:
+            # role 'external': an external-only row, never an assignment for a shared organization (access.py)
+            db.add(ProjectMember(project_id=invitation.project_id, user_id=user.id, role=EXTERNAL,
+                                 access=EXTERNAL_VIEWER))
+        elif assignment.access is None:  # assigned by a shared organization: add the external grant, keep that
+            assignment.access = EXTERNAL_VIEWER
+    elif existing is None:
         db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role=invitation.role))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:  # Story 12.15: two first accepts of the same user raced (membership / row exists)
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invitation accepted concurrently")
     db.refresh(invitation)
     return org
+
+
+def ensure_not_member(db: Session, invitation: OrganizationInvitation, user: User) -> None:
+    """Story 12.15: a project invitation cannot be accepted by a regular member of the organization (409
+    ``already_member``: they already reach its projects through their role)."""
+    if invitation.project_id is None:
+        return
+    role = get_role(db, user, invitation.organization_id)
+    if role is not None and role != EXTERNAL:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ALREADY_MEMBER)
 
 
 def accept_as_existing_user(db: Session, token: str, user: User) -> Organization:
@@ -233,6 +394,7 @@ def accept_for_user(db: Session, invitation: OrganizationInvitation, user: User)
     if normalize_email(user.email) != normalize_email(invitation.email):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This invitation was sent to another email")
     ensure_can_accept(db, invitation, user)  # Story 12.13
+    ensure_not_member(db, invitation, user)  # Story 12.15: before using the invitation
     _claim(db, invitation)
     return _join(db, invitation, user)
 

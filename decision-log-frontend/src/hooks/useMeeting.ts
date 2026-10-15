@@ -29,6 +29,9 @@ export interface Meeting {
   visibility?: MeetingVisibility
   /** Story 12.4: true for admins of the meeting's owner organization */
   can_change_visibility?: boolean
+  /** Story 12.15: who added the meeting; "Externo" badge when they are an external person */
+  created_by_name?: string | null
+  created_by_external?: boolean
 }
 
 /**

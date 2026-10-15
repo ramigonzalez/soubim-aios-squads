@@ -15,6 +15,8 @@ function statusOf(error: unknown): number | undefined {
 /**
  * Invitation link (Story 12.5): new users set name + password (account created, logged in);
  * existing users log in and accept. The invited email must match the logged-in account.
+ * Story 12.15: an invitation to one project ("Organization A invites you to project X") can also be
+ * rejected, without an account; accepting opens the project. Signing up creates no organization.
  */
 export default function AcceptInvitation() {
   const { t } = useTranslation('team')
@@ -25,24 +27,26 @@ export default function AcceptInvitation() {
   const setActiveOrganizationId = useOrganizationStore(s => s.setActiveOrganizationId)
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  const [rejected, setRejected] = useState(false)
 
   const preview = useQuery(['invitation', token], () => invitationService.preview(token), { retry: false })
 
-  const joined = (organizationId?: string) => {
+  const joined = (organizationId?: string, projectId?: string | null) => {
     if (organizationId) setActiveOrganizationId(organizationId)
     queryClient.invalidateQueries(ORGANIZATIONS_KEY)
-    navigate('/projects')
+    navigate(projectId ? `/projects/${projectId}` : '/projects')
   }
 
   const createAccount = useMutation(() => invitationService.acceptNewUser(token, name, password), {
     onSuccess: async data => {
       setAuth(data.user, data.access_token)
-      joined()
+      joined(undefined, preview.data?.project_id)
     },
   })
   const acceptExisting = useMutation(() => invitationService.acceptExisting(token), {
-    onSuccess: org => joined(org.id),
+    onSuccess: org => joined(org.id, org.project_id),
   })
+  const reject = useMutation(() => invitationService.reject(token), { onSuccess: () => setRejected(true) })
 
   const shell = (children: React.ReactNode) => (
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -52,6 +56,7 @@ export default function AcceptInvitation() {
     </main>
   )
 
+  if (rejected) return shell(<p role="status" className="text-sm text-gray-700">{t('accept.rejected')}</p>)
   if (preview.isLoading) return shell(<p className="text-sm text-gray-600">{t('accept.loading')}</p>)
   if (preview.isError || !preview.data) {
     const gone = statusOf(preview.error) === 410
@@ -64,7 +69,8 @@ export default function AcceptInvitation() {
 
   const inv = preview.data
   const sameEmail = user?.email.toLowerCase() === inv.email.toLowerCase()
-  const error = createAccount.error ?? acceptExisting.error
+  const isProject = !!inv.project_id
+  const error = createAccount.error ?? acceptExisting.error ?? reject.error
   const errorDetail = (error as { response?: { data?: { detail?: string } } } | null)?.response?.data?.detail
   // Story 12.13: refusals with a stable code get a translated message
   const errorMessage =
@@ -72,13 +78,21 @@ export default function AcceptInvitation() {
       ? t('accept.organizationBlocked')
       : errorDetail === 'operator_cannot_join'
         ? t('accept.operatorCannotJoin')
-        : errorDetail
+        : errorDetail === 'already_member'
+          ? t('accept.alreadyMember')
+          : errorDetail
 
   return shell(
     <>
-      <h1 className="text-xl font-bold text-gray-900">{t('accept.title', { organization: inv.organization_name })}</h1>
+      <h1 className="text-xl font-bold text-gray-900">
+        {isProject
+          ? t('accept.projectTitle', { organization: inv.organization_name, project: inv.project_name })
+          : t('accept.title', { organization: inv.organization_name })}
+      </h1>
       <p className="text-sm text-gray-600">
-        {t('accept.invitedAs', { email: inv.email, role: t(`roles.${inv.role}`) })}
+        {isProject
+          ? t('accept.projectInvitedAs', { email: inv.email })
+          : t('accept.invitedAs', { email: inv.email, role: t(`roles.${inv.role}`) })}
       </p>
 
       {!inv.account_exists && (
@@ -156,6 +170,17 @@ export default function AcceptInvitation() {
       {/* Story 12.8: accept with the Google account of the invited email (new or existing user) */}
       {!(inv.account_exists && isAuthenticated) && (
         <GoogleSignInButton labelKey="google.continue" invitationToken={token} />
+      )}
+
+      {/* Story 12.15: the invitee may say no (the organization sees it as "recusado") */}
+      {isProject && (
+        <button
+          onClick={() => reject.mutate()}
+          disabled={reject.isLoading}
+          className="w-full border border-gray-300 rounded-lg py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          {t('accept.reject')}
+        </button>
       )}
 
       {error && (

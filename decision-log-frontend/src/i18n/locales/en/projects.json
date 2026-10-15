@@ -197,5 +197,38 @@
       "drive_unavailable": "Google Drive did not answer. Try again in a moment.",
       "generic": "Something went wrong. Try again."
     }
+  },
+  "settings": {
+    "autoSaved": "Saved automatically"
+  },
+  "externals": {
+    "title": "External people",
+    "description": "Invite anyone by e-mail to follow this project only. Viewers only see shared meetings; contributors can also add items and meetings.",
+    "emailLabel": "Person's e-mail",
+    "emailPlaceholder": "name@company.com",
+    "invite": "Invite",
+    "created": "Invitation created for {{email}}. Copy the link and send it to them (it is shown only once):",
+    "linkLabel": "Invitation link",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "empty": "No external people on this project.",
+    "access": {
+      "viewer": "Viewer",
+      "contributor": "Contributor"
+    },
+    "accessFor": "Access of {{name}}",
+    "remove": "Remove {{name}}",
+    "removeConfirm": "Remove {{name}} from this project? Their access ends immediately; what they added stays.",
+    "status": {
+      "pending": "Invitation pending",
+      "rejected": "Declined"
+    },
+    "revoke": "Revoke",
+    "dismiss": "Remove from list",
+    "errors": {
+      "already_member": "This person is already a member of the organization.",
+      "already_invited": "This person already has external access to this project.",
+      "generic": "Could not update external people. Please try again."
+    }
   }
 }

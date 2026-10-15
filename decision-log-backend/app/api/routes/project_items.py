@@ -17,11 +17,14 @@ from app.api.models.project_item import (
 )
 from app.database.models import Project, ProjectItem, Source, User
 from app.database.session import get_db
+from app.services.project_externals import external_user_ids
 from app.services.thumbnails import thumbnail_url
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import capture_original
 from app.services.access import (
     ADMIN,
+    APPROVED,
+    PENDING,
     READ,
     WRITE,
     REVIEW_STATUSES,
@@ -54,11 +57,13 @@ def _check_project_access(db: Session, project_id: str, user, required: str = RE
     return require_project_access(db, user, project_id, required)
 
 
-def _item_to_response(item: ProjectItem, show_original: bool = False) -> dict:
+def _item_to_response(item: ProjectItem, show_original: bool = False, externals: Optional[set] = None) -> dict:
     """Convert a ProjectItem ORM object to response dict.
 
     Story 12.6: ``original`` (the AI's values before a reviewer edited the item) is only sent to
-    users of the owning organization (``show_original``)."""
+    users of the owning organization (``show_original``).
+    Story 12.15: ``created_by_name`` / ``created_by_external`` — who added the item by hand and whether they
+    are an external person of the project's organization (``externals``: their user ids) — "Externo" badge."""
     source_info = None
     if item.source:
         source_info = SourceInfo(
@@ -98,6 +103,8 @@ def _item_to_response(item: ProjectItem, show_original: bool = False) -> dict:
         "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None,
         "is_edited": item.original is not None,
         "original": item.original if show_original else None,
+        "created_by_name": item.creator.name if item.creator else None,
+        "created_by_external": item.created_by is not None and str(item.created_by) in (externals or ()),
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
     }
@@ -177,7 +184,7 @@ async def list_project_items(
     # Story 12.6: and only reviewed items the user may see
     query = (
         db.query(ProjectItem)
-        .options(joinedload(ProjectItem.reviewer))
+        .options(joinedload(ProjectItem.reviewer), joinedload(ProjectItem.creator))
         .filter(
             ProjectItem.project_id == project_id,
             visible_items_filter(user, include_rejected),
@@ -251,10 +258,11 @@ async def list_project_items(
     # Compute facets
     facets = _compute_facets(db, project_id, user, include_rejected)
     owner_side = reaches_through_owner(db, user, project)
+    externals = external_user_ids(db, project)  # Story 12.15
 
     return {
         **project_capabilities(db, user, project),  # can_review (12.6), access_level + can_manage (12.7)
-        "items": [_item_to_response(item, show_original=owner_side) for item in items],
+        "items": [_item_to_response(item, show_original=owner_side, externals=externals) for item in items],
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -285,7 +293,8 @@ async def get_project_item(
             detail=f"Project item {item_id} not found",
         )
 
-    return {**_item_to_response(item, show_original=reaches_through_owner(db, user, project)),
+    return {**_item_to_response(item, show_original=reaches_through_owner(db, user, project),
+                                externals=external_user_ids(db, project)),
             **project_capabilities(db, user, project)}
 
 
@@ -305,6 +314,9 @@ async def create_project_item(
         project_id=project_id,
         # Story 12.4: a manual item is owned by the creator's organization and internal to it
         owner_organization_id=acting_organization_id(db, user, project),
+        created_by=user.id,  # Story 12.15
+        # Story 12.15 (Rami, 2026-10-15): an external contributor's item waits for the organization's review
+        review_status=PENDING if project_capabilities(db, user, project)["is_external"] else APPROVED,
         item_type=body.item_type.value,
         source_type="manual_input",
         statement=body.statement,
@@ -327,7 +339,7 @@ async def create_project_item(
     db.commit()
     db.refresh(item)
 
-    return _item_to_response(item)
+    return _item_to_response(item, externals=external_user_ids(db, project))
 
 
 @router.patch("/projects/{project_id}/items/{item_id}")
@@ -374,7 +386,8 @@ async def update_project_item(
     db.commit()
     db.refresh(item)
 
-    return _item_to_response(item, show_original=reaches_through_owner(db, user, project))
+    return _item_to_response(item, show_original=reaches_through_owner(db, user, project),
+                             externals=external_user_ids(db, project))
 
 
 @router.get("/projects/{project_id}/milestones")

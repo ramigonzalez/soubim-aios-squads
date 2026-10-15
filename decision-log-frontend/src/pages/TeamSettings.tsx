@@ -13,6 +13,8 @@ import {
 } from '../hooks/useTeam'
 import { formatDate } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
+import { ExternalBadge } from '../components/atoms/ExternalBadge'
+import { EXTERNAL_ROLE } from '../types/organization'
 import type {
   OrganizationInvitationInfo,
   OrganizationMemberInfo,
@@ -235,15 +237,19 @@ function Members({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="min-w-0">
                 <span className="font-medium text-gray-900">{m.name}</span>{' '}
+                {m.role === EXTERNAL_ROLE && <ExternalBadge className="mr-1" />}
                 <span className="text-gray-500 break-all">{m.email}</span>
               </span>
               <span className="flex items-center gap-3">
-                <RoleSelect
-                  value={m.role}
-                  isOwner={isOwner}
-                  label={`${t('members.role')} ${m.name}`}
-                  onChange={role => update.mutate({ userId: m.user_id, role })}
-                />
+                {/* Story 12.15: an external person's role is not changed here (managed per project) */}
+                {m.role !== EXTERNAL_ROLE && (
+                  <RoleSelect
+                    value={m.role}
+                    isOwner={isOwner}
+                    label={`${t('members.role')} ${m.name}`}
+                    onChange={role => update.mutate({ userId: m.user_id, role })}
+                  />
+                )}
                 <button
                   disabled={m.user_id === currentUserId || (m.role === 'owner' && !isOwner)}
                   onClick={() => {
@@ -282,6 +288,9 @@ function MemberProjects({
 
   if (member.role === 'owner' || member.role === 'admin') {
     return <p className="mt-1 text-xs text-gray-500">{t('projects.all')}</p>
+  }
+  if (member.role === EXTERNAL_ROLE) {
+    return <p className="mt-1 text-xs text-gray-500">{t('projects.external')}</p>
   }
   const projects = assignments?.projects ?? []
   const assigned = new Set(

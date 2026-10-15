@@ -134,6 +134,9 @@ export interface ProjectItem {
   reviewed_by?: string | null
   reviewed_by_name?: string | null
   reviewed_at?: string | null
+  // Story 12.15: who added the item by hand; "Externo" badge when they are an external person
+  created_by_name?: string | null
+  created_by_external?: boolean
   is_edited?: boolean
   original?: ItemOriginal | null  // only sent to the owning organization
   // V1 backward compat fields (may be present in API responses)

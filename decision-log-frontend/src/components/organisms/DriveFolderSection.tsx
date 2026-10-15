@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { integrationsService } from '../../services/integrationsService'
 import type { DriveFolderOption, DriveFolderState } from '../../types/integrations'
+import { SettingsCard } from '../molecules/SettingsCard'
 
 export const driveFolderKey = (projectId: string) => ['drive-folder', projectId]
 const optionsKey = (projectId: string) => ['drive-folder-options', projectId]
@@ -60,10 +61,9 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
     const forbidden = (stateError as { response?: { status?: number } })?.response?.status === 403
     if (forbidden || !stateError) return null
     return (
-      <section className="mt-10 pt-6 border-t border-gray-200" aria-labelledby="drive-folder-title">
-        <h2 id="drive-folder-title" className="text-lg font-medium text-gray-900">{t('driveFolder.title')}</h2>
-        <p role="alert" className="mt-2 text-sm text-red-700">{t('driveFolder.errors.generic')}</p>
-      </section>
+      <SettingsCard titleId="drive-folder-title" title={t('driveFolder.title')}>
+        <p role="alert" className="text-sm text-red-700">{t('driveFolder.errors.generic')}</p>
+      </SettingsCard>
     )
   }
 
@@ -102,11 +102,7 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
   const others = folders.filter(f => f.id !== state.folder_id)
 
   return (
-    <section className="mt-10 pt-6 border-t border-gray-200 space-y-4" aria-labelledby="drive-folder-title">
-      <div>
-        <h2 id="drive-folder-title" className="text-lg font-medium text-gray-900">{t('driveFolder.title')}</h2>
-        <p className="text-sm text-gray-500">{t('driveFolder.description')}</p>
-      </div>
+    <SettingsCard titleId="drive-folder-title" title={t('driveFolder.title')} description={t('driveFolder.description')} autoSaved>
 
       {!state.configured ? (
         <p className="text-sm text-gray-600">{t('driveFolder.notConfigured')}</p>
@@ -217,6 +213,6 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
           )}
         </>
       )}
-    </section>
+    </SettingsCard>
   )
 }

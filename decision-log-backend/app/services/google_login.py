@@ -245,6 +245,8 @@ def _accept_invitation(
     user = find_active_user_by_email(db, email)
     try:  # Story 12.13: before any account, Google binding or membership is created
         inv.ensure_can_accept(db, invitation, user)
+        if user is not None:
+            inv.ensure_not_member(db, invitation, user)  # Story 12.15: before binding the Google account
     except HTTPException as exc:
         raise GoogleLoginError(exc.detail, exc.status_code)
     if user is None:
@@ -268,7 +270,8 @@ def redeem(db: Session, login_code: str, browser_key: str) -> LoginResult:
 
     Raises GoogleLoginError: invalid_code (404), browser_mismatch (403, code burnt), expired (410),
     unknown_email / account_disabled / email_mismatch / google_account_mismatch /
-    google_account_in_use / organization_blocked / operator_cannot_join (403, Story 12.13), invitation_gone (410).
+    google_account_in_use / organization_blocked / operator_cannot_join (403, Story 12.13), invitation_gone (410),
+    already_member (409, Story 12.15: project invitation accepted by a regular member of the organization).
     """
     if not (isinstance(login_code, str) and 0 < len(login_code) <= MAX_TOKEN_LENGTH):
         raise GoogleLoginError("invalid_code", 404)
@@ -301,7 +304,7 @@ def redeem(db: Session, login_code: str, browser_key: str) -> LoginResult:
         try:
             return _accept_invitation(db, invitation, email, name, sub)
         except HTTPException as exc:  # concurrent accept / revoke (410) or email race (409)
-            if exc.detail in (ORGANIZATION_BLOCKED, inv.OPERATOR_CANNOT_JOIN):  # Story 12.13
+            if exc.detail in (ORGANIZATION_BLOCKED, inv.OPERATOR_CANNOT_JOIN, inv.ALREADY_MEMBER):  # 12.13, 12.15
                 raise GoogleLoginError(exc.detail, exc.status_code)
             raise GoogleLoginError("invitation_gone" if exc.status_code == 410 else "account_exists", exc.status_code)
 

@@ -162,6 +162,7 @@ def complete(
         project_id=project.id,
         source_type="meeting",
         owner_organization_id=acting_organization_id(db, user, project),
+        created_by=user.id,  # Story 12.15
         visibility=visibility,
         title=title.strip(),
         occurred_at=occurred_at,

@@ -26,7 +26,7 @@ export interface ProjectDetail extends ProjectCapabilities {
   drive_folder_id?: string | null
   created_at: string
   archived_at?: string | null
-  members: Array<{ user_id: string; name: string; email: string; role: string }>
+  members: Array<{ user_id: string; name: string; email: string; role: string; is_external?: boolean }>  // 12.15: badge
   stats?: {
     total_decisions: number
     decisions_last_week: number

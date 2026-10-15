@@ -1,5 +1,7 @@
 /** Story 12.7: reviewer = member + review (items, ingestion approve / reject / retry) on assigned projects */
-export type OrganizationRole = 'owner' | 'admin' | 'reviewer' | 'member'
+export type OrganizationRole = 'owner' | 'admin' | 'reviewer' | 'member' | 'external'
+/** Story 12.15: a person invited to some projects only (never given by the team page) */
+export const EXTERNAL_ROLE: OrganizationRole = 'external'
 
 /** Story 12.7: projects the organization owns or that are shared with it, and its members assigned to them. */
 export interface OrganizationProjectAssignments {
@@ -16,6 +18,8 @@ export interface ProjectCapabilities {
   can_review?: boolean
   /** project settings, sharing, milestones, share links, meeting deletion */
   can_manage?: boolean
+  /** Story 12.15: the user reaches the project only as an external person (viewer / contributor) */
+  is_external?: boolean
 }
 
 /** Story 12.13: set by the platform operator. `payment_pending` shows a banner; `blocked` grants no access. */
@@ -61,7 +65,7 @@ export interface OrganizationInvitationInfo {
   organization_name: string
   email: string
   role: OrganizationRole
-  status: 'pending' | 'accepted' | 'revoked' | 'expired'
+  status: 'pending' | 'accepted' | 'revoked' | 'expired' | 'rejected'
   expires_at: string
   created_at: string
   /** Only in the create response: the link to send to the invitee (shown once). */
@@ -73,4 +77,7 @@ export interface InvitationPreview {
   email: string
   role: OrganizationRole
   account_exists: boolean
+  /** Story 12.15: set for an invitation to one project (role `external`) */
+  project_id?: string
+  project_name?: string
 }

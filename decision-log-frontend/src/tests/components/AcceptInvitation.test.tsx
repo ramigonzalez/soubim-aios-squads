@@ -16,6 +16,7 @@ function renderPage() {
         <Routes>
           <Route path="/invite/:token" element={<AcceptInvitation />} />
           <Route path="/projects" element={<div>projects page</div>} />
+          <Route path="/projects/:id" element={<div>project page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -126,5 +127,70 @@ describe('AcceptInvitation (Story 12.5)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create account and join' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
     expect(useAuthStore.getState().isAuthenticated).toBe(false)
+  })
+
+  describe('project invitation (Story 12.15)', () => {
+    const projectPreview = (over = {}) =>
+      preview({ role: 'external', project_id: 'p-x', project_name: 'Project X', ...over })
+
+    it('shows "Acme invites you to project X"; a new user signs up (no organization) and lands on the project', async () => {
+      const post = vi.spyOn(api, 'post').mockImplementation(async (url: string) => {
+        if (url === '/invitations/public/preview') return projectPreview()
+        return {
+          data: { access_token: 'jwt', token_type: 'bearer', user: { id: 'u', email: 'new@x.com', name: 'New', role: 'client' } },
+        }
+      })
+      renderPage()
+      expect(await screen.findByText('Acme invites you to the project Project X')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Decline invitation' })).toBeInTheDocument()
+      await userEvent.type(screen.getByPlaceholderText('Your name'), 'New Person')
+      await userEvent.type(screen.getByPlaceholderText(/Password/), 'password123')
+      await userEvent.click(screen.getByRole('button', { name: 'Create account and join' }))
+      expect(await screen.findByText('project page')).toBeInTheDocument()
+      expect(post).toHaveBeenCalledWith('/invitations/public/accept', {
+        token: 'tok123', name: 'New Person', password: 'password123',
+      })
+    })
+
+    it('existing user accepts and opens the project', async () => {
+      useAuthStore.getState().setAuth({ id: 'u', email: 'new@x.com', name: 'N', role: 'client' }, 'jwt')
+      vi.spyOn(api, 'post').mockImplementation(async (url: string) => {
+        if (url === '/invitations/public/preview') return projectPreview({ account_exists: true })
+        return { data: { id: 'org-acme', name: 'Acme', slug: 'acme', project_id: 'p-x' } }
+      })
+      renderPage()
+      await userEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
+      expect(await screen.findByText('project page')).toBeInTheDocument()
+      expect(useOrganizationStore.getState().activeOrganizationId).toBe('org-acme')
+    })
+
+    it('rejects without an account', async () => {
+      const post = vi.spyOn(api, 'post').mockImplementation(async (url: string) => {
+        if (url === '/invitations/public/preview') return projectPreview()
+        return { data: { status: 'rejected' } }
+      })
+      renderPage()
+      await userEvent.click(await screen.findByRole('button', { name: 'Decline invitation' }))
+      expect(await screen.findByRole('status')).toHaveTextContent('Invitation declined')
+      expect(post).toHaveBeenCalledWith('/invitations/public/reject', { token: 'tok123' })
+    })
+
+    it('organization invitations cannot be declined', async () => {
+      vi.spyOn(api, 'post').mockResolvedValue(preview())
+      renderPage()
+      expect(await screen.findByText('Join Acme')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Decline invitation' })).not.toBeInTheDocument()
+    })
+
+    it('a member of the organization gets a translated already_member message', async () => {
+      useAuthStore.getState().setAuth({ id: 'u', email: 'new@x.com', name: 'N', role: 'client' }, 'jwt')
+      vi.spyOn(api, 'post').mockImplementation(async (url: string) => {
+        if (url === '/invitations/public/preview') return projectPreview({ account_exists: true })
+        throw { response: { status: 409, data: { detail: 'already_member' } } }
+      })
+      renderPage()
+      await userEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent('You are already a member of this organization.')
+    })
   })
 })

@@ -197,5 +197,38 @@
       "drive_unavailable": "O Google Drive não respondeu. Tente de novo em instantes.",
       "generic": "Não foi possível concluir. Tente de novo."
     }
+  },
+  "settings": {
+    "autoSaved": "Salvo automaticamente"
+  },
+  "externals": {
+    "title": "Pessoas externas",
+    "description": "Convide qualquer pessoa por e-mail para acompanhar somente este projeto. Leitores apenas visualizam reuniões compartilhadas; colaboradores também adicionam itens e reuniões.",
+    "emailLabel": "E-mail da pessoa",
+    "emailPlaceholder": "nome@empresa.com",
+    "invite": "Convidar",
+    "created": "Convite criado para {{email}}. Copie o link e envie para a pessoa (ele é exibido apenas uma vez):",
+    "linkLabel": "Link do convite",
+    "copy": "Copiar link",
+    "copied": "Copiado",
+    "empty": "Nenhuma pessoa externa neste projeto.",
+    "access": {
+      "viewer": "Leitor",
+      "contributor": "Colaborador"
+    },
+    "accessFor": "Acesso de {{name}}",
+    "remove": "Remover {{name}}",
+    "removeConfirm": "Remover {{name}} deste projeto? O acesso termina imediatamente; o que a pessoa adicionou permanece.",
+    "status": {
+      "pending": "Convite pendente",
+      "rejected": "Recusado"
+    },
+    "revoke": "Revogar",
+    "dismiss": "Remover da lista",
+    "errors": {
+      "already_member": "Esta pessoa já é membro da organização.",
+      "already_invited": "Esta pessoa já tem acesso externo a este projeto.",
+      "generic": "Não foi possível atualizar as pessoas externas. Tente novamente."
+    }
   }
 }

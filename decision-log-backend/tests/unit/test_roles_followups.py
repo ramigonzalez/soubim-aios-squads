@@ -84,7 +84,7 @@ class TestReviewerRole:
         a, pid = w.a, str(w.a.project.id)
         assert access.project_access_level(db_session, rv.reviewer, a.project) == access.REVIEW
         assert access.project_capabilities(db_session, rv.reviewer, a.project) == {
-            "access_level": "review", "can_review": True, "can_manage": False}
+            "access_level": "review", "can_review": True, "can_manage": False, "is_external": False}
 
         assert run(_review(db_session, rv.reviewer, pid, a.item.id, "rejected"))["review_status"] == "rejected"
         edited = run(item_reviews.edit_item(pid, str(a.item.id), item_reviews.ItemEditBody(title="Fixed"), r,

@@ -7,6 +7,7 @@ import { DisciplineCircles } from '../atoms/DisciplineCircles'
 import { MilestoneStarToggle } from './MilestoneStarToggle'
 import { useToggleDone } from '../../hooks/useProjectItemMutation'
 import { CheckSquare, Square, User, AlertTriangle } from 'lucide-react'
+import { ExternalBadge } from '../atoms/ExternalBadge'
 import type { ProjectItem } from '../../types/projectItem'
 
 interface ProjectItemRowProps {
@@ -101,6 +102,13 @@ export function ProjectItemRow({ item, onClick, onToggleMilestone, isAdmin }: Pr
       <span className="text-xs text-gray-500 truncate max-w-[80px] hidden sm:block">
         {item.who}
       </span>
+      {/* Story 12.15: added by an external person */}
+      {item.created_by_external && (
+        <span className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0" title={item.created_by_name ?? undefined}>
+          <span className="truncate max-w-[80px] hidden sm:block">{item.created_by_name}</span>
+          <ExternalBadge />
+        </span>
+      )}
       <span className="text-xs text-gray-400 whitespace-nowrap">
         {shortDate}
       </span>

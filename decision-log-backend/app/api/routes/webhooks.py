@@ -102,6 +102,7 @@ async def receive_transcript(
         id=uuid4(),
         project_id=payload["project_id"],
         owner_organization_id=acting_organization_id(db, user, project),  # Story 12.4: internal by default
+        created_by=user.id,  # Story 12.15
         source_type="meeting",
         title=payload.get("meeting_title", "Untitled Meeting"),
         occurred_at=occurred_at,

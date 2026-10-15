@@ -10,6 +10,7 @@ import { Trash2 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { integrationsService } from '../../services/integrationsService'
+import { SettingsCard } from '../molecules/SettingsCard'
 import type { FathomRule, FathomRuleField } from '../../types/integrations'
 
 const FIELDS: FathomRuleField[] = ['title', 'participant_email', 'participant_domain']
@@ -79,11 +80,7 @@ export default function FathomRulesSection({ projectId }: { projectId: string })
   }
 
   return (
-    <section className="mt-10 pt-6 border-t border-gray-200 space-y-4" aria-labelledby="fathom-rules-title">
-      <div>
-        <h2 id="fathom-rules-title" className="text-lg font-medium text-gray-900">{t('fathomRules.title')}</h2>
-        <p className="text-sm text-gray-500">{t('fathomRules.description')}</p>
-      </div>
+    <SettingsCard titleId="fathom-rules-title" title={t('fathomRules.title')} description={t('fathomRules.description')} autoSaved>
 
       {error && (
         <div role="alert" className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>
@@ -147,6 +144,6 @@ export default function FathomRulesSection({ projectId }: { projectId: string })
           {t('fathomRules.add')}
         </button>
       </form>
-    </section>
+    </SettingsCard>
   )
 }

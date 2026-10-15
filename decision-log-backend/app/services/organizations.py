@@ -11,7 +11,7 @@ import uuid
 from typing import List, Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.database.models import (
@@ -29,6 +29,10 @@ ROLES = ("owner", "admin", "reviewer", "member")  # strongest first; reviewer: S
 ADMIN_ROLES = ("owner", "admin")
 # Story 12.7: roles that reach a project only when assigned to it (``project_members``)
 ASSIGNED_ROLES = ("reviewer", "member")
+# Story 12.15: a person invited to some of the organization's projects only. Not in ``ROLES``: given by a
+# project invitation only, never by the members endpoints; treated like a shared organization (access.py).
+EXTERNAL = "external"
+EXTERNAL_MEMBER = "external_member"  # error code: managed from the project's "Pessoas externas" section
 SHARED_ACCESS = ("contributor", "viewer")
 ACTIVE_ORGANIZATION_HEADER = "X-Organization-Id"
 # Story 12.13: organization status
@@ -207,12 +211,19 @@ def _lock_owners(db: Session, organization_id) -> None:
     ).with_for_update().all()
 
 
+def _refuse_external(member: OrganizationMember) -> None:
+    """Story 12.15: an external person's role and projects are managed per project (not converted here)."""
+    if member.role == EXTERNAL:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=EXTERNAL_MEMBER)
+
+
 def change_member_role(db: Session, actor: User, organization_id, user_id, role: str) -> OrganizationMember:
     if role not in ROLES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid role")
     _lock_owners(db, organization_id)
     member = _member_or_404(db, organization_id, user_id)
     db.refresh(member)
+    _refuse_external(member)
     actor_role = get_role(db, actor, organization_id)
     if not (can_manage_role(actor_role, role) and can_manage_role(actor_role, member.role)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only an owner can change owner roles")
@@ -245,8 +256,10 @@ def remove_member(db: Session, actor: User, organization_id, user_id) -> None:
     )
     for assignment, project in rows:
         owned = str(project.owner_organization_id) == str(organization_id)
-        if owned or not _other_granting_organizations(db, organization_id, user_id, project):
-            db.delete(assignment)
+        if owned and member.role == EXTERNAL:  # Story 12.15: the owner withdraws its external grant only
+            release_external_grant(db, assignment)
+        elif owned or not _other_granting_organizations(db, organization_id, user_id, project):
+            release_assignment(db, assignment)
     db.delete(member)
     db.commit()
 
@@ -290,7 +303,9 @@ def _active_member_or_404(db: Session, organization_id, user_id) -> Organization
 def _other_granting_organizations(db: Session, organization_id, user_id, project: Project) -> List[str]:
     """Organizations other than ``organization_id`` through which the user's (single, per project + user)
     ``project_members`` row on ``project`` grants access: the user holds an assignment-based role
-    (reviewer / member) there and that organization owns the project or the project is shared with it."""
+    (reviewer / member) there and that organization owns the project or the project is shared with it.
+    Story 12.15: an external grant (``access``) is not one — it lives on the row and survives a release
+    (``release_assignment``), so it never blocks a shared organization's admin."""
     shared_with = select(ProjectOrganization.organization_id).where(
         ProjectOrganization.project_id == str(project.id), ProjectOrganization.access.in_(SHARED_ACCESS)
     )
@@ -305,6 +320,24 @@ def _other_granting_organizations(db: Session, organization_id, user_id, project
         ),
     )
     return [str(org_id) for (org_id,) in rows]
+
+
+def release_assignment(db: Session, assignment: ProjectMember) -> None:
+    """Story 12.15: end a member / reviewer assignment. A row that also carries an external grant (``access``)
+    is kept as an external-only row (``role = 'external'``), which is never an assignment (access.py)."""
+    if assignment.access is not None:
+        assignment.role = EXTERNAL
+    else:
+        db.delete(assignment)
+
+
+def release_external_grant(db: Session, assignment: ProjectMember) -> None:
+    """Story 12.15: end an external grant. An external-only row is deleted; a row that is also a member /
+    reviewer assignment (made by a shared organization) keeps that assignment."""
+    if assignment.role == EXTERNAL:
+        db.delete(assignment)
+    else:
+        assignment.access = None
 
 
 def _require_assignment_control(db: Session, organization_id, user_id, project: Project) -> None:
@@ -327,7 +360,11 @@ def list_project_assignments(db: Session, organization_id) -> dict:
     members = select(OrganizationMember.user_id).where(OrganizationMember.organization_id == str(organization_id))
     rows = (
         db.query(ProjectMember.user_id, ProjectMember.project_id)
-        .filter(ProjectMember.project_id.in_([p.id for p in projects]), ProjectMember.user_id.in_(members))
+        .filter(
+            ProjectMember.project_id.in_([p.id for p in projects]),
+            ProjectMember.user_id.in_(members),
+            ProjectMember.role != EXTERNAL,  # Story 12.15: an external grant is not an assignment
+        )
         .all()
         if projects
         else []
@@ -346,7 +383,7 @@ def list_project_assignments(db: Session, organization_id) -> dict:
 def assign_project(db: Session, organization_id, user_id, project_id) -> None:
     """Assign a member of the organization to one of its projects (idempotent). 404 for another
     organization's user or project."""
-    _active_member_or_404(db, organization_id, user_id)
+    _refuse_external(_active_member_or_404(db, organization_id, user_id))  # Story 12.15
     project = _organization_project_or_404(db, organization_id, project_id)
     _require_assignment_control(db, organization_id, user_id, project)
     exists = (
@@ -356,17 +393,23 @@ def assign_project(db: Session, organization_id, user_id, project_id) -> None:
     )
     if exists is None:
         db.add(ProjectMember(project_id=project.id, user_id=uuid.UUID(str(user_id)), role="member"))
+    elif exists.role == EXTERNAL:  # Story 12.15: becomes an assignment too; the external grant stays
+        exists.role = "member"
     db.commit()
 
 
 def unassign_project(db: Session, organization_id, user_id, project_id) -> None:
     """Remove a member's assignment (idempotent). 404 for another organization's user or project."""
-    _active_member_or_404(db, organization_id, user_id)
+    _refuse_external(_active_member_or_404(db, organization_id, user_id))  # Story 12.15
     project = _organization_project_or_404(db, organization_id, project_id)
     _require_assignment_control(db, organization_id, user_id, project)
-    db.query(ProjectMember).filter(
-        ProjectMember.project_id == project.id, ProjectMember.user_id == str(user_id)
-    ).delete(synchronize_session=False)
+    assignment = (
+        db.query(ProjectMember)
+        .filter(ProjectMember.project_id == project.id, ProjectMember.user_id == str(user_id))
+        .first()
+    )
+    if assignment is not None and assignment.role != EXTERNAL:
+        release_assignment(db, assignment)  # Story 12.15: keeps an external grant
     db.commit()
 
 

@@ -13,6 +13,7 @@ import ExtractionVersions from '../components/organisms/ExtractionVersions'
 import { useMeeting, recordingSrc } from '../hooks/useMeeting'
 import { MeetingVisibilityControl } from '../components/organisms/MeetingVisibilityControl'
 import { formatSeconds, parseTranscript, turnIndexAt } from '../lib/transcript'
+import { ExternalBadge } from '../components/atoms/ExternalBadge'
 import { cn, formatDate } from '../lib/utils'
 
 // After the user scrolls the transcript by hand, auto-scroll waits this long before following again.
@@ -136,6 +137,13 @@ export function MeetingViewer() {
             <ExternalLink className="w-4 h-4" aria-hidden="true" />
             {t('openRecording')}
           </a>
+        )}
+        {/* Story 12.15: added by an external person */}
+        {meeting.created_by_external && (
+          <span className="inline-flex items-center gap-1.5">
+            {t('addedBy', { name: meeting.created_by_name })}
+            <ExternalBadge />
+          </span>
         )}
         {meeting.visibility && (
           <MeetingVisibilityControl

@@ -145,8 +145,10 @@ async def list_invitations(organization_id: UUID, db: Session = Depends(get_db),
         db.query(OrganizationInvitation)
         .filter(
             OrganizationInvitation.organization_id == str(organization_id),
+            OrganizationInvitation.project_id.is_(None),  # Story 12.15: listed in the project settings
             OrganizationInvitation.accepted_at.is_(None),
             OrganizationInvitation.revoked_at.is_(None),
+            OrganizationInvitation.rejected_at.is_(None),
             OrganizationInvitation.expires_at > inv.now(),
         )
         .order_by(OrganizationInvitation.created_at.desc())
@@ -180,12 +182,15 @@ class AcceptNewUser(BaseModel):
 
 
 def _invitation_preview(db: Session, i: OrganizationInvitation) -> dict:
-    return {
+    preview = {
         "organization_name": inv.invitation_org_name(i),
         "email": i.email,
         "role": i.role,
         "account_exists": inv.account_exists(db, i.email),
     }
+    if i.project_id is not None:  # Story 12.15: "Organization A invites you to project X"
+        preview.update(project_id=str(i.project_id), project_name=i.project.name)
+    return preview
 
 
 # Paths under /api/invitations/public/ skip the JWT middleware (the token identifies the invitation).
@@ -206,5 +211,15 @@ async def accept_invitation_new_user(body: AcceptNewUser, db: Session = Depends(
 @router.post("/invitations/accept")
 async def accept_invitation(body: TokenBody, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Existing user (logged in with the invited email): join the organization."""
-    org = inv.accept_as_existing_user(db, body.token, user)
-    return {"id": str(org.id), "name": org.name, "slug": org.slug}
+    invitation = inv.find_by_token(db, body.token)
+    project_id = str(invitation.project_id) if invitation.project_id else None
+    org = inv.accept_for_user(db, invitation, user)
+    return {"id": str(org.id), "name": org.name, "slug": org.slug, "project_id": project_id}
+
+
+@router.post("/invitations/public/reject")
+async def reject_invitation(body: TokenBody, db: Session = Depends(get_db)):
+    """Story 12.15: reject a project invitation (the token identifies the invitee; no account needed).
+    The organization sees it as rejected ("recusado")."""
+    invitation = inv.reject_invitation(db, body.token)
+    return {"status": inv.status_of(invitation)}

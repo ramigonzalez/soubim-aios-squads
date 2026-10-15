@@ -43,13 +43,25 @@ which now needs ``review`` instead of ``admin``) and approve / reject / retry of
 queue. Project settings, sharing, visibility, Drive, share links, milestones, meeting deletion and
 member management stay ``admin``. A ``reviewer`` of a *shared* organization is treated like a member of
 that organization (the shared level when assigned): review stays with the owning organization.
+
+Story 12.15 — ``external`` organization role: a person invited to one project of the owning organization.
+They reach a project only through a ``project_members`` row whose ``access`` gives the level, like a shared
+organization (``contributor`` → ``write``, ``viewer`` (default) → ``read``); never ``review`` / ``admin``.
+They are **not** "reached through" the owning organization: the owning organization never appears in
+``project_access_by_organization`` for them (see ``external_access_level``), so every rule keyed on it
+leaves them out — internal meetings and source-less (internal) items of the owner (12.4), pending /
+rejected items (12.6), visibility changes, review, settings. The SQL filters only add their projects to
+``accessible_projects_filter``; ``external`` is not in ``ASSIGNED_ROLES`` / ``ADMIN_ROLES``, so
+``_org_grants_access`` and ``review_visible_filter`` never grant them anything more than approved items of
+shared meetings. What they add is owned by the owning organization (``acting_organization_id``) and internal
+to it (they cannot create ``shared`` meetings), like a shared organization's member.
 """
 
 from typing import Dict, Optional
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, not_, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from app.database.models import (
@@ -63,6 +75,7 @@ from app.database.models import (
 )
 from app.services.organizations import (
     ASSIGNED_ROLES,
+    EXTERNAL,  # Story 12.15
     get_memberships,
     usable_organization_ids,
     user_organization_ids,
@@ -98,10 +111,23 @@ def organization_roles(db: Session, user) -> Dict[str, str]:
     return {str(org_id): role for org_id, role in rows}
 
 
+def _assigned_project_ids(uid):
+    """Projects the user is *assigned* to as a member / reviewer (``project_members``). Story 12.15: rows with
+    ``role = 'external'`` exist only for an external grant (``access``) and never count as an assignment, so
+    an external invitation cannot satisfy "assigned member of a shared organization"."""
+    return select(ProjectMember.project_id).where(
+        ProjectMember.user_id == uid, ProjectMember.role != EXTERNAL
+    )
+
+
 def _is_assigned(db: Session, user, project_id) -> bool:
     return (
         db.query(ProjectMember)
-        .filter(ProjectMember.project_id == str(project_id), ProjectMember.user_id == _user_id(user))
+        .filter(
+            ProjectMember.project_id == str(project_id),
+            ProjectMember.user_id == _user_id(user),
+            ProjectMember.role != EXTERNAL,  # Story 12.15
+        )
         .first()
         is not None
     )
@@ -156,25 +182,82 @@ def project_access_by_organization(db: Session, user, project: Project) -> Dict[
     return result
 
 
-def project_access_level(db: Session, user, project: Project) -> str:
-    """Access level of ``user`` on ``project``: none / read / write / admin (best over their organizations)."""
+def external_access_level(db: Session, user, project: Project) -> str:
+    """Story 12.15: level the user has on ``project`` as an ``external`` person of its owning organization
+    (``project_members.access``: ``contributor`` → ``write``, ``viewer`` → ``read``); ``none`` when the user is not
+    external there or has no external assignment (``access`` NULL: a row kept only for a shared organization's
+    member, see ``project_externals.remove_external``). Never keyed by organization (see module doc)."""
+    if project is None or project.owner_organization_id is None:
+        return NONE
+    if organization_roles(db, user).get(str(project.owner_organization_id)) != EXTERNAL:
+        return NONE
+    row = (
+        db.query(ProjectMember.access)
+        .filter(ProjectMember.project_id == str(project.id), ProjectMember.user_id == _user_id(user))
+        .first()
+    )
+    if row is None or row[0] is None:
+        return NONE
+    return SHARED_ACCESS_LEVELS.get(row[0], NONE)
+
+
+def _best(levels) -> str:
     level = NONE
-    for org_level in project_access_by_organization(db, user, project).values():
-        if _RANK[org_level] > _RANK[level]:
-            level = org_level
+    for candidate in levels:
+        if _RANK[candidate] > _RANK[level]:
+            level = candidate
     return level
+
+
+def project_access_level(db: Session, user, project: Project) -> str:
+    """Access level of ``user`` on ``project``: none / read / write / admin (best over their organizations,
+    Story 12.15: and their external access)."""
+    levels = list(project_access_by_organization(db, user, project).values())
+    return _best(levels + [external_access_level(db, user, project)])
 
 
 def has_access(level: str, required: str) -> bool:
     return _RANK[level] >= _RANK[required]
 
 
+def external_project_ids(user):
+    """Story 12.15: subquery of the projects the user is assigned to as an ``external`` person of their owning
+    organization (blocked organizations excluded). Aliased: safe inside a query on ``Project``."""
+    uid = _user_id(user)
+    project = aliased(Project)
+    return (
+        select(ProjectMember.project_id)
+        .join(project, project.id == ProjectMember.project_id)
+        .where(
+            ProjectMember.user_id == uid,
+            ProjectMember.access.in_(tuple(SHARED_ACCESS_LEVELS)),
+            project.owner_organization_id.in_(user_organization_ids(uid, (EXTERNAL,))),
+        )
+    )
+
+
 def accessible_projects_filter(user):
     """SQL condition on ``Project`` matching the projects the user can at least read."""
+    return or_(
+        _organization_projects_filter(user),
+        # Story 12.15: projects the user was invited to as an external person (read; never more here)
+        Project.id.in_(external_project_ids(user)),
+    )
+
+
+def guest_project_ids(user):
+    """Story 12.15: projects the user reaches **only** as an external person (no organization grants them)."""
+    return select(Project.id).where(
+        Project.id.in_(external_project_ids(user)), not_(_organization_projects_filter(user))
+    )
+
+
+def _organization_projects_filter(user):
+    """SQL condition on ``Project``: projects the user reaches through one of their organizations."""
     uid = _user_id(user)
     admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
     member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
-    assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
+    assigned = _assigned_project_ids(uid)
     shared = ProjectOrganization.access.in_(tuple(SHARED_ACCESS_LEVELS))
     shared_with_admin_orgs = select(ProjectOrganization.project_id).where(
         shared, ProjectOrganization.organization_id.in_(admin_orgs)
@@ -210,7 +293,7 @@ def _org_grants_access(user, org_col, project_col):
     uid = _user_id(user)
     admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
     member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
-    assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
+    assigned = _assigned_project_ids(uid)
     owned_project = aliased(Project)
     share = aliased(ProjectOrganization)
     owns = select(owned_project.id).where(
@@ -228,12 +311,23 @@ def _org_grants_access(user, org_col, project_col):
     )
 
 
+def _own_external_filter(user, created_by_col, project_col):
+    """Story 12.15 (Rami, 2026-10-15): an external person always sees what they added themselves — rows they
+    created, on projects where they **currently** have external access (removal cuts it). Nothing else."""
+    return and_(created_by_col == _user_id(user), project_col.in_(external_project_ids(user)))
+
+
 def visible_sources_filter(user):
     """SQL condition on ``Source``: sources the user may see (project readable, and shared or an
-    internal source of an organization through which the user reaches the project)."""
+    internal source of an organization through which the user reaches the project; Story 12.15: or a
+    meeting the external person added themselves)."""
     return and_(
         Source.project_id.in_(accessible_project_ids(user)),
-        or_(Source.visibility == SHARED, _org_grants_access(user, Source.owner_organization_id, Source.project_id)),
+        or_(
+            Source.visibility == SHARED,
+            _org_grants_access(user, Source.owner_organization_id, Source.project_id),
+            _own_external_filter(user, Source.created_by, Source.project_id),
+        ),
     )
 
 
@@ -244,13 +338,15 @@ def review_visible_filter(user, include_rejected: bool = False):
     uid = _user_id(user)
     admin_orgs = user_organization_ids(uid, ADMIN_ROLES)  # Story 12.13: blocked organizations excluded
     member_orgs = user_organization_ids(uid, ASSIGNED_ROLES)
-    assigned = select(ProjectMember.project_id).where(ProjectMember.user_id == uid)
+    assigned = _assigned_project_ids(uid)
     # projects the user reaches through the organization that owns them (not through a share)
     owned_as_admin = select(Project.id).where(Project.owner_organization_id.in_(admin_orgs))
     owned_as_member = select(Project.id).where(Project.owner_organization_id.in_(member_orgs), Project.id.in_(assigned))
     owner_org = or_(ProjectItem.project_id.in_(owned_as_admin), ProjectItem.project_id.in_(owned_as_member))
     statuses = [PENDING, REJECTED] if include_rejected else [PENDING]
-    return or_(ProjectItem.review_status == APPROVED, and_(ProjectItem.review_status.in_(statuses), owner_org))
+    # Story 12.15: an external person sees their own items while under review (only the ones they added)
+    own = _own_external_filter(user, ProjectItem.created_by, ProjectItem.project_id)
+    return or_(ProjectItem.review_status == APPROVED, and_(ProjectItem.review_status.in_(statuses), or_(owner_org, own)))
 
 
 def visible_items_filter(user, include_rejected: bool = False):
@@ -264,7 +360,10 @@ def visible_items_filter(user, include_rejected: bool = False):
             and_(ProjectItem.source_id.isnot(None), ProjectItem.source_id.in_(visible_source_ids)),
             and_(
                 ProjectItem.source_id.is_(None),
-                _org_grants_access(user, ProjectItem.owner_organization_id, ProjectItem.project_id),
+                or_(
+                    _org_grants_access(user, ProjectItem.owner_organization_id, ProjectItem.project_id),
+                    _own_external_filter(user, ProjectItem.created_by, ProjectItem.project_id),  # Story 12.15
+                ),
             ),
         ),
         review_visible_filter(user, include_rejected),
@@ -286,9 +385,26 @@ def source_visible(db: Session, user, source: Optional[Source]) -> bool:
     if source is None:
         return False
     orgs = project_access_by_organization(db, user, source.project)
-    if not orgs:
-        return False
-    return source.visibility == SHARED or str(source.owner_organization_id) in orgs
+    if str(source.owner_organization_id) in orgs:
+        return True
+    # Story 12.15: an external person sees shared meetings (like a shared organization) and the ones they added
+    if _own_external(db, user, source.created_by, source.project):
+        return True
+    return source.visibility == SHARED and _reads_project(db, user, source.project, orgs)
+
+
+def _own_external(db: Session, user, created_by, project: Project) -> bool:
+    """Story 12.15: ``created_by`` is this user and they currently have external access to ``project``."""
+    return (
+        created_by is not None
+        and str(created_by) == _user_id(user)
+        and external_access_level(db, user, project) != NONE
+    )
+
+
+def _reads_project(db: Session, user, project: Project, orgs: Dict[str, str]) -> bool:
+    """Can read ``project`` through an organization (``orgs``) or as an external person (Story 12.15)."""
+    return bool(orgs) or external_access_level(db, user, project) != NONE
 
 
 def reaches_through_owner(db: Session, user, project: Project) -> bool:
@@ -308,10 +424,18 @@ def project_capabilities(db: Session, user, project: Project) -> dict:
     """Story 12.7: what the user can do on ``project``, so the frontend shows matching UI.
 
     ``access_level``; ``can_review`` (items, ingestion approve / reject / retry); ``can_manage``
-    (project settings, sharing, milestones, share links, meeting deletion: owning organization's owner/admin).
+    (project settings, sharing, milestones, share links, meeting deletion: owning organization's owner/admin);
+    Story 12.15: ``is_external`` — the user reaches the project only as an external person.
     """
-    level = project_access_level(db, user, project)
-    return {"access_level": level, "can_review": has_access(level, REVIEW), "can_manage": has_access(level, ADMIN)}
+    orgs = project_access_by_organization(db, user, project)
+    external = external_access_level(db, user, project)
+    level = _best(list(orgs.values()) + [external])
+    return {
+        "access_level": level,
+        "can_review": has_access(level, REVIEW),
+        "can_manage": has_access(level, ADMIN),
+        "is_external": not orgs and external != NONE,
+    }
 
 
 def item_visible(db: Session, user, item: Optional[ProjectItem]) -> bool:
@@ -319,10 +443,13 @@ def item_visible(db: Session, user, item: Optional[ProjectItem]) -> bool:
     Story 12.6: items not approved only through the project's owning organization."""
     if item is None:
         return False
-    if item.review_status != APPROVED and not reaches_through_owner(db, user, item.project):
+    own = _own_external(db, user, item.created_by, item.project)  # Story 12.15: what they added themselves
+    if item.review_status != APPROVED and not (own or reaches_through_owner(db, user, item.project)):
         return False
     if item.source_id is not None:
         return source_visible(db, user, item.source)
+    if own:
+        return True
     if item.owner_organization_id is None:
         return False
     return str(item.owner_organization_id) in project_access_by_organization(db, user, item.project)
@@ -347,23 +474,30 @@ def can_create_shared(db: Session, user, project: Project) -> bool:
     return org is not None and organization_roles(db, user).get(str(org)) in ADMIN_ROLES
 
 
-def owned_object_visible(db: Session, user, project: Project, owner_organization_id, visibility: str) -> bool:
+def owned_object_visible(
+    db: Session, user, project: Project, owner_organization_id, visibility: str, created_by=None
+) -> bool:
     """Visibility rule for an object that is not a Source yet but will become one (e.g. an in-flight
     Fathom import): same as ``source_visible`` for the given owner organization and visibility."""
     orgs = project_access_by_organization(db, user, project)
-    if not orgs:
-        return False
-    return visibility == SHARED or (owner_organization_id is not None and str(owner_organization_id) in orgs)
+    if owner_organization_id is not None and str(owner_organization_id) in orgs:
+        return True
+    if _own_external(db, user, created_by, project):  # Story 12.15: the external person's own import
+        return True
+    return visibility == SHARED and _reads_project(db, user, project, orgs)  # Story 12.15: externals
 
 
 def acting_organization_id(db: Session, user, project: Project) -> Optional[UUID]:
     """Organization a user acts for on ``project`` — owner of the meetings/items they create there.
 
     The owning organization when the user reaches the project through it; otherwise the shared
-    organization giving the highest level (ties: smallest id, deterministic). None without access.
+    organization giving the highest level (ties: smallest id, deterministic). Story 12.15: an external person
+    acts for the owning organization (what they add is its content, internal to it). None without access.
     """
     orgs = project_access_by_organization(db, user, project)
     if not orgs:
+        if external_access_level(db, user, project) != NONE:
+            return UUID(str(project.owner_organization_id))
         return None
     if str(project.owner_organization_id) in orgs:
         return UUID(str(project.owner_organization_id))
