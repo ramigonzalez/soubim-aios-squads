@@ -12,6 +12,7 @@ import { HomeRedirect, PlatformRoute } from './components/common/PlatformRoute'
 import { PaymentPendingBanner } from './components/molecules/PaymentPendingBanner'
 import { useAuthStore } from './store/authStore'
 import { useTranslation } from 'react-i18next'
+import { ToastProvider, TooltipProvider } from './design-system'
 
 const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
 const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
@@ -23,6 +24,8 @@ const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
 const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
 const Platform = lazy(() => import('./pages/Platform'))
 const ChangePassword = lazy(() => import('./pages/ChangePassword'))
+// Component gallery (Promem design system), development builds only
+const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
 
 const queryClient = new QueryClient()
 
@@ -165,6 +168,16 @@ function AppRoutes() {
             </Suspense>
           }
         />
+        {UiGallery && (
+          <Route
+            path="/dev/ui"
+            element={
+              <Suspense fallback={null}>
+                <UiGallery />
+              </Suspense>
+            }
+          />
+        )}
         <Route path="/" element={<HomeRedirect />} />
       </Routes>
     </>
@@ -179,9 +192,13 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <TooltipProvider>
+        <ToastProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </ToastProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }

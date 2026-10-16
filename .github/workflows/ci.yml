@@ -70,6 +70,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Token guard (Promem design system)
+        run: npm run lint:tokens
       - name: Tests
         run: npx vitest run
       - name: Build
