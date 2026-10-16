@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     llm_model: str = "claude-opus-5-5"
     extraction_max_tokens: int = 64000  # streamed; a 98-min meeting needed ~11k output tokens
     extraction_effort: str = "high"
+    # Promem revamp G2: small model for the ingestion preview ("O que deve entrar no projeto")
+    # made when a source arrives; the full extraction still runs after approval.
+    llm_preview_model: str = "claude-haiku-5-5"
+    candidate_preview_enabled: bool = True
+    # Promem revamp G5: approving waits this long before extraction starts, so "Desfazer" can cancel it
+    ingestion_undo_seconds: int = 8
     # Story 13.6: list prices in USD per million tokens (Claude API docs, 2026-10); estimate only —
     # ignores cache and batch discounts. Override with MODEL_PRICING (JSON) when prices change.
     model_pricing: Dict[str, Dict[str, float]] = {

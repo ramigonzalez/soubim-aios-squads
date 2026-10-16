@@ -11,6 +11,10 @@ import { formatFileSize } from '../../lib/utils'
 import type { MeetingSource, EmailSource, DocumentSource, IngestionResponse, IngestionHistoryResponse } from '../../types/ingestion'
 
 // Mock the hooks
+// Promem revamp Phase 3d: the /ingestion route renders the new inbox (tested in tests/project/phase3d.test.tsx);
+// here only the route's access control is checked.
+vi.mock('../../pages/IngestionInbox', () => ({ default: () => <h1>Ingestion inbox</h1> }))
+
 vi.mock('../../hooks/useIngestion', () => ({
   useIngestion: vi.fn(),
   useIngestionHistory: vi.fn(),
@@ -323,7 +327,7 @@ describe('IngestionApproval', () => {
     it('organization owner/admin/reviewer can access /ingestion (Story 12.7)', () => {
       setupMocks()
       renderIngestionPage(true, 'client')
-      expect(screen.getByText('Ingestion Approval')).toBeInTheDocument()
+      expect(screen.getByText('Ingestion inbox')).toBeInTheDocument()
     })
 
     it('hides approve / reject / retry / delete on sources the user cannot review or manage (Story 12.7)', () => {
@@ -1045,7 +1049,7 @@ describe('Ingestion page — no separate Fathom box (Story 13.16)', () => {
   it('renders only the queue', () => {
     setupMocks()
     renderIngestionPage()
-    expect(screen.getByText('Ingestion Approval')).toBeInTheDocument()
+    expect(screen.getByText('Ingestion inbox')).toBeInTheDocument()
     expect(screen.queryByText('Unassigned meetings')).not.toBeInTheDocument()
   })
 })

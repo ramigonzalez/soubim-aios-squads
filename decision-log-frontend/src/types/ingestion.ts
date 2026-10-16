@@ -30,6 +30,15 @@ export interface BaseSource {
   can_review?: boolean
   /** Story 12.7: the user may delete this source (owning organization's owner/admin) */
   can_manage?: boolean
+  // Promem revamp G2: decision panel (pending sources only)
+  routing?: SourceRouting
+  flags?: SourceFlag[]
+  preview?: SourcePreviewLine[]
+  participants?: string[]
+  duration_minutes?: number | null
+  candidates?: SourceCandidate[] | null
+  candidates_ready?: boolean
+  created_by_name?: string | null
 }
 
 export interface MeetingSource extends BaseSource {
@@ -95,4 +104,32 @@ export interface IngestionFilters {
   source_type: SourceType | null
   date_from: string | null
   date_to: string | null
+}
+
+/** Promem revamp G2: why a pending source belongs to its project. */
+export interface SourceRouting {
+  confidence: 'high' | 'medium' | 'low'
+  reasons: ({ code: string } & Record<string, string | number>)[]
+}
+
+export interface SourceFlag {
+  kind: 'info' | 'warn'
+  code: 'external' | 'duplicate' | 'lowConfidence'
+  count?: number
+  names?: string[]
+  title?: string
+  date?: string
+}
+
+/** Meeting turns ({at, who, text}); e-mail lines use who = "from_to" | "text". */
+export interface SourcePreviewLine {
+  at: string | null
+  who: string | null
+  text: string
+}
+
+export interface SourceCandidate {
+  type: 'decision' | 'action_item' | 'topic' | 'idea' | 'information'
+  title: string
+  discipline: string
 }

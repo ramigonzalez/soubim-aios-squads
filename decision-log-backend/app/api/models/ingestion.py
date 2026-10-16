@@ -17,6 +17,8 @@ class IngestionUpdate(BaseModel):
         ...,
         description="New ingestion status (approved or rejected)",
     )
+    # Promem revamp G2c: approve into another project (the reviewer needs review access there too)
+    project_id: Optional[str] = Field(None, description="Project the source goes into when approved")
 
     @field_validator("ingestion_status")
     @classmethod
@@ -79,3 +81,9 @@ class SourceListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class IngestionUndo(BaseModel):
+    """Promem revamp G5: sources whose approve / reject is undone (back to pending)."""
+
+    source_ids: List[str] = Field(..., min_length=1)
