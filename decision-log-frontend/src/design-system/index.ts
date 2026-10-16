@@ -32,6 +32,7 @@ export * from './primitives/BottomSheet'
 export * from './primitives/Toast'
 export * from './primitives/States'
 export * from './primitives/KeyValueList'
+export * from './primitives/Switch'
 
 // Domain atoms
 export * from './domain/Wordmark'
@@ -45,3 +46,5 @@ export * from './domain/DueBadge'
 export * from './domain/StageStrip'
 export * from './domain/NavItem'
 export * from './domain/MobileBars'
+export * from './domain/Overview'
+export * from './domain/StageTimeline'

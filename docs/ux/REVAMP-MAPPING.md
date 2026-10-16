@@ -290,3 +290,20 @@ decision-log-frontend/
 4. **`lucide-react` 0.292 → 1.57:** needed for the icon map. `Tilde` still doesn't exist, so the custom `TildeIcon` from COMPONENTS.md is used.
 5. **Legacy screens are affected immediately:** the preset sets the base font (Plus Jakarta Sans), the paper background, the `rounded`/`rounded-sm|md|lg` radii and the accent focus ring globally. They render correctly; they will look mixed until Phases 2–3 migrate them.
 6. **`ConsensusList`** already supports `MIXED` ("Com ressalvas"). The backend and extraction change lands with the item panel (§6.1 #7).
+
+## 8. Delivery log
+
+Every phase is a PR into the integration branch `feat/promem-revamp`. It merges only with green CI. `main` gets the revamp once the screens are rebuilt.
+
+| PR | Phase | Notes |
+|---|---|---|
+| #50 | 0 · Audit, 1 · Foundations | See §7. |
+| #51 | 2 · Shell | Sidebar, project switcher, drawer, mobile top bar + tab bar + Mais, section routes and redirects. Backend: `project_visits` (migration 025), list aggregates, section counts, `/m/:token`. |
+| 3a | 3 · Visão geral + Marcos + item SidePanel | Backend: `GET /projects/{id}/items/{item_id}/similar` (G11). Frontend: ProjectHeader (export, upload, share, ⋯ edit/archive), OverviewTiles/OverviewRow, StageTimeline, ItemDetailPanel (`?item=`, ↑/↓, Esc, M, X, review block, Similares), undo toasts for marco/done. |
+
+### Phase 3 deviations for design review
+- **Side box with no stage in progress:** "Nenhuma etapa em andamento · marcos recentes" shows the latest five milestones.
+- **Panel "Impactos":** the ImpactIndicator (risk level) plus the platform's impact kinds (Custo · Prazo · Escopo · Áreas) instead of per-discipline rows (§1.1).
+- **Panel extra blocks:** "O que levou a isso" (`causation`), "Adicionado por" (Story 12.15 manual items, with "Externo") and the Revisão block (Story 12.6).
+- **Marcos:** keeps the source filter (decision §6.1 #3) and the JPEG export next to the PDF.
+- **New patterns:** a `Switch` primitive ("Mostrar etapas sem marcos") and `RowList`/`CompactRow` helpers.
