@@ -89,8 +89,9 @@ export function OverviewRow({ icon, title, badge, meta, disciplines, date, selec
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="text-body font-medium text-ink max-md:line-clamp-2 md:truncate">{title}</span>
+        {/* phones: the title keeps at least 60% of the line; badges that don't fit beside it wrap below */}
+        <span className="flex min-w-0 items-center gap-2 max-md:flex-wrap max-md:gap-y-1">
+          <span className="min-w-0 text-body font-medium text-ink max-md:min-w-[60%] max-md:flex-1 max-md:line-clamp-2 md:truncate">{title}</span>
           {badge}
         </span>
         <span className="flex min-w-0 items-center gap-1.5 truncate text-caption text-ink-2">
