@@ -149,7 +149,7 @@ export function ItemDetailPanel(props: ItemDetailPanelProps) {
           )}
         </div>
         {mobile && (
-          <div className="grid grid-cols-2 gap-3 border-t border-line-soft px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">
+          <div className="grid grid-cols-2 gap-3 border-t border-line-soft px-4 pb-safe-footer pt-3">
             <Button size="lg" icon={<Icons.arrowUp />} disabled={!hasPrevious} onClick={onPrevious}>
               {t('panel.previousShort')}
             </Button>
@@ -311,7 +311,7 @@ function ItemBody({
                   <button
                     type="button"
                     onClick={() => onOpenItem(other.id)}
-                    className="grid w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 border-b border-line-soft px-3 py-2.5 text-left last:border-b-0 hover:bg-surface-2"
+                    className="grid w-full grid-cols-icon-row items-center gap-3 border-b border-line-soft px-3 py-2.5 text-left last:border-b-0 hover:bg-surface-2"
                   >
                     <ItemTypeIcon type={other.item_type} done={other.is_done} />
                     <span className="flex min-w-0 flex-col">
@@ -357,7 +357,7 @@ function Excerpt({ item, meetingHref }: { item: ProjectItem; meetingHref: string
       ) : (
         <div className="flex flex-col rounded-md bg-surface-2">
           {lines.map((line, i) => (
-            <div key={i} className="grid grid-cols-[56px_minmax(0,1fr)] gap-2 px-3 py-2">
+            <div key={i} className="grid grid-cols-excerpt gap-2 px-3 py-2">
               <span className="font-mono text-mono-sm text-ink-3">{line.time ?? ''}</span>
               <p className="text-body text-ink">
                 {line.speaker && <span className="font-semibold">{line.speaker}: </span>}

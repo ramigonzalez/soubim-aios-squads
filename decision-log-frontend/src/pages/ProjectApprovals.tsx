@@ -99,7 +99,7 @@ function ApprovalCard({ source, onDecide, onOpen }: { source: Source; onDecide: 
       ) : shown.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {shown.map((c, i) => (
-            <li key={i} className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5">
+            <li key={i} className="grid grid-cols-icon-line gap-2.5">
               <span className="pt-0.5">
                 <ItemTypeIcon type={c.type} />
               </span>
@@ -113,7 +113,7 @@ function ApprovalCard({ source, onDecide, onOpen }: { source: Source; onDecide: 
             </li>
           ))}
           {candidates.length > shown.length && (
-            <li className="grid grid-cols-[16px_minmax(0,1fr)] gap-2.5 text-caption text-ink-2">
+            <li className="grid grid-cols-icon-line gap-2.5 text-caption text-ink-2">
               <span aria-hidden />
               {t('approvals.moreItems', { count: candidates.length - shown.length })}
             </li>

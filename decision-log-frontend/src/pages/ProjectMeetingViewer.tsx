@@ -377,7 +377,7 @@ export default function ProjectMeetingViewer() {
                     data-item-id={item.id}
                     onClick={() => jumpToItem(item)}
                     className={
-                      'grid min-w-0 flex-1 grid-cols-[20px_minmax(0,1fr)_56px] items-center gap-3 px-4 py-2.5 text-left ' +
+                      'grid min-w-0 flex-1 grid-cols-meeting-item items-center gap-3 px-4 py-2.5 text-left ' +
                       (focusedItem === item.id ? 'bg-accent-weak shadow-rail' : 'hover:bg-surface-2')
                     }
                   >

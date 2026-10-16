@@ -426,7 +426,7 @@ function DecisionPanel({
             <>
               <ul className="flex flex-col divide-y divide-line-soft rounded-md border border-line">
                 {source.candidates.map((c, i) => (
-                  <li key={i} className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2">
+                  <li key={i} className="grid grid-cols-icon-row items-center gap-3 px-3 py-2">
                     <ItemTypeIcon type={c.type} />
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-small font-medium text-ink">{c.title}</span>
@@ -447,7 +447,7 @@ function DecisionPanel({
           <PanelSection label={previewLabel}>
             <div className="flex flex-col gap-1.5 rounded-md bg-surface-2 px-3 py-2.5">
               {source.preview!.map((line, i) => (
-                <div key={i} className="grid grid-cols-[62px_minmax(0,1fr)] gap-2">
+                <div key={i} className="grid grid-cols-preview gap-2">
                   <span className="font-mono text-mono-sm text-ink-3">
                     {line.at ?? (line.who === 'from_to' ? t('panel.fromTo') : '')}
                   </span>
@@ -621,7 +621,7 @@ function HistoryList({ query, filters }: { query: ReturnType<typeof useInboxHist
           const by = s.status === 'rejected' ? s.rejected_by_name : s.approved_by_name
           const at = s.status === 'rejected' ? s.rejected_at : s.approved_at
           return (
-            <li key={s.id} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
+            <li key={s.id} className="grid grid-cols-tile-row items-center gap-3 border-b border-line-soft px-4 py-3 last:border-b-0">
               <SourceTile type={s.source_type} />
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-body font-semibold text-ink">{sourceTitle(s)}</span>

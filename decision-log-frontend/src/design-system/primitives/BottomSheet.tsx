@@ -36,7 +36,7 @@ export function BottomSheet({ open, onOpenChange, title, action, footer, childre
           <RadixDialog.Description className="sr-only">{title}</RadixDialog.Description>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>
           {footer && (
-            <div className="border-t border-line-soft bg-surface px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">{footer}</div>
+            <div className="border-t border-line-soft bg-surface px-4 pb-safe-footer pt-3">{footer}</div>
           )}
         </RadixDialog.Content>
       </RadixDialog.Portal>
