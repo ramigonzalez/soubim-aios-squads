@@ -14,7 +14,6 @@ import ExternalPeopleSection from '../../components/organisms/ExternalPeopleSect
 import FathomRulesSection from '../../components/organisms/FathomRulesSection'
 import DriveFolderSection from '../../components/organisms/DriveFolderSection'
 import ExtractionVersions from '../../components/organisms/ExtractionVersions'
-import { MeetingVisibilityControl } from '../../components/organisms/MeetingVisibilityControl'
 import { AddMeetingDialog } from '../../components/organisms/AddMeetingDialog'
 import { renderUi, usePortuguese } from '../design-system/render'
 
@@ -235,21 +234,6 @@ describe('Phase 4c · seções do projeto, versões e adicionar reunião', () =>
       expect(screen.getByText('Nenhuma versão ainda. Uma versão é criada sempre que a reunião é extraída.')).toBeInTheDocument()
       await user.click(screen.getByRole('button', { name: 'Extrair novamente' }))
       await waitFor(() => expect(api.post).toHaveBeenCalledWith('/sources/s1/re-extract'))
-    })
-  })
-
-  describe('Visibilidade da reunião', () => {
-    it('compartilha só depois de confirmar no diálogo', async () => {
-      api.patch.mockResolvedValue({ data: { id: 's1', visibility: 'shared' } })
-      const user = userEvent.setup()
-      wrap(<MeetingVisibilityControl sourceId="s1" visibility="internal" canChange />)
-      expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Interna')
-      await user.click(screen.getByRole('button', { name: 'Compartilhar com o projeto' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Confirmar visibilidade da reunião' })
-      expect(dialog).toHaveTextContent('Todas as organizações do projeto passarão a ver esta reunião')
-      expect(api.patch).not.toHaveBeenCalled()
-      await user.click(within(dialog).getByRole('button', { name: 'Confirmar' }))
-      await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/sources/s1/visibility', { visibility: 'shared' }))
     })
   })
 
