@@ -71,6 +71,18 @@ const promemPreset: Partial<Config> = {
       height: { row: v('row-h'), 'row-compact': v('row-h-compact'), 'row-2': v('row-h-two-line'), touch: v('touch-min') },
       minHeight: { row: v('row-h'), 'row-2': v('row-h-two-line'), touch: v('touch-min') },
       minWidth: { touch: v('touch-min') },
+      // Named row layouts, so feature code never writes px grid templates (token guard)
+      gridTemplateColumns: {
+        'icon-line': '16px minmax(0,1fr)', // icon + wrapping text (approval candidates)
+        'icon-row': '20px minmax(0,1fr) auto', // icon + two lines + trailing (panel lists)
+        'tile-row': '32px minmax(0,1fr) auto', // 32 px tile + text + trailing
+        excerpt: '56px minmax(0,1fr)', // mono time + transcript line
+        preview: '62px minmax(0,1fr)', // speaker / time + preview line
+        'meeting-item': '20px minmax(0,1fr) 56px', // extracted item + timestamp
+        'stage-row': 'minmax(140px,1fr) minmax(0,140px) minmax(0,140px) 64px 32px', // stage editor
+        'team-row': 'minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr) 32px', // team editor
+      },
+      padding: { 'safe-footer': 'calc(12px + env(safe-area-inset-bottom))' },
       transitionTimingFunction: { promem: v('ease') },
       transitionDuration: { fast: '120ms', base: '200ms' },
       screens: { xs: '375px' }, // Tailwind defaults cover md 768 / lg 1024 / xl 1280 / 2xl 1536

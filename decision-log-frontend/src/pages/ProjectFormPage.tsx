@@ -258,7 +258,7 @@ export default function ProjectFormPage({ mode }: { mode: 'create' | 'edit' }) {
               <p className="rounded-md border border-dashed border-line-strong px-4 py-5 text-center text-small text-ink-2">{t('projectForm.noStages')}</p>
             ) : (
               <div className="flex flex-col gap-2">
-                <div className="hidden grid-cols-[minmax(140px,1fr)_minmax(0,140px)_minmax(0,140px)_64px_32px] gap-2 text-label uppercase text-ink-2 sm:grid">
+                <div className="hidden grid-cols-stage-row gap-2 text-label uppercase text-ink-2 sm:grid">
                   <span>{t('projectForm.stageColumns.name')}</span>
                   <span>{t('projectForm.stageColumns.start')}</span>
                   <span>{t('projectForm.stageColumns.end')}</span>
@@ -270,7 +270,7 @@ export default function ProjectFormPage({ mode }: { mode: 'create' | 'edit' }) {
                   const days = stage.start && stage.end ? differenceInCalendarDays(toDate(stage.end)!, toDate(stage.start)!) : null
                   const patch = (p: Partial<StageDraft>) => setStages((cur) => cur.map((s) => (s.key === stage.key ? { ...s, ...p } : s)))
                   return (
-                    <div key={stage.key} className="grid grid-cols-2 items-center gap-2 sm:grid-cols-[minmax(140px,1fr)_minmax(0,140px)_minmax(0,140px)_64px_32px]">
+                    <div key={stage.key} className="grid grid-cols-2 items-center gap-2 sm:grid-cols-stage-row">
                       <Input
                         className="col-span-2 sm:col-span-1"
                         aria-label={`${t('projectForm.stageName')} ${index + 1}`}
@@ -327,7 +327,7 @@ export default function ProjectFormPage({ mode }: { mode: 'create' | 'edit' }) {
               <p className="rounded-md border border-dashed border-line-strong px-4 py-5 text-center text-small text-ink-2">{t('projectForm.noPeople')}</p>
             ) : (
               <div className="flex flex-col gap-2">
-                <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)_minmax(0,1fr)_32px] gap-2 text-label uppercase text-ink-2 md:grid">
+                <div className="hidden grid-cols-team-row gap-2 text-label uppercase text-ink-2 md:grid">
                   <span>{t('projectForm.teamColumns.name')}</span>
                   <span>{t('projectForm.teamColumns.email')}</span>
                   <span>{t('projectForm.teamColumns.discipline')}</span>
@@ -337,7 +337,7 @@ export default function ProjectFormPage({ mode }: { mode: 'create' | 'edit' }) {
                 {people.map((person, index) => {
                   const patch = (p: Partial<PersonDraft>) => setPeople((cur) => cur.map((x) => (x.key === person.key ? { ...x, ...p } : x)))
                   return (
-                    <div key={person.key} className="grid grid-cols-2 items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)_minmax(0,1fr)_32px]">
+                    <div key={person.key} className="grid grid-cols-2 items-center gap-2 md:grid-cols-team-row">
                       <Input aria-label={`${t('projectForm.personName')} ${index + 1}`} value={person.name} onChange={(e) => patch({ name: e.target.value })} />
                       <Input type="email" aria-label={`${t('projectForm.personEmail')} ${index + 1}`} value={person.email} onChange={(e) => patch({ email: e.target.value })} />
                       <Select
