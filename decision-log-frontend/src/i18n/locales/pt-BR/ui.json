@@ -75,5 +75,8 @@
     "label": "Promem",
     "endorsed": "by souBIM"
   },
-  "shortcut": "Atalho: {{key}}"
+  "shortcut": "Atalho: {{key}}",
+  "list": {
+    "and": "{{rest}} e {{last}}"
+  }
 }

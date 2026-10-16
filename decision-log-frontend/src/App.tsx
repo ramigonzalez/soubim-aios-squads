@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
 import { ProjectDetail } from './pages/ProjectDetail'
-import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
 import { HomeRedirect, PlatformRoute } from './components/common/PlatformRoute'
 import { LegacyMeetingRedirect, ProjectIndexRedirect } from './components/common/ProjectRedirects'
@@ -28,6 +27,8 @@ const ProjectHistory = lazy(() => import('./pages/ProjectHistory'))
 const ManualItemNew = lazy(() => import('./pages/ManualItemNew'))
 const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
 const ProjectsList = lazy(() => import('./pages/ProjectsList'))
+const PublicTimeline = lazy(() => import('./pages/PublicTimeline'))
+const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'))
 const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
 // Component gallery (Promem design system), development builds only
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
@@ -61,8 +62,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/shared/milestones/:token" element={<SharedMilestoneTimeline />} />
-      <Route path="/m/:token" element={<SharedMilestoneTimeline />} />
+      <Route path="/shared/milestones/:token" element={<Lazy><PublicTimeline /></Lazy>} />
+      <Route path="/m/:token" element={<Lazy><PublicTimeline /></Lazy>} />
       <Route path="/invite/:token" element={<Lazy><AcceptInvitation /></Lazy>} />
       <Route path="/auth/google/callback" element={<Lazy><GoogleCallback /></Lazy>} />
       {UiGallery && <Route path="/dev/ui" element={<Lazy><UiGallery /></Lazy>} />}
@@ -86,6 +87,7 @@ function AppRoutes() {
         <Route path="/settings/integrations/fathom" element={<Lazy><FathomMeetings /></Lazy>} />
         <Route path="/settings/team" element={<Lazy><TeamSettings /></Lazy>} />
         <Route path="/settings/password" element={<Lazy><ChangePassword /></Lazy>} />
+        <Route path="/settings/workspace" element={<Lazy><WorkspaceSettings /></Lazy>} />
         <Route path="/platform" element={<PlatformRoute><Lazy><Platform /></Lazy></PlatformRoute>} />
       </Route>
 

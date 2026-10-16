@@ -121,3 +121,9 @@ export function formatFileSize(bytes: number): string {
   }).format(value)
   return `${number} ${units[unit]}`
 }
+
+/** "A, B e C" (pt-BR) / "A, B and C". */
+export function formatList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? ''
+  return i18n.t('ui:list.and', { rest: items.slice(0, -1).join(', '), last: items[items.length - 1] })
+}
