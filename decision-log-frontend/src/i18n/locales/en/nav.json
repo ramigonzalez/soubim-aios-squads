@@ -57,9 +57,5 @@
     "share": "Share with the client",
     "account": "Account"
   },
-  "interim": {
-    "title": "{{section}} under construction",
-    "text": "This screen is rebuilt in the next phase of the new Promem. The other project sections are already in the menu."
-  },
   "skipToContent": "Skip to content"
 }

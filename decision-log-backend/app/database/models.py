@@ -279,6 +279,28 @@ class ProjectVisit(Base):
     )
 
 
+class TranscriptSpeakerCorrection(Base):
+    """A person picked for a turn whose speaker the transcription was unsure of (Promem revamp G4).
+
+    Kept apart from ``sources.raw_content`` so the original transcript is never rewritten; the
+    meeting endpoint applies the corrections when it serves the transcript.
+    """
+
+    __tablename__ = "transcript_speaker_corrections"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
+    turn_start = Column(Integer, nullable=False)  # seconds from the start of the recording
+    speaker = Column(String(255), nullable=False)
+    corrected_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+    corrected_at = Column(DateTime, nullable=False, default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("source_id", "turn_start", name="uq_speaker_correction_turn"),
+        Index("idx_speaker_corrections_source", "source_id"),
+    )
+
+
 class ProjectOrganization(Base):
     """An organization with access to a project (Story 12.3).
 

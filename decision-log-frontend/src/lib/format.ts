@@ -76,11 +76,12 @@ export function formatDaysLeft(days: number): string {
   return i18n.t('ui:stage.daysLeft', { count: Math.max(0, days) })
 }
 
-/** "45 min" · "1 h 05 min". */
+/** "45 min" · "1 h" · "1 h 05 min". */
 export function formatDuration(minutes: number | null | undefined): string {
   if (minutes == null || minutes < 0) return ''
   const m = Math.round(minutes)
   if (m < 60) return i18n.t('ui:duration.minutes', { count: m })
+  if (m % 60 === 0) return i18n.t('ui:duration.hoursOnly', { hours: m / 60 })
   return i18n.t('ui:duration.hours', { hours: Math.floor(m / 60), minutes: String(m % 60).padStart(2, '0') })
 }
 

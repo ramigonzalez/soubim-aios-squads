@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.api.routes.project_items import participant_names
+from app.services.meeting_view import participant_names
 from app.database.models import Project, ProjectItem, Source, User
 from app.utils.security import create_access_token, hash_password
 from tests.org_helpers import default_org_id, make_org_member
