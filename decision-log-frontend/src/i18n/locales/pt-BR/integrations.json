@@ -1,6 +1,7 @@
 {
   "title": "Integrações",
   "subtitle": "Conecte suas contas para importar reuniões no Promem.",
+  "eyebrow": "Configurações",
   "fathom": {
     "name": "Fathom",
     "description": "Importe as gravações e transcrições das suas reuniões do Fathom.",
@@ -14,7 +15,6 @@
     "notConnected": "Não conectado",
     "needsReconnect": "A conexão expirou. Reconecte sua conta do Fathom.",
     "notConfigured": "A integração com o Fathom ainda não está disponível neste servidor.",
-    "confirmDisconnect": "Desconectar sua conta do Fathom? As reuniões já importadas continuam no Promem.",
     "result": {
       "connected": "Conta do Fathom conectada.",
       "error": "Não foi possível conectar ao Fathom. Tente novamente.",
@@ -24,7 +24,8 @@
     },
     "errors": {
       "load": "Não foi possível carregar o status da integração.",
-      "action": "Algo deu errado. Tente novamente."
+      "action": "Algo deu errado. Tente novamente.",
+      "disconnect": "Não foi possível desconectar o Fathom. Tente de novo."
     },
     "browse": "Ver reuniões do Fathom",
     "autoImport": {
@@ -42,7 +43,15 @@
         "forbidden": "Você não pode usar esta visibilidade.",
         "generic": "Não foi possível salvar. Tente novamente."
       }
-    }
+    },
+    "expired": "Conexão expirada",
+    "unavailable": "Indisponível",
+    "disconnectSection": "Desconectar a conta",
+    "disconnectHelp": "As reuniões já importadas continuam no Promem.",
+    "disconnectTitle": "Desconectar o Fathom?",
+    "disconnectText": "As reuniões já importadas continuam no Promem. A importação automática para, e para importar novas reuniões você precisa conectar a conta de novo.",
+    "disconnectConfirm": "Desconectar o Fathom",
+    "cancel": "Cancelar"
   },
   "meetings": {
     "title": "Reuniões do Fathom",
@@ -107,7 +116,24 @@
         "alreadyImported": "Esta reunião já foi importada neste projeto.",
         "storage": "O armazenamento de gravações não está configurado neste servidor.",
         "generic": "Não foi possível importar. Tente novamente."
-      }
+      },
+      "meeting": "Reunião",
+      "projectsError": "Não foi possível carregar os projetos."
+    },
+    "emptyText": "As reuniões gravadas na sua conta do Fathom aparecem aqui. Depois de gravar uma reunião no Fathom, atualize a lista.",
+    "refresh": "Atualizar lista",
+    "clearSearch": "Limpar busca",
+    "sourceStatus": {
+      "pending": "Pendente",
+      "approved": "Aprovada",
+      "rejected": "Recusada",
+      "processed": "Processada",
+      "failed": "Falhou"
+    },
+    "job": {
+      "queued": "Na fila",
+      "running": "Processando",
+      "retrying": "Nova tentativa ({{attempt}}/{{max}})"
     }
   }
 }

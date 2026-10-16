@@ -79,9 +79,18 @@ function renderPage(status: Partial<FathomStatus> = {}) {
   )
 }
 
+/** Picks a project in the dialog's Radix Select (combobox → option). */
+async function chooseProject(dialog: HTMLElement, name: string) {
+  await userEvent.click(await within(dialog).findByRole('combobox', { name: 'Project' }))
+  await userEvent.click(await screen.findByRole('option', { name }))
+}
+
 describe('FathomMeetings (Story 13.4)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
     service.getFathomImportProjects.mockResolvedValue([
       { id: 'p1', name: 'D/SEASON', can_share: true },
       { id: 'p2', name: 'Casa Verde', can_share: false },
@@ -102,7 +111,7 @@ describe('FathomMeetings (Story 13.4)', () => {
     service.listFathomMeetings.mockResolvedValue({ items: [meeting({ imports: [anImport()] })], next_cursor: null })
     renderPage()
     expect(await screen.findByText('Imported into D/SEASON')).toBeInTheDocument()
-    expect(screen.getByText('pending')).toBeInTheDocument()
+    expect(screen.getByText('Pending')).toBeInTheDocument()
   })
 
   it('shows the thumbnail of an imported meeting, lazy-loaded, with alt text (Story 13.12)', async () => {
@@ -185,11 +194,10 @@ describe('FathomMeetings (Story 13.4)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
 
     const dialog = await screen.findByRole('dialog')
-    const select = await within(dialog).findByRole('combobox')
-    expect(within(dialog).getByRole('option', { name: 'D/SEASON (already imported)' })).toBeDisabled()
     expect(within(dialog).getByRole('button', { name: 'Import' })).toBeDisabled()
-
-    await userEvent.selectOptions(select, 'p2')
+    await userEvent.click(await within(dialog).findByRole('combobox', { name: 'Project' }))
+    expect(await screen.findByRole('option', { name: 'D/SEASON (already imported)' })).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(screen.getByRole('option', { name: 'Casa Verde' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
 
     await waitFor(() => expect(service.importFathomMeeting).toHaveBeenCalledWith({ recording_id: '123', project_id: 'p2', visibility: 'internal' }))
@@ -203,7 +211,7 @@ describe('FathomMeetings (Story 13.4)', () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
     const dialog = await screen.findByRole('dialog')
-    await userEvent.selectOptions(await within(dialog).findByRole('combobox'), 'p1')
+    await chooseProject(dialog, 'D/SEASON')
     const internal = within(dialog).getByRole('radio', { name: /Internal/ })
     const shared = within(dialog).getByRole('radio', { name: /Shared/ })
     expect(internal).toBeChecked()
@@ -219,10 +227,9 @@ describe('FathomMeetings (Story 13.4)', () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
     const dialog = await screen.findByRole('dialog')
-    const select = await within(dialog).findByRole('combobox')
-    await userEvent.selectOptions(select, 'p1')
+    await chooseProject(dialog, 'D/SEASON')
     await userEvent.click(within(dialog).getByRole('radio', { name: /Shared/ }))
-    await userEvent.selectOptions(select, 'p2')
+    await chooseProject(dialog, 'Casa Verde')
     expect(within(dialog).getByRole('radio', { name: /Shared/ })).toBeDisabled()
     expect(within(dialog).getByRole('radio', { name: /Internal/ })).toBeChecked()
     expect(within(dialog).getByText('Only admins of your organization can import a meeting as shared.')).toBeInTheDocument()
@@ -234,7 +241,7 @@ describe('FathomMeetings (Story 13.4)', () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Import: Coordenação D/SEASON' }))
     const dialog = await screen.findByRole('dialog')
-    await userEvent.selectOptions(await within(dialog).findByRole('combobox'), 'p1')
+    await chooseProject(dialog, 'D/SEASON')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Import' }))
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('This meeting is already imported into this project.')
   })

@@ -1,4 +1,5 @@
 {
+  "eyebrow": "Platform operations",
   "title": "Platform",
   "subtitle": "Client organizations and invitations for new companies. Counts only: client content is never shown here.",
   "organizations": {
@@ -16,7 +17,13 @@
     "hideDetails": "Hide",
     "statusLabel": "Status of {{name}}",
     "statusError": "Could not change the status.",
-    "confirmBlock": "Block {{name}}? Its members lose access to this organization immediately."
+    "confirmBlock": "Block {{name}}? Its members lose access to this organization immediately.",
+    "count_one": "{{count}} client organization",
+    "count_other": "{{count}} client organizations",
+    "emptyText": "Organizations appear here when someone accepts a new-company invitation.",
+    "statusChanged": "{{name}}: status changed to {{status}}",
+    "blockTitle": "Block {{name}}?",
+    "blockConfirm": "Block organization"
   },
   "status": {
     "active": "Active",
@@ -27,7 +34,8 @@
     "loading": "Loading members...",
     "empty": "No members.",
     "error": "Could not load the members.",
-    "membersOf": "Members of {{name}}"
+    "membersOf": "Members of {{name}}",
+    "retry": "Try again"
   },
   "roles": {
     "owner": "Owner",
@@ -46,13 +54,22 @@
     "link": "Invitation link",
     "copy": "Copy link",
     "copied": "Copied",
-    "error": "Could not create the invitation."
+    "error": "Could not create the invitation.",
+    "companyPlaceholder": "e.g. Example Architects Ltd.",
+    "emailPlaceholder": "e.g. partner@example.com"
   },
   "pending": {
     "title": "Pending invitations",
     "empty": "No pending invitations.",
     "expires": "expires {{date}}",
     "revoke": "Revoke",
-    "revokeError": "Could not revoke the invitation."
-  }
+    "revokeError": "Could not revoke the invitation.",
+    "expiresLabel": "expires",
+    "emptyText": "Invitations for new companies appear here until they are accepted, revoked or expire.",
+    "loadError": "Could not load the pending invitations.",
+    "revokeTitle": "Revoke invitation?",
+    "revokeText": "The link sent to {{email}} ({{name}}) stops working immediately and the organization will not be created. To invite them again, create a new invitation.",
+    "revokeConfirm": "Revoke invitation"
+  },
+  "cancel": "Cancel"
 }

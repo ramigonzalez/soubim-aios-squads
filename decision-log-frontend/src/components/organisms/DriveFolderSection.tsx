@@ -1,18 +1,19 @@
 /**
- * DriveFolderSection — the project's Google Drive folder (Story 12.9).
+ * DriveFolderSection — the project's Google Drive folder (Story 12.9), on the Promem design system.
  *
  * The organization shares a Drive folder with the platform's service account e-mail, then picks it
  * here from the folders its own members shared. The Drive monitor then imports new PDF/DOCX files.
- * Shown on the Project Edit page; renders nothing when the user cannot manage it (API 403: only the
- * owning organization's owner/admin can).
+ * Rendered as an integration row (icon, name, status, one action) inside its own section card, which
+ * saves on its own. Renders nothing when the user cannot manage it (API 403: only the owning
+ * organization's owner/admin can). `title` lets the project form number the card ("4 · …").
  */
-import { useState } from 'react'
-import { ExternalLink, RefreshCw } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
+import { Badge, Banner, Button, Dialog, ErrorState, Field, Icons, Select, SkeletonRows } from '../../design-system'
 import { integrationsService } from '../../services/integrationsService'
 import type { DriveFolderOption, DriveFolderState } from '../../types/integrations'
-import { SettingsCard } from '../molecules/SettingsCard'
+import { FormSection } from '../templates/FormShell'
 
 export const driveFolderKey = (projectId: string) => ['drive-folder', projectId]
 const optionsKey = (projectId: string) => ['drive-folder-options', projectId]
@@ -24,10 +25,10 @@ function errorKey(error: unknown): string {
   return typeof detail === 'string' && KNOWN_ERRORS.includes(detail) ? `driveFolder.errors.${detail}` : 'driveFolder.errors.generic'
 }
 
-export default function DriveFolderSection({ projectId }: { projectId: string }) {
+export default function DriveFolderSection({ projectId, title }: { projectId: string; title?: ReactNode }) {
   const { t, i18n } = useTranslation('projects')
   const queryClient = useQueryClient()
-  const { data: state, isLoading, error: stateError } = useQuery<DriveFolderState>(
+  const { data: state, isLoading, error: stateError, refetch } = useQuery<DriveFolderState>(
     driveFolderKey(projectId),
     () => integrationsService.getDriveFolder(projectId),
     { enabled: !!projectId, retry: false },
@@ -43,7 +44,7 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
   const [error, setError] = useState<string | null>(null)
 
   const save = useMutation((folderId: string) => integrationsService.setDriveFolder(projectId, folderId), {
-    onSuccess: data => {
+    onSuccess: (data) => {
       queryClient.setQueryData(driveFolderKey(projectId), data)
       setChoice('')
     },
@@ -55,16 +56,26 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
     },
   })
 
-  if (isLoading) return null
+  const section = (children: ReactNode) => (
+    <FormSection
+      title={title ?? t('driveFolder.title')}
+      description={
+        <>
+          {t('driveFolder.description')}
+          <span className="block text-ink-3">{t('settings.autoSaved')}</span>
+        </>
+      }
+    >
+      {children}
+    </FormSection>
+  )
+
+  if (isLoading) return section(<SkeletonRows rows={2} rowClassName="h-row-2" className="rounded-lg border border-line" />)
   if (!state) {
     // 403: this user cannot manage the folder, so the section is hidden. Any other failure is shown.
     const forbidden = (stateError as { response?: { status?: number } })?.response?.status === 403
     if (forbidden || !stateError) return null
-    return (
-      <SettingsCard titleId="drive-folder-title" title={t('driveFolder.title')}>
-        <p role="alert" className="text-sm text-red-700">{t('driveFolder.errors.generic')}</p>
-      </SettingsCard>
-    )
+    return section(<ErrorState className="py-6" title={t('driveFolder.loadError')} text={t('driveFolder.errors.generic')} onRetry={() => void refetch()} />)
   }
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString(i18n.language)
@@ -94,125 +105,117 @@ export default function DriveFolderSection({ projectId }: { projectId: string })
     try {
       await remove.mutateAsync()
     } catch (err) {
+      setConfirmRemove(false)
       setError(t(errorKey(err)))
     }
   }
 
   const folders = options.data || []
-  const others = folders.filter(f => f.id !== state.folder_id)
+  const others = folders.filter((f) => f.id !== state.folder_id)
+  const FolderIcon = Icons.projects
 
-  return (
-    <SettingsCard titleId="drive-folder-title" title={t('driveFolder.title')} description={t('driveFolder.description')} autoSaved>
+  if (!state.configured) return section(<Banner>{t('driveFolder.notConfigured')}</Banner>)
 
-      {!state.configured ? (
-        <p className="text-sm text-gray-600">{t('driveFolder.notConfigured')}</p>
-      ) : (
-        <>
-          {error && (
-            <div role="alert" className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">{error}</div>
-          )}
+  return section(
+    <>
+      {error && <Banner tone="danger">{error}</Banner>}
 
-          {state.folder_id && (
-            <div className="rounded-md border border-gray-200 p-3 text-sm space-y-1">
-              <p className="font-medium text-gray-900">{t('driveFolder.current', { name: state.folder_name || state.folder_id })}</p>
-              <p className="text-gray-500">
-                {state.last_checked_at
-                  ? t('driveFolder.lastChecked', { date: formatDate(state.last_checked_at) })
-                  : t('driveFolder.notCheckedYet')}
+      {/* Integration row (guidelines §5): icon, name, status, one action */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-line px-4 py-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-2 text-ink-2" aria-hidden>
+          <FolderIcon className="h-4 w-4" strokeWidth={1.75} />
+        </span>
+        {state.folder_id ? (
+          <>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <p className="break-words text-small font-medium text-ink">{t('driveFolder.current', { name: state.folder_name || state.folder_id })}</p>
+              <p className="text-caption text-ink-2">
+                {t('driveFolder.connected')} ·{' '}
+                {state.last_checked_at ? t('driveFolder.lastChecked', { date: formatDate(state.last_checked_at) }) : t('driveFolder.notCheckedYet')}
               </p>
-              {state.error && (
-                <p role="status" className="text-amber-700">{t(`driveFolder.errors.${state.error}`)}</p>
-              )}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <a
-                  href={`https://drive.google.com/drive/folders/${encodeURIComponent(state.folder_id)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                >
-                  {t('driveFolder.open')} <ExternalLink className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <Button asChild size="sm" variant="link">
+                <a href={`https://drive.google.com/drive/folders/${encodeURIComponent(state.folder_id)}`} target="_blank" rel="noreferrer">
+                  {t('driveFolder.open')} ↗
                 </a>
-                {confirmRemove ? (
-                  <span className="inline-flex flex-wrap items-center gap-2">
-                    <span className="text-gray-700">{t('driveFolder.removeConfirm')}</span>
-                    <button type="button" onClick={handleRemove} disabled={remove.isLoading}
-                      className="rounded-md bg-red-600 px-3 py-1 text-white hover:bg-red-700 disabled:opacity-50">
-                      {t('driveFolder.remove')}
-                    </button>
-                    <button type="button" onClick={() => setConfirmRemove(false)} className="text-gray-600 hover:underline">
-                      {t('common:cancel')}
-                    </button>
-                  </span>
-                ) : (
-                  <button type="button" onClick={() => setConfirmRemove(true)} className="text-red-600 hover:underline">
-                    {t('driveFolder.remove')}
-                  </button>
-                )}
-              </div>
+              </Button>
+              <Button size="sm" variant="danger-ghost" onClick={() => setConfirmRemove(true)}>
+                {t('driveFolder.remove')}
+              </Button>
             </div>
-          )}
-
-          <div className="rounded-md bg-gray-50 p-3 text-sm space-y-2">
-            <p className="font-medium text-gray-900">{t('driveFolder.howTo.title')}</p>
-            <ol className="list-decimal pl-5 space-y-1 text-gray-700">
-              <li>{t('driveFolder.howTo.step1')}</li>
-              <li>
-                {t('driveFolder.howTo.step2')}{' '}
-                <code className="break-all rounded bg-white px-1 py-0.5 border border-gray-200">{state.service_account_email}</code>{' '}
-                <button type="button" onClick={copyEmail} className="text-blue-600 hover:underline">
-                  {copied ? t('driveFolder.copied') : t('driveFolder.copy')}
-                </button>
-              </li>
-              <li>{t('driveFolder.howTo.step3')}</li>
-            </ol>
-            <p className="text-gray-500">{t('driveFolder.howTo.note')}</p>
+          </>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <p className="text-small font-medium text-ink">{t('driveFolder.title')}</p>
+            <Badge>{t('driveFolder.notConnected')}</Badge>
           </div>
+        )}
+      </div>
 
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <label htmlFor="drive-folder-select" className="block text-sm font-medium text-gray-700">
-                {t('driveFolder.select')}
-              </label>
-              <select
-                id="drive-folder-select"
-                value={choice}
-                onChange={e => setChoice(e.target.value)}
-                disabled={options.isLoading || others.length === 0}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="">{t('driveFolder.selectPlaceholder')}</option>
-                {others.map(f => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} — {t('driveFolder.sharedBy', { email: f.shared_by })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!choice || save.isLoading}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {save.isLoading ? t('driveFolder.saving') : t('driveFolder.save')}
-            </button>
-            <button
-              type="button"
-              onClick={() => options.refetch()}
-              disabled={options.isFetching}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${options.isFetching ? 'animate-spin' : ''}`} />
-              {t('driveFolder.refresh')}
-            </button>
-          </div>
-          {options.isLoading && <p className="text-sm text-gray-500">{t('driveFolder.loadingOptions')}</p>}
-          {options.isError && <p role="alert" className="text-sm text-red-700">{t(errorKey(options.error))}</p>}
-          {!options.isLoading && !options.isError && others.length === 0 && (
-            <p className="text-sm text-gray-500">{t('driveFolder.noOptions')}</p>
-          )}
-        </>
+      {state.folder_id && state.error && (
+        <Banner tone="warning">
+          <span role="status">{t(`driveFolder.errors.${state.error}`)}</span>
+        </Banner>
       )}
-    </SettingsCard>
+
+      <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4 text-small">
+        <p className="font-semibold text-ink">{t('driveFolder.howTo.title')}</p>
+        <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-ink-soft">
+          <li>{t('driveFolder.howTo.step1')}</li>
+          <li>
+            {t('driveFolder.howTo.step2')}{' '}
+            <span className="inline-flex max-w-full flex-wrap items-center gap-1 align-middle">
+              <code className="break-all rounded-sm border border-line bg-surface px-1.5 py-0.5 font-mono text-mono text-ink">{state.service_account_email}</code>
+              <Button size="sm" variant="ghost" icon={<Icons.copy />} onClick={() => void copyEmail()}>
+                {copied ? t('driveFolder.copied') : t('driveFolder.copy')}
+              </Button>
+            </span>
+          </li>
+          <li>{t('driveFolder.howTo.step3')}</li>
+        </ol>
+        <p className="text-caption text-ink-2">{t('driveFolder.howTo.note')}</p>
+      </div>
+
+      <div className="flex flex-col gap-2 md:flex-row md:items-end">
+        <Field label={t('driveFolder.select')} className="min-w-0 flex-1">
+          <Select
+            value={choice}
+            onValueChange={setChoice}
+            placeholder={t('driveFolder.selectPlaceholder')}
+            disabled={options.isLoading || others.length === 0}
+            options={others.map((f) => ({ value: f.id, label: `${f.name} — ${t('driveFolder.sharedBy', { email: f.shared_by })}` }))}
+          />
+        </Field>
+        <div className="flex flex-wrap gap-2 md:mb-px">
+          <Button onClick={() => void handleSave()} disabled={!choice} loading={save.isLoading}>
+            {save.isLoading ? t('driveFolder.saving') : t('driveFolder.save')}
+          </Button>
+          <Button variant="ghost" onClick={() => void options.refetch()} loading={options.isFetching}>
+            {t('driveFolder.refresh')}
+          </Button>
+        </div>
+      </div>
+      {options.isLoading && <p className="text-caption text-ink-2">{t('driveFolder.loadingOptions')}</p>}
+      {options.isError && <Banner tone="danger">{t(errorKey(options.error))}</Banner>}
+      {!options.isLoading && !options.isError && others.length === 0 && (
+        <p className="rounded-md border border-dashed border-line-strong px-4 py-5 text-center text-small text-ink-2">{t('driveFolder.noOptions')}</p>
+      )}
+
+      <Dialog
+        open={confirmRemove}
+        onOpenChange={setConfirmRemove}
+        title={t('driveFolder.removeTitle')}
+        description={t('driveFolder.removeConfirm')}
+        footer={
+          <>
+            <Button onClick={() => setConfirmRemove(false)}>{t('common:cancel')}</Button>
+            <Button variant="primary" loading={remove.isLoading} onClick={() => void handleRemove()}>
+              {t('driveFolder.remove')}
+            </Button>
+          </>
+        }
+      />
+    </>,
   )
 }

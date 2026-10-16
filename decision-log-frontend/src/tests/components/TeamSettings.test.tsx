@@ -7,6 +7,7 @@ import TeamSettings from '../../pages/TeamSettings'
 import { useAuthStore } from '../../store/authStore'
 import { useOrganizationStore } from '../../store/organizationStore'
 import api from '../../services/api'
+import { ToastProvider, TooltipProvider } from '../../design-system'
 
 const MEMBERS = [
   { user_id: 'u1', name: 'Ana Owner', email: 'ana@x.com', role: 'owner', joined_at: '2026-01-01T00:00:00Z' },
@@ -33,9 +34,13 @@ function setup(role: 'owner' | 'admin' | 'member', slug = 'acme', members: Array
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <TeamSettings />
-      </MemoryRouter>
+      <TooltipProvider>
+        <ToastProvider>
+          <MemoryRouter>
+            <TeamSettings />
+          </MemoryRouter>
+        </ToastProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }
@@ -43,6 +48,10 @@ function setup(role: 'owner' | 'admin' | 'member', slug = 'acme', members: Array
 describe('TeamSettings (Story 12.5)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    // Radix Select needs these in the DOM test environment
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
     localStorage.clear()
     useOrganizationStore.setState({ activeOrganizationId: null })
     useAuthStore.getState().setAuth({ id: 'u1', email: 'ana@x.com', name: 'Ana', role: 'client' }, 'jwt')
@@ -83,15 +92,19 @@ describe('TeamSettings (Story 12.5)', () => {
   it('an admin cannot grant the owner role', async () => {
     setup('admin')
     await screen.findByText('Bia Member')
-    const roleSelect = screen.getByLabelText('Role')
-    expect(roleSelect.querySelector('option[value="owner"]')).toBeNull()
+    await userEvent.click(screen.getByRole('combobox', { name: 'Role' }))
+    expect(await screen.findByRole('option', { name: 'Admin' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Owner' })).not.toBeInTheDocument()
   })
 
   it('reviewer is a role admins can invite and grant (Story 12.7)', async () => {
     setup('admin')
     await screen.findByText('Bia Member')
-    expect(screen.getByLabelText('Role').querySelector('option[value="reviewer"]')).not.toBeNull()
-    expect(screen.getByLabelText('Role Bia Member').querySelector('option[value="reviewer"]')).not.toBeNull()
+    await userEvent.click(screen.getByRole('combobox', { name: 'Role' }))
+    expect(await screen.findByRole('option', { name: 'Reviewer' })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(screen.getByRole('combobox', { name: 'Role Bia Member' }))
+    expect(await screen.findByRole('option', { name: 'Reviewer' })).toBeInTheDocument()
   })
 
   it('assigns and unassigns a member to projects of the organization (Story 12.7)', async () => {
@@ -106,7 +119,7 @@ describe('TeamSettings (Story 12.5)', () => {
     const shared = screen.getByRole('checkbox', { name: /Partner Tower/ })
     expect(assigned).toBeChecked()
     expect(shared).not.toBeChecked()
-    expect(screen.getByText('(shared)')).toBeInTheDocument()
+    expect(screen.getByText('shared')).toBeInTheDocument()
 
     await userEvent.click(shared)
     expect(put).toHaveBeenCalledWith('/organizations/org-1/members/u2/projects/p2')

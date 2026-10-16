@@ -30,6 +30,10 @@ function wrap() {
 describe('FathomRulesSection (Story 13.16)', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    // Radix Select uses pointer capture and scrollIntoView, which happy-dom lacks
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
     await i18n.changeLanguage('en')
     service.listFathomRules.mockResolvedValue(RULES)
     service.createFathomRule.mockResolvedValue({})
@@ -48,7 +52,7 @@ describe('FathomRulesSection (Story 13.16)', () => {
     service.listFathomRules.mockRejectedValue({ response: { status: 403 } })
     const { container } = wrap()
     await waitFor(() => expect(service.listFathomRules).toHaveBeenCalled())
-    expect(container).toBeEmptyDOMElement()
+    await waitFor(() => expect(container).toBeEmptyDOMElement())
   })
 
   it('shows an empty state', async () => {
@@ -60,7 +64,8 @@ describe('FathomRulesSection (Story 13.16)', () => {
   it('adds a rule (field + trimmed value)', async () => {
     wrap()
     await screen.findByText('D/SEASON')
-    await userEvent.selectOptions(screen.getByLabelText('Field'), 'participant_email')
+    await userEvent.click(screen.getByRole('combobox', { name: 'Field' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Participant email is' }))
     await userEvent.type(screen.getByLabelText('Value'), '  ana@cliente.com ')
     await userEvent.click(screen.getByRole('button', { name: 'Add rule' }))
     await waitFor(() => expect(service.createFathomRule).toHaveBeenCalledWith('p1', { field: 'participant_email', value: 'ana@cliente.com' }))
@@ -70,7 +75,8 @@ describe('FathomRulesSection (Story 13.16)', () => {
   it('refuses a domain with @ before calling the API', async () => {
     wrap()
     await screen.findByText('D/SEASON')
-    await userEvent.selectOptions(screen.getByLabelText('Field'), 'participant_domain')
+    await userEvent.click(screen.getByRole('combobox', { name: 'Field' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Participant domain is' }))
     await userEvent.type(screen.getByLabelText('Value'), '@cliente.com')
     await userEvent.click(screen.getByRole('button', { name: 'Add rule' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('a domain has no @')

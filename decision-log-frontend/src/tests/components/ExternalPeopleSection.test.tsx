@@ -41,6 +41,10 @@ function renderSection() {
 describe('ExternalPeopleSection (Story 12.15)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Radix Select uses pointer capture and scrollIntoView, which happy-dom lacks
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
     mockedApi.get.mockResolvedValue({ data })
   })
 
@@ -51,7 +55,7 @@ describe('ExternalPeopleSection (Story 12.15)', () => {
     expect(screen.getByText('Saved automatically')).toBeInTheDocument()
     expect(screen.getByText('Gina Guest')).toBeInTheDocument()
     expect(screen.getByTestId('external-badge')).toHaveTextContent('External')
-    expect(screen.getByLabelText('Access of Gina Guest')).toHaveValue('viewer')
+    expect(screen.getByRole('combobox', { name: 'Access of Gina Guest' })).toHaveTextContent('Viewer')
     expect(screen.getByText('pending@client.com')).toBeInTheDocument()
     expect(screen.getByText('Invitation pending')).toBeInTheDocument()
     expect(screen.getByText('Declined')).toBeInTheDocument()
@@ -90,12 +94,15 @@ describe('ExternalPeopleSection (Story 12.15)', () => {
   it('changes access, removes a person and revokes an invitation', async () => {
     mockedApi.patch.mockResolvedValue({ data: {} })
     mockedApi.delete.mockResolvedValue({ data: {} })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderSection()
-    await userEvent.selectOptions(await screen.findByLabelText('Access of Gina Guest'), 'contributor')
-    expect(mockedApi.patch).toHaveBeenCalledWith('/projects/p1/externals/u-guest', { access: 'contributor' })
+    await userEvent.click(await screen.findByRole('combobox', { name: 'Access of Gina Guest' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Contributor' }))
+    await waitFor(() => expect(mockedApi.patch).toHaveBeenCalledWith('/projects/p1/externals/u-guest', { access: 'contributor' }))
     await userEvent.click(screen.getByRole('button', { name: 'Remove Gina Guest' }))
-    expect(mockedApi.delete).toHaveBeenCalledWith('/projects/p1/externals/u-guest')
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Remove Gina Guest from this project?')
+    expect(mockedApi.delete).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Remove access' }))
+    await waitFor(() => expect(mockedApi.delete).toHaveBeenCalledWith('/projects/p1/externals/u-guest'))
     await userEvent.click(screen.getByRole('button', { name: 'Revoke' }))
     expect(mockedApi.delete).toHaveBeenCalledWith('/projects/p1/externals/invitations/i-1')
   })

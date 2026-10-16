@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { Banner, Button, ErrorState, Field, Input, SkeletonRows, useToast } from '../design-system'
 import { FormSection, FormShell } from '../components/templates/FormShell'
+import { FormContainer } from '../components/templates/PageContainer'
 import { useActiveOrganization } from '../hooks/useOrganizations'
 import api from '../services/api'
 import type { Branding } from '../types/project'
@@ -60,16 +61,16 @@ export default function WorkspaceSettings() {
 
   if (!orgsLoading && !isAdmin) {
     return (
-      <div className="mx-auto w-full max-w-form px-4 pt-8 md:px-0">
+      <FormContainer>
         <Banner>{t('workspace.noAccess')}</Banner>
-      </div>
+      </FormContainer>
     )
   }
   if (orgsLoading || branding.isLoading) {
     return (
-      <div className="mx-auto w-full max-w-form px-4 pt-8 md:px-0">
+      <FormContainer>
         <SkeletonRows rows={5} rowClassName="h-12" />
-      </div>
+      </FormContainer>
     )
   }
   if (branding.isError) return <ErrorState title={t('workspace.error')} onRetry={() => void branding.refetch()} />

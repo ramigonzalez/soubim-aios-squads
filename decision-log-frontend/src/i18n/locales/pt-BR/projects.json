@@ -94,7 +94,10 @@
       "alreadyShared": "Esta organização já tem acesso.",
       "owner": "Este projeto já pertence a esta organização.",
       "generic": "Não foi possível atualizar o acesso. Tente novamente."
-    }
+    },
+    "removeTitle": "Remover organização do projeto",
+    "removeAction": "Remover acesso",
+    "loadError": "Não foi possível carregar as organizações com acesso."
   },
   "form": {
     "details": "Dados do projeto",
@@ -160,7 +163,8 @@
       "invalid": "Confira o valor: não pode ficar vazio nem passar de 200 caracteres, um e-mail precisa de @ e um domínio não tem @.",
       "duplicate": "Esta regra já existe.",
       "generic": "Não foi possível salvar a regra. Tente novamente."
-    }
+    },
+    "loadError": "Não foi possível carregar as regras do Fathom."
   },
   "driveFolder": {
     "title": "Pasta do Google Drive",
@@ -196,7 +200,11 @@
       "folder_in_use": "Esta pasta já alimenta outro projeto. Cada pasta pode alimentar um projeto só.",
       "drive_unavailable": "O Google Drive não respondeu. Tente de novo em instantes.",
       "generic": "Não foi possível concluir. Tente de novo."
-    }
+    },
+    "removeTitle": "Parar de monitorar a pasta",
+    "connected": "Conectada · monitorando novos arquivos",
+    "notConnected": "Não conectada",
+    "loadError": "Não foi possível carregar a pasta do Google Drive."
   },
   "settings": {
     "autoSaved": "Salvo automaticamente"
@@ -211,7 +219,7 @@
     "linkLabel": "Link do convite",
     "copy": "Copiar link",
     "copied": "Copiado",
-    "empty": "Nenhuma pessoa externa neste projeto.",
+    "empty": "Nenhuma pessoa externa neste projeto. Quem você convidar por e-mail aparece aqui.",
     "access": {
       "viewer": "Leitor",
       "contributor": "Colaborador"
@@ -229,6 +237,9 @@
       "already_member": "Esta pessoa já é membro da organização.",
       "already_invited": "Esta pessoa já tem acesso externo a este projeto.",
       "generic": "Não foi possível atualizar as pessoas externas. Tente novamente."
-    }
+    },
+    "removeTitle": "Remover pessoa externa",
+    "removeAction": "Remover acesso",
+    "loadError": "Não foi possível carregar as pessoas externas."
   }
 }

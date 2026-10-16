@@ -5,6 +5,7 @@
 import type { FormEvent, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '../../design-system'
+import { FormContainer } from './PageContainer'
 
 export function FormShell({
   back,
@@ -33,7 +34,7 @@ export function FormShell({
   formId?: string
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-form flex-col gap-6 px-4 pb-20 pt-6 md:px-0 md:pt-8">
+    <FormContainer>
       <header className="flex flex-col gap-1">
         {back && (
           <Link to={back.to} className="ds-touch mb-2 self-start text-small font-medium text-accent hover:text-accent-strong">
@@ -51,7 +52,7 @@ export function FormShell({
       </form>
       {after}
       {after && footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-5">{footer}</div>}
-    </div>
+    </FormContainer>
   )
 }
 

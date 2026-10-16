@@ -29,6 +29,7 @@ import {
   useToast,
 } from '../design-system'
 import { FormSection, FormShell } from '../components/templates/FormShell'
+import { FormContainer } from '../components/templates/PageContainer'
 import DriveFolderSection from '../components/organisms/DriveFolderSection'
 import ExternalPeopleSection from '../components/organisms/ExternalPeopleSection'
 import FathomRulesSection from '../components/organisms/FathomRulesSection'
@@ -172,9 +173,9 @@ export default function ProjectFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
   if (editing && (project.isLoading || stagesQuery.isLoading || peopleQuery.isLoading || (!loaded && !project.isError))) {
     return (
-      <div className="mx-auto w-full max-w-form px-4 pt-8 md:px-0">
+      <FormContainer>
         <SkeletonRows rows={8} rowClassName="h-12" />
-      </div>
+      </FormContainer>
     )
   }
   if (editing && (project.isError || !project.data)) {
@@ -402,11 +403,7 @@ function EditSections({
   const [archiveOpen, setArchiveOpen] = useState(false)
   return (
     <>
-      {canManage && (
-        <FormSection title={t('projectForm.sections.drive')}>
-          <DriveFolderSection projectId={id} />
-        </FormSection>
-      )}
+      {canManage && <DriveFolderSection projectId={id} title={t('projectForm.sections.drive')} />}
 
       <section className="flex flex-col gap-4">
         <h2 className="text-h3 text-ink">{t('projectForm.sections.more')}</h2>

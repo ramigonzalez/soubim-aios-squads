@@ -52,6 +52,10 @@ function listReturns(organizations: ProjectOrganization[]) {
 describe('ProjectSharing (Story 12.3)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Radix Select uses pointer capture and scrollIntoView, which happy-dom lacks
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
   })
 
   it('lists the owner and shared organizations', async () => {
@@ -61,7 +65,7 @@ describe('ProjectSharing (Story 12.3)', () => {
     expect(mockedApi.get).toHaveBeenCalledWith('/projects/p1/organizations')
     expect(screen.getByText('souBIM')).toBeInTheDocument()
     expect(screen.getByText('Owner')).toBeInTheDocument()
-    expect(screen.getByLabelText('Access for DIMAS')).toHaveValue('viewer')
+    expect(screen.getByRole('combobox', { name: 'Access for DIMAS' })).toHaveTextContent('Viewer')
     // the owner cannot be changed or removed
     expect(screen.queryByLabelText('Access for souBIM')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Remove souBIM')).not.toBeInTheDocument()
@@ -80,7 +84,8 @@ describe('ProjectSharing (Story 12.3)', () => {
     renderSharing()
     const user = userEvent.setup()
     await user.type(await screen.findByLabelText('Organization identifier'), ' dimas ')
-    await user.selectOptions(screen.getByLabelText('Access level'), 'contributor')
+    await user.click(screen.getByRole('combobox', { name: 'Access level' }))
+    await user.click(await screen.findByRole('option', { name: 'Contributor' }))
     await user.click(screen.getByRole('button', { name: 'Invite' }))
     await waitFor(() =>
       expect(mockedApi.post).toHaveBeenCalledWith('/projects/p1/organizations', {
@@ -105,15 +110,17 @@ describe('ProjectSharing (Story 12.3)', () => {
     listReturns([owner, dimas])
     mockedApi.patch.mockResolvedValue({ data: { ...dimas, access: 'contributor' } })
     mockedApi.delete.mockResolvedValue({ data: {} })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderSharing()
     const user = userEvent.setup()
-    await user.selectOptions(await screen.findByLabelText('Access for DIMAS'), 'contributor')
-    expect(mockedApi.patch).toHaveBeenCalledWith('/projects/p1/organizations/org-dimas', { access: 'contributor' })
-    await user.click(screen.getByLabelText('Remove DIMAS'))
-    expect(confirm).toHaveBeenCalled()
+    await user.click(await screen.findByRole('combobox', { name: 'Access for DIMAS' }))
+    await user.click(await screen.findByRole('option', { name: 'Contributor' }))
+    await waitFor(() => expect(mockedApi.patch).toHaveBeenCalledWith('/projects/p1/organizations/org-dimas', { access: 'contributor' }))
+    await user.click(screen.getByRole('button', { name: 'Remove DIMAS' }))
+    // destructive: a Dialog that names the action, nothing removed yet
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Remove DIMAS from this project?')
+    expect(mockedApi.delete).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Remove access' }))
     await waitFor(() => expect(mockedApi.delete).toHaveBeenCalledWith('/projects/p1/organizations/org-dimas'))
-    confirm.mockRestore()
   })
 
   describe('in Portuguese', () => {

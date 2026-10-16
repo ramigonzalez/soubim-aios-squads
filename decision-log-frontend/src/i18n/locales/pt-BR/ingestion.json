@@ -130,7 +130,7 @@
     "saving": "Salvando reunião…",
     "cancel": "Cancelar",
     "submit": "Adicionar reunião",
-    "retry": "Tentar novamente",
+    "retry": "Tentar de novo",
     "fileErrors": {
       "video": {
         "extension": "Tipo de vídeo não suportado. Use .mp4, .webm, .mov ou .m4v.",
@@ -154,7 +154,8 @@
     "visibility": "Visibilidade",
     "visibilityInternal": "Interna — só a sua organização vê",
     "visibilityShared": "Compartilhada — todas as organizações do projeto veem",
-    "sharedAdminOnly": "Só o proprietário ou admin da sua organização pode compartilhar uma reunião."
+    "sharedAdminOnly": "Só o proprietário ou admin da sua organização pode compartilhar uma reunião.",
+    "loadError": "Não foi possível carregar os projetos."
   },
   "unassigned": {
     "noProject": "Sem projeto",

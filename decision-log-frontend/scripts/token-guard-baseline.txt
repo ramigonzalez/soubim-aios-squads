@@ -6,7 +6,6 @@ src/components/molecules/FilterPopover.tsx
 src/components/molecules/MilestoneNode.tsx
 src/components/molecules/ProjectItemRow.tsx
 src/components/organisms/FilterBar.tsx
-src/components/organisms/GoogleSignInButton.tsx
 src/components/organisms/IngestionApproval.tsx
 src/components/organisms/ManualItemForm.tsx
 src/components/organisms/StageScheduleBuilder.tsx

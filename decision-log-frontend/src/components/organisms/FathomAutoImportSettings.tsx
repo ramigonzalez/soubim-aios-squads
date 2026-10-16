@@ -11,9 +11,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'react-query'
 import { useTranslation } from 'react-i18next'
+import { Button, Checkbox, Icons } from '../../design-system'
 import { integrationsService } from '../../services/integrationsService'
 import type { FathomAutoImport } from '../../types/integrations'
 import type { MeetingVisibility } from '../../types/projectItem'
+import { VisibilityChoice } from './FathomImportDialog'
 
 interface FathomAutoImportSettingsProps {
   settings: FathomAutoImport | undefined
@@ -50,57 +52,48 @@ export function FathomAutoImportSettings({ settings, onSaved }: FathomAutoImport
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-t border-gray-100 pt-4 text-sm" aria-label={t('fathom.autoImport.title')}>
-      <h3 className="font-semibold text-gray-900">{t('fathom.autoImport.title')}</h3>
-      <p className="text-gray-600">{t('fathom.autoImport.description')}</p>
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4" aria-label={t('fathom.autoImport.title')}>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-h3 text-ink">{t('fathom.autoImport.title')}</h3>
+        <p className="text-caption text-ink-2 [text-wrap:pretty]">{t('fathom.autoImport.description')}</p>
+      </div>
 
-      <label className="flex items-center gap-2 text-gray-800">
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={e => { setEnabled(e.target.checked); setSaved(false) }}
-        />
-        {t('fathom.autoImport.enable')}
-      </label>
+      <Checkbox
+        className="-ml-1"
+        checked={enabled}
+        onCheckedChange={checked => { setEnabled(checked); setSaved(false) }}
+        label={t('fathom.autoImport.enable')}
+      />
 
       {enabled && (
         <>
-          <p className="text-gray-600">{t('fathom.autoImport.routing')}</p>
-          <fieldset>
-            <legend className="font-medium text-gray-700">{t('fathom.autoImport.visibility')}</legend>
-            <label className="mt-1 flex items-center gap-2 text-gray-700">
-              <input
-                type="radio"
-                name="fathom-auto-visibility"
-                checked={visibility === 'internal'}
-                onChange={() => { setVisibility('internal'); setSaved(false) }}
-              />
-              {t('meetings.dialog.visibilityInternal')}
-            </label>
-            <label className={`mt-1 flex items-center gap-2 ${canShare ? 'text-gray-700' : 'text-gray-400'}`}>
-              <input
-                type="radio"
-                name="fathom-auto-visibility"
-                checked={visibility === 'shared'}
-                disabled={!canShare}
-                onChange={() => { setVisibility('shared'); setSaved(false) }}
-              />
-              {t('meetings.dialog.visibilityShared')}
-            </label>
-          </fieldset>
+          <p className="rounded-md bg-surface-2 px-3 py-2.5 text-caption text-ink-soft">{t('fathom.autoImport.routing')}</p>
+          <VisibilityChoice
+            name="fathom-auto-visibility"
+            value={visibility}
+            onChange={value => { setVisibility(value); setSaved(false) }}
+            canShare={canShare}
+          />
         </>
       )}
 
-      {save.isError && <p role="alert" className="text-red-700">{t(`fathom.autoImport.errors.${errorKey(save.error)}`)}</p>}
-      {saved && !save.isError && <p role="status" className="text-green-700">{t('fathom.autoImport.saved')}</p>}
-
-      <button
-        type="submit"
-        disabled={save.isLoading}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-      >
-        {save.isLoading ? t('fathom.autoImport.saving') : t('fathom.autoImport.save')}
-      </button>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {save.isError && (
+          <p role="alert" className="mr-auto flex items-start gap-1.5 text-caption text-danger-ink">
+            <Icons.warning className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            {t(`fathom.autoImport.errors.${errorKey(save.error)}`)}
+          </p>
+        )}
+        {saved && !save.isError && (
+          <p role="status" className="mr-auto flex items-center gap-1.5 text-caption text-success">
+            <Icons.check className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            {t('fathom.autoImport.saved')}
+          </p>
+        )}
+        <Button type="submit" variant="primary" loading={save.isLoading}>
+          {t('fathom.autoImport.save')}
+        </Button>
+      </div>
     </form>
   )
 }
