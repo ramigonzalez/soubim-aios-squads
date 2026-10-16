@@ -148,7 +148,7 @@ describe('MeetingViewer (Story 7.13)', () => {
   it('links back to the project history', () => {
     useMeetingMock.mockReturnValue({ data: makeMeeting(), isLoading: false, error: null })
     renderAt('/meetings/src-1')
-    expect(screen.getByRole('link', { name: 'Back to project' })).toHaveAttribute('href', '/projects/proj-1#history')
+    expect(screen.getByRole('link', { name: 'Back to project' })).toHaveAttribute('href', '/projects/proj-1/history')
   })
 
   it('shows an error when the meeting cannot be loaded', () => {

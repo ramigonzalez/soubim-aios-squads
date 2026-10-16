@@ -115,7 +115,7 @@ async def create_share_link(
 
     return {
         "share_token": token,
-        "share_url": f"/shared/milestones/{token}",
+        "share_url": f"/m/{token}",  # Promem revamp: short public link (old /shared/milestones/ still works)
         "expires_at": expires_at.isoformat() + "Z",
     }
 

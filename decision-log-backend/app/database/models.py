@@ -260,6 +260,25 @@ class ProjectMember(Base):
     )
 
 
+class ProjectVisit(Base):
+    """When a user last opened a project (Promem revamp, REVAMP-MAPPING G1).
+
+    Drives "novos desde sua última visita". Visits within ``VISIT_SESSION_MINUTES`` of each other
+    count as one session, so ``previous_seen_at`` keeps the visit *before* the current session.
+    """
+
+    __tablename__ = "project_visits"
+
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
+    last_seen_at = Column(DateTime, nullable=False)
+    previous_seen_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("idx_project_visits_project", "project_id"),
+    )
+
+
 class ProjectOrganization(Base):
     """An organization with access to a project (Story 12.3).
 

@@ -9,10 +9,11 @@ from typing import Optional
 from uuid import UUID
 
 from app.database.session import get_db
-from app.services.access import ADMIN, admin_organization, require_project_access
+from app.services.access import ADMIN, READ, admin_organization, require_project_access
 from app.database.models import Project, ProjectMember
 from app.services.organizations import active_organization_id
 from app.services.project_sharing import add_owner_row
+from app.services.project_visits import record_visit, visit_since
 from app.services.project_service import (
     get_projects,
     get_project,
@@ -153,6 +154,27 @@ async def get_project_detail(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have access to this project",
         )
+
+
+@router.post("/{project_id}/visit")
+async def visit_project(
+    project_id: UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Record that the current user opened the project (Promem revamp G1).
+
+    Returns ``last_visit_at``: the visit before the current session, which defines what is "new"
+    on the project's Visão geral (null on a first visit).
+    """
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    require_project_access(db, user, project_id, READ)
+    now = datetime.utcnow()
+    visit = record_visit(db, user.id, project_id, now)
+    since = visit_since(visit, now)
+    return {"last_visit_at": since.isoformat() if since else None, "visited_at": visit.last_seen_at.isoformat()}
 
 
 @router.patch("/{project_id}")

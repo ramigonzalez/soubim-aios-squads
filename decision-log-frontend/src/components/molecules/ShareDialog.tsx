@@ -43,7 +43,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
 
   const handleCopy = async () => {
     if (!activeLink) return
-    const url = `${window.location.origin}/shared/milestones/${activeLink.share_token}`
+    const url = `${window.location.origin}/m/${activeLink.share_token}`
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)
@@ -105,7 +105,7 @@ export function ShareDialog({ projectId, open, onOpenChange }: ShareDialogProps)
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 truncate">
                   <Link2 className="w-4 h-4 inline mr-1 text-gray-400" />
-                  {`${window.location.origin}/shared/milestones/${activeLink.share_token}`}
+                  {`${window.location.origin}/m/${activeLink.share_token}`}
                 </div>
                 <button
                   onClick={handleCopy}

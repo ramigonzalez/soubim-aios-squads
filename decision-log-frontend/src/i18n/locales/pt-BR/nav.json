@@ -14,5 +14,52 @@
   },
   "platform": "Plataforma",
   "paymentPending": "Pagamento pendente. Fale com o suporte para regularizar o acesso de {{organization}}.",
-  "changePassword": "Alterar senha"
+  "changePassword": "Alterar senha",
+  "mainNav": "Navegação principal",
+  "projectNav": "Seções do projeto",
+  "firm": "Escritório",
+  "allProjects": "Todos os projetos",
+  "openMenu": "Abrir menu",
+  "sections": {
+    "overview": "Visão geral",
+    "milestones": "Marcos",
+    "history": "Histórico",
+    "meetings": "Reuniões",
+    "summary": "Resumo executivo",
+    "more": "Mais"
+  },
+  "switcher": {
+    "label": "Trocar projeto",
+    "choose": "Escolher projeto",
+    "search": "Buscar projeto…",
+    "active": "Projetos ativos",
+    "create": "Criar projeto",
+    "empty": "Nenhum projeto encontrado.",
+    "stageOf": "{{stage}} · {{index}} de {{total}}",
+    "noStages": "Sem etapas definidas",
+    "new_zero": "Nada novo",
+    "new_one": "{{count}} novo",
+    "new_other": "{{count}} novos",
+    "loadError": "Não foi possível carregar os projetos.",
+    "notStarted": "Começa em {{date}}",
+    "finished": "Etapas concluídas"
+  },
+  "orgRoles": {
+    "owner": "Proprietário(a)",
+    "admin": "Admin",
+    "reviewer": "Revisor(a)",
+    "member": "Membro",
+    "external": "Externo(a)"
+  },
+  "userMenu": "Menu da conta",
+  "more": {
+    "approvals": "Aguardando aprovação",
+    "share": "Compartilhar com o cliente",
+    "account": "Conta"
+  },
+  "interim": {
+    "title": "{{section}} em construção",
+    "text": "Esta tela é refeita na próxima fase do novo Promem. As outras seções do projeto já estão disponíveis no menu."
+  },
+  "skipToContent": "Pular para o conteúdo"
 }

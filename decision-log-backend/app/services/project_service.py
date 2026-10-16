@@ -6,7 +6,15 @@ from typing import Dict, List, Optional, Tuple
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.models import OrganizationMember, Project, ProjectItem, ProjectMember, User
+from app.database.models import (
+    OrganizationMember,
+    Project,
+    ProjectItem,
+    ProjectMember,
+    ProjectStage,
+    Source,
+    User,
+)
 from app.services.extraction_runs import active_items_filter
 from app.services.access import (
     NONE,
@@ -15,9 +23,12 @@ from app.services.access import (
     project_access_level,
     project_capabilities,
     visible_items_filter,
+    visible_sources_filter,
+    can_review_items,
 )
 from app.services.organizations import active_organization_projects_filter
 from app.services.project_externals import external_user_ids
+from app.services.project_visits import new_items_cutoff, visit_since, visits_by_project
 
 # Backward compatibility alias
 Decision = ProjectItem
@@ -72,6 +83,9 @@ def get_projects(
     # Apply sorting and pagination
     projects = query.order_by(Project.created_at.desc()).limit(limit).offset(offset).all()
 
+    now = datetime.utcnow()
+    visits = visits_by_project(db, user.id, [p.id for p in projects])
+
     # Format response
     result = []
     for project in projects:
@@ -102,10 +116,104 @@ def get_projects(
                 "decision_count": decision_count or 0,
                 "latest_decision": latest_decision.isoformat() if latest_decision else None,
                 **project_capabilities(db, user, project),  # Story 12.7
+                **project_overview_aggregates(db, user, project, visits.get(str(project.id)), now),
             }
         )
 
     return result, total_count
+
+
+def _iso(value: Optional[datetime]) -> Optional[str]:
+    return value.isoformat() if value else None
+
+
+def project_stages(db: Session, project_id) -> List[Dict]:
+    """Stage schedule in order (the client derives the current stage and progress from the dates)."""
+    stages = (
+        db.query(ProjectStage)
+        .filter(ProjectStage.project_id == project_id)
+        .order_by(ProjectStage.sort_order, ProjectStage.stage_from)
+        .all()
+    )
+    return [
+        {"id": str(s.id), "name": s.stage_name, "start": _iso(s.stage_from), "end": _iso(s.stage_to)}
+        for s in stages
+    ]
+
+
+def project_overview_aggregates(db: Session, user, project: Project, visit, now: datetime) -> Dict:
+    """Promem revamp (REVAMP-MAPPING G6): what the projects list and the project switcher show.
+
+    - stages: the schedule (current stage and progress are derived on the client)
+    - new_items: items created since the user's last visit (or the last 7 days without a visit)
+    - last_activity: newest visible item, labelled with its source title (or the item title)
+    - late_actions: open action items past their due date
+    - pending_ingestion: sources waiting for approval, only for users who can review the project
+    """
+    items = db.query(Decision).filter(
+        Decision.project_id == project.id, visible_items_filter(user), active_items_filter()
+    )
+    cutoff, basis = new_items_cutoff(visit, now)
+    new_count = items.filter(Decision.created_at > cutoff).count()
+
+    latest = items.order_by(Decision.created_at.desc()).first()
+    last_activity = None
+    if latest is not None:
+        label = latest.source.title if latest.source is not None and latest.source.title else None
+        last_activity = {
+            "at": _iso(latest.created_at),
+            "label": label or latest.title or latest.statement or latest.decision_statement,
+            "source_type": latest.source_type,
+        }
+
+    today_start = datetime(now.year, now.month, now.day)
+    late_actions = items.filter(
+        Decision.item_type == "action_item",
+        Decision.is_done.is_(False),
+        Decision.due_date.isnot(None),
+        Decision.due_date < today_start,
+    ).count()
+
+    pending = 0
+    if can_review_items(db, user, project):
+        pending = (
+            db.query(func.count(Source.id))
+            .filter(Source.project_id == project.id, Source.ingestion_status == "pending", visible_sources_filter(user))
+            .scalar()
+            or 0
+        )
+
+    return {
+        "stages": project_stages(db, project.id),
+        "new_items": {"count": new_count, "since": _iso(cutoff), "basis": basis},
+        "last_visit_at": _iso(visit_since(visit, now)),
+        "last_activity": last_activity,
+        "late_actions": late_actions,
+        "pending_ingestion": pending,
+    }
+
+
+def project_section_counts(db: Session, user, project: Project) -> Dict:
+    """Counts next to the project sections in the sidebar (Marcos · Histórico · Reuniões)."""
+    items = db.query(Decision).filter(
+        Decision.project_id == project.id, visible_items_filter(user), active_items_filter()
+    )
+    meetings = (
+        db.query(func.count(Source.id))
+        .filter(
+            Source.project_id == project.id,
+            Source.source_type == "meeting",
+            Source.ingestion_status.in_(["approved", "processed"]),
+            visible_sources_filter(user),
+        )
+        .scalar()
+        or 0
+    )
+    return {
+        "items": items.count(),
+        "milestones": items.filter(Decision.is_milestone.is_(True)).count(),
+        "meetings": meetings,
+    }
 
 
 def _visible_members_filter(db: Session, user, project: Project):
@@ -215,6 +323,8 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
         "archived_at": project.archived_at.isoformat() if project.archived_at else None,
         "members": member_list,
         **project_capabilities(db, user, project),  # Story 12.7
+        "stages": project_stages(db, project.id),  # Promem revamp: ProjectHeader / StageStrip
+        "counts": project_section_counts(db, user, project),  # Promem revamp: sidebar counts
         "stats": {
             "total_decisions": total_decisions,
             "decisions_last_week": decisions_last_week,

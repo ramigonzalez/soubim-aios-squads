@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { ProjectDetail } from '../../pages/ProjectDetail'
+import { ProjectDetail, type ProjectDetailView } from '../../pages/ProjectDetail'
 import { useProjectItems } from '../../hooks/useProjectItems'
 
 // Mock hooks used by ProjectDetail
@@ -107,12 +107,12 @@ const createQueryClient = () =>
     defaultOptions: { queries: { retry: false } },
   })
 
-function renderProjectDetail() {
+function renderProjectDetail(view: ProjectDetailView = 'milestones') {
   const queryClient = createQueryClient()
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ProjectDetail />
+        <ProjectDetail view={view} />
       </BrowserRouter>
     </QueryClientProvider>,
   )
@@ -125,186 +125,33 @@ describe('ProjectDetail Page', () => {
     window.location.hash = ''
   })
 
-  // ------- Tab toggle rendering -------
+  // ------- Section from the route (Promem revamp Phase 2: the sidebar replaces the tabs) -------
 
-  describe('Tab toggle', () => {
-    it('renders tab toggle with "Milestone Timeline", "Project History", and "Executive Digest"', () => {
+  describe('Section from the route', () => {
+    it('renders the milestone timeline by default, without tabs or breadcrumb', () => {
       renderProjectDetail()
-
-      const tablist = screen.getByRole('tablist')
-      const tabs = within(tablist).getAllByRole('tab')
-
-      expect(tabs).toHaveLength(3)
-      expect(tabs[0]).toHaveTextContent('Milestone Timeline')
-      expect(tabs[1]).toHaveTextContent('Project History')
-      expect(tabs[2]).toHaveTextContent('Executive Digest')
-    })
-
-    it('defaults to "milestones" view when no URL hash is present', () => {
-      renderProjectDetail()
-
-      const milestonesTab = screen.getByRole('tab', { name: /Milestone Timeline/i })
-      expect(milestonesTab).toHaveAttribute('aria-selected', 'true')
-    })
-
-    it('switches to Project History view when its tab is clicked', async () => {
-      const user = userEvent.setup()
-      renderProjectDetail()
-
-      const historyTab = screen.getByRole('tab', { name: /Project History/i })
-      await user.click(historyTab)
-
-      expect(historyTab).toHaveAttribute('aria-selected', 'true')
-      expect(screen.getByTestId('timeline-component')).toBeInTheDocument()
-    })
-
-    it('switches to Executive Digest view when its tab is clicked', async () => {
-      const user = userEvent.setup()
-      renderProjectDetail()
-
-      const digestTab = screen.getByRole('tab', { name: /Executive Digest/i })
-      await user.click(digestTab)
-
-      expect(digestTab).toHaveAttribute('aria-selected', 'true')
-      expect(screen.getByTestId('executive-digest')).toBeInTheDocument()
-    })
-
-    it('shows FilterBar only in Project History view', async () => {
-      const user = userEvent.setup()
-      renderProjectDetail()
-
-      // Milestones view — no filter bar
-      expect(screen.queryByTestId('filter-bar')).not.toBeInTheDocument()
-
-      // Switch to history
-      await user.click(screen.getByRole('tab', { name: /Project History/i }))
-      expect(screen.getByTestId('filter-bar')).toBeInTheDocument()
-
-      // Switch to digest — filter bar disappears
-      await user.click(screen.getByRole('tab', { name: /Executive Digest/i }))
-      expect(screen.queryByTestId('filter-bar')).not.toBeInTheDocument()
-    })
-  })
-
-  // ------- URL hash persistence -------
-
-  describe('URL hash persistence', () => {
-    it('reads #history hash on mount and opens Project History tab', () => {
-      window.location.hash = '#history'
-      renderProjectDetail()
-
-      const historyTab = screen.getByRole('tab', { name: /Project History/i })
-      expect(historyTab).toHaveAttribute('aria-selected', 'true')
-      expect(screen.getByTestId('timeline-component')).toBeInTheDocument()
-    })
-
-    it('reads #milestones hash on mount and opens Milestone Timeline tab', () => {
-      window.location.hash = '#milestones'
-      renderProjectDetail()
-
-      const milestonesTab = screen.getByRole('tab', { name: /Milestone Timeline/i })
-      expect(milestonesTab).toHaveAttribute('aria-selected', 'true')
-    })
-
-    it('reads #digest hash on mount and opens Executive Digest tab', () => {
-      window.location.hash = '#digest'
-      renderProjectDetail()
-
-      const digestTab = screen.getByRole('tab', { name: /Executive Digest/i })
-      expect(digestTab).toHaveAttribute('aria-selected', 'true')
-      expect(screen.getByTestId('executive-digest')).toBeInTheDocument()
-    })
-
-    it('defaults to milestones for invalid hash', () => {
-      window.location.hash = '#invalid-hash'
-      renderProjectDetail()
-
-      const milestonesTab = screen.getByRole('tab', { name: /Milestone Timeline/i })
-      expect(milestonesTab).toHaveAttribute('aria-selected', 'true')
-    })
-
-    it('updates URL hash when switching tabs', async () => {
-      const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
-      const user = userEvent.setup()
-      renderProjectDetail()
-
-      await user.click(screen.getByRole('tab', { name: /Project History/i }))
-      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#history')
-
-      await user.click(screen.getByRole('tab', { name: /Executive Digest/i }))
-      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#digest')
-
-      await user.click(screen.getByRole('tab', { name: /Milestone Timeline/i }))
-      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '#milestones')
-
-      replaceStateSpy.mockRestore()
-    })
-  })
-
-  // ------- Breadcrumb -------
-
-  describe('Breadcrumb', () => {
-    it('renders breadcrumb navigation', () => {
-      renderProjectDetail()
-
-      const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i })
-      expect(breadcrumb).toBeInTheDocument()
-      expect(breadcrumb).toHaveTextContent('Projects')
-    })
-
-    it('shows "Milestone Timeline" in breadcrumb for milestones view', () => {
-      window.location.hash = '#milestones'
-      renderProjectDetail()
-
-      const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i })
-      expect(breadcrumb).toHaveTextContent('Milestone Timeline')
-    })
-
-    it('shows "Project History" in breadcrumb for history view', () => {
-      window.location.hash = '#history'
-      renderProjectDetail()
-
-      const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i })
-      expect(breadcrumb).toHaveTextContent('Project History')
-    })
-
-    it('shows "Executive Digest" in breadcrumb for digest view', () => {
-      window.location.hash = '#digest'
-      renderProjectDetail()
-
-      const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i })
-      expect(breadcrumb).toHaveTextContent('Executive Digest')
-    })
-
-    it('updates breadcrumb when switching tabs', async () => {
-      const user = userEvent.setup()
-      renderProjectDetail()
-
-      const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i })
-      expect(breadcrumb).toHaveTextContent('Milestone Timeline')
-
-      await user.click(screen.getByRole('tab', { name: /Project History/i }))
-      expect(breadcrumb).toHaveTextContent('Project History')
-
-      await user.click(screen.getByRole('tab', { name: /Executive Digest/i }))
-      expect(breadcrumb).toHaveTextContent('Executive Digest')
-    })
-  })
-
-  // ------- Page heading -------
-
-  describe('Page heading', () => {
-    it('shows dynamic heading matching the active tab', async () => {
-      const user = userEvent.setup()
-      renderProjectDetail()
-
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Milestone Timeline')
+      expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+      expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).not.toBeInTheDocument()
+    })
 
-      await user.click(screen.getByRole('tab', { name: /Project History/i }))
+    it('renders Project History with the filter bar', () => {
+      renderProjectDetail('history')
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Project History')
+      expect(screen.getByTestId('timeline-component')).toBeInTheDocument()
+      expect(screen.getByTestId('filter-bar')).toBeInTheDocument()
+    })
 
-      await user.click(screen.getByRole('tab', { name: /Executive Digest/i }))
+    it('renders the Executive Digest without the filter bar', () => {
+      renderProjectDetail('digest')
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Executive Digest')
+      expect(screen.getByTestId('executive-digest')).toBeInTheDocument()
+      expect(screen.queryByTestId('filter-bar')).not.toBeInTheDocument()
+    })
+
+    it('has no filter bar on the milestone timeline', () => {
+      renderProjectDetail('milestones')
+      expect(screen.queryByTestId('filter-bar')).not.toBeInTheDocument()
     })
   })
 

@@ -107,7 +107,7 @@ export function MeetingViewer() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Header */}
       <Link
-        to={`/projects/${meeting.project_id}#history`}
+        to={`/projects/${meeting.project_id}/history`}
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
       >
         <ArrowLeft className="w-4 h-4" aria-hidden="true" />
