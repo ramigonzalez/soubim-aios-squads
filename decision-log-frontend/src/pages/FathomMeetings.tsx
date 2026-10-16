@@ -88,7 +88,7 @@ export default function FathomMeetings() {
   const needsReconnect = status?.needs_reconnect || apiDetail(meetings.error) === 'needs_reconnect'
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link to="/settings/integrations" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600">
           <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -169,7 +169,7 @@ export default function FathomMeetings() {
         )}
       </div>
       <FathomImportDialog meeting={importing} onClose={() => setImporting(null)} />
-    </main>
+    </div>
   )
 }
 

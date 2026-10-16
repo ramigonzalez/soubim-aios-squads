@@ -50,7 +50,7 @@ export default function ChangePassword() {
   const field = 'mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 sm:px-6 py-8 space-y-6">
         <header>
           <h1 className="text-2xl font-bold text-gray-900">{t('changePassword.title')}</h1>
@@ -119,6 +119,6 @@ export default function ChangePassword() {
           </button>
         </form>
       </div>
-    </main>
+    </div>
   )
 }

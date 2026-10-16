@@ -5,24 +5,17 @@
 import { useQuery, UseQueryResult } from 'react-query'
 import api from '../services/api'
 import type { ProjectCapabilities } from '../types/organization'
-
-export interface ProjectStageDetail {
-  id: string
-  stage_name: string
-  stage_from: string | null
-  stage_to: string | null
-  sort_order: number
-  is_current: boolean
-}
+import type { ProjectSectionCounts, ProjectStageRef } from '../types/project'
 
 export interface ProjectDetail extends ProjectCapabilities {
   id: string
   name: string
   description?: string | null
   project_type?: string | null
-  current_stage?: { name: string; stage_from?: string; stage_to?: string } | null
-  stages: ProjectStageDetail[]
-  participant_count: number
+  /** Promem revamp: schedule for the header StageStrip (GET /stages keeps the editable shape) */
+  stages: ProjectStageRef[]
+  /** Promem revamp: sidebar section counts */
+  counts: ProjectSectionCounts
   drive_folder_id?: string | null
   created_at: string
   archived_at?: string | null

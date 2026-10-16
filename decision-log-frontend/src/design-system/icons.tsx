@@ -5,9 +5,9 @@
 import { forwardRef } from 'react'
 import {
   Calendar, Check, ChevronDown, ChevronUp, ChevronsUpDown, CircleCheck, CirclePlay, Copy, Download,
-  Ellipsis, FileText, Folder, GitCommitVertical, History, Inbox, Info, LayoutDashboard, Lightbulb, Link,
-  Mail, MessageCircle, Minus, Pencil, Plus, Search, Square, SquareCheck, Star, Trash, TriangleAlert,
-  Upload, Users, Video, X,
+  Ellipsis, FileText, Folder, GitCommitVertical, History, Inbox, Info, KeyRound, LayoutDashboard, Lightbulb, Link,
+  LogOut, Mail, Menu, MessageCircle, Minus, Pencil, Plug, Plus, Search, Share2, ShieldCheck, Square, SquareCheck, Star,
+  Trash, TriangleAlert, Upload, Users, Video, X,
 } from 'lucide-react'
 import type { LucideIcon, LucideProps } from 'lucide-react'
 
@@ -83,6 +83,13 @@ export const Icons = {
   remove: Trash,
   copy: Copy,
   team: Users,
+  // Shell and account
+  menu: Menu,
+  platform: ShieldCheck,
+  integrations: Plug,
+  password: KeyRound,
+  logout: LogOut,
+  share: Share2,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof Icons

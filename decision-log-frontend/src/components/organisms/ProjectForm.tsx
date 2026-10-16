@@ -13,7 +13,7 @@ export interface ProjectFormData {
 }
 
 interface ProjectFormProps {
-  initialData?: Partial<Project> & { stages?: StageRow[]; participants?: ParticipantRow[] }
+  initialData?: Partial<Omit<Project, 'stages'>> & { stages?: StageRow[]; participants?: ParticipantRow[] }
   onSubmit: (data: ProjectFormData) => void
   onCancel?: () => void
   isLoading?: boolean

@@ -14,5 +14,52 @@
   },
   "platform": "Platform",
   "paymentPending": "Payment pending. Please contact support to keep access to {{organization}}.",
-  "changePassword": "Change password"
+  "changePassword": "Change password",
+  "mainNav": "Main navigation",
+  "projectNav": "Project sections",
+  "firm": "Firm",
+  "allProjects": "All projects",
+  "openMenu": "Open menu",
+  "sections": {
+    "overview": "Overview",
+    "milestones": "Milestones",
+    "history": "History",
+    "meetings": "Meetings",
+    "summary": "Executive summary",
+    "more": "More"
+  },
+  "switcher": {
+    "label": "Switch project",
+    "choose": "Choose project",
+    "search": "Search project…",
+    "active": "Active projects",
+    "create": "Create project",
+    "empty": "No project found.",
+    "stageOf": "{{stage}} · {{index}} of {{total}}",
+    "noStages": "No stages defined",
+    "new_zero": "Nothing new",
+    "new_one": "{{count}} new",
+    "new_other": "{{count}} new",
+    "loadError": "Could not load the projects.",
+    "notStarted": "Starts on {{date}}",
+    "finished": "All stages done"
+  },
+  "orgRoles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "reviewer": "Reviewer",
+    "member": "Member",
+    "external": "External"
+  },
+  "userMenu": "Account menu",
+  "more": {
+    "approvals": "Waiting for approval",
+    "share": "Share with the client",
+    "account": "Account"
+  },
+  "interim": {
+    "title": "{{section}} under construction",
+    "text": "This screen is rebuilt in the next phase of the new Promem. The other project sections are already in the menu."
+  },
+  "skipToContent": "Skip to content"
 }

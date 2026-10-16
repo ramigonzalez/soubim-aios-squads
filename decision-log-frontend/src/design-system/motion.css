@@ -1,15 +1,17 @@
 /* Promem motion (README §8.3): entrances only, 200 ms, --ease.
    Durations come from tokens.css and drop to 0 under prefers-reduced-motion. */
 @keyframes ds-slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ds-slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 @keyframes ds-slide-in-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ds-pop-in { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
 
 .ds-slide-in-right { animation: ds-slide-in-right var(--dur-base) var(--ease); }
+.ds-slide-in-left { animation: ds-slide-in-left var(--dur-base) var(--ease); }
 .ds-slide-in-up { animation: ds-slide-in-up var(--dur-base) var(--ease); }
 .ds-fade-in { animation: ds-fade-in var(--dur-base) var(--ease); }
 .ds-pop-in { animation: ds-pop-in var(--dur-base) var(--ease); }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-slide-in-right, .ds-slide-in-up, .ds-fade-in, .ds-pop-in { animation: none; }
+  .ds-slide-in-right, .ds-slide-in-left, .ds-slide-in-up, .ds-fade-in, .ds-pop-in { animation: none; }
 }

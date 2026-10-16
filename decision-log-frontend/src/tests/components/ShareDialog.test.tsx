@@ -221,7 +221,7 @@ describe('ShareDialog', () => {
     await user.click(copyButton)
 
     expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining('/shared/milestones/copy-test-token')
+      expect.stringContaining('/m/copy-test-token')
     )
   })
 

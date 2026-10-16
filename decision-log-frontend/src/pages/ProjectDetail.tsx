@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useProjectItems } from '../hooks/useProjectItems'
 import { useToggleMilestone } from '../hooks/useProjectItemMutation'
@@ -13,22 +13,10 @@ import { ShareDialog } from '../components/molecules/ShareDialog'
 import { useFilterStore } from '../store/filterStore'
 import { useFilterUrlSync } from '../hooks/useFilterUrlSync'
 import { useArchiveProject } from '../hooks/useProjectMutation'
-import { AlertCircle, Star, Clock, FileText, Share2, Download, Image, ChevronDown, Pencil, Archive } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { AlertCircle, FileText, Share2, Download, Image, ChevronDown, Pencil, Archive } from 'lucide-react'
 import { exportAsPDF, exportAsJPEG } from '../lib/exportTimeline'
 
-type View = 'milestones' | 'history' | 'digest'
-
-/**
- * Determines the initial view from the URL hash.
- * Falls back to 'milestones' if no valid hash is present.
- * Story 9.5: URL hash persistence
- */
-function getInitialView(): View {
-  const hash = window.location.hash.slice(1)
-  if (hash === 'milestones' || hash === 'history' || hash === 'digest') return hash as View
-  return 'milestones'
-}
+export type ProjectDetailView = 'milestones' | 'history' | 'digest'
 
 /**
  * Project detail page displaying Milestone Timeline, Project History, and Executive Digest.
@@ -39,12 +27,13 @@ function getInitialView(): View {
  * Story 8.4 - Added sharing & export functionality
  * Story 9.5 - Rename & Navigation Update (tab toggle, breadcrumb, hash persistence)
  * Story 10.2 - Added document upload button
+ * Promem revamp Phase 2 - the section comes from the route (/projects/:id/milestones | history | summary);
+ *   the sidebar replaces the tab toggle and the breadcrumb. Old #hash URLs redirect.
  */
-export function ProjectDetail() {
+export function ProjectDetail({ view = 'milestones' }: { view?: ProjectDetailView }) {
   const { t } = useTranslation('projects')
   const { id: projectId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [view, setView] = useState<View>(getInitialView)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [groupBy, setGroupBy] = useState<'date' | 'discipline'>('date')
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
@@ -154,12 +143,6 @@ export function ProjectDetail() {
     return decisions.find(d => d.id === selectedId) || null
   }, [selectedId, decisions])
 
-  /** Update view and persist to URL hash (Story 9.5) */
-  const handleViewChange = (newView: View) => {
-    setView(newView)
-    window.history.replaceState(null, '', `#${newView}`)
-  }
-
   /** Human-readable label for the active tab (Story 9.5) */
   const viewLabel = t(`detail.tabs.${view}`)
 
@@ -251,15 +234,6 @@ export function ProjectDetail() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb (Story 9.5) */}
-        <nav className="text-sm text-gray-500 mb-4" aria-label={t('detail.breadcrumb.label')}>
-          <Link to="/projects" className="hover:text-blue-600">{t('detail.breadcrumb.projects')}</Link>
-          <span className="mx-2" aria-hidden="true">&rsaquo;</span>
-          <span>{t('detail.breadcrumb.project')}</span>
-          <span className="mx-2" aria-hidden="true">&rsaquo;</span>
-          <span className="text-gray-900 font-medium">{viewLabel}</span>
-        </nav>
-
         {/* Header (Story 9.5 heading) + Edit/Archive (Story 6.4) */}
         <div className="mb-6 flex items-start justify-between">
           <div>
@@ -342,52 +316,6 @@ export function ProjectDetail() {
           </div>
         )}
 
-        {/* Tab Toggle — segmented control (Story 9.5) */}
-        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100 mb-4" role="tablist">
-          <button
-            role="tab"
-            aria-selected={view === 'milestones'}
-            onClick={() => handleViewChange('milestones')}
-            className={cn(
-              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
-              view === 'milestones'
-                ? 'bg-white shadow-sm text-gray-900 font-medium'
-                : 'text-gray-500 hover:text-gray-700'
-            )}
-          >
-            <Star className="w-4 h-4 mr-1.5" />
-            {t('detail.tabs.milestones')}
-          </button>
-          <button
-            role="tab"
-            aria-selected={view === 'history'}
-            onClick={() => handleViewChange('history')}
-            className={cn(
-              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
-              view === 'history'
-                ? 'bg-white shadow-sm text-gray-900 font-medium'
-                : 'text-gray-500 hover:text-gray-700'
-            )}
-          >
-            <Clock className="w-4 h-4 mr-1.5" />
-            {t('detail.tabs.history')}
-          </button>
-          <button
-            role="tab"
-            aria-selected={view === 'digest'}
-            onClick={() => handleViewChange('digest')}
-            className={cn(
-              'inline-flex items-center px-4 py-1.5 text-sm rounded-md transition-colors',
-              view === 'digest'
-                ? 'bg-white shadow-sm text-gray-900 font-medium'
-                : 'text-gray-500 hover:text-gray-700'
-            )}
-          >
-            <FileText className="w-4 h-4 mr-1.5" />
-            {t('detail.tabs.digest')}
-          </button>
-        </div>
-
         {/* Actions toolbar — milestones view, admin only (Story 8.4, 10.2) */}
         {view === 'milestones' && isAdmin && (
           <div className="mb-4 flex items-center gap-2 justify-end">
@@ -457,7 +385,7 @@ export function ProjectDetail() {
         )}
 
         {/* Main Content — full-width, no sidebar */}
-        <main>
+        <div>
           {view === 'milestones' ? (
             <MilestoneTimeline
               ref={milestoneTimelineRef}
@@ -481,7 +409,7 @@ export function ProjectDetail() {
           ) : (
             <ExecutiveDigest digest={mockDigest} />
           )}
-        </main>
+        </div>
 
         {/* Drilldown Modal (Stories 3.7, 8.2) */}
         <DrilldownModal

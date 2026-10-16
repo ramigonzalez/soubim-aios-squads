@@ -64,7 +64,7 @@ export default function IntegrationsSettings() {
   const connected = !!status?.connected && !status.needs_reconnect
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
@@ -166,7 +166,7 @@ export default function IntegrationsSettings() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   )
 }
 
