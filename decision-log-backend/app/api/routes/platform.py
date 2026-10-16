@@ -40,6 +40,21 @@ class CompanyInvitationCreate(BaseModel):
     organization_name: str
 
 
+class LeadUpdate(BaseModel):
+    handled: bool
+
+
+@router.get("/leads")
+def list_leads(db: Session = Depends(get_db)):
+    """Promem revamp Phase 5: requests from the landing page, newest first."""
+    return {"leads": platform.list_leads(db)}
+
+
+@router.patch("/leads/{lead_id}")
+def update_lead(lead_id: UUID, body: LeadUpdate, db: Session = Depends(get_db), user=Depends(require_operator)):
+    return platform.set_lead_handled(db, lead_id, body.handled, user)
+
+
 @router.get("/organizations")
 def list_organizations(db: Session = Depends(get_db)):
     return {"organizations": platform.list_organizations(db)}

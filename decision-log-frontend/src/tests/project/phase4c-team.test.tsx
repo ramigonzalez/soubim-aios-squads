@@ -43,6 +43,7 @@ function mockApi() {
     if (url === '/organizations/o1/invitations') return Promise.resolve({ data: { invitations: TEAM_INVITATIONS } })
     if (url === '/platform/organizations') return Promise.resolve({ data: { organizations } })
     if (url === '/platform/invitations') return Promise.resolve({ data: { invitations: COMPANY_INVITATIONS } })
+    if (url === '/platform/leads') return Promise.resolve({ data: { leads: [] } })
     return Promise.reject(new Error(`unexpected GET ${url}`))
   })
   api.post.mockResolvedValue({ data: { id: 'i2', email: 'nova@soubim.com', role: 'member', invite_url: 'http://app/invite/xyz' } })

@@ -30,6 +30,7 @@ function setup() {
     if (url === '/platform/organizations/org-1')
       return { data: { ...ORGS[0], members: [{ name: 'Ana Owner', email: 'ana@acme.com', role: 'owner' }] } }
     if (url === '/platform/invitations') return { data: { invitations: INVITATIONS } }
+    if (url === '/platform/leads') return { data: { leads: [] } }
     return { data: {} }
   })
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

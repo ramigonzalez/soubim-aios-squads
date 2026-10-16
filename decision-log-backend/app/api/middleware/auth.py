@@ -35,6 +35,7 @@ async def auth_middleware(request: Request, call_next):
         "/api/fathom/webhook/",  # Story 13.9: authenticated by the Fathom signature (checked in the route)
         "/api/auth/providers",  # Story 12.8: which login methods are enabled
         "/api/auth/google/",  # Story 12.8: start / callback / exchange (signed state, one-time code)
+        "/api/leads",  # Promem revamp Phase 5: the landing page contact form (rate limited)
         "/docs",
         "/openapi.json",
         "/redoc",

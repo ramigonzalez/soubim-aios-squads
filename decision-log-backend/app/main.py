@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.config import settings
-from app.api.routes import admin, auth, drive_folder, fathom, fathom_rules, health, ingestion, meetings, organizations, participants, platform, project_externals, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, notifications, search, source_curation, stages, uploads, webhooks
+from app.api.routes import admin, auth, drive_folder, fathom, fathom_rules, health, ingestion, meetings, organizations, participants, platform, project_externals, project_items, project_organizations, projects, decisions, digest, documents, extraction_runs, item_reviews, leads, notifications, search, source_curation, stages, uploads, webhooks
 from app.api.routes.shared_links import router as shared_links_router
 from app.api.middleware.auth import auth_middleware
 from app.api.middleware.rate_limit import setup_rate_limiting
@@ -105,6 +105,7 @@ app.include_router(uploads.router, prefix="/api", tags=["uploads"])
 app.include_router(extraction_runs.router, prefix="/api", tags=["extraction-runs"])
 app.include_router(search.router, prefix="/api", tags=["search"])  # Promem revamp Phase 4d
 app.include_router(notifications.router, prefix="/api", tags=["notifications"])  # Promem revamp Phase 4e
+app.include_router(leads.router, prefix="/api", tags=["leads"])  # Promem revamp Phase 5: landing contact form
 
 
 @app.get("/")
