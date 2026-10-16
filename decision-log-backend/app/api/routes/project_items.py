@@ -75,6 +75,10 @@ def _item_to_response(item: ProjectItem, show_original: bool = False, externals:
             summary=item.source.ai_summary,
             visibility=item.source.visibility,
             thumbnail_url=thumbnail_url(item.source),  # Story 13.12
+            duration_minutes=item.source.duration_minutes,
+            participants=participant_names(item.source.participants),
+            label=item.source.source_label,
+            meeting_type=item.source.meeting_type,
         ).model_dump()
 
     return {
@@ -106,9 +110,26 @@ def _item_to_response(item: ProjectItem, show_original: bool = False, externals:
         "original": item.original if show_original else None,
         "created_by_name": item.creator.name if item.creator else None,
         "created_by_external": item.created_by is not None and str(item.created_by) in (externals or ()),
+        "occurred_at": item.occurred_at.isoformat() if item.occurred_at else None,
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
     }
+
+
+def participant_names(participants) -> list:
+    """Source participants as display names. Stored as strings (uploads, Tactiq) or as
+    ``{name, email}`` dicts (Fathom invitees)."""
+    names = []
+    for entry in participants or []:
+        if isinstance(entry, str):
+            name = entry.strip()
+        elif isinstance(entry, dict):
+            name = (entry.get("name") or entry.get("email") or "").strip()
+        else:
+            name = ""
+        if name and name not in names:
+            names.append(name)
+    return names
 
 
 def _compute_facets(db: Session, project_id: str, user, include_rejected: bool = False) -> dict:
@@ -347,6 +368,8 @@ async def create_project_item(
         source_type="manual_input",
         statement=body.statement,
         decision_statement=body.statement,
+        title=(body.title or "").strip() or None,
+        occurred_at=body.occurred_at,
         who=body.who,
         timestamp="",
         discipline=body.affected_disciplines[0].value if body.affected_disciplines else "general",

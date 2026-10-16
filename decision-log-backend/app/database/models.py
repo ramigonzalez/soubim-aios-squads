@@ -782,6 +782,10 @@ class ProjectItem(Base):
     # Vector embedding
     embedding = Column(VECTOR(384))
 
+    # Promem revamp: when a manual item happened (a site visit, a call); NULL for extracted items,
+    # which take their date from the source.
+    occurred_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
 

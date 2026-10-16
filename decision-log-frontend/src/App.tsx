@@ -28,6 +28,8 @@ const ProjectSectionInterim = lazy(() => import('./pages/ProjectSectionInterim')
 const ProjectMore = lazy(() => import('./pages/ProjectMore'))
 const ProjectOverview = lazy(() => import('./pages/ProjectOverview'))
 const ProjectMilestones = lazy(() => import('./pages/ProjectMilestones'))
+const ProjectHistory = lazy(() => import('./pages/ProjectHistory'))
+const ManualItemNew = lazy(() => import('./pages/ManualItemNew'))
 // Component gallery (Promem design system), development builds only
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
 
@@ -73,7 +75,8 @@ function AppRoutes() {
         <Route path="/projects/:id/edit" element={<Lazy><ProjectEdit /></Lazy>} />
         <Route path="/projects/:id/overview" element={<Lazy><ProjectOverview /></Lazy>} />
         <Route path="/projects/:id/milestones" element={<Lazy><ProjectMilestones /></Lazy>} />
-        <Route path="/projects/:id/history" element={<ProjectDetail key="history" view="history" />} />
+        <Route path="/projects/:id/history" element={<Lazy><ProjectHistory /></Lazy>} />
+        <Route path="/projects/:id/items/new" element={<Lazy><ManualItemNew /></Lazy>} />
         <Route path="/projects/:id/meetings" element={<Lazy><ProjectSectionInterim section="meetings" /></Lazy>} />
         <Route path="/projects/:id/meetings/:sourceId" element={<MeetingViewer />} />
         <Route path="/projects/:id/summary" element={<ProjectDetail key="summary" view="digest" />} />

@@ -46,7 +46,7 @@ export function FilterMenu<T extends string>({
           <Chevron className="h-4 w-4 text-ink-2" strokeWidth={1.75} aria-hidden />
         </button>
       </MenuTrigger>
-      <MenuContent align="start" className="w-64">
+      <MenuContent align="start" className="max-h-80 w-64 overflow-y-auto">
         {options.map((option) => (
           <MenuCheckboxItem
             key={option.value}

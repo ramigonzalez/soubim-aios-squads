@@ -148,7 +148,7 @@ export default function ProjectMilestones() {
             options={DISCIPLINE_ORDER.filter((d) => discCounts[d] > 0 || disciplines.includes(d)).map((d) => ({
               value: d,
               label: t(`labels:discipline.${d}`),
-              marker: <DisciplineMarker discipline={d} size="md" label="none" />,
+              marker: <DisciplineMarker discipline={d} size="md" label="none" decorative />,
               count: discCounts[d],
             }))}
           />

@@ -111,6 +111,11 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
             </Menu>
           )}
           {(section === 'overview' || section === 'history') && canWrite && <UploadDocumentButton projectId={projectId} />}
+          {section === 'history' && canWrite && (
+            <Button icon={<Icons.add />} onClick={() => navigate(`/projects/${projectId}/items/new`)}>
+              {t('header.addItem')}
+            </Button>
+          )}
           {canManage && (
             <Button variant="primary" icon={<Link />} onClick={() => setShareOpen(true)}>
               {t('header.share')}

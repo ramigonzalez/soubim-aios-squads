@@ -16,6 +16,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Skeleton,
   SkeletonRows,
 } from '../../design-system'
 import { useProjectList } from '../../hooks/useProjectList'
@@ -131,7 +132,7 @@ function useSwitcherActions(close: () => void) {
 }
 
 /** Sidebar card: project name + stage, ChevronsUpDown, opens the popover. */
-export function ProjectSwitcher({ project }: { project: CurrentProjectInfo | null }) {
+export function ProjectSwitcher({ project, loading = false }: { project: CurrentProjectInfo | null; loading?: boolean }) {
   const { t } = useTranslation('nav')
   const [open, setOpen] = useState(false)
   const actions = useSwitcherActions(() => setOpen(false))
@@ -146,7 +147,14 @@ export function ProjectSwitcher({ project }: { project: CurrentProjectInfo | nul
           className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 text-left hover:bg-surface-2"
         >
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-small font-semibold text-ink">{project?.name ?? t('switcher.choose')}</span>
+            {loading && !project ? (
+              <span className="flex flex-col gap-1.5 py-0.5" aria-busy>
+                <Skeleton width="70%" />
+                <Skeleton width="45%" className="h-2.5" />
+              </span>
+            ) : (
+              <span className="truncate text-small font-semibold text-ink">{project?.name ?? t('switcher.choose')}</span>
+            )}
             {stage && <span className="truncate text-caption text-ink-2">{stage.label}</span>}
           </span>
           <Chevrons className="h-4 w-4 shrink-0 text-ink-2" strokeWidth={1.75} aria-hidden />

@@ -10,11 +10,13 @@ export interface DisciplineMarkerProps {
   size?: 'sm' | 'md'
   /** code "ARQ" (rows) · name "Arquitetura" (detail, filters, chips) · short (mobile chips) · none */
   label?: 'code' | 'name' | 'short' | 'none'
+  /** With label "none" inside a control that already names the discipline (chips, menu options): hidden from screen readers */
+  decorative?: boolean
   className?: string
 }
 
 /** Discipline square + code or name. Colour is never shown alone. */
-export function DisciplineMarker({ discipline, size = 'sm', label = 'code', className }: DisciplineMarkerProps) {
+export function DisciplineMarker({ discipline, size = 'sm', label = 'code', decorative = false, className }: DisciplineMarkerProps) {
   const { t } = useTranslation('labels')
   const meta = disciplineMeta(discipline)
   const name = t(`discipline.${meta.key}`)
@@ -24,6 +26,7 @@ export function DisciplineMarker({ discipline, size = 'sm', label = 'code', clas
       className={cn('inline-block shrink-0 rounded-xs print:[print-color-adjust:exact]', size === 'sm' ? 'h-2 w-2' : 'h-2.5 w-2.5', meta.markerClass)}
     />
   )
+  if (label === 'none' && decorative) return <span className={cn('inline-flex', className)}>{square}</span>
   if (label === 'none') {
     return (
       <span role="img" aria-label={name} title={name} className={cn('inline-flex', className)}>
