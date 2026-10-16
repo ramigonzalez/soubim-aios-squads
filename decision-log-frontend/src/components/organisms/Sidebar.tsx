@@ -42,11 +42,13 @@ export const PROJECT_SECTIONS: { key: ProjectSection; icon: LucideIcon; count?: 
 
 export interface SidebarProps {
   project: (CurrentProjectInfo & { counts?: ProjectSectionCounts }) | null
+  /** The current project is still loading (avoids flashing "Escolher projeto") */
+  loading?: boolean
   /** Called after a navigation (closes the drawer) */
   onNavigate?: () => void
 }
 
-export function Sidebar({ project, onNavigate }: SidebarProps) {
+export function Sidebar({ project, loading, onNavigate }: SidebarProps) {
   const { t } = useTranslation('nav')
   const { user } = useAuthStore()
   const { canReviewSomewhere } = useActiveOrganization()
@@ -59,7 +61,7 @@ export function Sidebar({ project, onNavigate }: SidebarProps) {
       </div>
 
       <div className="px-3">
-        <ProjectSwitcher project={project} />
+        <ProjectSwitcher project={project} loading={loading} />
       </div>
 
       <nav aria-label={t('mainNav')} className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3">

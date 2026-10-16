@@ -14,9 +14,9 @@ export function itemTitle(item: ProjectItem): string {
   return item.title || item.statement || item.decision_statement || ''
 }
 
-/** When the item happened: its source date, else when it was captured. */
+/** When the item happened: its own date (manual items), its source date, else when it was captured. */
 export function itemDate(item: ProjectItem): string {
-  return item.source?.occurred_at || item.meeting_date || item.created_at
+  return item.occurred_at || item.source?.occurred_at || item.meeting_date || item.created_at
 }
 
 /** "late" = open action past its due date (README §9.1). */

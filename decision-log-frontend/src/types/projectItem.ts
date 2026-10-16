@@ -62,7 +62,7 @@ export const DISCIPLINE_LABELS: Record<Discipline, string> = {
 }
 
 export interface ConsensusEntry {
-  status: 'AGREE' | 'DISAGREE' | 'ABSTAIN'
+  status: 'AGREE' | 'MIXED' | 'DISAGREE' | 'ABSTAIN'
   notes?: string | null
 }
 
@@ -84,6 +84,11 @@ export interface SourceInfo {
   summary?: string | null  // Story 7.12: meeting summary
   visibility?: MeetingVisibility | null  // Story 12.4
   thumbnail_url?: string | null  // Story 13.12: presigned, only for meetings the user may see
+  // Promem revamp: History source bands
+  duration_minutes?: number | null
+  participants?: string[]
+  label?: string | null
+  meeting_type?: string | null
 }
 
 /** Story 12.4: who sees a meeting — its owner organization only, or every organization on the project */
@@ -137,6 +142,8 @@ export interface ProjectItem {
   // Story 12.15: who added the item by hand; "Externo" badge when they are an external person
   created_by_name?: string | null
   created_by_external?: boolean
+  /** Promem revamp: when a manual item happened (extracted items use the source date) */
+  occurred_at?: string | null
   is_edited?: boolean
   original?: ItemOriginal | null  // only sent to the owning organization
   // V1 backward compat fields (may be present in API responses)
@@ -184,6 +191,9 @@ export interface ProjectItemFilters {
 
 export interface ProjectItemCreate {
   statement: string
+  /** Promem revamp: short headline and when it happened */
+  title?: string | null
+  occurred_at?: string | null
   item_type: ItemType
   who: string
   affected_disciplines: Discipline[]

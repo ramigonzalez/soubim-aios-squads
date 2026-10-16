@@ -68,11 +68,11 @@ export function AppShell() {
       </a>
 
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-sidebar border-r border-line bg-surface lg:flex lg:flex-col">
-        <Sidebar project={project} />
+        <Sidebar project={project} loading={!!projectId && projectQuery.isLoading} />
       </aside>
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} title={t('mainNav')}>
-        <Sidebar project={project} onNavigate={() => setDrawerOpen(false)} />
+        <Sidebar project={project} loading={!!projectId && projectQuery.isLoading} onNavigate={() => setDrawerOpen(false)} />
       </Drawer>
 
       <TopBar>

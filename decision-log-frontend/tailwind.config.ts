@@ -12,6 +12,8 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Create / edit forms: single column, max 760 (UX-UI-GUIDELINES §5)
+      maxWidth: { form: '760px' },
       screens: {
         'sm': '375px',   // Mobile
         'md': '768px',   // Tablet

@@ -299,7 +299,9 @@ Every phase is a PR into the integration branch `feat/promem-revamp`. It merges 
 |---|---|---|
 | #50 | 0 · Audit, 1 · Foundations | See §7. |
 | #51 | 2 · Shell | Sidebar, project switcher, drawer, mobile top bar + tab bar + Mais, section routes and redirects. Backend: `project_visits` (migration 025), list aggregates, section counts, `/m/:token`. |
-| 3a | 3 · Visão geral + Marcos + item SidePanel | Backend: `GET /projects/{id}/items/{item_id}/similar` (G11). Frontend: ProjectHeader (export, upload, share, ⋯ edit/archive), OverviewTiles/OverviewRow, StageTimeline, ItemDetailPanel (`?item=`, ↑/↓, Esc, M, X, review block, Similares), undo toasts for marco/done. |
+| #52 | 3 · Visão geral + Marcos + item SidePanel | Backend: `GET /projects/{id}/items/{item_id}/similar` (G11). Frontend: ProjectHeader (export, upload, share, ⋯ edit/archive), OverviewTiles/OverviewRow, StageTimeline, ItemDetailPanel (`?item=`, ↑/↓, Esc, M, X, review block, Similares), undo toasts for marco/done. |
+
+| 3b | 3 · Histórico + Adicionar item | Backend: source duration / participants / tool / meeting type on items, `project_items.occurred_at` (migration 026), manual items take a title and date, consensus accepts `MIXED`. Frontend: FilterBar (search `/`, Disciplina · Tipo · Fonte · Tipo de reunião · Quem, Período, chips), date groups with collapsible source bands (approve pending, open transcript), discipline groups, ItemRow, list keyboard (↑/↓, Enter, M, X), "Mostrar recusados", manual item form at `/projects/:id/items/new`. |
 
 ### Phase 3 deviations for design review
 - **Side box with no stage in progress:** "Nenhuma etapa em andamento · marcos recentes" shows the latest five milestones.
@@ -307,3 +309,8 @@ Every phase is a PR into the integration branch `feat/promem-revamp`. It merges 
 - **Panel extra blocks:** "O que levou a isso" (`causation`), "Adicionado por" (Story 12.15 manual items, with "Externo") and the Revisão block (Story 12.6).
 - **Marcos:** keeps the source filter (decision §6.1 #3) and the JPEG export next to the PDF.
 - **New patterns:** a `Switch` primitive ("Mostrar etapas sem marcos") and `RowList`/`CompactRow` helpers.
+- **Histórico:**
+  - By discipline, an item sits under its main (first) discipline only, so the keyboard never visits a row twice.
+  - The legacy meeting-type filter is kept as its own "Tipo de reunião" menu (shown only when sources have a type).
+  - Source bands also show the visibility badge (Interna/Compartilhada) and, for reviewers, "Aprovar N pendentes".
+- **Adicionar item:** the form follows the create/edit cookbook. Its section 5 (consenso and impactos) is optional.
