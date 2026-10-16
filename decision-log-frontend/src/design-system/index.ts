@@ -37,6 +37,7 @@ export * from './primitives/Switch'
 
 // Domain atoms
 export * from './domain/Wordmark'
+export * from './domain/GoogleMark'
 export * from './domain/ItemType'
 export * from './domain/Source'
 export * from './domain/Discipline'

@@ -1,6 +1,6 @@
 {
   "title": "Integrações",
-  "subtitle": "Conecte suas contas para importar reuniões no DecisionLog.",
+  "subtitle": "Conecte suas contas para importar reuniões no Promem.",
   "fathom": {
     "name": "Fathom",
     "description": "Importe as gravações e transcrições das suas reuniões do Fathom.",
@@ -14,12 +14,12 @@
     "notConnected": "Não conectado",
     "needsReconnect": "A conexão expirou. Reconecte sua conta do Fathom.",
     "notConfigured": "A integração com o Fathom ainda não está disponível neste servidor.",
-    "confirmDisconnect": "Desconectar sua conta do Fathom? As reuniões já importadas continuam no DecisionLog.",
+    "confirmDisconnect": "Desconectar sua conta do Fathom? As reuniões já importadas continuam no Promem.",
     "result": {
       "connected": "Conta do Fathom conectada.",
       "error": "Não foi possível conectar ao Fathom. Tente novamente.",
       "confirming": "Finalizando a conexão com o Fathom...",
-      "otherUser": "Esta conexão com o Fathom foi iniciada por outra conta do DecisionLog e foi descartada. Clique em \"Conectar ao Fathom\" você mesmo para conectar.",
+      "otherUser": "Esta conexão com o Fathom foi iniciada por outra conta do Promem e foi descartada. Clique em \"Conectar ao Fathom\" você mesmo para conectar.",
       "expired": "O pedido de conexão com o Fathom expirou. Conecte novamente."
     },
     "errors": {
@@ -29,7 +29,7 @@
     "browse": "Ver reuniões do Fathom",
     "autoImport": {
       "title": "Importação automática",
-      "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao DecisionLog. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
+      "description": "Desligada por padrão. Quando ligada, as novas reuniões da sua conta do Fathom chegam sozinhas ao Promem. Reuniões pessoais da sua conta também chegariam, então ligue só se for isso que você quer.",
       "enable": "Importar novas reuniões do Fathom automaticamente",
       "routing": "Cada reunião vai para o projeto cujas regras do Fathom ela atende (defina-as nas configurações de cada projeto). Uma reunião que não atende a nenhum projeto, ou atende a mais de um, aguarda na Ingestão para você escolher o projeto.",
       "visibility": "Visibilidade",

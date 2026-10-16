@@ -28,6 +28,7 @@ const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
 const ProjectsList = lazy(() => import('./pages/ProjectsList'))
 const PublicTimeline = lazy(() => import('./pages/PublicTimeline'))
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 const ProjectSummary = lazy(() => import('./pages/ProjectSummary'))
 const ProjectApprovals = lazy(() => import('./pages/ProjectApprovals'))
 const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
@@ -94,6 +95,7 @@ function AppRoutes() {
       </Route>
 
       <Route path="/" element={<HomeRedirect />} />
+      <Route path="*" element={<Lazy><NotFound /></Lazy>} />
     </Routes>
   )
 }

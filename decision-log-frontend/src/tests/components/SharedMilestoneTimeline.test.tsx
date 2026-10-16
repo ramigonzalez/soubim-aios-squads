@@ -199,7 +199,7 @@ describe('SharedMilestoneTimeline', () => {
     expect(screen.getByText('Loading shared timeline...')).toBeInTheDocument()
   })
 
-  it('shows footer with DecisionLog branding', () => {
+  it('shows footer with Promem branding', () => {
     mockUseSharedTimeline.mockReturnValue({
       data: mockTimelineData,
       isLoading: false,
@@ -207,7 +207,7 @@ describe('SharedMilestoneTimeline', () => {
     })
 
     renderSharedTimeline()
-    expect(screen.getByText('Powered by DecisionLog')).toBeInTheDocument()
+    expect(screen.getByText('Powered by Promem')).toBeInTheDocument()
   })
 
   it('displays discipline badges for milestones', () => {

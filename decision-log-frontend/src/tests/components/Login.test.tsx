@@ -34,7 +34,7 @@ describe('Login Component', () => {
   it('renders login form', () => {
     renderLogin()
 
-    expect(screen.getByRole('heading', { name: /decisionlog/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
@@ -56,12 +56,11 @@ describe('Login Component', () => {
     expect(passwordInput.placeholder).toBe('Enter your password')
   })
 
-  it('renders demo mode note', () => {
+  it('has no demo hint (Promem revamp)', () => {
     renderLogin()
 
-    expect(screen.getByText(/demo login:/i)).toBeInTheDocument()
-    // Check for the demo password specifically (in code element)
-    expect(screen.getByText('"password"')).toBeInTheDocument()
+    expect(screen.queryByText(/demo login:/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('"password"')).not.toBeInTheDocument()
   })
 
   it('requires email field', async () => {
@@ -213,7 +212,8 @@ describe('Login Component', () => {
     await user.click(submitButton)
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid email or password/i)).toBeInTheDocument()
+      // 401: a localized message instead of the English-only backend detail
+      expect(screen.getByText('Wrong e-mail or password.')).toBeInTheDocument()
     })
   })
 
@@ -282,7 +282,8 @@ describe('Login Component', () => {
 
     // Wait for error to appear
     await waitFor(() => {
-      expect(screen.getByText(/invalid email or password/i)).toBeInTheDocument()
+      // 401: a localized message instead of the English-only backend detail
+      expect(screen.getByText('Wrong e-mail or password.')).toBeInTheDocument()
     })
 
     // Clear the input and type again

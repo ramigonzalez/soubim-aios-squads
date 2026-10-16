@@ -1,5 +1,5 @@
 {
-  "appName": "DecisionLog",
+  "appName": "Promem",
   "loading": "Loading…",
   "retry": "Retry",
   "cancel": "Cancel",
@@ -19,5 +19,12 @@
   "external": {
     "badge": "External",
     "hint": "Someone from outside the organization, invited to specific projects"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The address may have changed or the link is incomplete. Nothing was lost.",
+    "projects": "Go to projects",
+    "login": "Sign in",
+    "code": "Error 404"
   }
 }

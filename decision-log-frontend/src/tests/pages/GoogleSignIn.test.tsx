@@ -171,7 +171,7 @@ describe('Sign in with Google (Story 12.8)', () => {
       savePendingGoogleLogin({ browserKey: 'bk-1' })
       vi.spyOn(api, 'post').mockRejectedValue({ response: { status: 403, data: { detail: 'unknown_email' } } })
       renderCallback('#code=c')
-      expect(await screen.findByRole('alert')).toHaveTextContent('There is no DecisionLog account for this Google email')
+      expect(await screen.findByRole('alert')).toHaveTextContent('There is no Promem account for this Google email')
       expect(useAuthStore.getState().isAuthenticated).toBe(false)
     })
 

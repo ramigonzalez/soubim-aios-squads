@@ -47,18 +47,18 @@
   },
   "accept": {
     "title": "Join {{organization}}",
-    "loading": "Loading invitation...",
+    "loading": "Loading invitation…",
     "invitedAs": "{{email}} was invited as {{role}}.",
     "notFound": "This invitation does not exist.",
     "gone": "This invitation has already been used, revoked or has expired. Ask for a new one.",
     "name": "Your name",
     "password": "Password (at least 8 characters)",
     "createAccount": "Create account and join",
-    "creating": "Creating...",
+    "creating": "Creating…",
     "haveAccount": "This email already has an account. Log in to accept the invitation.",
     "login": "Log in",
     "accept": "Accept invitation",
-    "accepting": "Joining...",
+    "accepting": "Joining…",
     "wrongAccount": "You are logged in as {{current}}, but this invitation is for {{email}}. Log out and log in with the invited email.",
     "logout": "Log out",
     "error": "Could not accept the invitation.",
@@ -69,6 +69,9 @@
     "projectInvitedAs": "Invitation for {{email}}, with external access to this project only.",
     "reject": "Decline invitation",
     "rejected": "Invitation declined. You can close this page.",
-    "alreadyMember": "You are already a member of this organization."
+    "alreadyMember": "You are already a member of this organization.",
+    "nameLabel": "Name",
+    "passwordLabel": "Password",
+    "passwordHelp": "At least 8 characters."
   }
 }
