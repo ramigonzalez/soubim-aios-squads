@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Avatar,
   Icons,
+  Kbd,
   Menu,
   MenuContent,
   MenuItem,
@@ -27,6 +28,7 @@ import { ingestionService } from '../../services/ingestionService'
 import { useActiveOrganization } from '../../hooks/useOrganizations'
 import { useAuthStore } from '../../store/authStore'
 import { EXTERNAL_ROLE } from '../../types/organization'
+import { useSearchStore } from '../../store/searchStore'
 import { ProjectSwitcher, type CurrentProjectInfo } from './ProjectSwitcher'
 import type { ProjectSectionCounts } from '../../types/project'
 
@@ -60,8 +62,9 @@ export function Sidebar({ project, loading, onNavigate }: SidebarProps) {
         <WorkspaceName />
       </div>
 
-      <div className="px-3">
+      <div className="flex flex-col gap-1 px-3">
         <ProjectSwitcher project={project} loading={loading} />
+        <SearchButton onNavigate={onNavigate} />
       </div>
 
       <nav aria-label={t('mainNav')} className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3">
@@ -104,6 +107,30 @@ export function Sidebar({ project, loading, onNavigate }: SidebarProps) {
         <UserMenu onNavigate={onNavigate} />
       </div>
     </div>
+  )
+}
+
+const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+
+/** Opens the global search (⌘K). */
+function SearchButton({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useTranslation('nav')
+  const setOpen = useSearchStore((s) => s.setOpen)
+  const Search = Icons.search
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onNavigate?.()
+        setOpen(true)
+      }}
+      aria-keyshortcuts="Meta+K Control+K"
+      className={navItemClass(false)}
+    >
+      <Search className="h-4 w-4 shrink-0 text-ink-2" strokeWidth={1.75} aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-left">{t('search.open')}</span>
+      <Kbd>{isMac() ? t('search.shortcut') : t('search.shortcutOther')}</Kbd>
+    </button>
   )
 }
 

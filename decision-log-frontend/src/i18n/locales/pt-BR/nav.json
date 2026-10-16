@@ -60,5 +60,30 @@
     "fathomRules": "Regras do Fathom"
   },
   "skipToContent": "Pular para o conteúdo",
-  "workspace": "Escritório"
+  "workspace": "Escritório",
+  "search": {
+    "open": "Buscar",
+    "shortcut": "⌘K",
+    "placeholder": "Buscar projetos, itens e reuniões…",
+    "label": "Buscar em todos os projetos",
+    "hint": "Digite pelo menos 2 letras. A busca cobre os projetos, itens e reuniões que você pode ver.",
+    "empty": "Nada encontrado para “{{q}}”",
+    "emptyText": "Confira a grafia ou tente outra palavra. Todas as palavras precisam aparecer.",
+    "error": "Não foi possível buscar",
+    "groups": {
+      "projects": "Projetos",
+      "items": "Itens",
+      "meetings": "Reuniões"
+    },
+    "more": "Mostrando os primeiros resultados. Refine a busca para ver mais.",
+    "keys": {
+      "move": "↑↓ navegar",
+      "open": "Enter abrir",
+      "close": "Esc fechar"
+    },
+    "archived": "Arquivado",
+    "close": "Fechar busca",
+    "milestone": "Marco",
+    "shortcutOther": "Ctrl K"
+  }
 }

@@ -28,6 +28,8 @@ import { useProject } from '../../hooks/useProject'
 import { useProjectVisit } from '../../hooks/useProjectVisit'
 import { Sidebar } from '../organisms/Sidebar'
 import { ProjectSwitcherSheet, ProjectSwitcherTrigger } from '../organisms/ProjectSwitcher'
+import { GlobalSearch, useSearchShortcut } from '../organisms/GlobalSearch'
+import { useSearchStore } from '../../store/searchStore'
 
 const MOBILE_TABS = [
   { key: 'overview', icon: Icons.overview },
@@ -44,6 +46,8 @@ export function AppShell() {
   const { projectId, fromRoute, forget } = useCurrentProjectId()
   const projectQuery = useProject(projectId ?? undefined)
   useProjectVisit(fromRoute ? projectId ?? undefined : undefined)
+  useSearchShortcut()
+  const openSearch = useSearchStore((s) => s.setOpen)
 
   // A remembered project the user can no longer open (archived, access removed) is dropped.
   useEffect(() => {
@@ -89,10 +93,11 @@ export function AppShell() {
             <ProjectSwitcherTrigger project={project} onClick={() => setSheetOpen(true)} />
           </div>
         ) : (
-          <div className="px-1">
+          <div className="flex-1 px-1">
             <Wordmark size={19} />
           </div>
         )}
+        <IconButton label={t('search.open')} icon={<Icons.search />} size="touch" variant="ghost" onClick={() => openSearch(true)} />
       </TopBar>
 
       <div className="lg:pl-sidebar">
@@ -117,6 +122,7 @@ export function AppShell() {
           <ProjectSwitcherSheet open={sheetOpen} onOpenChange={setSheetOpen} currentId={project.id} />
         </>
       )}
+      <GlobalSearch />
     </div>
   )
 }

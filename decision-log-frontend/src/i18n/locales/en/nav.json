@@ -60,5 +60,30 @@
     "fathomRules": "Fathom rules"
   },
   "skipToContent": "Skip to content",
-  "workspace": "Firm"
+  "workspace": "Firm",
+  "search": {
+    "open": "Search",
+    "shortcut": "⌘K",
+    "placeholder": "Search projects, items and meetings…",
+    "label": "Search all projects",
+    "hint": "Type at least 2 letters. Search covers the projects, items and meetings you can see.",
+    "empty": "Nothing found for “{{q}}”",
+    "emptyText": "Check the spelling or try another word. Every word must appear.",
+    "error": "Could not search",
+    "groups": {
+      "projects": "Projects",
+      "items": "Items",
+      "meetings": "Meetings"
+    },
+    "more": "Showing the first results. Refine the search to see more.",
+    "keys": {
+      "move": "↑↓ move",
+      "open": "Enter open",
+      "close": "Esc close"
+    },
+    "archived": "Archived",
+    "close": "Close search",
+    "milestone": "Milestone",
+    "shortcutOther": "Ctrl K"
+  }
 }
