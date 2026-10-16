@@ -2,7 +2,6 @@ import React, { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
-import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
 import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
@@ -13,8 +12,7 @@ import { useAuthStore } from './store/authStore'
 import { useTranslation } from 'react-i18next'
 import { ToastProvider, TooltipProvider } from './design-system'
 
-const ProjectCreate = lazy(() => import('./pages/ProjectCreate'))
-const ProjectEdit = lazy(() => import('./pages/ProjectEdit'))
+const ProjectFormPage = lazy(() => import('./pages/ProjectFormPage'))
 const IntegrationsSettings = lazy(() => import('./pages/IntegrationsSettings'))
 const FathomMeetings = lazy(() => import('./pages/FathomMeetings'))
 
@@ -29,6 +27,7 @@ const ProjectMilestones = lazy(() => import('./pages/ProjectMilestones'))
 const ProjectHistory = lazy(() => import('./pages/ProjectHistory'))
 const ManualItemNew = lazy(() => import('./pages/ManualItemNew'))
 const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
+const ProjectsList = lazy(() => import('./pages/ProjectsList'))
 const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
 // Component gallery (Promem design system), development builds only
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
@@ -69,10 +68,10 @@ function AppRoutes() {
       {UiGallery && <Route path="/dev/ui" element={<Lazy><UiGallery /></Lazy>} />}
 
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/new" element={<Lazy><ProjectCreate /></Lazy>} />
+        <Route path="/projects" element={<Lazy><ProjectsList /></Lazy>} />
+        <Route path="/projects/new" element={<Lazy><ProjectFormPage key="create" mode="create" /></Lazy>} />
         <Route path="/projects/:id" element={<ProjectIndexRedirect />} />
-        <Route path="/projects/:id/edit" element={<Lazy><ProjectEdit /></Lazy>} />
+        <Route path="/projects/:id/edit" element={<Lazy><ProjectFormPage key="edit" mode="edit" /></Lazy>} />
         <Route path="/projects/:id/overview" element={<Lazy><ProjectOverview /></Lazy>} />
         <Route path="/projects/:id/milestones" element={<Lazy><ProjectMilestones /></Lazy>} />
         <Route path="/projects/:id/history" element={<Lazy><ProjectHistory /></Lazy>} />

@@ -112,6 +112,8 @@ def get_projects(
                 "name": project.name,
                 "description": project.description,
                 "created_at": project.created_at.isoformat(),
+                "archived_at": _iso(project.archived_at),  # Promem revamp: "Arquivados" view
+                "project_type": project.project_type,
                 "member_count": member_count or 0,
                 "decision_count": decision_count or 0,
                 "latest_decision": latest_decision.isoformat() if latest_decision else None,

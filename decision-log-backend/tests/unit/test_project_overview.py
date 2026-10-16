@@ -235,3 +235,14 @@ class TestVisitEndpoint:
         pg_session.commit()
         project = _project(pg_session)
         assert client.post(f"/api/projects/{project.id}/visit", headers=_auth(outsider)).status_code == 403
+
+
+def test_list_includes_archive_date_and_type(db_session: Session):
+    user = _user(db_session, "gabriela@x.com")
+    project = _project(db_session)
+    project.project_type = "residential"
+    project.archived_at = NOW
+    db_session.commit()
+    [entry], _ = get_projects(db_session, str(user.id), archived=True)
+    assert entry["archived_at"] == NOW.isoformat()
+    assert entry["project_type"] == "residential"
