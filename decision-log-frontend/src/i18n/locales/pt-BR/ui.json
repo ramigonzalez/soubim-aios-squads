@@ -1,0 +1,78 @@
+{
+  "loading": "Carregando…",
+  "close": "Fechar",
+  "closePanel": "Fechar painel",
+  "optional": "opcional",
+  "selectPlaceholder": "Selecione…",
+  "toast": {
+    "undo": "Desfazer",
+    "retry": "Tentar de novo",
+    "dismiss": "Dispensar aviso"
+  },
+  "chip": {
+    "remove": "Remover filtro: {{label}}"
+  },
+  "dateRange": {
+    "placeholder": "Período",
+    "from": "De",
+    "to": "Até",
+    "clear": "Limpar"
+  },
+  "state": {
+    "retry": "Tentar de novo"
+  },
+  "milestone": {
+    "mark": "Marcar como marco",
+    "unmark": "Remover dos marcos"
+  },
+  "action": {
+    "markDone": "Marcar ação como concluída",
+    "reopen": "Reabrir ação"
+  },
+  "due": {
+    "open": "até {{date}}",
+    "late": "atrasada · {{date}}",
+    "done": "concluída · {{date}}"
+  },
+  "impact": {
+    "high": "Impacto alto",
+    "medium": "Impacto médio",
+    "low": "Impacto baixo"
+  },
+  "consensus": {
+    "label": "Consenso",
+    "summary": "{{agree}} de {{total}} concordam",
+    "AGREE": "Concorda",
+    "MIXED": "Com ressalvas",
+    "DISAGREE": "Discorda",
+    "ABSTAIN": "Sem posição"
+  },
+  "disciplines": {
+    "more": "+{{count}}",
+    "all": "Disciplinas: {{names}}"
+  },
+  "stage": {
+    "today": "hoje, {{date}}",
+    "daysLeft_zero": "termina hoje",
+    "daysLeft_one": "falta {{count}} dia",
+    "daysLeft_other": "faltam {{count}} dias",
+    "todayMarker": "Hoje",
+    "progress": "{{name}} · {{percent}}% da etapa"
+  },
+  "date": {
+    "today": "hoje",
+    "yesterday": "ontem",
+    "daysAgo_one": "há {{count}} dia",
+    "daysAgo_other": "há {{count}} dias",
+    "at": "{{date}} às {{time}}"
+  },
+  "duration": {
+    "minutes": "{{count}} min",
+    "hours": "{{hours}} h {{minutes}} min"
+  },
+  "wordmark": {
+    "label": "Promem",
+    "endorsed": "by souBIM"
+  },
+  "shortcut": "Atalho: {{key}}"
+}

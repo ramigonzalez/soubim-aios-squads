@@ -28,5 +28,22 @@
     "email": "E-mail",
     "document": "Documento",
     "manual_input": "Entrada manual"
+  },
+  "disciplineShort": {
+    "architecture": "Arquitetura",
+    "structural": "Estrutura",
+    "mep": "Instalações",
+    "electrical": "Elétrica",
+    "plumbing": "Hidrossanitário",
+    "landscape": "Paisagismo",
+    "fire_protection": "Incêndio",
+    "acoustical": "Acústica",
+    "sustainability": "Sustentabilidade",
+    "civil": "Civil",
+    "client": "Cliente",
+    "contractor": "Construtora",
+    "tenant": "Locatário",
+    "engineer": "Engenharia",
+    "general": "Geral"
   }
 }

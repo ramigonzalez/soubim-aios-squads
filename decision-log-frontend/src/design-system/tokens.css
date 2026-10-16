@@ -1,0 +1,139 @@
+/* =========================================================================
+   Promem — design tokens v1.0
+   SINGLE SOURCE OF TRUTH for app + landing + public client view.
+   Framework-agnostic CSS custom properties. Tailwind maps to these
+   (see tailwind.preset.ts for v3, tailwind-v4-theme.css for v4).
+
+   Naming avoids Tailwind v4 theme namespaces on purpose
+   (no --color-*, --font-*, --radius-*, --shadow-* here), so the v4
+   @theme block can reference these without circular variables.
+
+   Rule zero: colour belongs to the DISCIPLINES. The interface is ink on
+   paper, with ONE accent (petróleo) reserved for focus, selection, links
+   and the "hoje" marker.
+   ========================================================================= */
+
+:root {
+  /* ---- Paper & surfaces ------------------------------------------------ */
+  --bg: #F4F3EF;            /* app + landing background ("papel") */
+  --surface: #FFFFFF;       /* panels, lists, inputs, cards */
+  --surface-2: #F9F8F5;     /* row hover, source-group header band, key/value boxes */
+  --surface-3: #EFEDE8;     /* neutral badge/chip fill, segmented-control track, avatar fill */
+  --surface-sunk: #E9E7E1;  /* "Documento" source tile, skeleton blocks */
+
+  /* ---- Lines ------------------------------------------------------------ */
+  --line: #E3E0D9;          /* borders of panels, dividers between groups */
+  --line-soft: #EFEDE8;     /* row dividers INSIDE a list */
+  --line-strong: #CFCBC2;   /* button + input borders, unchecked checkbox, empty star */
+  --track: #D6D2CA;         /* unfilled part of the current-stage progress bar */
+
+  /* ---- Ink (text & icons) ------------------------------------------------ */
+  --ink: #1C1E22;           /* primary text, PRIMARY BUTTON, completed stage bar   16:1 on surface */
+  --ink-soft: #3A3C42;      /* emphasised secondary text (metadata values, filter labels) */
+  --ink-2: #5F6168;         /* secondary text, icons                               5.6:1 on bg (AA) */
+  --ink-3: #8A8C92;         /* placeholders, non-essential metadata, completed items (NOT for body text) */
+  --ink-4: #B5B3AC;         /* disabled icons, keyboard hints, dashed placeholder outlines */
+
+  /* ---- Accent: petróleo (use sparingly) ----------------------------------- */
+  --accent: #3E5F66;        /* focus, selection rail, links, "hoje" marker, milestone star */
+  --accent-strong: #2F4C52; /* link hover, text on --accent-weak */
+  --accent-weak: #E6EEEF;   /* selected row, active nav item, active filter button */
+  --accent-on-dark: #A9C4C9;/* accent icons on ink surfaces (toasts) */
+  --focus-ring: 0 0 0 3px rgba(62, 95, 102, 0.20);
+
+  /* ---- Status (never used as decorative fills) ----------------------------- */
+  --success: #2F7A4F;       /* "Concorda", "Aprovado", "Concluída" */
+  --success-weak: #E7F2EA;  /* "Aprovado" badge fill, "Confiança alta" badge */
+  --success-on-dark: #7FC49B;
+
+  --warning: #9A6A12;       /* "Com ressalvas", impacto médio (icons/bars) */
+  --warning-ink: #7A520C;   /* warning TEXT on light surfaces (uncertain speaker, notes) */
+  --warning-weak: #F8F0DE;  /* warning flag fill, "Confiança média" badge */
+  --warning-line: #C9A14A;  /* border of a field with an overlap warning */
+
+  --danger: #B3402F;        /* "Discorda", errors, impacto alto (icons/bars) */
+  --danger-ink: #8E3224;    /* danger TEXT ("atrasada · 10/02", error helper text) */
+  --danger-weak: #F8E7E3;   /* late-badge fill, error banner fill */
+  --danger-line: #E8C9C2;   /* border of destructive zones ("Arquivar projeto") */
+  --danger-on-dark: #F0A493;
+
+  /* ---- On-dark (landing dark band, toasts) ---------------------------------- */
+  --on-dark: #FFFFFF;
+  --on-dark-2: #D9D7D1;     /* reading text on --ink */
+  --on-dark-3: #B5B3AC;     /* placeholder text on --ink */
+  --on-dark-line: #6B6D74;  /* dashed placeholder outlines on --ink */
+
+  /* ---- Disciplines -----------------------------------------------------------
+     15 hues with balanced lightness/chroma in OKLCH; hex = sRGB conversion.
+     Always paired with the 3-letter code (list rows) or full name (detail,
+     filters). Only used on small markers (8–10 px squares, radius 2 px), never
+     as text colour or large fills.                                              */
+  --disc-arq: #3A7BCB;  /* Arquitetura            oklch(0.58 0.14 255) */
+  --disc-est: #795BBF;  /* Estrutura              oklch(0.55 0.15 295) */
+  --disc-ins: #E07227;  /* Instalações (MEP)      oklch(0.67 0.16 50)  */
+  --disc-ele: #E0AB22;  /* Elétrica               oklch(0.77 0.15 85)  */
+  --disc-hid: #25AABE;  /* Hidrossanitário        oklch(0.68 0.11 210) */
+  --disc-pai: #28A16D;  /* Paisagismo             oklch(0.63 0.13 160) */
+  --disc-inc: #D33A3C;  /* Prevenção de incêndio  oklch(0.58 0.19 25)  */
+  --disc-acu: #974391;  /* Acústica               oklch(0.52 0.15 330) */
+  --disc-sus: #80A03E;  /* Sustentabilidade       oklch(0.66 0.13 125) */
+  --disc-civ: #8F653A;  /* Civil                  oklch(0.54 0.08 65)  */
+  --disc-cli: #404E63;  /* Cliente                oklch(0.42 0.04 260) */
+  --disc-con: #824748;  /* Construtora            oklch(0.47 0.08 20)  */
+  --disc-loc: #D281A8;  /* Locatário              oklch(0.70 0.11 350) */
+  --disc-eng: #135372;  /* Engenharia             oklch(0.42 0.08 235) */
+  --disc-ger: #918F88;  /* Geral                  oklch(0.65 0.01 90)  */
+
+  /* ---- Type families (Google Fonts, free) ------------------------------------ */
+  --family-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; /* UI + headings */
+  --family-serif: 'Newsreader', Georgia, serif;          /* long reading: "Por quê", summaries, landing */
+  --family-mono: 'IBM Plex Mono', ui-monospace, monospace; /* dates, times, codes, counts */
+
+  /* ---- Corners ------------------------------------------------------------- */
+  --corner-xs: 2px;   /* discipline square, stage-bar segment (1px on 6px bars) */
+  --corner-sm: 3px;   /* chips, badges, checkboxes */
+  --corner-md: 4px;   /* buttons, inputs, nav items, menus */
+  --corner-lg: 6px;   /* panels, list containers, tiles, dialogs */
+  /* pills/avatars: 9999px / 50% */
+
+  /* ---- Elevation ------------------------------------------------------------- */
+  --elev-0: none;                                                      /* level 0: border only */
+  --elev-xs: 0 1px 2px rgba(0, 0, 0, 0.08);                            /* active segment of a segmented control */
+  --elev-1: 0 4px 16px rgba(28, 30, 34, 0.10), 0 0 0 1px var(--line);  /* popover, menu, dropdown */
+  --elev-2: 0 12px 40px rgba(28, 30, 34, 0.16), 0 0 0 1px rgba(28, 30, 34, 0.06); /* side panel, dialog, sheet */
+  --rail-selected: inset 2px 0 0 var(--accent);                        /* selected row / anchored transcript turn */
+  --tab-active: inset 0 -3px 0 var(--ink);                             /* active overview tile */
+  --scrim: rgba(28, 30, 34, 0.32);                                     /* behind dialogs / sheets */
+
+  /* ---- Layout --------------------------------------------------------------- */
+  --sidebar-w: 248px;
+  --panel-w: 480px;          /* item detail side panel */
+  --content-max: 1200px;     /* app main column */
+  --landing-max: 1200px;
+  --row-h: 40px;             /* dense list row (comfortable) */
+  --row-h-compact: 32px;     /* dense list row (compact) */
+  --row-h-two-line: 52px;    /* overview two-line row */
+  --touch-min: 44px;         /* mobile hit target minimum */
+
+  /* ---- Motion ----------------------------------------------------------------- */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 120ms;         /* hover, press */
+  --dur-base: 200ms;         /* panel / sheet / popover in */
+  --toast-ms: 5000;          /* toast lifetime (ms, read from JS) */
+}
+
+/* Base resets used by every prototype */
+html, body { background: var(--bg); color: var(--ink); font-family: var(--family-sans); -webkit-font-smoothing: antialiased; }
+*, *::before, *::after { box-sizing: border-box; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-strong); }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; }
+}
+
+/* Print / PDF export (Milestone Timeline is exported for clients) */
+@media print {
+  html, body { background: #FFFFFF; }
+}

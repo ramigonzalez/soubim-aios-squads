@@ -1,0 +1,14 @@
+# Legacy files with raw colours/px, skipped by scripts/check-tokens.sh.
+# Remove a file from this list when its screen migrates to the design system.
+src/components/atoms/DisciplineCircle.tsx
+src/components/atoms/ParticipantIndicator.tsx
+src/components/molecules/FilterPopover.tsx
+src/components/molecules/MilestoneNode.tsx
+src/components/molecules/ProjectItemRow.tsx
+src/components/organisms/FilterBar.tsx
+src/components/organisms/GoogleSignInButton.tsx
+src/components/organisms/IngestionApproval.tsx
+src/components/organisms/ManualItemForm.tsx
+src/components/organisms/StageScheduleBuilder.tsx
+src/lib/exportTimeline.ts
+src/lib/utils.ts

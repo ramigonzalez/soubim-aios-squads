@@ -1,6 +1,6 @@
 # Promem revamp: Phase 0 mapping
 
-> **Status:** Phase 0 (audit). Decisions recorded in §6.1; one item still open (§6.2). No UI code has been written.
+> **Status:** Phase 0 approved (decisions in §6.1). Phase 1 (foundations) done, see §7.
 > **Inputs:** `docs/design_handoff_promem/` (README, UX-UI-GUIDELINES, COMPONENTS, tokens, BRAND, prototypes) and an audit of `decision-log-frontend/` and `decision-log-backend/` on `feat/promem-revamp` @ `2e1e20e`.
 > **Rule of thumb used here:** the platform wins (README §0.3). Where the prototype shows something the API can't back, the section hides and the gap is listed in §4.
 
@@ -161,7 +161,9 @@ Columns: **Prototype ref** points at `screenshots/desktop/*` or the README secti
 
 ## 4. Backend gaps (verified against `decision-log-backend/`)
 
-Legend: ✅ exists · 🟡 partial · ❌ missing. **UI behaviour** = what Phase 3 does without a backend change.
+Legend: ✅ exists · 🟡 partial · ❌ missing.
+
+> **Superseded (§6.1 #7):** nothing is hidden. Every gap below is built in the backend. The "UI behaviour" column only records what was considered before that decision.
 
 | # | Need (README §9.3) | Status | Evidence | UI behaviour without backend work | Backend ask (optional, separate tickets) |
 |---|---|---|---|---|---|
@@ -249,10 +251,42 @@ decision-log-frontend/
 3. **Marcos source filter:** **keep it.** It filters by source: Reunião · E-mail · Documento · Entrada manual (`MilestoneFilterBar.tsx:21-26`). It becomes a third quiet menu "Todas as fontes" in the Marcos toolbar, next to Tipos and Disciplinas.
 4. **Manual item entry:** **include it.** Important decisions also happen informally (calls, site visits, hallway conversations). It goes in as an **"Adicionar item"** action in the Histórico header, and as an entry in the Visão geral "⋯" menu. Route `/projects/:id/items/new`, a full-page form shell (cookbook "Create / edit"). It reuses the `ManualItemForm` fields (statement, type, who with participant suggestions, disciplines, date, why, causation, owner/due/done for actions, impacts, consensus). It saves as `source_type=manual_input`, then returns to Histórico with `?item=<newId>` open. Needs `write` access. This also fixes today's broken post-save redirect.
 5. **Dead code:** removed in **one separate cleanup PR**, not inside the screen PRs.
-6. **Tests and language:** pt-BR is the primary language. New and migrated tests **assert pt-BR strings**. Phase 1 switches `src/tests/setup.ts` to pt-BR. Existing English-asserting tests are updated when their screen migrates. The `en` catalogue stays in key parity (the existing parity test is kept).
+6. **Tests and language:** pt-BR is the primary language. New and migrated tests **assert pt-BR strings**. Design-system tests run in pt-BR now (`src/tests/design-system/render.tsx`). The global `src/tests/setup.ts` stays English until the legacy English-asserting tests are rewritten with their screens. Switching it today would break the legacy tests that assert English labels. The `en` catalogue stays in key parity (the existing parity test is kept).
 
-### 6.2 Still open
-7. **Backend asks:** the small backend changes listed in §4's last column, which would let the hidden sections appear. Two options: file them as separate tickets now, or ship the simplified UI first and file them later. The most valuable are:
-   - **G6**: project list totals. Without it, the Projects table can't show the current stage or pending work.
-   - **G3**: `GET /projects/:id/sources`. Without it, Reuniões lists only meetings that produced items.
-   - **G7**: the firm name in the public link payload.
+7. **Backend gaps: build, don't hide.** Nothing in the prototypes is hidden or simplified. Every ❌/🟡 gap in §4 becomes backend work in the phase of the screen that needs it. The "UI behaviour without backend work" column in §4 is **superseded**: read the "Backend ask" column as the plan. Where the backend design is ambiguous, ask first.
+   - **G1:** build `project_visits`. Tile 1 becomes "desde sua última visita" as in the prototype. "Últimos 7 dias" is only the fallback for a user's first visit.
+   - **G2 candidate items:** **step 1** is a cheap preview pass on arrival (a small model call listing likely items: title, type, discipline), with full extraction still after approval. **Step 2 (later)** migrates to full extraction on arrival, where approval publishes the staged items. Confidence and reasons come from the deterministic match that assigned the project (Drive folder, Fathom rule, Gmail matcher). Flags come from participant/e-mail domains and duplicate checks.
+   - **G4 speaker correction:** the transcript marks uncertain speakers as `⚠️ Name [reason]` with no candidate list. The picker offers the meeting's participants, and the correction is stored as an override on the turn.
+   - **G5 undo:** approve/reject enqueue the job with a short `run_after`. A revert endpoint cancels the job while it's still queued.
+   - **G9 Drive:** keep the **service-account ("robot e-mail") flow** that's already in production. Folder IDs are never shown or typed. No Google Picker.
+   - **G11 similar items:** embeddings already exist. Build a similarity endpoint with a reason ("mesma disciplina", "mesma fonte", "assunto semelhante").
+   - **Consensus:** add `MIXED` ("Com ressalvas") to the extraction schema and prompt, for new extractions only. **Impacts** keep the current shape (custo / prazo / escopo / risco / áreas), shown in full.
+   - **G15:** build **global search ⌘K** (cross-project: projects, items, meetings) and **Notificações**. The notification trigger events will be proposed for approval before that phase.
+   - **G10:** seed the prototype templates (Edificação padrão, Casa, Retrofit) alongside the existing ones.
+   - **G8:** nullable expiry ("Nunca") and the `/m/:token` short URL.
+
+---
+
+## 7. Phase 1 (foundations): delivered
+
+- **Foundations:** `tokens.css` and the v3 preset (copied verbatim), self-hosted fonts (`@fontsource`, latin subset), `motion.css` (200 ms entrances, off under reduced motion), favicons and brand SVGs in `public/brand/`, `index.html` set to `lang="pt-BR"` with the title "Promem".
+- **Library:** `decision-log-frontend/src/design-system/`. The primitives and domain atoms are listed in its README. A Promem-aware `cn()` (tailwind-merge knows the type scale) is re-exported from `lib/utils`.
+- **Helpers:** `lib/format.ts` (date-fns `ptBR`) and `lib/stages.ts` (proportions, progress, "hoje" position, item → stage).
+- **i18n:** a new `ui` namespace (pt-BR + en) and `labels.disciplineShort` (the explicit short names from README §7.5).
+- **Gallery:** `/dev/ui`, development builds only (verified absent from the production bundle). No horizontal scroll at 375 px.
+- **CI:** `npm run lint:tokens` (README §0.4 guard). Legacy files with raw values are listed in `scripts/token-guard-baseline.txt` and leave the list as their screens migrate.
+- **Tests:** 55 new tests in `src/tests/design-system/` (pt-BR). Full suite: 63 files, 788 passed.
+
+### Deviations for design review
+1. **New patterns:**
+   - `Banner` (info/warning/danger notice; also the ingestion flag box).
+   - `Count` (nav count).
+   - The toggle variant of `Chip` (template picker, mobile filter sheet).
+   - The `Spinner`/`Kbd` helpers.
+2. **Snapped sizes (README §6.3):** the Dialog title is 18 → `h2`, and the BottomSheet title is 16 → `h3`.
+3. **Copy:**
+   - `formatDaysLeft(0)` reads "termina hoje". pt-BR plural rules would otherwise produce "falta 0 dia".
+   - Durations of an hour or more read "1 h 05 min". The handoff only shows minutes.
+4. **`lucide-react` 0.292 → 1.57:** needed for the icon map. `Tilde` still doesn't exist, so the custom `TildeIcon` from COMPONENTS.md is used.
+5. **Legacy screens are affected immediately:** the preset sets the base font (Plus Jakarta Sans), the paper background, the `rounded`/`rounded-sm|md|lg` radii and the accent focus ring globally. They render correctly; they will look mixed until Phases 2–3 migrate them.
+6. **`ConsensusList`** already supports `MIXED` ("Com ressalvas"). The backend and extraction change lands with the item panel (§6.1 #7).
