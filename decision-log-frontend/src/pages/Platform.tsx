@@ -1,24 +1,21 @@
 import { useTranslation } from 'react-i18next'
 import { CompanyInvitations } from '../components/organisms/CompanyInvitations'
 import { PlatformOrganizations } from '../components/organisms/PlatformOrganizations'
+import { PageContainer, PageHeader } from '../components/templates/PageContainer'
 
 /**
  * /platform (Story 12.13): the platform operator's page. Guarded by `PlatformRoute` (frontend) and
  * by `users.is_platform_operator` on every `/api/platform/*` call (backend).
+ * Promem revamp Phase 4c: page anatomy (eyebrow, h1, description) and section blocks.
  */
 export default function Platform() {
   const { t } = useTranslation('platform')
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <header>
-          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-          <p className="mt-1 text-sm text-gray-600">{t('subtitle')}</p>
-        </header>
-        <PlatformOrganizations />
-        <CompanyInvitations />
-      </div>
-    </div>
+    <PageContainer>
+      <PageHeader eyebrow={t('eyebrow')} title={t('title')} description={t('subtitle')} />
+      <PlatformOrganizations />
+      <CompanyInvitations />
+    </PageContainer>
   )
 }

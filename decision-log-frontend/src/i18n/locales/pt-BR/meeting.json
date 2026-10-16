@@ -27,7 +27,7 @@
   "versions": {
     "button": "Versões",
     "heading": "Versões da extração",
-    "empty": "Nenhuma versão de extração ainda.",
+    "empty": "Nenhuma versão ainda. Uma versão é criada sempre que a reunião é extraída.",
     "active": "Ativa",
     "activate": "Usar esta versão",
     "activating": "Trocando…",
@@ -44,7 +44,10 @@
     "unknownModel": "Importada",
     "by": "por {{name}}",
     "note": "Somente os itens da versão ativa aparecem no projeto. Edições e revisões pertencem à versão em que foram feitas.",
-    "error": "Não foi possível atualizar as versões."
+    "error": "Não foi possível atualizar as versões.",
+    "activateTitle": "Usar a versão {{version}}?",
+    "activateAction": "Usar a versão {{version}}",
+    "loadError": "Não foi possível carregar as versões da extração."
   },
   "addedBy": "Adicionada por {{name}}"
 }

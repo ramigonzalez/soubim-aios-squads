@@ -1,26 +1,25 @@
 /**
- * ProjectSharing — organizations with access to a project (Story 12.3).
+ * ProjectSharing — organizations with access to a project (Story 12.3), on the Promem design system.
  *
- * List, invite (by exact organization slug), change access and remove. Shown on the
- * Project Edit page; renders nothing when the user cannot manage shares (API 403).
+ * List, invite (by exact organization slug), change access and remove (confirmed in a Dialog that names
+ * the action). Shown on the Project Edit page as a section card that saves on its own; renders nothing
+ * when the user cannot manage shares (API 403).
  */
-import { FormEvent, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AxiosError } from 'axios'
+import { Badge, Banner, Button, Dialog, ErrorState, IconButton, Icons, Input, Select, SkeletonRows } from '../../design-system'
 import {
   ShareAccess,
   useProjectOrganizations,
   useRemoveProjectShare,
   useShareProject,
   useUpdateProjectShare,
+  type ProjectOrganization,
 } from '../../hooks/useProjectOrganizations'
-import { SettingsCard } from '../molecules/SettingsCard'
+import { FormSection } from '../templates/FormShell'
 
 const SHARE_ACCESS: ShareAccess[] = ['viewer', 'contributor']
-
-const inputClass =
-  'block rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500'
 
 function inviteErrorKey(error: unknown): string {
   const status = (error as AxiosError | undefined)?.response?.status
@@ -30,17 +29,39 @@ function inviteErrorKey(error: unknown): string {
   return 'sharing.errors.generic'
 }
 
+const isForbidden = (error: unknown) => (error as AxiosError | undefined)?.response?.status === 403
+
 export default function ProjectSharing({ projectId }: { projectId: string }) {
   const { t } = useTranslation('projects')
-  const { data: organizations, isLoading, isError } = useProjectOrganizations(projectId)
+  const { data: organizations, isLoading, isError, error: loadError, refetch } = useProjectOrganizations(projectId)
   const share = useShareProject(projectId)
   const update = useUpdateProjectShare(projectId)
   const remove = useRemoveProjectShare(projectId)
   const [slug, setSlug] = useState('')
   const [access, setAccess] = useState<ShareAccess>('viewer')
   const [error, setError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<ProjectOrganization | null>(null)
 
-  if (isLoading || isError || !organizations) return null
+  if (isError && isForbidden(loadError)) return null
+
+  const section = (children: ReactNode) => (
+    <FormSection
+      title={t('sharing.title')}
+      description={
+        <>
+          {t('sharing.description')}
+          <span className="block text-ink-3">{t('settings.autoSaved')}</span>
+        </>
+      }
+    >
+      {children}
+    </FormSection>
+  )
+
+  if (isLoading) return section(<SkeletonRows rows={2} rowClassName="h-row-2" className="rounded-lg border border-line" />)
+  if (isError || !organizations) {
+    return section(<ErrorState className="py-6" title={t('sharing.loadError')} onRetry={() => void refetch()} />)
+  }
 
   const handleInvite = async (e: FormEvent) => {
     e.preventDefault()
@@ -63,89 +84,95 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
     }
   }
 
-  return (
-    <SettingsCard titleId="project-sharing-title" title={t('sharing.title')} description={t('sharing.description')} autoSaved>
+  const accessOptions = SHARE_ACCESS.map((value) => ({ value, label: t(`sharing.access.${value}`) }))
 
-      {error && (
-        <div role="alert" className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+  return section(
+    <>
+      {error && <Banner tone="danger">{error}</Banner>}
 
-      <ul className="divide-y divide-gray-100">
-        {organizations.map(org => (
-          <li key={org.organization_id} className="flex items-center justify-between gap-3 py-2">
-            <div>
-              <p className="text-sm font-medium text-gray-900">{org.name}</p>
-              <p className="text-xs text-gray-500">{org.slug}</p>
+      <ul className="rounded-lg border border-line">
+        {organizations.map((org) => (
+          <li
+            key={org.organization_id}
+            className="flex min-h-row-2 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line-soft px-4 py-2.5 last:border-b-0"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-small font-medium text-ink">{org.name}</p>
+              <p className="truncate font-mono text-mono-sm text-ink-2">{org.slug}</p>
             </div>
             {org.access === 'owner' ? (
-              <span className="text-xs font-medium text-gray-600">{t('sharing.access.owner')}</span>
+              <Badge>{t('sharing.access.owner')}</Badge>
             ) : (
-              <div className="flex items-center gap-2">
-                <select
+              <div className="flex items-center gap-1">
+                <Select
+                  size="toolbar"
+                  className="w-36"
                   aria-label={t('sharing.accessFor', { name: org.name })}
                   value={org.access}
-                  onChange={e =>
-                    run(() =>
-                      update.mutateAsync({ organizationId: org.organization_id, access: e.target.value as ShareAccess })
-                    )
+                  onValueChange={(value) =>
+                    void run(() => update.mutateAsync({ organizationId: org.organization_id, access: value as ShareAccess }))
                   }
-                  className={inputClass}
-                >
-                  {SHARE_ACCESS.map(value => (
-                    <option key={value} value={value}>
-                      {t(`sharing.access.${value}`)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  aria-label={t('sharing.remove', { name: org.name })}
-                  onClick={() => {
-                    if (window.confirm(t('sharing.removeConfirm', { name: org.name }))) {
-                      void run(() => remove.mutateAsync(org.organization_id))
-                    }
-                  }}
-                  className="text-gray-400 hover:text-red-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  options={accessOptions}
+                />
+                <IconButton
+                  label={t('sharing.remove', { name: org.name })}
+                  icon={<Icons.remove />}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setRemoving(org)}
+                />
               </div>
             )}
           </li>
         ))}
       </ul>
 
-      <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-2">
-        <input
+      <form onSubmit={handleInvite} className="flex flex-col gap-2 md:flex-row">
+        <Input
           type="text"
           value={slug}
-          onChange={e => setSlug(e.target.value)}
+          onChange={(e) => setSlug(e.target.value)}
           placeholder={t('sharing.slugPlaceholder')}
+          size="toolbar"
           aria-label={t('sharing.slugLabel')}
-          className={`${inputClass} flex-1`}
+          className="min-w-0 flex-1"
         />
-        <select
+        <Select
+          size="toolbar"
+          className="md:w-40"
           aria-label={t('sharing.accessLabel')}
           value={access}
-          onChange={e => setAccess(e.target.value as ShareAccess)}
-          className={inputClass}
-        >
-          {SHARE_ACCESS.map(value => (
-            <option key={value} value={value}>
-              {t(`sharing.access.${value}`)}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          disabled={!slug.trim() || share.isLoading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 max-md:min-h-11"
-        >
+          onValueChange={(value) => setAccess(value as ShareAccess)}
+          options={accessOptions}
+        />
+        <Button type="submit" icon={<Icons.add />} disabled={!slug.trim() || share.isLoading}>
           {t('sharing.invite')}
-        </button>
+        </Button>
       </form>
-    </SettingsCard>
+
+      <Dialog
+        open={!!removing}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title={t('sharing.removeTitle')}
+        description={removing ? t('sharing.removeConfirm', { name: removing.name }) : undefined}
+        footer={
+          <>
+            <Button onClick={() => setRemoving(null)}>{t('common:cancel')}</Button>
+            <Button
+              variant="primary"
+              loading={remove.isLoading}
+              onClick={() => {
+                if (!removing) return
+                const id = removing.organization_id
+                setRemoving(null)
+                void run(() => remove.mutateAsync(id))
+              }}
+            >
+              {t('sharing.removeAction')}
+            </Button>
+          </>
+        }
+      />
+    </>,
   )
 }

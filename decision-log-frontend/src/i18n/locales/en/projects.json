@@ -94,7 +94,10 @@
       "alreadyShared": "This organization already has access.",
       "owner": "This project already belongs to this organization.",
       "generic": "Could not update access. Please try again."
-    }
+    },
+    "removeTitle": "Remove organization from the project",
+    "removeAction": "Remove access",
+    "loadError": "Could not load the organizations with access."
   },
   "form": {
     "details": "Project Details",
@@ -160,7 +163,8 @@
       "invalid": "Check the value: it cannot be empty or longer than 200 characters, an email needs an @ and a domain has no @.",
       "duplicate": "This rule already exists.",
       "generic": "Could not save the rule. Try again."
-    }
+    },
+    "loadError": "Could not load the Fathom rules."
   },
   "driveFolder": {
     "title": "Google Drive folder",
@@ -196,7 +200,11 @@
       "folder_in_use": "This folder already feeds another project. A folder can feed one project only.",
       "drive_unavailable": "Google Drive did not answer. Try again in a moment.",
       "generic": "Something went wrong. Try again."
-    }
+    },
+    "removeTitle": "Stop monitoring the folder",
+    "connected": "Connected · watching for new files",
+    "notConnected": "Not connected",
+    "loadError": "Could not load the Google Drive folder."
   },
   "settings": {
     "autoSaved": "Saved automatically"
@@ -211,7 +219,7 @@
     "linkLabel": "Invitation link",
     "copy": "Copy link",
     "copied": "Copied",
-    "empty": "No external people on this project.",
+    "empty": "No external people on this project. People you invite by e-mail appear here.",
     "access": {
       "viewer": "Viewer",
       "contributor": "Contributor"
@@ -229,6 +237,9 @@
       "already_member": "This person is already a member of the organization.",
       "already_invited": "This person already has external access to this project.",
       "generic": "Could not update external people. Please try again."
-    }
+    },
+    "removeTitle": "Remove external person",
+    "removeAction": "Remove access",
+    "loadError": "Could not load the external people."
   }
 }

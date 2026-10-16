@@ -210,11 +210,11 @@ describe('MeetingViewer visibility (Story 12.4)', () => {
     expect(screen.getByTestId('visibility-badge')).toHaveTextContent('Internal')
     await user.click(screen.getByRole('button', { name: 'Share with the project' }))
     expect(mockedApi.patch).not.toHaveBeenCalled()
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('Every organization on the project will see this meeting')
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Every organization on the project will see this meeting')
 
     await user.click(screen.getByRole('button', { name: 'Confirm' }))
     await waitFor(() => expect(mockedApi.patch).toHaveBeenCalledWith('/sources/src-1/visibility', { visibility: 'shared' }))
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('cancelling the confirmation changes nothing', async () => {
@@ -227,9 +227,9 @@ describe('MeetingViewer visibility (Story 12.4)', () => {
     renderAt('/meetings/src-1')
 
     await user.click(screen.getByRole('button', { name: 'Make internal' }))
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('Only your organization will see this meeting')
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Only your organization will see this meeting')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(mockedApi.patch).not.toHaveBeenCalled()
   })
 

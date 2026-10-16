@@ -27,7 +27,7 @@
   "versions": {
     "button": "Versions",
     "heading": "Extraction versions",
-    "empty": "No extraction versions yet.",
+    "empty": "No versions yet. A version is created every time the meeting is extracted.",
     "active": "Active",
     "activate": "Use this version",
     "activating": "Switching…",
@@ -44,7 +44,10 @@
     "unknownModel": "Imported",
     "by": "by {{name}}",
     "note": "Only the active version's items are shown in the project. Edits and reviews belong to the version they were made on.",
-    "error": "Could not update the versions."
+    "error": "Could not update the versions.",
+    "activateTitle": "Use version {{version}}?",
+    "activateAction": "Use version {{version}}",
+    "loadError": "Could not load the extraction versions."
   },
   "addedBy": "Added by {{name}}"
 }

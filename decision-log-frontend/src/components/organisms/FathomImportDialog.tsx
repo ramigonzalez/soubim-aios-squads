@@ -7,11 +7,10 @@
  * organization they act for (`can_share`).
  */
 
-import { useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
+import { useId, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { Banner, Button, Dialog, Field, Icons, Select, SkeletonRows, cn } from '../../design-system'
 import { integrationsService } from '../../services/integrationsService'
 import type { FathomMeeting } from '../../types/integrations'
 import type { MeetingVisibility } from '../../types/projectItem'
@@ -31,13 +30,71 @@ function importErrorKey(error: unknown): string {
   return 'generic'
 }
 
+/**
+ * Internal / shared choice of a Fathom meeting, as a vertical radio group: the labels are full
+ * sentences, too long for a SegmentedControl on a phone. Shared with the auto-import settings.
+ */
+export function VisibilityChoice({
+  name,
+  value,
+  onChange,
+  canShare,
+  sharedDisabledMuted = true,
+  note,
+}: {
+  name: string
+  value: MeetingVisibility
+  onChange: (value: MeetingVisibility) => void
+  canShare: boolean
+  /** Grey out the shared label when it cannot be chosen */
+  sharedDisabledMuted?: boolean
+  note?: ReactNode
+}) {
+  const { t } = useTranslation('integrations')
+  const legendId = useId()
+  const options: { value: MeetingVisibility; label: string; disabled: boolean }[] = [
+    { value: 'internal', label: t('meetings.dialog.visibilityInternal'), disabled: false },
+    { value: 'shared', label: t('meetings.dialog.visibilityShared'), disabled: !canShare },
+  ]
+  return (
+    <fieldset className="flex flex-col gap-1" aria-labelledby={legendId}>
+      <legend id={legendId} className="mb-1 text-small font-semibold text-ink">
+        {t('meetings.dialog.visibility')}
+      </legend>
+      {options.map(option => (
+        <label
+          key={option.value}
+          className={cn(
+            'flex min-h-touch cursor-pointer items-center gap-2.5 text-small md:min-h-0 md:py-1',
+            option.disabled ? 'cursor-not-allowed' : '',
+            option.disabled && sharedDisabledMuted ? 'text-ink-3' : 'text-ink',
+          )}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={value === option.value}
+            disabled={option.disabled}
+            onChange={() => onChange(option.value)}
+            className="h-4 w-4 shrink-0 accent-ink focus-visible:shadow-focus focus-visible:outline-none"
+          />
+          {option.label}
+        </label>
+      ))}
+      {note && <p className="text-caption text-ink-2">{note}</p>}
+    </fieldset>
+  )
+}
+
 export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps) {
   const { t } = useTranslation('integrations')
   const queryClient = useQueryClient()
+  const formId = useId()
   const [projectId, setProjectId] = useState('')
   const [visibility, setVisibility] = useState<MeetingVisibility>('internal')
 
-  const { data: projects, isLoading } = useQuery(IMPORT_PROJECTS_KEY, integrationsService.getFathomImportProjects, {
+  const { data: projects, isLoading, isError, refetch } = useQuery(IMPORT_PROJECTS_KEY, integrationsService.getFathomImportProjects, {
     enabled: !!meeting,
     staleTime: 60_000,
   })
@@ -74,100 +131,84 @@ export function FathomImportDialog({ meeting, onClose }: FathomImportDialogProps
     })
   }
 
+  const hasProjects = !!projects && projects.length > 0
+
   return (
-    <Dialog.Root open={!!meeting} onOpenChange={open => !open && close()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <Dialog.Title className="text-lg font-semibold text-gray-900">{t('meetings.dialog.title')}</Dialog.Title>
-              <p className="mt-1 text-sm font-medium text-gray-700">{meeting?.title || t('meetings.untitled')}</p>
-            </div>
-            <Dialog.Close className="rounded p-1 text-gray-500 hover:bg-gray-100" aria-label={t('meetings.dialog.close')}>
-              <X className="h-4 w-4" />
-            </Dialog.Close>
-          </div>
-          <Dialog.Description className="mt-2 text-sm text-gray-600">{t('meetings.dialog.description')}</Dialog.Description>
+    <Dialog
+      open={!!meeting}
+      onOpenChange={open => !open && close()}
+      title={t('meetings.dialog.title')}
+      description={t('meetings.dialog.description')}
+      footer={
+        <>
+          <Button onClick={close}>{t('meetings.dialog.cancel')}</Button>
+          <Button
+            type="submit"
+            form={formId}
+            variant="primary"
+            icon={<Icons.download />}
+            disabled={!projectId}
+            loading={importMutation.isLoading}
+          >
+            {t('meetings.dialog.submit')}
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-label uppercase text-ink-2">{t('meetings.dialog.meeting')}</span>
+          <p className="text-body font-semibold text-ink">{meeting?.title || t('meetings.untitled')}</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            {isLoading && <p className="text-sm text-gray-500">{t('nav:loading')}</p>}
-            {projects && projects.length === 0 && (
-              <p className="text-sm text-gray-600">{t('meetings.dialog.noProjects')}</p>
-            )}
-            {projects && projects.length > 0 && (
-              <label className="block text-sm">
-                <span className="font-medium text-gray-700">{t('meetings.dialog.project')}</span>
-                <select
-                  value={projectId}
-                  onChange={e => selectProject(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">{t('meetings.dialog.selectProject')}</option>
-                  {projects.map(p => (
-                    <option key={p.id} value={p.id} disabled={importedInto.has(p.id)}>
-                      {importedInto.has(p.id) ? t('meetings.dialog.alreadyImported', { project: p.name }) : p.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
+        {isLoading && <SkeletonRows rows={2} rowClassName="h-10" />}
+        {isError && (
+          <Banner
+            tone="danger"
+            action={
+              <Button size="sm" variant="link" onClick={() => void refetch()}>
+                {t('ui:state.retry')}
+              </Button>
+            }
+          >
+            {t('meetings.dialog.projectsError')}
+          </Banner>
+        )}
+        {projects && projects.length === 0 && <Banner>{t('meetings.dialog.noProjects')}</Banner>}
 
-            {projects && projects.length > 0 && (
-              <fieldset className="text-sm">
-                <legend className="font-medium text-gray-700">{t('meetings.dialog.visibility')}</legend>
-                <label className="mt-1 flex items-center gap-2 text-gray-700">
-                  <input
-                    type="radio"
-                    name="fathom-import-visibility"
-                    value="internal"
-                    checked={visibility === 'internal'}
-                    onChange={() => setVisibility('internal')}
-                  />
-                  {t('meetings.dialog.visibilityInternal')}
-                </label>
-                <label className={`mt-1 flex items-center gap-2 ${projectId && !canShare ? 'text-gray-400' : 'text-gray-700'}`}>
-                  <input
-                    type="radio"
-                    name="fathom-import-visibility"
-                    value="shared"
-                    checked={visibility === 'shared'}
-                    disabled={!canShare}
-                    onChange={() => setVisibility('shared')}
-                  />
-                  {t('meetings.dialog.visibilityShared')}
-                </label>
-                {projectId && !canShare && (
-                  <p className="mt-1 text-xs text-gray-500">{t('meetings.dialog.sharedAdminOnly')}</p>
-                )}
-              </fieldset>
-            )}
+        {hasProjects && (
+          <Field label={t('meetings.dialog.project')}>
+            <Select
+              value={projectId || undefined}
+              onValueChange={selectProject}
+              placeholder={t('meetings.dialog.selectProject')}
+              options={projects.map(p => ({
+                value: p.id,
+                label: importedInto.has(p.id) ? t('meetings.dialog.alreadyImported', { project: p.name }) : p.name,
+                disabled: importedInto.has(p.id),
+              }))}
+            />
+          </Field>
+        )}
 
-            {importMutation.isError && (
-              <p role="alert" className="text-sm text-red-700">
-                {t(`meetings.dialog.errors.${importErrorKey(importMutation.error)}`)}
-              </p>
-            )}
+        {hasProjects && (
+          <VisibilityChoice
+            name="fathom-import-visibility"
+            value={visibility}
+            onChange={setVisibility}
+            canShare={canShare}
+            sharedDisabledMuted={!!projectId}
+            note={projectId && !canShare ? t('meetings.dialog.sharedAdminOnly') : undefined}
+          />
+        )}
 
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={close}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                {t('meetings.dialog.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={!projectId || importMutation.isLoading}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {importMutation.isLoading ? t('meetings.dialog.submitting') : t('meetings.dialog.submit')}
-              </button>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        {importMutation.isError && (
+          <p role="alert" className="flex items-start gap-1.5 text-caption text-danger-ink">
+            <Icons.warning className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            {t(`meetings.dialog.errors.${importErrorKey(importMutation.error)}`)}
+          </p>
+        )}
+      </form>
+    </Dialog>
   )
 }

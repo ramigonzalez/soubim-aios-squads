@@ -1,6 +1,7 @@
 {
   "title": "Integrations",
   "subtitle": "Connect your accounts to import meetings into Promem.",
+  "eyebrow": "Settings",
   "fathom": {
     "name": "Fathom",
     "description": "Import recordings and transcripts of your Fathom meetings.",
@@ -14,7 +15,6 @@
     "notConnected": "Not connected",
     "needsReconnect": "The connection expired. Reconnect your Fathom account.",
     "notConfigured": "The Fathom integration is not available on this server yet.",
-    "confirmDisconnect": "Disconnect your Fathom account? Meetings already imported stay in Promem.",
     "result": {
       "connected": "Fathom account connected.",
       "error": "Could not connect to Fathom. Please try again.",
@@ -24,7 +24,8 @@
     },
     "errors": {
       "load": "Could not load the integration status.",
-      "action": "Something went wrong. Please try again."
+      "action": "Something went wrong. Please try again.",
+      "disconnect": "Could not disconnect Fathom. Try again."
     },
     "browse": "Browse Fathom meetings",
     "autoImport": {
@@ -42,7 +43,15 @@
         "forbidden": "You cannot use this visibility.",
         "generic": "Could not save. Try again."
       }
-    }
+    },
+    "expired": "Connection expired",
+    "unavailable": "Unavailable",
+    "disconnectSection": "Disconnect the account",
+    "disconnectHelp": "Meetings already imported stay in Promem.",
+    "disconnectTitle": "Disconnect Fathom?",
+    "disconnectText": "Meetings already imported stay in Promem. Automatic import stops, and to import new meetings you need to connect the account again.",
+    "disconnectConfirm": "Disconnect Fathom",
+    "cancel": "Cancel"
   },
   "meetings": {
     "title": "Fathom meetings",
@@ -107,7 +116,24 @@
         "alreadyImported": "This meeting is already imported into this project.",
         "storage": "Recording storage is not configured on this server.",
         "generic": "Could not import. Try again."
-      }
+      },
+      "meeting": "Meeting",
+      "projectsError": "Could not load the projects."
+    },
+    "emptyText": "Meetings recorded in your Fathom account appear here. After recording a meeting in Fathom, refresh the list.",
+    "refresh": "Refresh list",
+    "clearSearch": "Clear search",
+    "sourceStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "processed": "Processed",
+      "failed": "Failed"
+    },
+    "job": {
+      "queued": "Queued",
+      "running": "Processing",
+      "retrying": "Retrying ({{attempt}}/{{max}})"
     }
   }
 }
