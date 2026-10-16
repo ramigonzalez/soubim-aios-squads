@@ -15,6 +15,8 @@ export function FormShell({
   footer,
   onSubmit,
   children,
+  after,
+  formId,
 }: {
   back?: { to: string; label: string }
   eyebrow?: ReactNode
@@ -25,6 +27,10 @@ export function FormShell({
   footer: ReactNode
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   children: ReactNode
+  /** Sections with their own forms (rendered after the form, before the footer) */
+  after?: ReactNode
+  /** Lets footer buttons outside the form submit it (`form` attribute) */
+  formId?: string
 }) {
   return (
     <div className="mx-auto flex w-full max-w-form flex-col gap-6 px-4 pb-20 pt-6 md:px-0 md:pt-8">
@@ -39,10 +45,12 @@ export function FormShell({
         {subtitle && <p className="text-small text-ink-2 [text-wrap:pretty]">{subtitle}</p>}
       </header>
       {notice}
-      <form noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
+      <form id={formId} noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
         {children}
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-5">{footer}</div>
+        {!after && footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-5">{footer}</div>}
       </form>
+      {after}
+      {after && footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-5">{footer}</div>}
     </div>
   )
 }
