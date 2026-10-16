@@ -301,7 +301,8 @@ Every phase is a PR into the integration branch `feat/promem-revamp`. It merges 
 | #51 | 2 · Shell | Sidebar, project switcher, drawer, mobile top bar + tab bar + Mais, section routes and redirects. Backend: `project_visits` (migration 025), list aggregates, section counts, `/m/:token`. |
 | #52 | 3 · Visão geral + Marcos + item SidePanel | Backend: `GET /projects/{id}/items/{item_id}/similar` (G11). Frontend: ProjectHeader (export, upload, share, ⋯ edit/archive), OverviewTiles/OverviewRow, StageTimeline, ItemDetailPanel (`?item=`, ↑/↓, Esc, M, X, review block, Similares), undo toasts for marco/done. |
 
-| 3b | 3 · Histórico + Adicionar item | Backend: source duration / participants / tool / meeting type on items, `project_items.occurred_at` (migration 026), manual items take a title and date, consensus accepts `MIXED`. Frontend: FilterBar (search `/`, Disciplina · Tipo · Fonte · Tipo de reunião · Quem, Período, chips), date groups with collapsible source bands (approve pending, open transcript), discipline groups, ItemRow, list keyboard (↑/↓, Enter, M, X), "Mostrar recusados", manual item form at `/projects/:id/items/new`. |
+| #53 | 3 · Histórico + Adicionar item | Backend: source duration / participants / tool / meeting type on items, `project_items.occurred_at` (migration 026), manual items take a title and date, consensus accepts `MIXED`. Frontend: FilterBar (search `/`, Disciplina · Tipo · Fonte · Tipo de reunião · Quem, Período, chips), date groups with collapsible source bands (approve pending, open transcript), discipline groups, ItemRow, list keyboard (↑/↓, Enter, M, X), "Mostrar recusados", manual item form at `/projects/:id/items/new`. |
+| 3c | 3 · Reuniões + Meeting viewer | Backend: `GET /projects/{id}/meetings` with item counts (G3); the meeting endpoint adds participants, tool, candidates and corrected transcript; `PUT /sources/{id}/speakers` stores speaker corrections in `transcript_speaker_corrections` (migration 027, the stored transcript never changes) (G4). Frontend: Reuniões list, viewer with participants (with discipline), AI summary with counts, PlayerBar with item ticks and speed (real video when stored), transcript with anchored item chips, uncertain-speaker prompt, extracted items column, `?t=` deep links, restyled visibility control. |
 
 ### Phase 3 deviations for design review
 - **Side box with no stage in progress:** "Nenhuma etapa em andamento · marcos recentes" shows the latest five milestones.
@@ -314,3 +315,7 @@ Every phase is a PR into the integration branch `feat/promem-revamp`. It merges 
   - The legacy meeting-type filter is kept as its own "Tipo de reunião" menu (shown only when sources have a type).
   - Source bands also show the visibility badge (Interna/Compartilhada) and, for reviewers, "Aprovar N pendentes".
 - **Adicionar item:** the form follows the create/edit cookbook. Its section 5 (consenso and impactos) is optional.
+- **Meeting viewer:**
+  - With a stored recording, the native video controls stay above the PlayerBar (volume, fullscreen).
+  - Transcripts mark one uncertain name ("⚠️ Lucia [reason]"), not a pair. The prompt offers the meeting's participants (or the project's).
+  - The "Versões da extração" block still uses the legacy component; it's restyled with the other unprototyped screens (Phase 4).

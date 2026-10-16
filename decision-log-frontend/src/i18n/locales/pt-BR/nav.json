@@ -57,9 +57,5 @@
     "share": "Compartilhar com o cliente",
     "account": "Conta"
   },
-  "interim": {
-    "title": "{{section}} em construção",
-    "text": "Esta tela é refeita na próxima fase do novo Promem. As outras seções do projeto já estão disponíveis no menu."
-  },
   "skipToContent": "Pular para o conteúdo"
 }

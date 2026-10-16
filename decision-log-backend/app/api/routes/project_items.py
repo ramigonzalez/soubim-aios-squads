@@ -22,6 +22,7 @@ from app.services.thumbnails import thumbnail_url
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import capture_original
 from app.services.similar_items import similar_items
+from app.services.meeting_view import participant_names
 from app.services.access import (
     ADMIN,
     APPROVED,
@@ -115,21 +116,6 @@ def _item_to_response(item: ProjectItem, show_original: bool = False, externals:
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
     }
 
-
-def participant_names(participants) -> list:
-    """Source participants as display names. Stored as strings (uploads, Tactiq) or as
-    ``{name, email}`` dicts (Fathom invitees)."""
-    names = []
-    for entry in participants or []:
-        if isinstance(entry, str):
-            name = entry.strip()
-        elif isinstance(entry, dict):
-            name = (entry.get("name") or entry.get("email") or "").strip()
-        else:
-            name = ""
-        if name and name not in names:
-            names.append(name)
-    return names
 
 
 def _compute_facets(db: Session, project_id: str, user, include_rejected: bool = False) -> dict:

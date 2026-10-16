@@ -68,7 +68,8 @@
   },
   "duration": {
     "minutes": "{{count}} min",
-    "hours": "{{hours}} h {{minutes}} min"
+    "hours": "{{hours}} h {{minutes}} min",
+    "hoursOnly": "{{hours}} h"
   },
   "wordmark": {
     "label": "Promem",

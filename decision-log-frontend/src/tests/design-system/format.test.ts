@@ -68,6 +68,7 @@ describe('lib/format (pt-BR)', () => {
   it('formats durations', () => {
     expect(formatDuration(45)).toBe('45 min')
     expect(formatDuration(65)).toBe('1 h 05 min')
+    expect(formatDuration(60)).toBe('1 h')
     expect(formatDuration(null)).toBe('')
   })
 

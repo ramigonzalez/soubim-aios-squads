@@ -6,7 +6,6 @@ import { Projects } from './pages/Projects'
 import { ProjectDetail } from './pages/ProjectDetail'
 import { SharedMilestoneTimeline } from './pages/SharedMilestoneTimeline'
 import Ingestion from './pages/Ingestion'
-import { MeetingViewer } from './pages/MeetingViewer'
 import { HomeRedirect, PlatformRoute } from './components/common/PlatformRoute'
 import { LegacyMeetingRedirect, ProjectIndexRedirect } from './components/common/ProjectRedirects'
 import { AppShell } from './components/templates/AppShell'
@@ -24,12 +23,13 @@ const AcceptInvitation = lazy(() => import('./pages/AcceptInvitation'))
 const GoogleCallback = lazy(() => import('./pages/GoogleCallback'))
 const Platform = lazy(() => import('./pages/Platform'))
 const ChangePassword = lazy(() => import('./pages/ChangePassword'))
-const ProjectSectionInterim = lazy(() => import('./pages/ProjectSectionInterim'))
 const ProjectMore = lazy(() => import('./pages/ProjectMore'))
 const ProjectOverview = lazy(() => import('./pages/ProjectOverview'))
 const ProjectMilestones = lazy(() => import('./pages/ProjectMilestones'))
 const ProjectHistory = lazy(() => import('./pages/ProjectHistory'))
 const ManualItemNew = lazy(() => import('./pages/ManualItemNew'))
+const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
+const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
 // Component gallery (Promem design system), development builds only
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
 
@@ -77,8 +77,8 @@ function AppRoutes() {
         <Route path="/projects/:id/milestones" element={<Lazy><ProjectMilestones /></Lazy>} />
         <Route path="/projects/:id/history" element={<Lazy><ProjectHistory /></Lazy>} />
         <Route path="/projects/:id/items/new" element={<Lazy><ManualItemNew /></Lazy>} />
-        <Route path="/projects/:id/meetings" element={<Lazy><ProjectSectionInterim section="meetings" /></Lazy>} />
-        <Route path="/projects/:id/meetings/:sourceId" element={<MeetingViewer />} />
+        <Route path="/projects/:id/meetings" element={<Lazy><ProjectMeetings /></Lazy>} />
+        <Route path="/projects/:id/meetings/:sourceId" element={<Lazy><ProjectMeetingViewer /></Lazy>} />
         <Route path="/projects/:id/summary" element={<ProjectDetail key="summary" view="digest" />} />
         <Route path="/projects/:id/more" element={<Lazy><ProjectMore /></Lazy>} />
         <Route path="/meetings/:sourceId" element={<LegacyMeetingRedirect />} />
