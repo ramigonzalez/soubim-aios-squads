@@ -3,7 +3,8 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { HomeRedirect, PlatformRoute, homePath } from '../../components/common/PlatformRoute'
-import { Navigation } from '../../components/common/Navigation'
+import { Sidebar } from '../../components/organisms/Sidebar'
+import { TooltipProvider } from '../../design-system'
 import { useAuthStore } from '../../store/authStore'
 import api from '../../services/api'
 import type { User } from '../../types/auth'
@@ -69,7 +70,7 @@ describe('PlatformRoute (Story 12.13)', () => {
   })
 })
 
-describe('Navigation link to the platform page (Story 12.13)', () => {
+describe('Sidebar link to the platform page (Story 12.13)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
@@ -80,9 +81,11 @@ describe('Navigation link to the platform page (Story 12.13)', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     return render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <Navigation />
-        </MemoryRouter>
+        <TooltipProvider>
+          <MemoryRouter>
+            <Sidebar project={null} />
+          </MemoryRouter>
+        </TooltipProvider>
       </QueryClientProvider>
     )
   }
