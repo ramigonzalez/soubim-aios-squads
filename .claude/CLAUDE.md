@@ -117,6 +117,10 @@ soubim-aios-squads/
 - **Backend routes/services:** `snake_case.py`
 - **Tests:** mirror `src/` structure in `src/tests/`
 
+## Promem UI Revamp (design handoff)
+
+Toda mudança de UI segue `docs/design_handoff_promem/UX-UI-GUIDELINES.md` e usa só os tokens de `docs/design_handoff_promem/design-system/tokens.css`. Feature-to-screen mapping: `docs/ux/REVAMP-MAPPING.md`.
+
 ## Frontend Component Architecture
 
 Hybrid atomic + feature-based pattern:
