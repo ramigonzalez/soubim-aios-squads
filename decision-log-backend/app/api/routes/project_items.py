@@ -21,6 +21,7 @@ from app.services.project_externals import external_user_ids
 from app.services.thumbnails import thumbnail_url
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import capture_original
+from app.services.similar_items import similar_items
 from app.services.access import (
     ADMIN,
     APPROVED,
@@ -296,6 +297,31 @@ async def get_project_item(
     return {**_item_to_response(item, show_original=reaches_through_owner(db, user, project),
                                 externals=external_user_ids(db, project)),
             **project_capabilities(db, user, project)}
+
+
+@router.get("/projects/{project_id}/items/{item_id}/similar")
+async def get_similar_items(
+    project_id: str,
+    item_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(5, ge=1, le=20),
+):
+    """Promem revamp G11: items like this one, each with a reason
+    (``same_source`` · ``same_discipline`` · ``similar_topic``), for the item panel's "Similares" tab."""
+    user = _get_user(request)
+    project = _check_project_access(db, project_id, user)
+    item = db.query(ProjectItem).filter(ProjectItem.id == item_id, ProjectItem.project_id == project_id).first()
+    if not item_visible(db, user, item):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project item {item_id} not found")
+    owner_side = reaches_through_owner(db, user, project)
+    externals = external_user_ids(db, project)
+    return {
+        "items": [
+            {**_item_to_response(other, show_original=owner_side, externals=externals), "reason": reason}
+            for other, reason, _score in similar_items(db, user, item, limit)
+        ]
+    }
 
 
 @router.post("/projects/{project_id}/items", status_code=status.HTTP_201_CREATED)
