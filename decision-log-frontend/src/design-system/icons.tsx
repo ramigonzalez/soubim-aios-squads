@@ -5,6 +5,7 @@
 import { forwardRef } from 'react'
 import {
   ArrowDown,
+  Bell,
   ArrowUp,
   ChevronLeft,
   SlidersHorizontal,
@@ -90,6 +91,7 @@ export const Icons = {
   // Shell and account
   menu: Menu,
   back: ChevronLeft,
+  notifications: Bell,
   arrowUp: ArrowUp,
   arrowDown: ArrowDown,
   filter: SlidersHorizontal,

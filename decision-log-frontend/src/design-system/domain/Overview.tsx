@@ -205,3 +205,44 @@ export function DisciplineBarList({ rows, className }: { rows: DisciplineBar[]; 
     </ul>
   )
 }
+
+export interface NotificationRowProps {
+  icon: ReactNode
+  title: ReactNode
+  meta: ReactNode
+  /** "hoje", "ontem", "03/03" */
+  time: ReactNode
+  unread: boolean
+  /** Screen-reader word for the unread dot ("Não lida") */
+  unreadLabel: string
+  onClick: () => void
+}
+
+/**
+ * Notification (UX-UI-GUIDELINES §5 → Notifications): an OverviewRow-style two-line row;
+ * unread rows sit on `accent-weak` with a dot (and its label, so colour isn't the only signal).
+ */
+export function NotificationRow({ icon, title, meta, time, unread, unreadLabel, onClick }: NotificationRowProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'grid min-h-row-2 w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 border-b border-line-soft px-4 py-2 text-left last:border-b-0 max-md:min-h-14',
+        unread ? 'bg-accent-weak hover:bg-accent-weak' : 'bg-surface hover:bg-surface-2',
+      )}
+    >
+      <span className="flex items-center justify-center">{icon}</span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className={cn('truncate text-body text-ink', unread ? 'font-semibold' : 'font-medium')}>{title}</span>
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-caption text-ink-2">{meta}</span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="font-mono text-mono-sm text-ink-2">{time}</span>
+        {unread && (
+          <span role="img" aria-label={unreadLabel} className="h-2 w-2 rounded-full bg-accent" />
+        )}
+      </span>
+    </button>
+  )
+}

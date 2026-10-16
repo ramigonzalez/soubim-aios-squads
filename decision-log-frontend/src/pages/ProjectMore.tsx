@@ -2,14 +2,15 @@
  * Mobile "Mais" tab (README §7): Aguardando aprovação · Trocar projeto ·
  * Compartilhar com o cliente · Editar projeto, the sections without a tab (Reuniões,
  * Resumo executivo), then the firm sections and the account
- * (the phone has no sidebar). Notificações joins this list when it exists (Phase 4).
+ * (the phone has no sidebar), with Notificações and its unread count.
  * Aguardando aprovação opens the project's mobile approvals list.
  */
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useTranslation } from 'react-i18next'
-import { Count, Icons, type LucideIcon } from '../design-system'
+import { Badge, Count, Icons, type LucideIcon } from '../design-system'
+import { useNotifications } from '../hooks/useNotifications'
 import { ShareMilestonesDialog } from '../components/organisms/ShareMilestonesDialog'
 import { ProjectSwitcherSheet } from '../components/organisms/ProjectSwitcher'
 import { PageContainer, PageHeader } from '../components/templates/PageContainer'
@@ -50,6 +51,7 @@ export default function ProjectMore() {
   const { user, clearAuth } = useAuthStore()
   const { isAdmin, canReviewSomewhere } = useActiveOrganization()
   const [switcherOpen, setSwitcherOpen] = useState(false)
+  const { data: notifications } = useNotifications()
   const [shareOpen, setShareOpen] = useState(false)
   const canReview = !!project?.can_review
   const { data: list } = useProjectList(canReview)
@@ -74,6 +76,12 @@ export default function ProjectMore() {
         <Row icon={Icons.meetings} label={t('sections.meetings')} onClick={() => navigate(`/projects/${id}/meetings`)} />
         <Row icon={Icons.summary} label={t('sections.summary')} onClick={() => navigate(`/projects/${id}/summary`)} />
         <Row icon={Icons.switcher} label={t('switcher.label')} onClick={() => setSwitcherOpen(true)} />
+        <Row
+          icon={Icons.notifications}
+          label={t('notifications.title')}
+          trailing={notifications?.unread ? <Badge tone="accent" mono>{notifications.unread}</Badge> : undefined}
+          onClick={() => navigate('/notifications')}
+        />
         {project?.can_manage && <Row icon={Icons.share} label={t('more.share')} onClick={() => setShareOpen(true)} />}
         {(project?.can_manage || canReview) && (
           <Row icon={Icons.manual} label={project?.can_manage ? t('more.edit') : t('more.fathomRules')} onClick={() => navigate(`/projects/${id}/edit`)} />
