@@ -43,7 +43,12 @@ Use ONLY these discipline identifiers:
 **For decisions:**
 - `why`: Rationale behind the decision
 - `causation`: What triggered this decision
-- `consensus`: Map of {discipline: {status: "AGREE"|"DISAGREE"|"ABSTAIN", notes: "..."}}
+- `consensus`: Map of {discipline: {status: "AGREE"|"MIXED"|"DISAGREE"|"ABSTAIN", notes: "..."}}
+  - `AGREE`: the discipline accepts the decision as is.
+  - `MIXED`: the discipline accepts it **with reservations or conditions** ("ok, desde que…", "concordo, mas preocupa o prazo"). Always put the reservation in `notes`.
+  - `DISAGREE`: the discipline objects or asks for another solution.
+  - `ABSTAIN`: the discipline is present or affected but takes no position.
+  - Only include disciplines whose position is stated or clearly implied in the transcript; never invent agreement.
 - `impacts`: {cost_impact, timeline_impact, scope_impact, risk_level, affected_areas[]}
 
 **For action_items:**
@@ -65,7 +70,7 @@ Use ONLY these discipline identifiers:
 - Write every free-text value (`meeting_summary`, `title`, `statement`, `why`, `causation`, consensus `notes`, `impacts` texts, `discussion_points`, `related_topic`, `reference_source`) in the same language as the transcript — for a Brazilian Portuguese meeting, write in Brazilian Portuguese.
 - Keep `who` and `owner` as the participant names, as they appear in the roster.
 - `source_excerpt` is a verbatim copy of the transcript: never translate or rewrite it.
-- Keep identifiers exactly as specified, in English: JSON keys, `item_type` values, discipline values, and consensus `status` (AGREE / DISAGREE / ABSTAIN).
+- Keep identifiers exactly as specified, in English: JSON keys, `item_type` values, discipline values, and consensus `status` (AGREE / MIXED / DISAGREE / ABSTAIN).
 
 ## Speakers
 
@@ -78,7 +83,7 @@ Besides the items, return `meeting_summary`: 3-5 sentences summarizing the meeti
 
 ## Discipline Inference Rules
 
-- **decision**: Disciplines with AGREE/DISAGREE status in consensus
+- **decision**: Disciplines with AGREE / MIXED / DISAGREE status in consensus
 - **topic**: All disciplines whose representatives participate in discussion
 - **idea**: Proposer's discipline + explicitly mentioned disciplines
 - **action_item**: Owner's discipline + impacted disciplines

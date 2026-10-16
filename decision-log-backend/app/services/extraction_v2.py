@@ -205,6 +205,45 @@ VALID_DISCIPLINES = {
 }
 
 
+CONSENSUS_STATUSES = ("AGREE", "MIXED", "DISAGREE", "ABSTAIN")
+# Promem revamp Phase 4f: words models use for the same four positions
+_CONSENSUS_ALIASES = {
+    "STRONGLY_AGREE": "AGREE",
+    "AGREED": "AGREE",
+    "AGREE_WITH_RESERVATIONS": "MIXED",
+    "CONDITIONAL": "MIXED",
+    "PARTIAL": "MIXED",
+    "WITH_RESERVATIONS": "MIXED",
+    "STRONGLY_DISAGREE": "DISAGREE",
+    "DISSENT": "DISAGREE",
+    "NEUTRAL": "ABSTAIN",
+}
+
+
+def normalize_consensus(raw: Any) -> Dict[str, Dict[str, Optional[str]]]:
+    """Consensus as ``{discipline: {status, notes}}`` with status in ``CONSENSUS_STATUSES``.
+
+    Accepts the plain-string form (``{"structural": "AGREE"}``) and common synonyms; unknown
+    statuses are dropped rather than guessed. ``MIXED`` = "Com ressalvas" (Promem revamp Phase 4f).
+    """
+    if not isinstance(raw, dict):
+        return {}
+    result: Dict[str, Dict[str, Optional[str]]] = {}
+    for discipline, value in raw.items():
+        if not isinstance(discipline, str) or not discipline.strip():
+            continue
+        status = value.get("status") if isinstance(value, dict) else value
+        if not isinstance(status, str):
+            continue
+        key = status.strip().upper().replace(" ", "_").replace("-", "_")
+        key = _CONSENSUS_ALIASES.get(key, key)
+        if key not in CONSENSUS_STATUSES:
+            continue
+        notes = value.get("notes") if isinstance(value, dict) else None
+        result[discipline.strip().lower()] = {"status": key, "notes": notes.strip() if isinstance(notes, str) and notes.strip() else None}
+    return result
+
+
 def _validate_item(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Validate and normalize an extracted item."""
     item_type = item.get("item_type", "").lower()
@@ -244,7 +283,7 @@ def _validate_item(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if item_type == "decision":
         validated["why"] = item.get("why", "")
         validated["causation"] = item.get("causation")
-        validated["consensus"] = item.get("consensus", {})
+        validated["consensus"] = normalize_consensus(item.get("consensus"))
         validated["impacts"] = item.get("impacts")
 
     elif item_type == "action_item":
