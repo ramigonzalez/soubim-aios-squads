@@ -38,6 +38,15 @@ export interface ProjectLastActivity {
   source_type: SourceType
 }
 
+/** Promem revamp G7: how the firm appears on public links. */
+export interface Branding {
+  name: string
+  tagline: string | null
+  contact_email: string | null
+  /** data URL */
+  logo: string | null
+}
+
 /** Promem revamp: counts next to the project sections in the sidebar. */
 export interface ProjectSectionCounts {
   items: number

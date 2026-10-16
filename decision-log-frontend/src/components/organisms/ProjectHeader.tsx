@@ -25,7 +25,7 @@ import { useProject } from '../../hooks/useProject'
 import { useParticipants } from '../../hooks/useParticipants'
 import { useArchiveProject } from '../../hooks/useProjectMutation'
 import { exportAsJPEG, exportAsPDF } from '../../lib/exportTimeline'
-import { ShareDialog } from '../molecules/ShareDialog'
+import { ShareMilestonesDialog } from './ShareMilestonesDialog'
 import { UploadDocumentButton } from '../molecules/UploadDocumentButton'
 import type { ProjectSection } from './Sidebar'
 
@@ -146,7 +146,7 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
 
       {project.stages?.length > 0 && <StageStrip stages={project.stages} />}
 
-      {canManage && <ShareDialog projectId={projectId} open={shareOpen} onOpenChange={setShareOpen} />}
+      {canManage && <ShareMilestonesDialog projectId={projectId} open={shareOpen} onOpenChange={setShareOpen} />}
       <Dialog
         open={archiveOpen}
         onOpenChange={setArchiveOpen}

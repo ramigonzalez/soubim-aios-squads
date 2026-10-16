@@ -75,5 +75,8 @@
     "label": "Promem",
     "endorsed": "by souBIM"
   },
-  "shortcut": "Shortcut: {{key}}"
+  "shortcut": "Shortcut: {{key}}",
+  "list": {
+    "and": "{{rest}} and {{last}}"
+  }
 }

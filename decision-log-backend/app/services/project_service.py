@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database.models import (
+    Organization,
     OrganizationMember,
     Project,
     ProjectItem,
@@ -28,6 +29,7 @@ from app.services.access import (
 )
 from app.services.organizations import active_organization_projects_filter
 from app.services.project_externals import external_user_ids
+from app.services.branding import branding
 from app.services.project_visits import new_items_cutoff, visit_since, visits_by_project
 
 # Backward compatibility alias
@@ -326,6 +328,7 @@ def get_project(db: Session, project_id: str, user_id: str) -> Dict:
         "members": member_list,
         **project_capabilities(db, user, project),  # Story 12.7
         "stages": project_stages(db, project.id),  # Promem revamp: ProjectHeader / StageStrip
+        "organization": branding(db.get(Organization, project.owner_organization_id)),  # Promem revamp: share preview
         "counts": project_section_counts(db, user, project),  # Promem revamp: sidebar counts
         "stats": {
             "total_decisions": total_decisions,

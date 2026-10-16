@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useTranslation } from 'react-i18next'
 import { Count, Icons, type LucideIcon } from '../design-system'
-import { ShareDialog } from '../components/molecules/ShareDialog'
+import { ShareMilestonesDialog } from '../components/organisms/ShareMilestonesDialog'
 import { ProjectSwitcherSheet } from '../components/organisms/ProjectSwitcher'
 import { PageContainer, PageHeader } from '../components/templates/PageContainer'
 import { useProject } from '../hooks/useProject'
@@ -89,6 +89,7 @@ export default function ProjectMore() {
       <Group title={t('more.account')}>
         <Row icon={Icons.integrations} label={t('integrations')} onClick={() => navigate('/settings/integrations')} />
         {isAdmin && <Row icon={Icons.team} label={t('team')} onClick={() => navigate('/settings/team')} />}
+        {isAdmin && <Row icon={Icons.projects} label={t('workspace')} onClick={() => navigate('/settings/workspace')} />}
         <Row icon={Icons.password} label={t('changePassword')} onClick={() => navigate('/settings/password')} />
         <Row
           icon={Icons.logout}
@@ -101,7 +102,7 @@ export default function ProjectMore() {
       </Group>
 
       <ProjectSwitcherSheet open={switcherOpen} onOpenChange={setSwitcherOpen} currentId={id} />
-      {project?.can_manage && <ShareDialog projectId={id} open={shareOpen} onOpenChange={setShareOpen} />}
+      {project?.can_manage && <ShareMilestonesDialog projectId={id} open={shareOpen} onOpenChange={setShareOpen} />}
     </PageContainer>
   )
 }

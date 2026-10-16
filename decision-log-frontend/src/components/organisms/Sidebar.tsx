@@ -213,6 +213,11 @@ export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
             {t('team')}
           </MenuItem>
         )}
+        {isAdmin && (
+          <MenuItem icon={<Icons.projects />} onSelect={() => go('/settings/workspace')}>
+            {t('workspace')}
+          </MenuItem>
+        )}
         <MenuItem icon={<Icons.password />} onSelect={() => go('/settings/password')}>
           {t('changePassword')}
         </MenuItem>

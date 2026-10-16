@@ -135,6 +135,10 @@ class Organization(Base):
     # Story 12.13: set by the platform operator. ``payment_pending`` keeps access (banner);
     # ``blocked`` makes every membership of the organization grant nothing.
     status = Column(String(20), nullable=False, default="active", server_default="active")
+    # Promem revamp G7: the firm's branding on public client links
+    tagline = Column(String(255))
+    contact_email = Column(String(255))
+    logo_data = Column(Text)  # small image as a data URL (PNG / JPEG / SVG / WebP, ≤ 300 KB)
 
     members = relationship("OrganizationMember", back_populates="organization", cascade="all, delete-orphan")
 
@@ -892,7 +896,7 @@ class SharedLink(Base):
     resource_type = Column(String(50), nullable=False, default='milestone_timeline')
     created_by = Column(GUID(), ForeignKey("users.id"))
     created_at = Column(DateTime, default=func.now())
-    expires_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=True)  # Promem revamp G8: NULL = never expires
     revoked_at = Column(DateTime)
     view_count = Column(Integer, default=0)
 

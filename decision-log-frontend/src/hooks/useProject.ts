@@ -5,7 +5,7 @@
 import { useQuery, UseQueryResult } from 'react-query'
 import api from '../services/api'
 import type { ProjectCapabilities } from '../types/organization'
-import type { ProjectSectionCounts, ProjectStageRef } from '../types/project'
+import type { Branding, ProjectSectionCounts, ProjectStageRef } from '../types/project'
 
 export interface ProjectDetail extends ProjectCapabilities {
   id: string
@@ -16,6 +16,8 @@ export interface ProjectDetail extends ProjectCapabilities {
   stages: ProjectStageRef[]
   /** Promem revamp: sidebar section counts */
   counts: ProjectSectionCounts
+  /** Promem revamp: the owning firm's branding (share preview) */
+  organization?: Branding | null
   drive_folder_id?: string | null
   created_at: string
   archived_at?: string | null

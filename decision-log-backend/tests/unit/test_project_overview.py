@@ -195,6 +195,7 @@ class TestProjectSectionCounts:
 
         detail = get_project(db_session, str(project.id), str(user.id))
         assert detail["counts"] == {"items": 3, "milestones": 1, "meetings": 1}
+        assert detail["organization"]["name"] == "Test Org"
         assert detail["stages"] == []
 
 

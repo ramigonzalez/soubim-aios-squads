@@ -5,12 +5,14 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.services.extraction_runs import active_items_filter
-from app.database.models import Organization, SharedLink, Project, ProjectItem, ProjectStage
+from app.database.models import Organization, SharedLink, Project, ProjectItem, ProjectStage, User
+from app.services.branding import branding
 from app.services.access import ADMIN, public_items_filter, require_project_access
 from app.services.organizations import BLOCKED
 
@@ -22,8 +24,13 @@ router = APIRouter()
 
 
 class CreateShareLinkRequest(BaseModel):
-    """Request body for creating a share link."""
-    expires_in_days: int = 30
+    """Request body for creating a share link. Promem revamp G8: null = never expires."""
+    expires_in_days: Optional[int] = Field(30, ge=1, le=3650)
+
+
+class UpdateShareLinkRequest(BaseModel):
+    """Promem revamp G8: change when an existing link expires (from now); null = never."""
+    expires_in_days: Optional[int] = Field(None, ge=1, le=3650)
 
 
 class ShareLinkResponse(BaseModel):
@@ -100,7 +107,7 @@ async def create_share_link(
 
     # Generate cryptographically secure token
     token = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(days=body.expires_in_days)
+    expires_at = datetime.utcnow() + timedelta(days=body.expires_in_days) if body.expires_in_days else None
 
     link = SharedLink(
         project_id=project_id,
@@ -116,8 +123,40 @@ async def create_share_link(
     return {
         "share_token": token,
         "share_url": f"/m/{token}",  # Promem revamp: short public link (old /shared/milestones/ still works)
-        "expires_at": expires_at.isoformat() + "Z",
+        "expires_at": _iso(expires_at),
     }
+
+
+def _iso(value: Optional[datetime]) -> Optional[str]:
+    return value.isoformat() + "Z" if value else None
+
+
+def _active():
+    """Not revoked and not expired (a NULL expiry never expires)."""
+    now = datetime.utcnow()
+    return [SharedLink.revoked_at.is_(None), or_(SharedLink.expires_at.is_(None), SharedLink.expires_at > now)]
+
+
+@router.patch("/projects/{project_id}/milestones/share/{token}")
+async def update_share_link(
+    project_id: str,
+    token: str,
+    body: UpdateShareLinkRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Promem revamp G8: "Expira em" — 30 dias · 90 dias · Nunca, counted from now."""
+    _require_admin(request, db, project_id)
+    link = (
+        db.query(SharedLink)
+        .filter(SharedLink.project_id == project_id, SharedLink.share_token == token, *_active())
+        .first()
+    )
+    if not link:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shared link not found")
+    link.expires_at = datetime.utcnow() + timedelta(days=body.expires_in_days) if body.expires_in_days else None
+    db.commit()
+    return {"share_token": link.share_token, "expires_at": _iso(link.expires_at), "view_count": link.view_count or 0}
 
 
 @router.get("/projects/{project_id}/milestones/share")
@@ -132,14 +171,9 @@ async def list_share_links(
     """
     _require_admin(request, db, project_id)
 
-    now = datetime.utcnow()
     links = (
         db.query(SharedLink)
-        .filter(
-            SharedLink.project_id == project_id,
-            SharedLink.revoked_at.is_(None),
-            SharedLink.expires_at > now,
-        )
+        .filter(SharedLink.project_id == project_id, *_active())
         .order_by(SharedLink.created_at.desc())
         .all()
     )
@@ -149,7 +183,7 @@ async def list_share_links(
             {
                 "share_token": link.share_token,
                 "created_at": link.created_at.isoformat() + "Z" if link.created_at else None,
-                "expires_at": link.expires_at.isoformat() + "Z",
+                "expires_at": _iso(link.expires_at),
                 "view_count": link.view_count or 0,
                 "resource_type": link.resource_type,
             }
@@ -203,43 +237,26 @@ async def view_shared_timeline(
     Returns project + milestones for a valid, non-expired, non-revoked share token.
     Increments view_count on each access.
     """
-    now = datetime.utcnow()
-    link = (
-        db.query(SharedLink)
-        .filter(
-            SharedLink.share_token == token,
-            SharedLink.revoked_at.is_(None),
-            SharedLink.expires_at > now,
-        )
-        .first()
-    )
+    link = db.query(SharedLink).filter(SharedLink.share_token == token).first()
+    project = db.get(Project, link.project_id) if link is not None else None
+    org = db.get(Organization, project.owner_organization_id) if project is not None else None
 
     # Story 12.13: a blocked organization's public links stop working (same answer as a revoked link)
-    owner_blocked = (
-        link is not None
-        and db.query(Organization.id)
-        .join(Project, Project.owner_organization_id == Organization.id)
-        .filter(Project.id == link.project_id, Organization.status == BLOCKED)
-        .first()
-        is not None
-    )
-    if not link or owner_blocked:
+    if link is None or link.revoked_at is not None or project is None or (org is not None and org.status == BLOCKED):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This link has expired or been revoked",
+        )
+    # Promem revamp: an expired link says whose it was and whom to ask for a new one
+    if link.expires_at is not None and link.expires_at <= datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail={"code": "expired", "expired_at": _iso(link.expires_at), "project": project.name, "organization": branding(org)},
         )
 
     # Increment view count
     link.view_count = (link.view_count or 0) + 1
     db.commit()
-
-    # Load project
-    project = db.query(Project).filter(Project.id == link.project_id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
 
     # Load stages for the project
     stages = (
@@ -262,12 +279,19 @@ async def view_shared_timeline(
         .all()
     )
 
+    shared_by = db.get(User, link.created_by) if link.created_by else None
+    updated = max((m.updated_at or m.created_at for m in milestones if (m.updated_at or m.created_at)), default=None)
     return {
         "project": {
             "id": str(project.id),
             "name": project.name,
             "description": project.description,
         },
+        # Promem revamp G7 / G7b: the firm leads the page; who shared it and until when
+        "organization": branding(org),
+        "shared_by": shared_by.name if shared_by else None,
+        "link": {"created_at": _iso(link.created_at), "expires_at": _iso(link.expires_at)},
+        "updated_at": _iso(updated),
         "stages": [
             {
                 "id": str(s.id),
@@ -289,6 +313,11 @@ async def view_shared_timeline(
                 "created_at": m.created_at.isoformat() + "Z" if m.created_at else "",
                 "is_done": m.is_done,
                 "affected_disciplines": m.affected_disciplines or [],
+                # Promem revamp G7b: the client view shows the type, a title, the date and the "por quê"
+                "title": m.title,
+                "item_type": m.item_type,
+                "why": m.why or None,
+                "date": _iso(m.occurred_at or (m.source.occurred_at if m.source else None) or m.created_at),
             }
             for m in milestones
         ],
