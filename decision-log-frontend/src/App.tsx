@@ -2,7 +2,6 @@ import React, { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { Login } from './pages/Login'
-import { ProjectDetail } from './pages/ProjectDetail'
 import Ingestion from './pages/Ingestion'
 import { HomeRedirect, PlatformRoute } from './components/common/PlatformRoute'
 import { LegacyMeetingRedirect, ProjectIndexRedirect } from './components/common/ProjectRedirects'
@@ -29,6 +28,7 @@ const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
 const ProjectsList = lazy(() => import('./pages/ProjectsList'))
 const PublicTimeline = lazy(() => import('./pages/PublicTimeline'))
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'))
+const ProjectSummary = lazy(() => import('./pages/ProjectSummary'))
 const ProjectApprovals = lazy(() => import('./pages/ProjectApprovals'))
 const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
 // Component gallery (Promem design system), development builds only
@@ -80,7 +80,7 @@ function AppRoutes() {
         <Route path="/projects/:id/items/new" element={<Lazy><ManualItemNew /></Lazy>} />
         <Route path="/projects/:id/meetings" element={<Lazy><ProjectMeetings /></Lazy>} />
         <Route path="/projects/:id/meetings/:sourceId" element={<Lazy><ProjectMeetingViewer /></Lazy>} />
-        <Route path="/projects/:id/summary" element={<ProjectDetail key="summary" view="digest" />} />
+        <Route path="/projects/:id/summary" element={<Lazy><ProjectSummary /></Lazy>} />
         <Route path="/projects/:id/more" element={<Lazy><ProjectMore /></Lazy>} />
         <Route path="/projects/:id/approvals" element={<Lazy><ProjectApprovals /></Lazy>} />
         <Route path="/meetings/:sourceId" element={<LegacyMeetingRedirect />} />

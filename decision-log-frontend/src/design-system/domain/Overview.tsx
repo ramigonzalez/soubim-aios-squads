@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '../cn'
+import { disciplineMeta } from '../disciplines'
 import { useIsMobile } from '../useMediaQuery'
 
 export interface OverviewTile<K extends string> {
@@ -136,5 +137,71 @@ export function CompactRow({ marker, title, date, onClick, itemId }: { marker: R
       <span className="truncate text-small text-ink">{title}</span>
       {date != null && <span className="font-mono text-mono-sm text-ink-2">{date}</span>}
     </button>
+  )
+}
+
+export interface KpiTileProps {
+  /** Says exactly what is counted ("Decisões com consenso total") */
+  label: ReactNode
+  /** Always ink */
+  value: ReactNode
+  note?: ReactNode
+  /** Colour only in the note: danger-ink ("1 atrasada"), warning-ink ("2 com ressalvas") */
+  tone?: 'neutral' | 'danger' | 'warning'
+}
+
+const KPI_NOTE = { neutral: 'text-ink-2', danger: 'font-semibold text-danger-ink', warning: 'font-semibold text-warning-ink' } as const
+
+/** KPI tile (COMPONENTS.md → KpiTile): the OverviewTile anatomy without selection. */
+export function KpiTile({ label, value, note, tone = 'neutral' }: KpiTileProps) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg border border-line bg-surface px-[18px] py-3.5">
+      <dt className="order-2 text-small font-semibold text-ink">{label}</dt>
+      <dd className="order-1 text-kpi text-ink">{value}</dd>
+      {note && <dd className={cn('order-3 text-caption', KPI_NOTE[tone])}>{note}</dd>}
+    </div>
+  )
+}
+
+/** A row of KpiTiles: 4 across on desktop, 2 on phones. */
+export function KpiTiles({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <dl aria-label={label} className="grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] md:gap-3">
+      {children}
+    </dl>
+  )
+}
+
+export interface DisciplineBar {
+  discipline: string
+  label: ReactNode
+  count: number
+}
+
+/**
+ * Count per discipline (README §5.12): name with its square, a bar in the discipline colour
+ * proportional to the largest count, and the count in mono. The label always names the
+ * discipline, so colour is never the only signal.
+ */
+export function DisciplineBarList({ rows, className }: { rows: DisciplineBar[]; className?: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.count))
+  return (
+    <ul className={cn('flex flex-col gap-2.5', className)}>
+      {rows.map((row) => (
+        <li key={row.discipline} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_2.5rem] items-center gap-3 md:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_3rem]">
+          <span className="flex min-w-0 items-center gap-2">
+            <span aria-hidden className={cn('h-2.5 w-2.5 shrink-0 rounded-xs', disciplineMeta(row.discipline).markerClass)} />
+            <span className="truncate text-small text-ink">{row.label}</span>
+          </span>
+          <span aria-hidden className="block h-2 overflow-hidden rounded-full bg-surface-3">
+            <span
+              className={cn('block h-full rounded-full print:[print-color-adjust:exact]', disciplineMeta(row.discipline).markerClass)}
+              style={{ width: `${(row.count / max) * 100}%` }}
+            />
+          </span>
+          <span className="text-right font-mono text-mono text-ink-2">{row.count}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
