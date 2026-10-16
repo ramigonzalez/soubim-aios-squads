@@ -12,7 +12,8 @@ cd "$(dirname "$0")/.."
 BASELINE="scripts/token-guard-baseline.txt"
 PATTERN='#[0-9A-Fa-f]{6}\b|rgba?\(|\[[0-9.]+px\]'
 
-violations=$(grep -rnE "$PATTERN" src --include='*.ts' --include='*.tsx' \
+# landing/ (the static marketing page) follows the same rule.
+violations=$(grep -rnE "$PATTERN" src landing --include='*.ts' --include='*.tsx' --include='*.css' --include='*.html' \
   --exclude-dir=design-system --exclude-dir=tests || true)
 
 if [ -f "$BASELINE" ]; then

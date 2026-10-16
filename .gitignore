@@ -43,3 +43,6 @@ client_secret_*.json
 
 # Browser automation screenshots/snapshots (local only)
 .playwright-mcp/
+
+# Promem landing build output (npm run landing:build)
+decision-log-frontend/dist-landing/
