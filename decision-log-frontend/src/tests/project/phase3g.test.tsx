@@ -138,8 +138,9 @@ describe('Phase 3g · mobile', () => {
       const user = userEvent.setup()
       renderAt('/projects/p1/history')
       await screen.findByText('Shaft de prumadas ampliado')
-      // the project header has no title on phones: the top bar names the project
-      expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
+      // on phones the top bar names the project; the h1 stays for screen readers only
+      expect(screen.getByRole('heading', { level: 1 })).toHaveClass('sr-only')
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Histórico do projeto · Residential Tower Alpha')
       expect(screen.getByRole('button', { name: 'Adicionar item' })).toBeInTheDocument()
 
       await user.click(screen.getByRole('button', { name: 'Filtros' }))
