@@ -112,6 +112,13 @@ def test_invitation_limited_per_ip(client, monkeypatch):
     assert codes[-1] == 429 and 429 not in codes[:2]
 
 
+def test_landing_contact_form_limited_per_ip(client, monkeypatch):
+    """Promem revamp Phase 5: the public form can't be flooded (invalid bodies count too)."""
+    monkeypatch.setattr(settings, "rate_limit_leads", "2/minute")
+    codes = [client.post("/api/leads", json={}).status_code for _ in range(3)]
+    assert codes[:2] == [422, 422] and codes[-1] == 429
+
+
 def test_health_is_exempt(client, monkeypatch):
     monkeypatch.setattr(settings, "rate_limit_default", "1/minute")
     assert all(client.get("/api/health").status_code != 429 for _ in range(5))

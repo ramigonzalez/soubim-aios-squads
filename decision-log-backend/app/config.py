@@ -123,6 +123,7 @@ class Settings(BaseSettings):
     rate_limit_oauth_callback: str = "20/minute"
     rate_limit_webhook: str = "120/minute"
     rate_limit_public_link: str = "60/minute"
+    rate_limit_leads: str = "5/minute"  # Promem revamp Phase 5: landing contact form, per IP
     rate_limit_default: str = "600/minute"
 
     @field_validator("llm_provider", mode="before")

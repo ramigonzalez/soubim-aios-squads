@@ -71,5 +71,38 @@
     "revokeText": "The link sent to {{email}} ({{name}}) stops working immediately and the organization will not be created. To invite them again, create a new invitation.",
     "revokeConfirm": "Revoke invitation"
   },
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "leads": {
+    "title": "Website requests",
+    "subtitle": "Demo and pilot requests from the landing page form. Their final destination (e-mail or CRM) is still to be defined; until then they're listed here.",
+    "count_one": "{{count}} request · {{open}} open",
+    "count_other": "{{count}} requests · {{open}} open",
+    "empty": "No requests yet",
+    "emptyText": "Requests from the landing page contact form show up here.",
+    "error": "Could not load the requests",
+    "mode": {
+      "demo": "Demo",
+      "pilot": "Free pilot"
+    },
+    "role": {
+      "partner": "Partner or director",
+      "coordinator": "Project coordinator",
+      "architect": "Architect or engineer",
+      "other": "Other"
+    },
+    "teamSize": {
+      "1-9": "1 to 9 people",
+      "10-24": "10 to 24 people",
+      "25-50": "25 to 50 people",
+      "50+": "More than 50"
+    },
+    "markHandled": "Mark as handled",
+    "reopen": "Reopen",
+    "handled": "Handled by {{name}} · {{date}}",
+    "handledToast": "{{name}}'s request marked as handled",
+    "updateError": "Could not update the request.",
+    "whatsapp": "WhatsApp {{phone}}",
+    "handledBadge": "Handled",
+    "handledOn": "Handled on {{date}}"
+  }
 }

@@ -266,6 +266,29 @@ class ProjectMember(Base):
     )
 
 
+class Lead(Base):
+    """Promem revamp Phase 5: a request from the landing page (Agendar demonstração / Solicitar piloto)."""
+
+    __tablename__ = "leads"
+
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    mode = Column(String(10), nullable=False)  # demo | pilot
+    name = Column(String(120), nullable=False)
+    company = Column(String(160), nullable=False)
+    whatsapp = Column(String(20), nullable=False)  # digits only
+    email = Column(String(255), nullable=False)
+    role = Column(String(20))  # partner | coordinator | architect | other
+    team_size = Column(String(10))  # 1-9 | 10-24 | 25-50 | 50+
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    handled_at = Column(DateTime)
+    handled_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
+
+    __table_args__ = (
+        CheckConstraint("mode IN ('demo', 'pilot')", name="ck_leads_mode"),
+        Index("idx_leads_created", "created_at"),
+    )
+
+
 class NotificationRead(Base):
     """Promem revamp Phase 4e: one notification the user opened or marked as read (``key`` = kind:id)."""
 
