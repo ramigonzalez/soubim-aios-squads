@@ -1,0 +1,144 @@
+{
+  "eyebrow": "{{org}} · all projects",
+  "eyebrowNoOrg": "Firm · all projects",
+  "title": "Ingestion",
+  "subtitle": "Only what you approve enters the projects. On approval, the AI extracts decisions, actions and topics from the source.",
+  "addMeeting": "Add meeting",
+  "tabs": {
+    "pending": "Pending",
+    "history": "History"
+  },
+  "filters": {
+    "project": "Project",
+    "allProjects": "All projects",
+    "source": "Source",
+    "all": "All",
+    "meeting": "Meetings",
+    "email": "E-mails",
+    "document": "Documents",
+    "period": "Period"
+  },
+  "bulk": {
+    "selectAll": "Select all",
+    "pending_zero": "none pending",
+    "pending_one": "{{count}} pending",
+    "pending_other": "{{count}} pending",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "reject": "Reject",
+    "approve": "Approve selected"
+  },
+  "row": {
+    "select": "Select {{title}}",
+    "to": "→ {{project}}",
+    "noProject": "no project",
+    "conflict": "more than one possible project"
+  },
+  "panel": {
+    "position": "{{kind}} · {{index}} of {{total}}",
+    "summary": "AI summary · what it's about",
+    "noSummary": "No summary yet: the AI writes it when the source is processed.",
+    "candidates": "What should enter the project",
+    "candidateNote": "Preview made from the summary. The final items are extracted after approval.",
+    "candidatesPending": "The AI is preparing the item preview…",
+    "noCandidates": "The AI found no items in this source. If approved, it enters as a project reference.",
+    "previewMeeting": "Transcript excerpt",
+    "previewEmail": "E-mail excerpt",
+    "previewDocument": "Document excerpt",
+    "openOriginal": "Open in {{tool}} ↗",
+    "openOriginalGeneric": "Open original ↗",
+    "why": "Why this project",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "participants": "Participants",
+    "fromTo": "From → To",
+    "file": "File",
+    "received": "Received",
+    "addedBy": "Added by",
+    "project": "Goes into project",
+    "projectHintAi": "Chosen by the AI · reasons below",
+    "projectHintRule": "Chosen by the project rules",
+    "projectHintYou": "You chose this project",
+    "projectHintNone": "Choose the project to approve",
+    "chooseProject": "Choose a project",
+    "reject": "Reject",
+    "approve": "Approve",
+    "footnote": "Approve extracts the items into the project · Reject discards the source",
+    "discard": "Discard",
+    "import": "Import",
+    "failed": "Extraction failed: {{error}}",
+    "retry": "Try again"
+  },
+  "flags": {
+    "external_one": "{{count}} external participant ({{names}}). Items stay visible to the team only, unless they enter the shared milestones.",
+    "external_other": "{{count}} external participants ({{names}}). Items stay visible to the team only, unless they enter the shared milestones.",
+    "duplicate": "Possible duplicate of “{{title}}” ({{date}}). Approve only one.",
+    "lowConfidence": "The AI isn't sure about the project. Confirm before approving.",
+    "noProject": "No project matches this meeting. Choose one to import.",
+    "conflict": "More than one project matches this meeting: {{projects}}. Choose one."
+  },
+  "reasons": {
+    "drive_folder": "File in the project's Drive folder",
+    "fathom_rule": "Project rule: {{field}} {{operator}} “{{value}}”",
+    "email_participant": "{{who}} is a participant of this project",
+    "email_thread": "Continues a conversation already approved in this project",
+    "manual": "Sent directly to this project by {{who}}",
+    "participants_overlap": "{{count}} of {{total}} participants are on the project team",
+    "title_match": "The title mentions “{{term}}”",
+    "webhook": "Received through the {{tool}} integration"
+  },
+  "ruleFields": {
+    "title": "title",
+    "participant_email": "participant e-mail",
+    "participant_domain": "participant domain"
+  },
+  "ruleOperators": {
+    "contains": "contains",
+    "equals": "is"
+  },
+  "history": {
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "processed": "Processed",
+    "failed": "Failed",
+    "by": "by {{name}} · {{date}}",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "job": {
+      "queued": "queued",
+      "running": "extracting",
+      "retrying": "retrying"
+    },
+    "delete": "Delete source",
+    "deleteTitle": "Delete this source?",
+    "deleteText": "The source, the items extracted from it and its extraction versions are deleted. This can't be undone.",
+    "deleteConfirm": "Delete source",
+    "deleteError": "Could not delete the source."
+  },
+  "toast": {
+    "approved": "Approved · the AI is extracting the items",
+    "approvedMany": "{{count}} items approved · the AI is extracting the items",
+    "rejected": "Rejected · won't enter the project",
+    "rejectedMany": "{{count}} items rejected · won't enter the project",
+    "undone": "Decision undone",
+    "error": "Could not save the decision. The source is back in the list.",
+    "imported": "Imported · the AI is extracting the items",
+    "discarded": "Discarded",
+    "retrying": "Extraction restarted",
+    "deleted": "Source deleted"
+  },
+  "empty": {
+    "title": "Ingestion inbox is clear",
+    "text": "New meetings, e-mails and documents show up here as soon as they arrive.",
+    "historyTitle": "No decisions yet",
+    "historyText": "Approved and rejected sources show up here.",
+    "filteredTitle": "Nothing with these filters",
+    "filteredText": "Change the project or the source."
+  },
+  "error": "Could not load ingestion",
+  "errorText": "The connection dropped. Nothing was lost.",
+  "keyboardHint": "↑↓ move · A approve · R reject · Space select"
+}

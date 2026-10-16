@@ -7,15 +7,16 @@ Story 7.9: Unified workflow — included auto-set on approve/reject,
            history endpoint, cascade delete, retry for failed sources.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
-from app.api.models.ingestion import IngestionBatchAction, IngestionUpdate
-from app.database.models import ExtractionRun, Project, ProjectItem, Source, User
+from app.api.models.ingestion import IngestionBatchAction, IngestionUndo, IngestionUpdate
+from app.config import settings
+from app.database.models import ExtractionRun, Job, Project, ProjectItem, Source, User
 from app.database.session import get_db
 from app.services.extraction_runs import active_items_filter
 from app.services.access import (
@@ -25,6 +26,7 @@ from app.services.access import (
     has_access,
     project_access_level,
     project_capabilities,
+    require_project_access,
     require_source_access,
     source_visible,
     visible_items_filter,
@@ -32,6 +34,7 @@ from app.services.access import (
 )
 from app.services.jobs import enqueue, latest_job_for_source
 from app.services.thumbnails import thumbnail_url
+from app.services.ingestion_insights import insights
 
 router = APIRouter()
 
@@ -173,6 +176,46 @@ def _format_source(source, project_name: str, item_count: int = 0, approved_by_n
     return base
 
 
+def _approve(db: Session, user, source) -> None:
+    """Approve and queue the extraction after the undo window (Promem revamp G5)."""
+    source.ingestion_status = "approved"
+    source.included = True
+    source.approved_by = user.id
+    source.approved_at = datetime.utcnow()
+    source.rejected_by = None
+    source.rejected_at = None
+    source.extraction_error = None
+    job = enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)  # Story 13.2
+    job.run_after = datetime.utcnow() + timedelta(seconds=settings.ingestion_undo_seconds)
+
+
+def _reject(db: Session, user, source) -> None:
+    source.ingestion_status = "rejected"
+    source.included = False
+    source.rejected_by = user.id
+    source.rejected_at = datetime.utcnow()
+    source.approved_by = None
+    source.approved_at = None
+
+
+def _undo(db: Session, source) -> bool:
+    """Back to pending, if the extraction has not started. False when it is too late."""
+    if source.ingestion_status == "rejected":
+        pass
+    elif source.ingestion_status == "approved":
+        jobs_ = db.query(Job).filter(Job.source_id == source.id, Job.type == "process_source").all()
+        if any(j.status != "queued" for j in jobs_):
+            return False
+        for j in jobs_:
+            db.delete(j)
+    else:
+        return False
+    source.ingestion_status = "pending"
+    source.included = False
+    source.approved_by = source.approved_at = source.rejected_by = source.rejected_at = None
+    return True
+
+
 @router.get("/ingestion")
 async def list_sources(
     request: Request,
@@ -242,7 +285,10 @@ async def list_sources(
     redact = _guest_redaction(db, user)  # Story 12.15
     sources_list = []
     for source, project_name in rows:
-        sources_list.append(redact(source, {**_format_source(source, project_name), **capabilities(source)}))
+        row = {**_format_source(source, project_name), **capabilities(source)}
+        if source.ingestion_status == "pending":
+            row.update(insights(db, source))  # Promem revamp G2: reasons, flags, preview, candidates
+        sources_list.append(redact(source, row))
 
     return {
         "sources": sources_list,
@@ -353,20 +399,17 @@ async def update_source_status(
     """
     user, source = _require_source_reviewer(request, db, source_id)
 
-    source.ingestion_status = update.ingestion_status
-
-    if update.ingestion_status == "approved":
-        source.included = True
-        source.approved_by = user.id
-        source.approved_at = datetime.utcnow()
-        source.extraction_error = None
-        # Story 13.2: the worker runs the ETL pipeline
-        enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)
+    if source.ingestion_status == update.ingestion_status:
+        pass  # already decided this way: no second extraction job
+    elif update.ingestion_status == "approved":
+        if update.project_id and update.project_id != str(source.project_id):
+            # Promem revamp G2c: approve into the project the reviewer chose
+            target = require_project_access(db, user, update.project_id, REVIEW)
+            source.project_id = target.id
+        _approve(db, user, source)
         db.commit()
     elif update.ingestion_status == "rejected":
-        source.included = False
-        source.rejected_by = user.id
-        source.rejected_at = datetime.utcnow()
+        _reject(db, user, source)
         db.commit()
 
     return {
@@ -469,18 +512,12 @@ async def batch_update_sources(
         if not source_visible(db, user, source) or not has_access(project_access_level(db, user, source.project), REVIEW):
             continue
 
-        source.ingestion_status = new_status
-
+        if source.ingestion_status == new_status:
+            continue
         if new_status == "approved":
-            source.included = True
-            source.approved_by = user.id
-            source.approved_at = datetime.utcnow()
-            source.extraction_error = None
-            enqueue(db, "process_source", {"source_id": str(source.id)}, source_id=source.id)  # Story 13.2
-        elif new_status == "rejected":
-            source.included = False
-            source.rejected_by = user.id
-            source.rejected_at = datetime.utcnow()
+            _approve(db, user, source)
+        else:
+            _reject(db, user, source)
 
         updated_count += 1
 
@@ -490,6 +527,28 @@ async def batch_update_sources(
         "updated": updated_count,
         "action": batch.action,
     }
+
+
+@router.post("/ingestion/undo")
+async def undo_decisions(
+    body: IngestionUndo,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Promem revamp G5: "Desfazer" after approve / reject — the sources go back to pending.
+
+    An approval can only be undone while its extraction is still queued (the undo window,
+    ``settings.ingestion_undo_seconds``); later ones are reported in ``too_late``.
+    """
+    user = _get_user(request)
+    undone, too_late = [], []
+    for sid in body.source_ids:
+        source = db.query(Source).filter(Source.id == sid).first()
+        if not source_visible(db, user, source) or not has_access(project_access_level(db, user, source.project), REVIEW):
+            continue
+        (undone if _undo(db, source) else too_late).append(str(source.id))
+    db.commit()
+    return {"undone": undone, "too_late": too_late}
 
 
 @router.get("/ingestion/count")

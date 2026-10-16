@@ -401,6 +401,10 @@ class Source(Base):
     title = Column(String(500))
     occurred_at = Column(DateTime, nullable=False)
     ingestion_status = Column(String(50), nullable=False, default="pending")
+    # Promem revamp G2: cheap AI preview made on arrival, before approval —
+    # [{type, title, discipline}] — and when it was made (NULL = not yet)
+    candidates = Column(JSONType)
+    candidates_at = Column(DateTime)
     ai_summary = Column(Text)
     approved_by = Column(GUID(), ForeignKey("users.id"))
     approved_at = Column(DateTime)

@@ -13,6 +13,7 @@ from app.api.middleware.auth import auth_middleware
 from app.api.middleware.rate_limit import setup_rate_limiting
 from app.database.init_db import init_db
 from app.scheduler import app_scheduler
+from app.services import candidate_preview as _candidate_preview  # noqa: F401  Promem revamp G2: queues a preview for each new pending source
 
 logger = logging.getLogger(__name__)
 

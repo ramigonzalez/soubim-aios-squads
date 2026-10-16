@@ -1,0 +1,144 @@
+{
+  "eyebrow": "{{org}} · todos os projetos",
+  "eyebrowNoOrg": "Escritório · todos os projetos",
+  "title": "Ingestão",
+  "subtitle": "Só entra nos projetos o que você aprovar. Ao aprovar, a IA extrai decisões, ações e tópicos da fonte.",
+  "addMeeting": "Adicionar reunião",
+  "tabs": {
+    "pending": "Pendentes",
+    "history": "Histórico"
+  },
+  "filters": {
+    "project": "Projeto",
+    "allProjects": "Todos os projetos",
+    "source": "Fonte",
+    "all": "Todas",
+    "meeting": "Reuniões",
+    "email": "E-mails",
+    "document": "Documentos",
+    "period": "Período"
+  },
+  "bulk": {
+    "selectAll": "Selecionar todos",
+    "pending_zero": "nenhum pendente",
+    "pending_one": "{{count}} pendente",
+    "pending_other": "{{count}} pendentes",
+    "selected_one": "{{count}} selecionado",
+    "selected_other": "{{count}} selecionados",
+    "reject": "Recusar",
+    "approve": "Aprovar selecionados"
+  },
+  "row": {
+    "select": "Selecionar {{title}}",
+    "to": "→ {{project}}",
+    "noProject": "sem projeto",
+    "conflict": "mais de um projeto possível"
+  },
+  "panel": {
+    "position": "{{kind}} · {{index}} de {{total}}",
+    "summary": "Resumo da IA · do que trata",
+    "noSummary": "Sem resumo ainda: a IA gera o resumo quando a fonte é processada.",
+    "candidates": "O que deve entrar no projeto",
+    "candidateNote": "Prévia feita a partir do resumo. Os itens finais são extraídos depois da aprovação.",
+    "candidatesPending": "A IA está preparando a prévia dos itens…",
+    "noCandidates": "A IA não encontrou itens nesta fonte. Ao aprovar, ela entra como referência do projeto.",
+    "previewMeeting": "Trecho da transcrição",
+    "previewEmail": "Trecho do e-mail",
+    "previewDocument": "Trecho do documento",
+    "openOriginal": "Abrir em {{tool}} ↗",
+    "openOriginalGeneric": "Abrir original ↗",
+    "why": "Por que este projeto",
+    "confidence": {
+      "high": "Confiança alta",
+      "medium": "Confiança média",
+      "low": "Confiança baixa"
+    },
+    "participants": "Participantes",
+    "fromTo": "De → Para",
+    "file": "Arquivo",
+    "received": "Recebido",
+    "addedBy": "Adicionado por",
+    "project": "Entra no projeto",
+    "projectHintAi": "Escolhido pela IA · motivos abaixo",
+    "projectHintRule": "Escolhido pelas regras do projeto",
+    "projectHintYou": "Você escolheu este projeto",
+    "projectHintNone": "Escolha o projeto para aprovar",
+    "chooseProject": "Escolha um projeto",
+    "reject": "Recusar",
+    "approve": "Aprovar",
+    "footnote": "Aprovar extrai os itens para o projeto · Recusar descarta a fonte",
+    "discard": "Descartar",
+    "import": "Importar",
+    "failed": "A extração falhou: {{error}}",
+    "retry": "Tentar de novo"
+  },
+  "flags": {
+    "external_one": "{{count}} participante externo ({{names}}). Os itens ficam visíveis só para a equipe, a menos que entrem nos marcos compartilhados.",
+    "external_other": "{{count}} participantes externos ({{names}}). Os itens ficam visíveis só para a equipe, a menos que entrem nos marcos compartilhados.",
+    "duplicate": "Possível duplicata de “{{title}}” ({{date}}). Aprove só uma.",
+    "lowConfidence": "A IA não tem certeza do projeto. Confirme antes de aprovar.",
+    "noProject": "Nenhum projeto combina com esta reunião. Escolha um para importar.",
+    "conflict": "Mais de um projeto combina com esta reunião: {{projects}}. Escolha um."
+  },
+  "reasons": {
+    "drive_folder": "Arquivo na pasta do Drive do projeto",
+    "fathom_rule": "Regra do projeto: {{field}} {{operator}} “{{value}}”",
+    "email_participant": "{{who}} é participante deste projeto",
+    "email_thread": "Continua uma conversa já aprovada neste projeto",
+    "manual": "Enviado diretamente para este projeto por {{who}}",
+    "participants_overlap": "{{count}} de {{total}} participantes estão na equipe do projeto",
+    "title_match": "O título cita “{{term}}”",
+    "webhook": "Recebido pela integração com {{tool}}"
+  },
+  "ruleFields": {
+    "title": "título",
+    "participant_email": "e-mail do participante",
+    "participant_domain": "domínio do participante"
+  },
+  "ruleOperators": {
+    "contains": "contém",
+    "equals": "é"
+  },
+  "history": {
+    "approved": "Aprovado",
+    "rejected": "Recusado",
+    "processed": "Processado",
+    "failed": "Falhou",
+    "by": "por {{name}} · {{date}}",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} itens",
+    "job": {
+      "queued": "na fila",
+      "running": "extraindo",
+      "retrying": "nova tentativa"
+    },
+    "delete": "Excluir fonte",
+    "deleteTitle": "Excluir esta fonte?",
+    "deleteText": "A fonte, os itens extraídos dela e as versões da extração são apagados. Isso não pode ser desfeito.",
+    "deleteConfirm": "Excluir fonte",
+    "deleteError": "Não foi possível excluir a fonte."
+  },
+  "toast": {
+    "approved": "Aprovado · a IA está extraindo os itens",
+    "approvedMany": "{{count}} itens aprovados · a IA está extraindo os itens",
+    "rejected": "Recusado · não entra no projeto",
+    "rejectedMany": "{{count}} itens recusados · não entram no projeto",
+    "undone": "Decisão desfeita",
+    "error": "Não foi possível salvar a decisão. A fonte voltou para a lista.",
+    "imported": "Importado · a IA está extraindo os itens",
+    "discarded": "Descartado",
+    "retrying": "Extração reiniciada",
+    "deleted": "Fonte excluída"
+  },
+  "empty": {
+    "title": "Caixa de ingestão em dia",
+    "text": "Novas reuniões, e-mails e documentos aparecem aqui assim que chegarem.",
+    "historyTitle": "Nenhuma decisão ainda",
+    "historyText": "Fontes aprovadas e recusadas aparecem aqui.",
+    "filteredTitle": "Nada com esses filtros",
+    "filteredText": "Troque o projeto ou a fonte."
+  },
+  "error": "Não foi possível carregar a ingestão",
+  "errorText": "A conexão caiu no meio do caminho. Nada foi perdido.",
+  "keyboardHint": "↑↓ navegar · A aprovar · R recusar · Espaço selecionar"
+}
