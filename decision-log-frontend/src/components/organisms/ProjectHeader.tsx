@@ -110,9 +110,12 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
   if (mobile) {
     const share = section === 'milestones' && canManage
     const write = section === 'history' && canWrite
-    if (!share && !write) return null
+    // the top bar shows the project name; the page still needs its h1 for screen readers
+    const title = <h1 className="sr-only">{`${t(`header.eyebrow.${section}`)} · ${project.name}`}</h1>
+    if (!share && !write) return title
     return (
       <header className="flex flex-wrap items-center gap-2" data-export-exclude>
+        {title}
         {write && (
           <>
             <Button icon={<Icons.add />} onClick={() => navigate(`/projects/${projectId}/items/new`)}>
