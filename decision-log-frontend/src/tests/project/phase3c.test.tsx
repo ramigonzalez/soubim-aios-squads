@@ -112,7 +112,7 @@ describe('Phase 3c', () => {
     const aside = screen.getByRole('heading', { name: /Itens extraídos/ }).closest('aside')!
     await user.click(within(aside).getByRole('button', { name: /Enviar memorial/ }))
     expect(screen.getByTestId('where')).toHaveTextContent('?t=545')
-    expect(within(list).getByText('Ok.').closest('li')).toHaveAttribute('aria-current', 'true')
+    await waitFor(() => expect(within(list).getByText('Ok.').closest('li')).toHaveAttribute('aria-current', 'true'))
   })
 
   it('opens the item panel from an anchored chip', async () => {
@@ -136,7 +136,8 @@ describe('Phase 3c', () => {
   it('opens at ?t= on the matching turn', async () => {
     renderAt('/projects/p1/meetings/s1?t=00:06:15')
     const list = await screen.findByTestId('transcript-list')
-    expect(within(list).getByText('Concordo.').closest('li')).toHaveAttribute('aria-current', 'true')
+    // the arrival focus is set by an effect after the transcript renders
+    await waitFor(() => expect(within(list).getByText('Concordo.').closest('li')).toHaveAttribute('aria-current', 'true'))
   })
 
   it('confirms a visibility change', async () => {
