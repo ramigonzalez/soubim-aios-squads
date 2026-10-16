@@ -99,6 +99,8 @@ class User(Base):
     # Story 12.13: the platform operator (runs /platform). Set only by
     # scripts/create_platform_operator.py, never through the API. Grants no access to tenant data.
     is_platform_operator = Column(Boolean, nullable=False, default=False, server_default=sql_false())
+    # Promem revamp Phase 4e: "Marcar todas como lidas" — notifications up to then are read
+    notifications_seen_at = Column(DateTime)
     # Story 12.13: false for accounts created with an unusable random password (Google sign-in,
     # create_platform_operator --no-password); they cannot use "change password" (setting a first one is phase 2)
     has_password = Column(Boolean, nullable=False, default=True, server_default=text("true"))
@@ -262,6 +264,16 @@ class ProjectMember(Base):
         Index("idx_project_members_user", "user_id"),
         CheckConstraint("access IS NULL OR access IN ('viewer', 'contributor')", name="ck_project_member_access"),
     )
+
+
+class NotificationRead(Base):
+    """Promem revamp Phase 4e: one notification the user opened or marked as read (``key`` = kind:id)."""
+
+    __tablename__ = "notification_reads"
+
+    user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    key = Column(String(120), primary_key=True)
+    read_at = Column(DateTime, nullable=False)
 
 
 class ProjectVisit(Base):
@@ -781,6 +793,9 @@ class ProjectItem(Base):
     item_type = Column(String(50), nullable=False, default="decision")
     source_type = Column(String(50), nullable=False, default="meeting")
     is_milestone = Column(Boolean, nullable=False, default=False)
+    # Promem revamp Phase 4e: when / by whom the item became a marco (notifications)
+    milestone_at = Column(DateTime)
+    milestone_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
     is_done = Column(Boolean, nullable=False, default=False)
     affected_disciplines = Column(JSONType, nullable=False, default=list)
     owner = Column(String(255))  # Nullable — primarily for action_items

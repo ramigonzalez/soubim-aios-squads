@@ -28,6 +28,7 @@ const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
 const ProjectsList = lazy(() => import('./pages/ProjectsList'))
 const PublicTimeline = lazy(() => import('./pages/PublicTimeline'))
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const ProjectSummary = lazy(() => import('./pages/ProjectSummary'))
 const ProjectApprovals = lazy(() => import('./pages/ProjectApprovals'))
@@ -91,6 +92,7 @@ function AppRoutes() {
         <Route path="/settings/team" element={<Lazy><TeamSettings /></Lazy>} />
         <Route path="/settings/password" element={<Lazy><ChangePassword /></Lazy>} />
         <Route path="/settings/workspace" element={<Lazy><WorkspaceSettings /></Lazy>} />
+        <Route path="/notifications" element={<Lazy><NotificationsPage /></Lazy>} />
         <Route path="/platform" element={<PlatformRoute><Lazy><Platform /></Lazy></PlatformRoute>} />
       </Route>
 

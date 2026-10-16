@@ -30,6 +30,7 @@ import { useAuthStore } from '../../store/authStore'
 import { EXTERNAL_ROLE } from '../../types/organization'
 import { useSearchStore } from '../../store/searchStore'
 import { ProjectSwitcher, type CurrentProjectInfo } from './ProjectSwitcher'
+import { NotificationsButton } from './Notifications'
 import type { ProjectSectionCounts } from '../../types/project'
 
 export type ProjectSection = 'overview' | 'milestones' | 'history' | 'meetings' | 'summary'
@@ -103,8 +104,11 @@ export function Sidebar({ project, loading, onNavigate }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="border-t border-line px-3 py-3">
-        <UserMenu onNavigate={onNavigate} />
+      <div className="flex items-center gap-1 border-t border-line px-3 py-3">
+        <div className="min-w-0 flex-1">
+          <UserMenu onNavigate={onNavigate} />
+        </div>
+        <NotificationsButton onNavigate={onNavigate} />
       </div>
     </div>
   )

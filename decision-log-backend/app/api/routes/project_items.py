@@ -407,6 +407,10 @@ async def update_project_item(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only organization admins can toggle milestone status",
             )
+        if body.is_milestone and not item.is_milestone:
+            # Promem revamp Phase 4e: "X marcou como marco" notifications
+            item.milestone_at = datetime.utcnow()
+            item.milestone_by = user.id
         item.is_milestone = body.is_milestone
 
     if body.is_done is not None:
