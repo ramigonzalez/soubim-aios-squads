@@ -1,6 +1,7 @@
 /**
  * Mobile "Mais" tab (README §7): Aguardando aprovação · Trocar projeto ·
- * Compartilhar com o cliente · Editar projeto, then the firm sections and the account
+ * Compartilhar com o cliente · Editar projeto, the sections without a tab (Reuniões,
+ * Resumo executivo), then the firm sections and the account
  * (the phone has no sidebar). Notificações joins this list when it exists (Phase 4).
  * Aguardando aprovação opens the project's mobile approvals list.
  */
@@ -70,6 +71,8 @@ export default function ProjectMore() {
             onClick={() => navigate(`/projects/${id}/approvals`)}
           />
         )}
+        <Row icon={Icons.meetings} label={t('sections.meetings')} onClick={() => navigate(`/projects/${id}/meetings`)} />
+        <Row icon={Icons.summary} label={t('sections.summary')} onClick={() => navigate(`/projects/${id}/summary`)} />
         <Row icon={Icons.switcher} label={t('switcher.label')} onClick={() => setSwitcherOpen(true)} />
         {project?.can_manage && <Row icon={Icons.share} label={t('more.share')} onClick={() => setShareOpen(true)} />}
         {(project?.can_manage || canReview) && (
