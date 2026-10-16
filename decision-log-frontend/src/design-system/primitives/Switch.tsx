@@ -25,7 +25,7 @@ export function Switch({ checked, onCheckedChange, label, disabled, className }:
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
-          'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-fast disabled:opacity-45',
+          'ds-touch relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-fast disabled:opacity-45',
           checked ? 'bg-ink' : 'bg-line-strong',
         )}
       >

@@ -55,6 +55,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
           'focus:border-accent focus:shadow-focus focus:outline-none data-[placeholder]:text-ink-3',
           'disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-3',
           size === 'form' ? 'h-[38px]' : 'h-9',
+        'max-md:h-11',
           TONES[tone],
           className,
         )}
@@ -79,7 +80,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
                 value={option.value}
                 disabled={option.disabled}
                 className={cn(
-                  'relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-2.5 pr-8 text-small text-ink outline-none',
+                  'relative flex h-8 max-md:h-11 cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-2.5 pr-8 text-small text-ink outline-none',
                   'data-[highlighted]:bg-surface-2 data-[disabled]:cursor-not-allowed data-[disabled]:text-ink-4',
                 )}
               >

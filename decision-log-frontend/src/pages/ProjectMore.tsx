@@ -1,7 +1,8 @@
 /**
  * Mobile "Mais" tab (README §7): Aguardando aprovação · Trocar projeto ·
- * Compartilhar com o cliente, then the firm sections and the account
+ * Compartilhar com o cliente · Editar projeto, then the firm sections and the account
  * (the phone has no sidebar). Notificações joins this list when it exists (Phase 4).
+ * Aguardando aprovação opens the project's mobile approvals list.
  */
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -15,7 +16,6 @@ import { useProject } from '../hooks/useProject'
 import { useActiveOrganization } from '../hooks/useOrganizations'
 import { useProjectList } from '../hooks/useProjectList'
 import { useAuthStore } from '../store/authStore'
-import { useIngestionStore } from '../store/ingestionStore'
 import { ingestionService } from '../services/ingestionService'
 
 function Row({ icon: Icon, label, trailing, onClick }: { icon: LucideIcon; label: string; trailing?: ReactNode; onClick: () => void }) {
@@ -48,7 +48,6 @@ export default function ProjectMore() {
   const { data: project } = useProject(id)
   const { user, clearAuth } = useAuthStore()
   const { isAdmin, canReviewSomewhere } = useActiveOrganization()
-  const setIngestionFilter = useIngestionStore((s) => s.setFilter)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const canReview = !!project?.can_review
@@ -68,14 +67,14 @@ export default function ProjectMore() {
             icon={Icons.ingestion}
             label={t('more.approvals')}
             trailing={pending ? <span className="font-mono text-mono-sm font-semibold text-danger-ink">{pending}</span> : undefined}
-            onClick={() => {
-              setIngestionFilter('project_id', id)
-              navigate(`/ingestion?tab=pending&project=${id}`)
-            }}
+            onClick={() => navigate(`/projects/${id}/approvals`)}
           />
         )}
         <Row icon={Icons.switcher} label={t('switcher.label')} onClick={() => setSwitcherOpen(true)} />
         {project?.can_manage && <Row icon={Icons.share} label={t('more.share')} onClick={() => setShareOpen(true)} />}
+        {(project?.can_manage || canReview) && (
+          <Row icon={Icons.manual} label={project?.can_manage ? t('more.edit') : t('more.fathomRules')} onClick={() => navigate(`/projects/${id}/edit`)} />
+        )}
       </Group>
 
       <Group title={t('firm')}>

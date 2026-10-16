@@ -36,6 +36,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         FIELD_BASE,
         TONES[tone],
         size === 'form' ? 'h-[38px]' : 'h-9',
+        'max-md:h-11',
         'px-3',
         leadingIcon && 'pl-9',
         trailing && 'pr-9',

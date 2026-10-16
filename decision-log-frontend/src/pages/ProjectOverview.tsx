@@ -2,6 +2,8 @@
  * Visão geral, the project home (README §5.2): "Where is this project now, and
  * what changed since my last visit?" Three tiles drive the list below them;
  * the side box lists the current stage's milestones.
+ * Phones (README §7): a stage card with the stepper on top; "em aberto" opens Histórico
+ * filtered to Ações and "aguardando aprovação" opens the approvals list.
  */
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -22,6 +24,8 @@ import {
   Skeleton,
   SkeletonRows,
   SourceIcon,
+  StageStepper,
+  useIsMobile,
   type OverviewTile,
 } from '../design-system'
 import { ProjectHeader } from '../components/organisms/ProjectHeader'
@@ -48,6 +52,7 @@ export default function ProjectOverview() {
   const navigate = useNavigate()
   const { id: projectId = '' } = useParams<{ id: string }>()
   const [tile, setTile] = useState<TileKey>('new')
+  const mobile = useIsMobile()
   const { data: project } = useProject(projectId)
   const visit = useProjectVisit(projectId)
   const itemsQuery = useAllProjectItems(projectId)
@@ -95,6 +100,7 @@ export default function ProjectOverview() {
         ? `${t('overview.tiles.openNote', { count: openActions.length })} · ${t('overview.tiles.late', { count: lateCount })}`
         : t('overview.tiles.openNote', { count: openActions.length }),
       alert: lateCount > 0,
+      mobileNote: lateCount ? t('overview.tiles.late', { count: lateCount }) : undefined,
     },
     ...(canReview
       ? [{ key: 'pending' as const, value: pendingQuery.isLoading ? <Skeleton width="1.5em" className="inline-block h-6 align-middle" /> : pending.length, label: t('overview.tiles.pending'), note: t('overview.tiles.pendingNote') }]
@@ -187,7 +193,34 @@ export default function ProjectOverview() {
         <ErrorState title={t('overview.error')} text={t('overview.errorText')} onRetry={() => void itemsQuery.refetch()} />
       ) : (
         <>
-          <OverviewTiles tiles={tiles} value={tile} onValueChange={setTile} label={t('nav:sections.overview')} />
+          {mobile && stages.length > 0 && (
+            <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4" aria-labelledby="overview-stages-title">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 id="overview-stages-title" className="text-label uppercase text-ink-2">
+                  {t('overview.stageCard.title')}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/projects/${projectId}/milestones`)}
+                  className="ds-touch whitespace-nowrap text-small font-semibold text-accent hover:text-accent-strong"
+                >
+                  {t('overview.stageCard.link')}
+                </button>
+              </div>
+              <StageStepper stages={stages} />
+            </section>
+          )}
+
+          <OverviewTiles
+            tiles={tiles}
+            value={tile}
+            onValueChange={(key) => {
+              if (mobile && key === 'open') navigate(`/projects/${projectId}/history?type=action_item`)
+              else if (mobile && key === 'pending') navigate(`/projects/${projectId}/approvals`)
+              else setTile(key)
+            }}
+            label={t('nav:sections.overview')}
+          />
 
           <OverviewColumns
             main={
@@ -202,7 +235,7 @@ export default function ProjectOverview() {
                 footer={
                   <>
                     <span>{header.foot}</span>
-                    <button type="button" onClick={() => navigate(header.to)} className="ml-auto whitespace-nowrap font-semibold text-accent hover:text-accent-strong">
+                    <button type="button" onClick={() => navigate(header.to)} className="ds-touch ml-auto whitespace-nowrap font-semibold text-accent hover:text-accent-strong">
                       {header.link}
                     </button>
                   </>
@@ -221,7 +254,7 @@ export default function ProjectOverview() {
                 <button
                   type="button"
                   onClick={() => navigate(`/projects/${projectId}/milestones`)}
-                  className="whitespace-nowrap text-small font-semibold text-accent hover:text-accent-strong"
+                  className="ds-touch whitespace-nowrap text-small font-semibold text-accent hover:text-accent-strong"
                 >
                   {t('overview.stageBox.link')}
                 </button>

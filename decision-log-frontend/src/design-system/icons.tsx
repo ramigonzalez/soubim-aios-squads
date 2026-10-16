@@ -4,6 +4,10 @@
  */
 import { forwardRef } from 'react'
 import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  SlidersHorizontal,
   Calendar, Check, ChevronDown, ChevronUp, ChevronsUpDown, CircleCheck, CirclePlay, Copy, Download,
   Ellipsis, FileText, Folder, GitCommitVertical, History, Inbox, Info, KeyRound, LayoutDashboard, Lightbulb, Link,
   LogOut, Mail, Menu, MessageCircle, Minus, Pencil, Plug, Plus, Search, Share2, ShieldCheck, Square, SquareCheck, Star,
@@ -85,6 +89,10 @@ export const Icons = {
   team: Users,
   // Shell and account
   menu: Menu,
+  back: ChevronLeft,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
+  filter: SlidersHorizontal,
   platform: ShieldCheck,
   integrations: Plug,
   password: KeyRound,

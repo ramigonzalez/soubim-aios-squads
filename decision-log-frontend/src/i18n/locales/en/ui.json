@@ -57,7 +57,12 @@
     "daysLeft_one": "{{count}} day left",
     "daysLeft_other": "{{count}} days left",
     "todayMarker": "Today",
-    "progress": "{{name}} · {{percent}}% of stage"
+    "progress": "{{name}} · {{percent}}% of stage",
+    "current": "current",
+    "stepperLine": "Today {{date}} · {{percent}}% of stage · due {{end}}",
+    "stepperBefore": "Starts on {{date}}",
+    "stepperDone": "All stages done",
+    "stepperGap": "Today {{date}} · next stage on {{next}}"
   },
   "date": {
     "today": "today",

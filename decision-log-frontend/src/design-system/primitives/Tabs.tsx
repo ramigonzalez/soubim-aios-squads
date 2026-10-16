@@ -22,7 +22,7 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab({ classN
     <RadixTabs.Trigger
       ref={ref}
       className={cn(
-        '-mb-px inline-flex h-9 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent text-small font-medium text-ink-2',
+        'ds-touch -mb-px inline-flex h-9 items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent text-small font-medium text-ink-2',
         'transition-colors duration-fast ease-promem hover:text-ink',
         'data-[state=active]:border-ink data-[state=active]:font-semibold data-[state=active]:text-ink',
         className,

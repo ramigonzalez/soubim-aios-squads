@@ -55,7 +55,9 @@
   "more": {
     "approvals": "Waiting for approval",
     "share": "Share with the client",
-    "account": "Account"
+    "account": "Account",
+    "edit": "Edit project",
+    "fathomRules": "Fathom rules"
   },
   "skipToContent": "Skip to content",
   "workspace": "Firm"

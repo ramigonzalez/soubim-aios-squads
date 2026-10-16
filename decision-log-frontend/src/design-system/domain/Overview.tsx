@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '../cn'
+import { useIsMobile } from '../useMediaQuery'
 
 export interface OverviewTile<K extends string> {
   key: K
@@ -8,9 +9,14 @@ export interface OverviewTile<K extends string> {
   note: ReactNode
   /** The note needs action (e.g. "1 atrasada"): danger-ink 600 */
   alert?: boolean
+  /** Phones show three narrow tiles: only this short note ("1 atrasada"), if any */
+  mobileNote?: ReactNode
 }
 
-/** Three selectable tiles acting as tabs for the list below (COMPONENTS.md → OverviewTiles). */
+/**
+ * Three selectable tiles acting as tabs for the list below (COMPONENTS.md → OverviewTiles).
+ * Phones (README §7): three in a row, the number above a two-line label.
+ */
 export function OverviewTiles<K extends string>({
   tiles,
   value,
@@ -23,7 +29,7 @@ export function OverviewTiles<K extends string>({
   label: string
 }) {
   return (
-    <div role="tablist" aria-label={label} className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+    <div role="tablist" aria-label={label} className="grid grid-cols-3 gap-2 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))] md:gap-3">
       {tiles.map((tile) => {
         const selected = tile.key === value
         return (
@@ -34,15 +40,18 @@ export function OverviewTiles<K extends string>({
             aria-selected={selected}
             onClick={() => onValueChange(tile.key)}
             className={cn(
-              'flex flex-col gap-1 rounded-lg border bg-surface px-[18px] py-3.5 text-left transition-colors duration-fast',
+              'flex min-w-0 flex-col gap-1 rounded-lg border bg-surface px-3 py-3 text-left transition-colors duration-fast md:px-[18px] md:py-3.5',
               selected ? 'border-ink shadow-tab-active' : 'border-line hover:bg-surface-2',
             )}
           >
-            <span className="flex items-baseline gap-2">
+            <span className="flex flex-col gap-0.5 md:flex-row md:items-baseline md:gap-2">
               <span className="text-kpi text-ink">{tile.value}</span>
-              <span className="text-small font-semibold text-ink">{tile.label}</span>
+              <span className="text-small font-semibold text-ink [overflow-wrap:anywhere]">{tile.label}</span>
             </span>
-            <span className={cn('text-caption', tile.alert ? 'font-semibold text-danger-ink' : 'text-ink-2')}>{tile.note}</span>
+            <span className={cn('hidden text-caption md:block', tile.alert ? 'font-semibold text-danger-ink' : 'text-ink-2')}>{tile.note}</span>
+            {tile.mobileNote && (
+              <span className={cn('text-caption md:hidden', tile.alert ? 'font-semibold text-danger-ink' : 'text-ink-2')}>{tile.mobileNote}</span>
+            )}
           </button>
         )
       })}
@@ -65,25 +74,30 @@ export interface OverviewRowProps {
 
 /** Two-line row (COMPONENTS.md → OverviewRow): grid 20 · 1fr · auto · 48, min-height 52. */
 export function OverviewRow({ icon, title, badge, meta, disciplines, date, selected, onClick }: OverviewRowProps) {
+  // phones move the disciplines into line 2 (README §7)
+  const mobile = useIsMobile()
   return (
     <button
       type="button"
       onClick={onClick}
       aria-current={selected || undefined}
       className={cn(
-        'grid min-h-row-2 w-full grid-cols-[20px_minmax(0,1fr)_auto_48px] items-center gap-3 border-b border-line-soft px-4 py-2 text-left last:border-b-0',
+        'grid min-h-row-2 max-md:min-h-14 w-full grid-cols-[20px_minmax(0,1fr)_auto_48px] items-center gap-3 border-b border-line-soft px-4 py-2 text-left last:border-b-0',
         selected ? 'bg-accent-weak shadow-rail' : 'bg-surface hover:bg-surface-2',
       )}
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-body font-medium text-ink">{title}</span>
+          <span className="text-body font-medium text-ink max-md:line-clamp-2 md:truncate">{title}</span>
           {badge}
         </span>
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-caption text-ink-2">{meta}</span>
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-caption text-ink-2">
+          {mobile && disciplines && <span className="flex shrink-0">{disciplines}</span>}
+          {meta}
+        </span>
       </span>
-      <span className="hidden min-w-0 sm:flex">{disciplines}</span>
+      <span className="flex min-w-0">{mobile ? null : disciplines}</span>
       <span className="text-right font-mono text-mono-sm text-ink-2">{date}</span>
     </button>
   )
@@ -116,7 +130,7 @@ export function CompactRow({ marker, title, date, onClick, itemId }: { marker: R
       type="button"
       data-item-id={itemId}
       onClick={onClick}
-      className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-sm py-1.5 text-left hover:bg-surface-2"
+      className="grid grid-cols-[16px_minmax(0,1fr)_auto] items-center gap-2 rounded-sm py-1.5 text-left hover:bg-surface-2 max-md:min-h-touch"
     >
       <span className="flex items-center justify-center">{marker}</span>
       <span className="truncate text-small text-ink">{title}</span>

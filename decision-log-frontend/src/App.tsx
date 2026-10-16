@@ -29,6 +29,7 @@ const ProjectMeetings = lazy(() => import('./pages/ProjectMeetings'))
 const ProjectsList = lazy(() => import('./pages/ProjectsList'))
 const PublicTimeline = lazy(() => import('./pages/PublicTimeline'))
 const WorkspaceSettings = lazy(() => import('./pages/WorkspaceSettings'))
+const ProjectApprovals = lazy(() => import('./pages/ProjectApprovals'))
 const ProjectMeetingViewer = lazy(() => import('./pages/ProjectMeetingViewer'))
 // Component gallery (Promem design system), development builds only
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/UiGallery')) : null
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="/projects/:id/meetings/:sourceId" element={<Lazy><ProjectMeetingViewer /></Lazy>} />
         <Route path="/projects/:id/summary" element={<ProjectDetail key="summary" view="digest" />} />
         <Route path="/projects/:id/more" element={<Lazy><ProjectMore /></Lazy>} />
+        <Route path="/projects/:id/approvals" element={<Lazy><ProjectApprovals /></Lazy>} />
         <Route path="/meetings/:sourceId" element={<LegacyMeetingRedirect />} />
         <Route path="/ingestion" element={<Ingestion />} />
         <Route path="/settings/integrations" element={<Lazy><IntegrationsSettings /></Lazy>} />

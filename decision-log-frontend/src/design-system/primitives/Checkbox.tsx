@@ -42,7 +42,7 @@ export const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>(function Ch
       {...aria}
       className={cn(
         'group inline-flex shrink-0 items-center justify-center rounded-sm disabled:cursor-not-allowed disabled:opacity-45',
-        touch ? 'h-11 w-11' : 'h-6 w-6',
+        touch ? 'h-11 w-11' : 'ds-touch h-6 w-6',
         !label && className,
       )}
     >

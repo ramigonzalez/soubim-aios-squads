@@ -84,3 +84,50 @@ export function MiniStageBar({ stages, today = new Date(), className }: { stages
     </div>
   )
 }
+
+/**
+ * Mobile stage stepper (README §7, Visão geral): equal columns with a bar, "01 ✓" / "02 · atual"
+ * and the stage name, then "Hoje 03/03 · 36% da etapa · entrega em 31/03". Progress is ink;
+ * the accent is only the "hoje" marker.
+ */
+export function StageStepper({ stages, today = new Date(), className }: { stages: StageInput[]; today?: Date; className?: string }) {
+  const { t } = useTranslation('ui')
+  const { segments, currentIndex } = layoutStages(stages, today)
+  if (segments.length === 0) return null
+  const current = currentIndex >= 0 ? segments[currentIndex] : null
+  const next = segments.find((s) => s.status === 'future')
+  const line = current
+    ? t('stage.stepperLine', { date: formatDay(today), percent: Math.round(current.progress * 100), end: formatDay(current.end) })
+    : segments[0].status === 'future'
+      ? t('stage.stepperBefore', { date: formatDay(segments[0].start) })
+      : next
+        ? t('stage.stepperGap', { date: formatDay(today), next: formatDay(next.start) })
+        : t('stage.stepperDone')
+  return (
+    <div className={cn('flex flex-col gap-2', className)}>
+      <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${segments.length}, minmax(0, 1fr))` }}>
+        {segments.map((segment, index) => (
+          <li key={segment.id} className="flex min-w-0 flex-col gap-1" aria-current={segment.status === 'current' ? 'step' : undefined}>
+            <span className="relative block">
+              <span
+                aria-hidden
+                className={cn('block h-1.5 rounded-[1px]', BAR_TONE[segment.status])}
+                style={barStyle(segment)}
+              />
+              {segment.status === 'current' && (
+                <span aria-hidden className="absolute -top-[5px] h-4 w-0.5 -translate-x-1/2 bg-accent" style={{ left: `${Math.round(segment.progress * 100)}%` }} />
+              )}
+            </span>
+            <span className={cn('truncate font-mono text-mono-sm', segment.status === 'current' ? 'text-accent' : 'text-ink-3')}>
+              {String(index + 1).padStart(2, '0')}
+              {segment.status === 'done' && ' ✓'}
+              {segment.status === 'current' && ` · ${t('stage.current')}`}
+            </span>
+            <span className={cn('truncate text-small', segment.status === 'current' ? 'font-semibold text-ink' : 'text-ink-2')}>{segment.name}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="text-caption text-ink-2">{line}</p>
+    </div>
+  )
+}

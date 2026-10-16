@@ -1,6 +1,7 @@
 import { forwardRef, type ReactNode } from 'react'
 import { cn } from '../cn'
 import { Icons } from '../icons'
+import { useIsMobile } from '../useMediaQuery'
 
 export interface ItemRowProps {
   itemId: string
@@ -29,11 +30,13 @@ export interface ItemRowProps {
  * Dense history row (COMPONENTS.md → ItemRow):
  * grid 24 · title (min 220) · disciplines 104 · owner 112 · source 18 · date 46 · star 18.
  * The row is focusable; Enter or a click opens the panel. Secondary columns clip first.
+ * Phones (README §7): two lines, at least 56 px: the title wraps, then disciplines · owner · source.
  */
 export const ItemRow = forwardRef<HTMLDivElement, ItemRowProps>(function ItemRow(
   { itemId, icon, title, done, badges, disciplines, owner, source, date, star, selected, compact, onOpen },
   ref,
 ) {
+  const mobile = useIsMobile()
   return (
     <div
       ref={ref}
@@ -50,20 +53,35 @@ export const ItemRow = forwardRef<HTMLDivElement, ItemRowProps>(function ItemRow
       }}
       className={cn(
         'group grid cursor-pointer items-center gap-2.5 border-b border-line-soft px-2 outline-none last:border-b-0',
-        'grid-cols-[24px_minmax(0,1fr)_18px_46px_18px] md:grid-cols-[24px_minmax(220px,1fr)_minmax(0,104px)_minmax(0,112px)_18px_46px_18px]',
-        compact ? 'h-row-compact' : 'h-row',
+        mobile
+          ? 'min-h-14 grid-cols-[24px_minmax(0,1fr)_46px_18px] py-2'
+          : cn('grid-cols-[24px_minmax(220px,1fr)_minmax(0,104px)_minmax(0,112px)_18px_46px_18px]', compact ? 'h-row-compact' : 'h-row'),
         'focus-visible:shadow-[inset_0_0_0_2px_var(--accent)]',
         selected ? 'bg-accent-weak shadow-rail' : 'bg-surface hover:bg-surface-2',
       )}
     >
-      <span className="flex items-center justify-center">{icon}</span>
-      <span className="flex min-w-[90px] items-center gap-2 overflow-hidden">
-        <span className={cn('min-w-0 truncate text-body font-medium', done ? 'text-ink-3 line-through' : 'text-ink')}>{title}</span>
-        {badges}
-      </span>
-      <span className="hidden min-w-0 overflow-hidden md:flex">{disciplines}</span>
-      <span className="hidden min-w-0 items-center gap-1.5 overflow-hidden text-caption text-ink-2 md:flex">{owner}</span>
-      <span className="flex items-center justify-center">{source}</span>
+      <span className={cn('flex justify-center', mobile ? 'items-start self-start pt-0.5' : 'items-center')}>{icon}</span>
+      {mobile ? (
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className={cn('line-clamp-2 text-body font-medium', done ? 'text-ink-3 line-through' : 'text-ink')}>{title}</span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
+            {disciplines}
+            {owner && <span className="flex min-w-0 items-center gap-1.5">{owner}</span>}
+            {source}
+            {badges}
+          </span>
+        </span>
+      ) : (
+        <>
+          <span className="flex min-w-[90px] items-center gap-2 overflow-hidden">
+            <span className={cn('min-w-0 truncate text-body font-medium', done ? 'text-ink-3 line-through' : 'text-ink')}>{title}</span>
+            {badges}
+          </span>
+          <span className="flex min-w-0 overflow-hidden">{disciplines}</span>
+          <span className="flex min-w-0 items-center gap-1.5 overflow-hidden text-caption text-ink-2">{owner}</span>
+          <span className="flex items-center justify-center">{source}</span>
+        </>
+      )}
       <span className="text-right font-mono text-mono-sm text-ink-2">{date}</span>
       <span className="flex items-center justify-center">{star}</span>
     </div>
@@ -114,7 +132,7 @@ export interface SourceBandProps {
 export function SourceBand({ tile, kind, title, meta, summary, actions, expanded, onToggle, toggleLabel, children }: SourceBandProps) {
   return (
     <section className="overflow-hidden rounded-lg border border-line bg-surface">
-      <div className="flex items-start gap-3 border-b border-line-soft bg-surface-2 px-3 py-2.5">
+      <div className="flex flex-wrap items-start gap-x-3 gap-y-2 border-b border-line-soft bg-surface-2 px-3 py-2.5 md:flex-nowrap">
         {tile}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <p className="flex min-w-0 items-baseline gap-1.5">
@@ -124,13 +142,13 @@ export function SourceBand({ tile, kind, title, meta, summary, actions, expanded
           {meta && <p className="truncate text-caption text-ink-2">{meta}</p>}
           {summary && <p className="truncate text-caption text-ink-soft">{summary}</p>}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{actions}</div>
+        <div className="order-last flex basis-full flex-wrap items-center gap-2 empty:hidden md:order-none md:basis-auto md:shrink-0 md:justify-end">{actions}</div>
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
           aria-label={toggleLabel}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-2 hover:bg-surface-3 hover:text-ink"
+          className="ds-touch flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-2 hover:bg-surface-3 hover:text-ink"
         >
           <Icons.dropdown className={cn('h-4 w-4 transition-transform duration-fast', expanded && 'rotate-180')} strokeWidth={1.75} aria-hidden />
         </button>

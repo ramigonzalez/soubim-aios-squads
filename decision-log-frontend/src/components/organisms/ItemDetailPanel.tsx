@@ -3,6 +3,8 @@
  * Replaces the old modal. Opens from any project list via `?item=`, keeps the
  * list visible, ↑/↓ walk the list's visible order, Esc closes, M toggles marco,
  * X toggles done. Empty sections are not rendered.
+ * Phones (README §7): full screen with ‹ back, type, marco and copy link on top, a 44 px
+ * "▶ Ouvir trecho", a "Concluir ação" toggle for actions and "↑ Anterior / Próximo ↓" below.
  */
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -32,6 +34,8 @@ import {
   TabsContent,
   TabsList,
   Textarea,
+  useIsMobile,
+  useToast,
 } from '../../design-system'
 import { useEditReviewedItem, useRestoreOriginal, useReviewItem } from '../../hooks/useItemReview'
 import { useSimilarItems } from '../../hooks/useSimilarItems'
@@ -68,6 +72,8 @@ export function ItemDetailPanel(props: ItemDetailPanelProps) {
   const { t } = useTranslation('project')
   const { open, item, loading, error, onClose, onPrevious, onNext, hasPrevious, hasNext, canManage, onToggleMilestone, onToggleDone } = props
   const [tab, setTab] = useState('overview')
+  const mobile = useIsMobile()
+  const toast = useToast()
 
   // a new item opens on its overview tab
   useEffect(() => setTab('overview'), [item?.id])
@@ -92,29 +98,67 @@ export function ItemDetailPanel(props: ItemDetailPanelProps) {
   const Close = Icons.close
   const level = item ? impactLevel(item) : null
 
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.show({ message: t('panel.linkCopied'), tone: 'neutral' })
+    } catch {
+      toast.show({ message: t('panel.copyError'), tone: 'error' })
+    }
+  }
+
+  const header = mobile ? (
+    <div className="flex min-h-14 items-center gap-1 border-b border-line-soft px-2">
+      <IconButton label={t('panel.back')} icon={<Icons.back />} size="touch" variant="ghost" onClick={onClose} />
+      {item && <ItemTypeBadge type={item.item_type} className="text-body" />}
+      {level === 'high' && <Badge tone="danger">{t('ui:impact.high')}</Badge>}
+      <span className="ml-auto flex items-center">
+        {item && (canManage || item.is_milestone) && (
+          <span className="flex h-11 w-11 items-center justify-center">
+            <MilestoneStar pressed={item.is_milestone} onToggle={canManage ? () => onToggleMilestone(item) : undefined} size="panel" />
+          </span>
+        )}
+        <IconButton label={t('panel.copyLink')} icon={<Icons.link />} size="touch" variant="ghost" onClick={() => void copyLink()} />
+      </span>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 border-b border-line-soft px-5 py-3.5">
+      {item && <ItemTypeBadge type={item.item_type} />}
+      {level === 'high' && <Badge tone="danger">{t('ui:impact.high')}</Badge>}
+      <span className="ml-auto flex items-center gap-1">
+        {item && (canManage || item.is_milestone) && (
+          <MilestoneStar pressed={item.is_milestone} onToggle={canManage ? () => onToggleMilestone(item) : undefined} size="panel" />
+        )}
+        <IconButton label={t('panel.previous')} icon={<Up />} size="sm" variant="ghost" disabled={!hasPrevious} onClick={onPrevious} />
+        <IconButton label={t('panel.next')} icon={<Down />} size="sm" variant="ghost" disabled={!hasNext} onClick={onNext} />
+        <IconButton label={t('panel.close')} icon={<Close />} size="sm" variant="ghost" onClick={onClose} />
+      </span>
+    </div>
+  )
+
   return (
     <SidePanel open={open} onOpenChange={(value) => !value && onClose()} title={item ? itemTitle(item) : t('panel.title')}>
       <div className="flex h-full min-h-0 flex-col" onKeyDown={onKeyDown}>
-        <div className="flex items-center gap-2 border-b border-line-soft px-5 py-3.5">
-          {item && <ItemTypeBadge type={item.item_type} />}
-          {level === 'high' && <Badge tone="danger">{t('ui:impact.high')}</Badge>}
-          <span className="ml-auto flex items-center gap-1">
-            {item && (canManage || item.is_milestone) && (
-              <MilestoneStar pressed={item.is_milestone} onToggle={canManage ? () => onToggleMilestone(item) : undefined} size="panel" />
-            )}
-            <IconButton label={t('panel.previous')} icon={<Up />} size="sm" variant="ghost" disabled={!hasPrevious} onClick={onPrevious} />
-            <IconButton label={t('panel.next')} icon={<Down />} size="sm" variant="ghost" disabled={!hasNext} onClick={onNext} />
-            <IconButton label={t('panel.close')} icon={<Close />} size="sm" variant="ghost" onClick={onClose} />
-          </span>
-        </div>
+        {header}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {loading && <SkeletonRows rows={6} className="p-5" />}
           {error && !loading && <ErrorState title={t('panel.loadError')} text={t('panel.notFound')} />}
           {item && !loading && (
-            <ItemBody {...props} item={item} tab={tab} onTabChange={setTab} />
+            <ItemBody {...props} item={item} tab={tab} onTabChange={setTab} mobile={mobile} />
           )}
         </div>
+        {mobile && (
+          <div className="grid grid-cols-2 gap-3 border-t border-line-soft px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">
+            <Button size="lg" icon={<Icons.arrowUp />} disabled={!hasPrevious} onClick={onPrevious}>
+              {t('panel.previousShort')}
+            </Button>
+            <Button size="lg" disabled={!hasNext} onClick={onNext}>
+              {t('panel.nextShort')}
+              <Icons.arrowDown aria-hidden />
+            </Button>
+          </div>
+        )}
       </div>
     </SidePanel>
   )
@@ -129,7 +173,8 @@ function ItemBody({
   onTabChange,
   onOpenItem,
   onToggleDone,
-}: ItemDetailPanelProps & { item: ProjectItem; tab: string; onTabChange: (tab: string) => void }) {
+  mobile,
+}: ItemDetailPanelProps & { item: ProjectItem; tab: string; onTabChange: (tab: string) => void; mobile: boolean }) {
   const { t } = useTranslation(['project', 'common'])
   const similar = useSimilarItems(projectId, tab === 'similar' ? item.id : null)
   const seconds = parseClock(item.timestamp)
@@ -179,7 +224,7 @@ function ItemBody({
             {
               label: t('panel.recording'),
               value:
-                meetingHref && seconds != null ? (
+                !mobile && meetingHref && seconds != null ? (
                   <Link to={meetingHref} className="inline-flex items-center gap-1.5 font-medium text-accent hover:text-accent-strong">
                     <Play className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                     <span className="font-mono text-mono">{formatClock(seconds)}</span>
@@ -201,6 +246,20 @@ function ItemBody({
           ]}
         />
       </div>
+
+      {mobile && meetingHref && seconds != null && (
+        <Button asChild size="lg" className="w-full text-accent">
+          <Link to={meetingHref}>
+            <Play aria-hidden />
+            {t('panel.listenExcerpt', { time: formatClock(seconds) })}
+          </Link>
+        </Button>
+      )}
+      {mobile && item.item_type === 'action_item' && (
+        <Button size="lg" className="w-full" aria-pressed={item.is_done} icon={item.is_done ? <Icons.actionDone /> : <Icons.actionOpen />} onClick={() => onToggleDone(item)}>
+          {item.is_done ? t('panel.reopen') : t('panel.markDone')}
+        </Button>
+      )}
 
       <ReviewBlock projectId={projectId} item={item} canReview={canReview} />
 

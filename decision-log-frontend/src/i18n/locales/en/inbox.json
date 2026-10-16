@@ -140,5 +140,16 @@
   },
   "error": "Could not load ingestion",
   "errorText": "The connection dropped. Nothing was lost.",
-  "keyboardHint": "↑↓ move · A approve · R reject · Space select"
+  "keyboardHint": "↑↓ move · A approve · R reject · Space select",
+  "approvals": {
+    "title": "Awaiting approval",
+    "back": "Back to More",
+    "empty": "Nothing awaiting approval",
+    "emptyText": "New sources for this project show up here for you to approve or reject.",
+    "moreItems_one": "+ {{count}} item",
+    "moreItems_other": "+ {{count}} items",
+    "openInbox": "Open in Ingestion",
+    "error": "Could not load the approvals",
+    "noAccess": "Only the firm's reviewers approve this project's sources."
+  }
 }

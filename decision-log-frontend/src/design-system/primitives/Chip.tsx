@@ -29,7 +29,7 @@ export function Chip({ label, marker, onRemove, touch = false, selected, onClick
   )
   if (onClick) {
     return (
-      <button type="button" aria-pressed={selected} onClick={onClick} className={cn(base, !selected && 'hover:bg-surface-2')}>
+      <button type="button" aria-pressed={selected} onClick={onClick} className={cn(base, 'ds-touch', !selected && 'hover:bg-surface-2')}>
         {marker}
         <span className="truncate">{label}</span>
       </button>
@@ -44,7 +44,7 @@ export function Chip({ label, marker, onRemove, touch = false, selected, onClick
           type="button"
           onClick={onRemove}
           aria-label={t('chip.remove', { label })}
-          className="-mr-1 inline-flex h-5 w-5 items-center justify-center rounded-sm text-ink-2 hover:text-ink"
+          className="ds-touch -mr-1 inline-flex h-5 w-5 items-center justify-center rounded-sm text-ink-2 hover:text-ink"
         >
           <Close className="h-3 w-3" strokeWidth={1.75} aria-hidden />
         </button>

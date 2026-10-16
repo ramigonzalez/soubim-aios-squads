@@ -55,7 +55,9 @@
   "more": {
     "approvals": "Aguardando aprovação",
     "share": "Compartilhar com o cliente",
-    "account": "Conta"
+    "account": "Conta",
+    "edit": "Editar projeto",
+    "fathomRules": "Regras do Fathom"
   },
   "skipToContent": "Pular para o conteúdo",
   "workspace": "Escritório"

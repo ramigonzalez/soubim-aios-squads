@@ -37,7 +37,7 @@ export function SegmentedControl<T extends string>({ value, onValueChange, optio
           value={option.value}
           disabled={option.disabled}
           className={cn(
-            'whitespace-nowrap rounded-sm px-2.5 py-1 text-caption font-medium text-ink-2 transition-colors duration-fast ease-promem',
+            'ds-touch whitespace-nowrap rounded-sm px-2.5 py-1 text-caption font-medium text-ink-2 transition-colors duration-fast ease-promem',
             'hover:text-ink disabled:cursor-not-allowed disabled:opacity-45',
             'data-[state=checked]:bg-surface data-[state=checked]:font-semibold data-[state=checked]:text-ink data-[state=checked]:shadow-xs',
           )}

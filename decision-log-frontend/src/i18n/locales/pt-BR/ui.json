@@ -57,7 +57,12 @@
     "daysLeft_one": "falta {{count}} dia",
     "daysLeft_other": "faltam {{count}} dias",
     "todayMarker": "Hoje",
-    "progress": "{{name}} · {{percent}}% da etapa"
+    "progress": "{{name}} · {{percent}}% da etapa",
+    "current": "atual",
+    "stepperLine": "Hoje {{date}} · {{percent}}% da etapa · entrega em {{end}}",
+    "stepperBefore": "Começa em {{date}}",
+    "stepperDone": "Todas as etapas concluídas",
+    "stepperGap": "Hoje {{date}} · próxima etapa em {{next}}"
   },
   "date": {
     "today": "hoje",
