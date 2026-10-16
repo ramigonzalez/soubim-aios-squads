@@ -13,6 +13,8 @@ import { safeRedirect } from '../lib/safeRedirect'
 import { useAuthStore } from '../store/authStore'
 import { useOrganizationStore } from '../store/organizationStore'
 import { homePath } from '../components/common/PlatformRoute'
+import { AuthShell } from '../components/templates/AuthShell'
+import { Banner, Button, Spinner } from '../design-system'
 
 /** Reasons with a specific message (backend callback fragment `error=` or exchange `detail`). */
 export const GOOGLE_ERROR_REASONS = [
@@ -91,24 +93,22 @@ export default function GoogleCallback() {
   }, [navigate, pending, queryClient, setActiveOrganizationId, setAuth])
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl border border-slate-100 p-8 space-y-4">
-        {error ? (
-          <>
-            <p role="alert" className="text-sm text-red-700">
-              {t(error)}
-            </p>
-            <Link
-              to={pending?.invitationToken ? `/invite/${encodeURIComponent(pending.invitationToken)}` : '/login'}
-              className="block w-full text-center bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700"
-            >
+    <AuthShell>
+      {error ? (
+        <>
+          <Banner tone="danger">{t(error)}</Banner>
+          <Button asChild variant="primary" size="lg" className="w-full">
+            <Link to={pending?.invitationToken ? `/invite/${encodeURIComponent(pending.invitationToken)}` : '/login'}>
               {pending?.invitationToken ? t('google.backToInvitation') : t('google.backToLogin')}
             </Link>
-          </>
-        ) : (
-          <p className="text-sm text-gray-600">{t('google.completing')}</p>
-        )}
-      </div>
-    </main>
+          </Button>
+        </>
+      ) : (
+        <p role="status" className="flex items-center gap-2 text-small text-ink-2">
+          <Spinner />
+          {t('google.completing')}
+        </p>
+      )}
+    </AuthShell>
   )
 }

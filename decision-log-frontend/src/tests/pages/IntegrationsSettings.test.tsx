@@ -136,7 +136,7 @@ describe('IntegrationsSettings (Story 13.3)', () => {
     it('explains when the flow was started by another account (403)', async () => {
       service.confirmFathom.mockRejectedValue({ response: { status: 403 } })
       renderPage({}, pendingUrl)
-      expect(await screen.findByRole('alert')).toHaveTextContent('started from another DecisionLog account')
+      expect(await screen.findByRole('alert')).toHaveTextContent('started from another Promem account')
       expect(screen.getByTestId('location')).toHaveTextContent('fathom=error&reason=other_user')
       expect(screen.getByTestId('location')).not.toHaveTextContent('n-123')
     })
