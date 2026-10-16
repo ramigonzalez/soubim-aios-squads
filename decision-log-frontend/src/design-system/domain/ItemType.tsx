@@ -33,7 +33,7 @@ export function ItemTypeIcon({ type, done = false, size = 16, onToggleDone, clas
           event.stopPropagation()
           onToggleDone()
         }}
-        className={cn('-m-1 inline-flex items-center justify-center rounded-sm p-1 hover:bg-surface-3', className)}
+        className={cn('ds-touch -m-1 inline-flex items-center justify-center rounded-sm p-1 hover:bg-surface-3', className)}
       >
         {icon}
       </button>

@@ -81,7 +81,11 @@
       "previous_other": "{{stage}} concluída com {{count}} marcos"
     },
     "error": "Não foi possível carregar a visão geral",
-    "errorText": "A conexão caiu no meio do caminho. Nada foi perdido."
+    "errorText": "A conexão caiu no meio do caminho. Nada foi perdido.",
+    "stageCard": {
+      "title": "Etapas do projeto",
+      "link": "Ver marcos ›"
+    }
   },
   "timeline": {
     "milestones_one": "{{count}} marco",
@@ -181,7 +185,16 @@
         "due": "Prazo"
       },
       "statementRequired": "A descrição não pode ficar vazia."
-    }
+    },
+    "back": "Voltar",
+    "copyLink": "Copiar link do item",
+    "linkCopied": "Link do item copiado",
+    "copyError": "Não foi possível copiar o link",
+    "previousShort": "Anterior",
+    "nextShort": "Próximo",
+    "listenExcerpt": "Ouvir trecho · {{time}}",
+    "markDone": "Concluir ação",
+    "reopen": "Reabrir ação"
   },
   "toast": {
     "milestoneOn": "Marcado como marco",
@@ -205,7 +218,12 @@
       "clear": "Limpar filtros",
       "clearMenu": "Limpar",
       "searchChip": "“{{q}}”",
-      "periodChip": "{{range}}"
+      "periodChip": "{{range}}",
+      "open": "Filtros",
+      "openCount": "Filtros · {{count}}",
+      "sheet": "Filtros",
+      "show_one": "Ver {{count}} item",
+      "show_other": "Ver {{count}} itens"
     },
     "count_one": "{{count}} item",
     "count_other": "{{count}} itens",

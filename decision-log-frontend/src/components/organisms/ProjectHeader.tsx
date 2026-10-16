@@ -3,6 +3,9 @@
  * eyebrow, project name, description · participants, actions and the StageStrip.
  * Actions: [Exportar PDF] on Marcos · [Enviar documento] on Visão geral and Histórico ·
  * primary [Compartilhar marcos] · [⋯] Editar / Arquivar. Each follows the user's capabilities.
+ * Phones (README §7): the top bar already names the project and its stage, so only the section's
+ * actions stay — Compartilhar on Marcos, Adicionar item / Enviar documento on Histórico.
+ * Editar projeto and Compartilhar com o cliente live in Mais.
  */
 import { useState, type RefObject } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -19,6 +22,7 @@ import {
   MenuTrigger,
   Skeleton,
   StageStrip,
+  useIsMobile,
   useToast,
 } from '../../design-system'
 import { useProject } from '../../hooks/useProject'
@@ -48,7 +52,9 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
   const [shareOpen, setShareOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const mobile = useIsMobile()
 
+  if (mobile && (isLoading || !project)) return null
   if (isLoading || !project) {
     return (
       <header className="flex flex-col gap-3" aria-busy>
@@ -83,6 +89,50 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
   const Download = Icons.download
   const Link = Icons.link
   const showMenu = canManage || canReview
+  const exportMenu = section === 'milestones' && canManage && exportTarget && (
+    <Menu>
+      <MenuTrigger asChild>
+        <Button icon={<Download />} loading={exporting}>
+          {exporting ? t('header.exporting') : t('header.exportPdf')}
+        </Button>
+      </MenuTrigger>
+      <MenuContent>
+        <MenuItem icon={<Download />} onSelect={() => void runExport('pdf')}>
+          {t('header.exportPdf')}
+        </MenuItem>
+        <MenuItem icon={<Download />} onSelect={() => void runExport('jpeg')}>
+          {t('header.exportJpeg')}
+        </MenuItem>
+      </MenuContent>
+    </Menu>
+  )
+
+  if (mobile) {
+    const share = section === 'milestones' && canManage
+    const write = section === 'history' && canWrite
+    if (!share && !write) return null
+    return (
+      <header className="flex flex-wrap items-center gap-2" data-export-exclude>
+        {write && (
+          <>
+            <Button icon={<Icons.add />} onClick={() => navigate(`/projects/${projectId}/items/new`)}>
+              {t('header.addItem')}
+            </Button>
+            <UploadDocumentButton projectId={projectId} />
+          </>
+        )}
+        {share && (
+          <>
+            {exportMenu}
+            <Button variant="primary" icon={<Link />} onClick={() => setShareOpen(true)}>
+              {t('header.share')}
+            </Button>
+            <ShareMilestonesDialog projectId={projectId} open={shareOpen} onOpenChange={setShareOpen} />
+          </>
+        )}
+      </header>
+    )
+  }
 
   return (
     <header className="flex flex-col gap-5" data-export-exclude>
@@ -93,23 +143,7 @@ export function ProjectHeader({ projectId, section, exportTarget }: ProjectHeade
           {description && <p className="text-small text-ink-2">{description}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {section === 'milestones' && canManage && exportTarget && (
-            <Menu>
-              <MenuTrigger asChild>
-                <Button icon={<Download />} loading={exporting}>
-                  {exporting ? t('header.exporting') : t('header.exportPdf')}
-                </Button>
-              </MenuTrigger>
-              <MenuContent>
-                <MenuItem icon={<Download />} onSelect={() => void runExport('pdf')}>
-                  {t('header.exportPdf')}
-                </MenuItem>
-                <MenuItem icon={<Download />} onSelect={() => void runExport('jpeg')}>
-                  {t('header.exportJpeg')}
-                </MenuItem>
-              </MenuContent>
-            </Menu>
-          )}
+          {exportMenu}
           {(section === 'overview' || section === 'history') && canWrite && <UploadDocumentButton projectId={projectId} />}
           {section === 'history' && canWrite && (
             <Button icon={<Icons.add />} onClick={() => navigate(`/projects/${projectId}/items/new`)}>

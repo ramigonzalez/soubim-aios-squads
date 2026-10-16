@@ -44,7 +44,7 @@ export function MilestoneStar({ pressed, onToggle, size = 'row', className }: Mi
         onToggle()
       }}
       className={cn(
-        'inline-flex items-center justify-center rounded-sm hover:bg-surface-3',
+        'ds-touch inline-flex items-center justify-center rounded-sm hover:bg-surface-3',
         size === 'row' ? '-m-1 p-1' : 'h-8 w-8 rounded-md',
         className,
       )}

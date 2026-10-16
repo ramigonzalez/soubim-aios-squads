@@ -41,6 +41,7 @@ import { PageContainer, PageHeader } from '../components/templates/PageContainer
 import { useActiveOrganization } from '../hooks/useOrganizations'
 import { useFathomUnassigned, unassignedDate, FATHOM_UNASSIGNED_KEY } from '../hooks/useFathomUnassigned'
 import { useIngestionUrlSync } from '../hooks/useIngestionUrlSync'
+import { SourceFlagBanner } from '../components/molecules/SourceFlagBanner'
 import { useInboxDecision, useInboxHistory, useInboxPending } from '../hooks/useInbox'
 import { useProjectList } from '../hooks/useProjectList'
 import { useIngestionStore } from '../store/ingestionStore'
@@ -48,7 +49,7 @@ import { ingestionService } from '../services/ingestionService'
 import { integrationsService } from '../services/integrationsService'
 import { formatDay, formatDayTime, formatDuration } from '../lib/format'
 import { sourceDate, sourceTitle } from '../lib/sources'
-import type { Source, SourceFlag, SourceRouting } from '../types/ingestion'
+import type { Source, SourceRouting } from '../types/ingestion'
 import type { FathomUnassignedMeeting } from '../types/integrations'
 
 type Row = { kind: 'source'; id: string; source: Source } | { kind: 'unassigned'; id: string; meeting: FathomUnassignedMeeting }
@@ -341,17 +342,6 @@ function ReasonText({ reason }: { reason: SourceRouting['reasons'][number] }) {
   return <>{t(`reasons.${reason.code}`, reason as Record<string, string | number>)}</>
 }
 
-function FlagBox({ flag }: { flag: SourceFlag }) {
-  const { t } = useTranslation('inbox')
-  const text =
-    flag.code === 'external'
-      ? t('flags.external', { count: flag.count ?? 0, names: (flag.names ?? []).join(', ') })
-      : flag.code === 'duplicate'
-        ? t('flags.duplicate', { title: flag.title, date: formatDayTime(flag.date) })
-        : t('flags.lowConfidence')
-  return <Banner tone={flag.kind === 'warn' ? 'warning' : 'info'}>{text}</Banner>
-}
-
 function DecisionPanel({
   source,
   index,
@@ -410,7 +400,7 @@ function DecisionPanel({
 
       <div className="flex flex-col gap-5 px-5 py-4">
         {(source.flags ?? []).map((flag, i) => (
-          <FlagBox key={i} flag={flag} />
+          <SourceFlagBanner key={i} flag={flag} />
         ))}
         {source.status === 'failed' && (
           <Banner tone="danger" action={<Button size="sm" loading={retry.isLoading} onClick={() => retry.mutate()}>{t('panel.retry')}</Button>}>

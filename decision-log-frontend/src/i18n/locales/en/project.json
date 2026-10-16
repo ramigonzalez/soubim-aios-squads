@@ -81,7 +81,11 @@
       "previous_other": "{{stage}} done with {{count}} milestones"
     },
     "error": "Could not load the overview",
-    "errorText": "The connection dropped. Nothing was lost."
+    "errorText": "The connection dropped. Nothing was lost.",
+    "stageCard": {
+      "title": "Project stages",
+      "link": "See milestones ›"
+    }
   },
   "timeline": {
     "milestones_one": "{{count}} milestone",
@@ -181,7 +185,16 @@
         "due": "Due"
       },
       "statementRequired": "The description can't be empty."
-    }
+    },
+    "back": "Back",
+    "copyLink": "Copy item link",
+    "linkCopied": "Item link copied",
+    "copyError": "Could not copy the link",
+    "previousShort": "Previous",
+    "nextShort": "Next",
+    "listenExcerpt": "Play excerpt · {{time}}",
+    "markDone": "Complete action",
+    "reopen": "Reopen action"
   },
   "toast": {
     "milestoneOn": "Marked as milestone",
@@ -205,7 +218,12 @@
       "clear": "Clear filters",
       "clearMenu": "Clear",
       "searchChip": "“{{q}}”",
-      "periodChip": "{{range}}"
+      "periodChip": "{{range}}",
+      "open": "Filters",
+      "openCount": "Filters · {{count}}",
+      "sheet": "Filters",
+      "show_one": "See {{count}} item",
+      "show_other": "See {{count}} items"
     },
     "count_one": "{{count}} item",
     "count_other": "{{count}} items",

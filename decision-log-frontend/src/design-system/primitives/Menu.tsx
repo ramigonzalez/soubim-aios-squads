@@ -26,7 +26,7 @@ export const MenuContent = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<t
 })
 
 const ITEM =
-  'relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-sm px-2.5 text-small outline-none ' +
+  'relative flex h-8 max-md:h-11 cursor-pointer select-none items-center gap-2 rounded-sm px-2.5 text-small outline-none ' +
   'data-[highlighted]:bg-surface-2 data-[disabled]:cursor-not-allowed data-[disabled]:text-ink-4 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-ink-2'
 
 export interface MenuItemProps extends ComponentPropsWithoutRef<typeof Dropdown.Item> {

@@ -35,6 +35,7 @@ export function DateRange({ value, onChange, placeholder, size = 'toolbar', clas
           className={cn(
             'inline-flex items-center gap-2 whitespace-nowrap rounded-md border px-3 text-small transition-colors duration-fast',
             size === 'form' ? 'h-[38px]' : 'h-9',
+        'max-md:h-11',
             active ? 'border-accent bg-accent-weak text-accent-strong' : 'border-line-strong bg-surface text-ink hover:bg-surface-2',
             className,
           )}

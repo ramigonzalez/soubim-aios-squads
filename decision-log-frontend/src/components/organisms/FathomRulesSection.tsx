@@ -139,7 +139,7 @@ export default function FathomRulesSection({ projectId }: { projectId: string })
         <button
           type="submit"
           disabled={create.isLoading || !value.trim()}
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 max-md:min-h-11"
         >
           {t('fathomRules.add')}
         </button>

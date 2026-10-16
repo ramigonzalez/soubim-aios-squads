@@ -88,7 +88,7 @@ export default function ExternalPeopleSection({ projectId }: { projectId: string
         </div>
       )}
 
-      <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-2">
+      <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-2">
         <input
           type="email"
           value={email}
@@ -100,7 +100,7 @@ export default function ExternalPeopleSection({ projectId }: { projectId: string
         <button
           type="submit"
           disabled={!email.trim() || invite.isLoading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 max-md:min-h-11"
         >
           {t('externals.invite')}
         </button>
@@ -109,7 +109,7 @@ export default function ExternalPeopleSection({ projectId }: { projectId: string
       {link && (
         <div role="status" className="rounded-md bg-green-50 p-3 text-sm text-green-800 space-y-2">
           <p>{t('externals.created', { email: link.email })}</p>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             <input readOnly value={link.url} aria-label={t('externals.linkLabel')} className={`${inputClass} flex-1 bg-white`} />
             <button
               type="button"

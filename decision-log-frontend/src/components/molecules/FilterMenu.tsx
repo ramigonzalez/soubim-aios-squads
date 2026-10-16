@@ -38,7 +38,7 @@ export function FilterMenu<T extends string>({
         <button
           type="button"
           className={cn(
-            'inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-small font-medium transition-colors duration-fast',
+            'ds-touch inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-small font-medium transition-colors duration-fast',
             active ? 'border-accent bg-accent-weak text-accent-strong' : 'border-transparent text-ink-soft hover:bg-surface-2',
           )}
         >

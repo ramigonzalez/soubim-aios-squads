@@ -105,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               type="button"
               onClick={dismiss}
               aria-label={t('toast.dismiss')}
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-on-dark-3 hover:text-on-dark"
+              className="ds-touch inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-on-dark-3 hover:text-on-dark"
             >
               <Close className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
             </button>

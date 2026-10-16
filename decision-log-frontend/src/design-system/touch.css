@@ -1,0 +1,14 @@
+/* Touch targets (README §6, layout: touch targets ≥ 44 px). `.ds-touch` grows the hit area of a
+   small control to 44 × 44 without moving the layout; desktop keeps the dense sizes. */
+@media (max-width: 767px) {
+  .ds-touch { position: relative; }
+  .ds-touch::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

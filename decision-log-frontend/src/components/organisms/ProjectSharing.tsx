@@ -117,7 +117,7 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
         ))}
       </ul>
 
-      <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-2">
+      <form onSubmit={handleInvite} className="flex flex-col md:flex-row gap-2">
         <input
           type="text"
           value={slug}
@@ -141,7 +141,7 @@ export default function ProjectSharing({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!slug.trim() || share.isLoading}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 max-md:min-h-11"
         >
           {t('sharing.invite')}
         </button>

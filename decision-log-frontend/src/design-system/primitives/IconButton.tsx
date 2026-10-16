@@ -13,8 +13,8 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
 }
 
 const SIZES: Record<IconButtonSize, string> = {
-  sm: 'h-8 w-8',
-  md: 'h-9 w-9',
+  sm: 'ds-touch h-8 w-8',
+  md: 'ds-touch h-9 w-9',
   touch: 'h-11 w-11',
 }
 

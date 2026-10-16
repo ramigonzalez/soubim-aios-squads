@@ -286,7 +286,7 @@ export default function ProjectHistory() {
     <PageContainer>
       <ProjectHeader projectId={projectId} section="history" />
 
-      <HistoryFilterBar ref={searchRef} items={all} filters={filters} onChange={update} onClear={clear} active={active} loading={itemsQuery.isLoading} />
+      <HistoryFilterBar ref={searchRef} items={all} filters={filters} onChange={update} onClear={clear} active={active} loading={itemsQuery.isLoading} resultCount={visible.length} />
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">

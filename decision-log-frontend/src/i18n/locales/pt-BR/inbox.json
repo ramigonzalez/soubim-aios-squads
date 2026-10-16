@@ -140,5 +140,16 @@
   },
   "error": "Não foi possível carregar a ingestão",
   "errorText": "A conexão caiu no meio do caminho. Nada foi perdido.",
-  "keyboardHint": "↑↓ navegar · A aprovar · R recusar · Espaço selecionar"
+  "keyboardHint": "↑↓ navegar · A aprovar · R recusar · Espaço selecionar",
+  "approvals": {
+    "title": "Aguardando aprovação",
+    "back": "Voltar para Mais",
+    "empty": "Nada aguardando aprovação",
+    "emptyText": "Fontes novas deste projeto aparecem aqui para você aprovar ou recusar.",
+    "moreItems_one": "+ {{count}} item",
+    "moreItems_other": "+ {{count}} itens",
+    "openInbox": "Abrir na Ingestão",
+    "error": "Não foi possível carregar as aprovações",
+    "noAccess": "Só revisores do escritório aprovam fontes deste projeto."
+  }
 }
