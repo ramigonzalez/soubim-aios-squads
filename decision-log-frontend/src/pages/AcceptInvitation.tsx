@@ -7,6 +7,8 @@ import { ORGANIZATIONS_KEY } from '../hooks/useOrganizations'
 import { useAuthStore } from '../store/authStore'
 import { useOrganizationStore } from '../store/organizationStore'
 import { GoogleSignInButton } from '../components/organisms/GoogleSignInButton'
+import { AuthShell } from '../components/templates/AuthShell'
+import { Banner, Button, Field, Input, Spinner } from '../design-system'
 
 function statusOf(error: unknown): number | undefined {
   return (error as { response?: { status?: number } })?.response?.status
@@ -48,22 +50,24 @@ export default function AcceptInvitation() {
   })
   const reject = useMutation(() => invitationService.reject(token), { onSuccess: () => setRejected(true) })
 
-  const shell = (children: React.ReactNode) => (
-    <main className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl border border-slate-100 p-8 space-y-4">
-        {children}
-      </div>
-    </main>
+  const shell = (children: React.ReactNode, title?: React.ReactNode, description?: React.ReactNode) => (
+    <AuthShell title={title} description={description}>
+      {children}
+    </AuthShell>
   )
 
-  if (rejected) return shell(<p role="status" className="text-sm text-gray-700">{t('accept.rejected')}</p>)
-  if (preview.isLoading) return shell(<p className="text-sm text-gray-600">{t('accept.loading')}</p>)
+  if (rejected) return shell(<p role="status" className="text-small text-ink">{t('accept.rejected')}</p>)
+  if (preview.isLoading)
+    return shell(
+      <p role="status" className="flex items-center gap-2 text-small text-ink-2">
+        <Spinner />
+        {t('accept.loading')}
+      </p>,
+    )
   if (preview.isError || !preview.data) {
     const gone = statusOf(preview.error) === 410
     return shell(
-      <p role="alert" className="text-sm text-red-700">
-        {statusOf(preview.error) === 429 ? t('accept.rateLimited') : gone ? t('accept.gone') : t('accept.notFound')}
-      </p>
+      <Banner tone="danger">{statusOf(preview.error) === 429 ? t('accept.rateLimited') : gone ? t('accept.gone') : t('accept.notFound')}</Banner>,
     )
   }
 
@@ -84,110 +88,77 @@ export default function AcceptInvitation() {
 
   return shell(
     <>
-      <h1 className="text-xl font-bold text-gray-900">
-        {isProject
-          ? t('accept.projectTitle', { organization: inv.organization_name, project: inv.project_name })
-          : t('accept.title', { organization: inv.organization_name })}
-      </h1>
-      <p className="text-sm text-gray-600">
-        {isProject
-          ? t('accept.projectInvitedAs', { email: inv.email })
-          : t('accept.invitedAs', { email: inv.email, role: t(`roles.${inv.role}`) })}
-      </p>
-
       {!inv.account_exists && (
         <form
           onSubmit={e => {
             e.preventDefault()
             createAccount.mutate()
           }}
-          className="space-y-3"
+          className="flex flex-col gap-4"
         >
-          <input
-            aria-label={t('accept.name')}
-            placeholder={t('accept.name')}
-            required
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            aria-label={t('accept.password')}
-            placeholder={t('accept.password')}
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={createAccount.isLoading}
-            className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Field label={t('accept.nameLabel')}>
+            <Input placeholder={t('accept.name')} autoComplete="name" required value={name} onChange={e => setName(e.target.value)} />
+          </Field>
+          <Field label={t('accept.passwordLabel')} help={t('accept.passwordHelp')}>
+            <Input
+              placeholder={t('accept.password')}
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+          </Field>
+          <Button type="submit" variant="primary" size="lg" className="w-full" loading={createAccount.isLoading}>
             {createAccount.isLoading ? t('accept.creating') : t('accept.createAccount')}
-          </button>
+          </Button>
         </form>
       )}
 
       {inv.account_exists && isAuthenticated && sameEmail && (
-        <button
-          onClick={() => acceptExisting.mutate()}
-          disabled={acceptExisting.isLoading}
-          className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-        >
+        <Button variant="primary" size="lg" className="w-full" loading={acceptExisting.isLoading} onClick={() => acceptExisting.mutate()}>
           {acceptExisting.isLoading ? t('accept.accepting') : t('accept.accept')}
-        </button>
+        </Button>
       )}
 
       {inv.account_exists && isAuthenticated && !sameEmail && (
-        <div className="space-y-3">
-          <p role="alert" className="text-sm text-amber-800">
-            {t('accept.wrongAccount', { current: user?.email, email: inv.email })}
-          </p>
-          <button
-            onClick={() => clearAuth()}
-            className="w-full border border-gray-300 rounded-lg py-2 text-sm font-medium hover:bg-gray-50"
-          >
+        <div className="flex flex-col gap-3">
+          <div role="alert">
+            <Banner tone="warning">{t('accept.wrongAccount', { current: user?.email, email: inv.email })}</Banner>
+          </div>
+          <Button size="lg" className="w-full" onClick={() => clearAuth()}>
             {t('accept.logout')}
-          </button>
+          </Button>
         </div>
       )}
 
       {inv.account_exists && !isAuthenticated && (
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600">{t('accept.haveAccount')}</p>
-          <Link
-            to={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}
-            className="block w-full text-center bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700"
-          >
-            {t('accept.login')}
-          </Link>
+        <div className="flex flex-col gap-3">
+          <p className="text-small text-ink-2">{t('accept.haveAccount')}</p>
+          <Button asChild variant="primary" size="lg" className="w-full">
+            <Link to={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}>{t('accept.login')}</Link>
+          </Button>
         </div>
       )}
 
       {/* Story 12.8: accept with the Google account of the invited email (new or existing user) */}
-      {!(inv.account_exists && isAuthenticated) && (
-        <GoogleSignInButton labelKey="google.continue" invitationToken={token} />
-      )}
+      {!(inv.account_exists && isAuthenticated) && <GoogleSignInButton labelKey="google.continue" invitationToken={token} />}
 
       {/* Story 12.15: the invitee may say no (the organization sees it as "recusado") */}
       {isProject && (
-        <button
-          onClick={() => reject.mutate()}
-          disabled={reject.isLoading}
-          className="w-full border border-gray-300 rounded-lg py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
+        <Button variant="ghost" size="lg" className="w-full" loading={reject.isLoading} onClick={() => reject.mutate()}>
           {t('accept.reject')}
-        </button>
+        </Button>
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-red-700">
-          {statusOf(error) === 429 ? t('accept.rateLimited') : errorMessage || t('accept.error')}
-        </p>
+        <Banner tone="danger">{statusOf(error) === 429 ? t('accept.rateLimited') : errorMessage || t('accept.error')}</Banner>
       )}
-    </>
+    </>,
+    isProject
+      ? t('accept.projectTitle', { organization: inv.organization_name, project: inv.project_name })
+      : t('accept.title', { organization: inv.organization_name }),
+    isProject ? t('accept.projectInvitedAs', { email: inv.email }) : t('accept.invitedAs', { email: inv.email, role: t(`roles.${inv.role}`) }),
   )
 }

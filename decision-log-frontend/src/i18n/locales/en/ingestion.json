@@ -154,7 +154,8 @@
     "visibility": "Visibility",
     "visibilityInternal": "Internal — only your organization sees it",
     "visibilityShared": "Shared — every organization on the project sees it",
-    "sharedAdminOnly": "Only an owner or admin of your organization can share a meeting."
+    "sharedAdminOnly": "Only an owner or admin of your organization can share a meeting.",
+    "loadError": "Could not load the projects."
   },
   "unassigned": {
     "noProject": "No project",

@@ -3,14 +3,13 @@
  *
  * The video is PUT straight to storage with a signed URL (progress bar); the transcript is read in
  * the browser (UTF-8, Latin-1 fallback) and sent as text. The meeting then waits in Ingestão as
- * pending. Visibility is not offered yet: it arrives with Story 12.4.
+ * pending. Internal / shared visibility (Story 12.4). Built on the Promem design system Dialog.
  */
 
 import { useRef, useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
 import { useQuery, useQueryClient } from 'react-query'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { Banner, Button, cn, Dialog, Field, Icons, Input, Select, SkeletonRows } from '../../design-system'
 import { uploadService } from '../../services/uploadService'
 import { decodeText, titleFromFileName, transcriptProblem, transcriptTextProblem, videoProblem } from '../../lib/upload'
 import type { FileProblem } from '../../lib/upload'
@@ -56,7 +55,7 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  const { data: projects, isLoading } = useQuery('upload-projects', uploadService.getProjects, {
+  const { data: projects, isLoading, isError, refetch } = useQuery('upload-projects', uploadService.getProjects, {
     enabled: open,
     staleTime: 60_000,
   })
@@ -168,156 +167,133 @@ export function AddMeetingDialog({ open, onClose }: AddMeetingDialogProps) {
     }
   }
 
-  const field = 'mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm'
+  const percent = Math.round(progress * 100)
+  const fileInput =
+    'block w-full min-w-0 text-small text-ink-2 file:mr-3 file:h-9 file:cursor-pointer file:rounded-md file:border file:border-solid ' +
+    'file:border-line-strong file:bg-surface file:px-3 file:text-small file:font-medium file:text-ink hover:file:bg-surface-2 ' +
+    'disabled:cursor-not-allowed disabled:opacity-45 max-md:file:h-11'
 
   return (
-    <Dialog.Root open={open} onOpenChange={o => !o && close()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-          <div className="flex items-start justify-between gap-4">
-            <Dialog.Title className="text-lg font-semibold text-gray-900">{t('addMeeting.title')}</Dialog.Title>
-            <Dialog.Close className="rounded p-1 text-gray-500 hover:bg-gray-100" aria-label={t('addMeeting.close')}>
-              <X className="h-4 w-4" />
-            </Dialog.Close>
-          </div>
-          <Dialog.Description className="mt-1 text-sm text-gray-600">{t('addMeeting.description')}</Dialog.Description>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && close()}
+      title={t('addMeeting.title')}
+      description={t('addMeeting.description')}
+      footer={
+        <>
+          <Button onClick={close}>{t('addMeeting.cancel')}</Button>
+          <Button type="submit" form="add-meeting-form" variant="primary" disabled={!canSubmit} icon={<Icons.upload />}>
+            {stage === 'error' ? t('addMeeting.retry') : t('addMeeting.submit')}
+          </Button>
+        </>
+      }
+    >
+      <form id="add-meeting-form" noValidate onSubmit={handleSubmit} className="flex flex-col gap-4 py-1">
+        {isLoading && <SkeletonRows rows={1} rowClassName="h-row-2" />}
+        {isError && (
+          <Banner
+            tone="danger"
+            action={
+              <Button size="sm" variant="link" onClick={() => void refetch()}>
+                {t('ui:state.retry')}
+              </Button>
+            }
+          >
+            {t('addMeeting.loadError')}
+          </Banner>
+        )}
+        {projects && projects.length === 0 && <Banner>{t('addMeeting.noProjects')}</Banner>}
+        {projects && projects.length > 0 && (
+          <Field label={t('addMeeting.project')}>
+            <Select
+              value={projectId}
+              placeholder={t('addMeeting.selectProject')}
+              disabled={busy}
+              onValueChange={(value) => {
+                setProjectId(value)
+                if (!projects?.find((p) => p.id === value)?.can_share) setVisibility('internal')
+              }}
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+            />
+          </Field>
+        )}
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            {isLoading && <p className="text-sm text-gray-500">{t('addMeeting.loadingProjects')}</p>}
-            {projects && projects.length === 0 && <p className="text-sm text-gray-600">{t('addMeeting.noProjects')}</p>}
-            {projects && projects.length > 0 && (
-              <label className="block text-sm">
-                <span className="font-medium text-gray-700">{t('addMeeting.project')}</span>
-                <select value={projectId} onChange={e => {
-                    setProjectId(e.target.value)
-                    if (!projects?.find(p => p.id === e.target.value)?.can_share) setVisibility('internal')
-                  }} disabled={busy} className={field}>
-                  <option value="">{t('addMeeting.selectProject')}</option>
-                  {projects.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </label>
-            )}
+        <Field label={t('addMeeting.meetingTitle')}>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} maxLength={500} />
+        </Field>
 
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{t('addMeeting.meetingTitle')}</span>
-              <input value={title} onChange={e => setTitle(e.target.value)} disabled={busy} maxLength={500} className={field} />
-            </label>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Field label={t('addMeeting.date')}>
+            <Input type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} disabled={busy} />
+          </Field>
+          <Field label={t('addMeeting.participants')}>
+            <Input value={participants} onChange={(e) => setParticipants(e.target.value)} disabled={busy} placeholder={t('addMeeting.participantsHint')} />
+          </Field>
+        </div>
 
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{t('addMeeting.date')}</span>
-              <input type="datetime-local" value={occurredAt} onChange={e => setOccurredAt(e.target.value)} disabled={busy} className={field} />
-            </label>
-
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{t('addMeeting.participants')}</span>
-              <input value={participants} onChange={e => setParticipants(e.target.value)} disabled={busy} placeholder={t('addMeeting.participantsHint')} className={field} />
-            </label>
-
-            <fieldset className="text-sm">
-              <legend className="font-medium text-gray-700">{t('addMeeting.visibility')}</legend>
-              <label className="mt-1 flex items-center gap-2 text-gray-700">
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-1.5 text-small font-semibold text-ink">{t('addMeeting.visibility')}</legend>
+          {(['internal', 'shared'] as const).map((value) => {
+            const unavailable = value === 'shared' && (!canShare || busy)
+            const checked = visibility === value
+            return (
+              <label
+                key={value}
+                className={cn(
+                  'flex min-h-touch items-center gap-2.5 rounded-md border px-3 py-2 text-small md:min-h-0',
+                  checked ? 'border-ink bg-surface-2 text-ink' : 'border-line text-ink-soft',
+                  unavailable ? 'cursor-not-allowed text-ink-3' : 'cursor-pointer hover:bg-surface-2',
+                )}
+              >
                 <input
                   type="radio"
                   name="add-meeting-visibility"
-                  value="internal"
-                  checked={visibility === 'internal'}
-                  disabled={busy}
-                  onChange={() => setVisibility('internal')}
+                  value={value}
+                  checked={checked}
+                  disabled={value === 'shared' ? !canShare || busy : busy}
+                  onChange={() => setVisibility(value)}
+                  className="h-4 w-4 shrink-0 accent-ink"
                 />
-                {t('addMeeting.visibilityInternal')}
+                {value === 'internal' ? t('addMeeting.visibilityInternal') : t('addMeeting.visibilityShared')}
               </label>
-              <label className={`mt-1 flex items-center gap-2 ${projectId && !canShare ? 'text-gray-400' : 'text-gray-700'}`}>
-                <input
-                  type="radio"
-                  name="add-meeting-visibility"
-                  value="shared"
-                  checked={visibility === 'shared'}
-                  disabled={!canShare || busy}
-                  onChange={() => setVisibility('shared')}
-                />
-                {t('addMeeting.visibilityShared')}
-              </label>
-              {projectId && !canShare && <p className="mt-1 text-xs text-gray-500">{t('addMeeting.sharedAdminOnly')}</p>}
-            </fieldset>
+            )
+          })}
+          {projectId && !canShare && <p className="text-caption text-ink-2">{t('addMeeting.sharedAdminOnly')}</p>}
+        </fieldset>
 
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{t('addMeeting.video')}</span>
-              <input
-                type="file"
-                accept=".mp4,.webm,.mov,.m4v,video/*"
-                disabled={busy}
-                onChange={e => pickVideo(e.target.files?.[0])}
-                className="mt-1 block w-full text-sm"
-              />
-            </label>
+        <Field label={t('addMeeting.video')}>
+          <input type="file" accept=".mp4,.webm,.mov,.m4v,video/*" disabled={busy} onChange={(e) => pickVideo(e.target.files?.[0])} className={fileInput} />
+        </Field>
 
-            <label className="block text-sm">
-              <span className="font-medium text-gray-700">{t('addMeeting.transcript')}</span>
-              <input
-                type="file"
-                accept=".txt,text/plain"
-                disabled={busy}
-                onChange={e => void pickTranscript(e.target.files?.[0])}
-                className="mt-1 block w-full text-sm"
-              />
-              <span className="mt-1 block text-xs text-gray-500">{t('addMeeting.transcriptHint')}</span>
-            </label>
+        <Field label={t('addMeeting.transcript')} help={t('addMeeting.transcriptHint')}>
+          <input type="file" accept=".txt,text/plain" disabled={busy} onChange={(e) => void pickTranscript(e.target.files?.[0])} className={fileInput} />
+        </Field>
 
-            {fileError && (
-              <p role="alert" className="text-sm text-red-700">
-                {t(`addMeeting.fileErrors.${fileError.field}.${fileError.problem}`)}
-              </p>
-            )}
+        {fileError && <Banner tone="danger">{t(`addMeeting.fileErrors.${fileError.field}.${fileError.problem}`)}</Banner>}
 
-            {!video && !transcriptFile && <p className="text-xs text-gray-500">{t('addMeeting.needFile')}</p>}
-            {video && !transcriptFile && <p className="text-xs text-gray-500">{t('addMeeting.videoOnlyNote')}</p>}
+        {!video && !transcriptFile && <p className="text-caption text-ink-2">{t('addMeeting.needFile')}</p>}
+        {video && !transcriptFile && <Banner tone="warning">{t('addMeeting.videoOnlyNote')}</Banner>}
 
-            {(stage === 'uploading' || stage === 'saving') && (
-              <div>
-                <div
-                  role="progressbar"
-                  aria-label={t('addMeeting.progress')}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(progress * 100)}
-                  className="h-2 w-full overflow-hidden rounded bg-gray-200"
-                >
-                  <div className="h-full bg-blue-600 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
-                </div>
-                <p className="mt-1 text-xs text-gray-600">
-                  {stage === 'uploading' ? t('addMeeting.uploading', { percent: Math.round(progress * 100) }) : t('addMeeting.saving')}
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <p role="alert" className="text-sm text-red-700">
-                {t(`addMeeting.errors.${error}`)}
-              </p>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={close}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                {t('addMeeting.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-              >
-                {stage === 'error' ? t('addMeeting.retry') : t('addMeeting.submit')}
-              </button>
+        {busy && (
+          <div className="flex flex-col gap-1.5">
+            <div
+              role="progressbar"
+              aria-label={t('addMeeting.progress')}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent}
+              className="h-2 w-full overflow-hidden rounded-sm bg-surface-sunk"
+            >
+              <div className="h-full bg-ink transition-all duration-base ease-promem" style={{ width: `${percent}%` }} />
             </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            <p className="font-mono text-mono text-ink-2">
+              {stage === 'uploading' ? t('addMeeting.uploading', { percent }) : t('addMeeting.saving')}
+            </p>
+          </div>
+        )}
+
+        {error && <Banner tone="danger">{t(`addMeeting.errors.${error}`)}</Banner>}
+      </form>
+    </Dialog>
   )
 }

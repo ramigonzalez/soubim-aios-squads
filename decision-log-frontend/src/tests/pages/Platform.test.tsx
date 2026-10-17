@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import Platform from '../../pages/Platform'
 import api from '../../services/api'
+import { ToastProvider, TooltipProvider } from '../../design-system'
 
 const ORGS = [
   {
@@ -29,14 +30,19 @@ function setup() {
     if (url === '/platform/organizations/org-1')
       return { data: { ...ORGS[0], members: [{ name: 'Ana Owner', email: 'ana@acme.com', role: 'owner' }] } }
     if (url === '/platform/invitations') return { data: { invitations: INVITATIONS } }
+    if (url === '/platform/leads') return { data: { leads: [] } }
     return { data: {} }
   })
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <Platform />
-      </MemoryRouter>
+      <TooltipProvider>
+        <ToastProvider>
+          <MemoryRouter>
+            <Platform />
+          </MemoryRouter>
+        </ToastProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }
@@ -44,29 +50,41 @@ function setup() {
 describe('Platform page (Story 12.13)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    // Radix Select needs these in the DOM test environment
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
   })
 
   it('lists organizations with counts and status', async () => {
     setup()
     expect(await screen.findByText('Acme')).toBeInTheDocument()
     expect(screen.getByText(/Members 3 · Projects 2/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Status of Acme')).toHaveValue('active')
-    expect(screen.getByLabelText('Status of Late Co')).toHaveValue('payment_pending')
+    expect(screen.getByRole('combobox', { name: 'Status of Acme' })).toHaveTextContent('Active')
+    expect(screen.getByRole('combobox', { name: 'Status of Late Co' })).toHaveTextContent('Payment pending')
   })
 
   it('changes the status; blocking asks for confirmation first', async () => {
     const patch = vi.spyOn(api, 'patch').mockResolvedValue({ data: { ...ORGS[0], status: 'payment_pending' } })
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
     setup()
-    const select = await screen.findByLabelText('Status of Acme')
+    const select = await screen.findByRole('combobox', { name: 'Status of Acme' })
 
-    await userEvent.selectOptions(select, 'payment_pending')
+    await userEvent.click(select)
+    await userEvent.click(await screen.findByRole('option', { name: 'Payment pending' }))
     expect(patch).toHaveBeenCalledWith('/platform/organizations/org-1', { status: 'payment_pending' })
-    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    await userEvent.selectOptions(select, 'blocked') // cancelled
+    await userEvent.click(select)
+    await userEvent.click(await screen.findByRole('option', { name: 'Blocked' }))
+    let dialog = await screen.findByRole('dialog', { name: 'Block Acme?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' })) // cancelled
     expect(patch).toHaveBeenCalledTimes(1)
-    await userEvent.selectOptions(select, 'blocked')
+
+    await userEvent.click(select)
+    await userEvent.click(await screen.findByRole('option', { name: 'Blocked' }))
+    dialog = await screen.findByRole('dialog', { name: 'Block Acme?' })
+    expect(within(dialog).getByText(/Its members lose access/)).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Block organization' }))
     expect(patch).toHaveBeenLastCalledWith('/platform/organizations/org-1', { status: 'blocked' })
   })
 
@@ -98,6 +116,9 @@ describe('Platform page (Story 12.13)', () => {
     expect(await screen.findByText('NewCo')).toBeInTheDocument()
     expect(screen.getByText('ceo@newco.com')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Revoke' }))
+    expect(del).not.toHaveBeenCalled() // irreversible: confirmed in a dialog first
+    const dialog = await screen.findByRole('dialog', { name: 'Revoke invitation?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Revoke invitation' }))
     expect(del).toHaveBeenCalledWith('/platform/invitations/inv-1')
   })
 })

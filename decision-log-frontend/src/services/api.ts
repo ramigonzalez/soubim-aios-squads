@@ -37,8 +37,8 @@ api.interceptors.response.use(
       localStorage.removeItem('auth_user')
       localStorage.removeItem(ACTIVE_ORGANIZATION_KEY)
       window.location.href = '/login?blocked=1'
-    } else if (error.response?.status === 401) {
-      // Clear token and redirect to login
+    } else if (error.response?.status === 401 && url !== '/auth/login') {
+      // Clear token and redirect to login (a wrong password on the login itself stays on the page with its message)
       localStorage.removeItem('access_token')
       localStorage.removeItem(ACTIVE_ORGANIZATION_KEY)
       window.location.href = '/login'

@@ -21,6 +21,8 @@ from app.services.project_externals import external_user_ids
 from app.services.thumbnails import thumbnail_url
 from app.services.extraction_runs import active_items_filter
 from app.services.item_review import capture_original
+from app.services.similar_items import similar_items
+from app.services.meeting_view import participant_names
 from app.services.access import (
     ADMIN,
     APPROVED,
@@ -74,6 +76,10 @@ def _item_to_response(item: ProjectItem, show_original: bool = False, externals:
             summary=item.source.ai_summary,
             visibility=item.source.visibility,
             thumbnail_url=thumbnail_url(item.source),  # Story 13.12
+            duration_minutes=item.source.duration_minutes,
+            participants=participant_names(item.source.participants),
+            label=item.source.source_label,
+            meeting_type=item.source.meeting_type,
         ).model_dump()
 
     return {
@@ -105,9 +111,11 @@ def _item_to_response(item: ProjectItem, show_original: bool = False, externals:
         "original": item.original if show_original else None,
         "created_by_name": item.creator.name if item.creator else None,
         "created_by_external": item.created_by is not None and str(item.created_by) in (externals or ()),
+        "occurred_at": item.occurred_at.isoformat() if item.occurred_at else None,
         "created_at": item.created_at.isoformat() if item.created_at else None,
         "updated_at": item.updated_at.isoformat() if item.updated_at else None,
     }
+
 
 
 def _compute_facets(db: Session, project_id: str, user, include_rejected: bool = False) -> dict:
@@ -298,6 +306,31 @@ async def get_project_item(
             **project_capabilities(db, user, project)}
 
 
+@router.get("/projects/{project_id}/items/{item_id}/similar")
+async def get_similar_items(
+    project_id: str,
+    item_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    limit: int = Query(5, ge=1, le=20),
+):
+    """Promem revamp G11: items like this one, each with a reason
+    (``same_source`` · ``same_discipline`` · ``similar_topic``), for the item panel's "Similares" tab."""
+    user = _get_user(request)
+    project = _check_project_access(db, project_id, user)
+    item = db.query(ProjectItem).filter(ProjectItem.id == item_id, ProjectItem.project_id == project_id).first()
+    if not item_visible(db, user, item):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Project item {item_id} not found")
+    owner_side = reaches_through_owner(db, user, project)
+    externals = external_user_ids(db, project)
+    return {
+        "items": [
+            {**_item_to_response(other, show_original=owner_side, externals=externals), "reason": reason}
+            for other, reason, _score in similar_items(db, user, item, limit)
+        ]
+    }
+
+
 @router.post("/projects/{project_id}/items", status_code=status.HTTP_201_CREATED)
 async def create_project_item(
     project_id: str,
@@ -321,6 +354,8 @@ async def create_project_item(
         source_type="manual_input",
         statement=body.statement,
         decision_statement=body.statement,
+        title=(body.title or "").strip() or None,
+        occurred_at=body.occurred_at,
         who=body.who,
         timestamp="",
         discipline=body.affected_disciplines[0].value if body.affected_disciplines else "general",
@@ -372,6 +407,10 @@ async def update_project_item(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only organization admins can toggle milestone status",
             )
+        if body.is_milestone and not item.is_milestone:
+            # Promem revamp Phase 4e: "X marcou como marco" notifications
+            item.milestone_at = datetime.utcnow()
+            item.milestone_by = user.id
         item.is_milestone = body.is_milestone
 
     if body.is_done is not None:

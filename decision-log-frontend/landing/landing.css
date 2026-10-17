@@ -1,0 +1,37 @@
+/* Promem landing styles: the design-system tokens + the app's Tailwind preset.
+   No raw colours here: everything points at tokens.css. */
+@import '../src/design-system/tokens.css';
+@import '../src/design-system/touch.css';
+@import './fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/* The `hidden` attribute wins over display utilities (client.ts toggles it on flex boxes). */
+[hidden] { display: none !important; }
+
+::selection {
+  background-color: var(--accent-weak);
+  color: var(--ink);
+}
+
+@layer components {
+  /* Sticky header: bg at 92% + blur (README §6.2). */
+  .landing-header {
+    background-color: color-mix(in srgb, var(--bg) 92%, transparent);
+  }
+
+  /* Submit label follows the mode, even without JS. */
+  .lead-form [data-mode-label='pilot'] { display: none; }
+  .lead-form:has(input[name='mode'][value='pilot']:checked) [data-mode-label='pilot'] { display: inline; }
+  .lead-form:has(input[name='mode'][value='pilot']:checked) [data-mode-label='demo'] { display: none; }
+}

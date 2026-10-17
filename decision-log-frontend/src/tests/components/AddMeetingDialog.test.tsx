@@ -32,14 +32,19 @@ function renderDialog(onClose = vi.fn()) {
 }
 
 async function fillCommon(user: ReturnType<typeof userEvent.setup>) {
-  await screen.findByRole('option', { name: 'Obra X' })
-  await user.selectOptions(screen.getByLabelText('Project'), 'p1')
+  await user.click(await screen.findByRole('combobox', { name: 'Project' }))
+  await user.click(await screen.findByRole('option', { name: 'Obra X' }))
   await user.type(screen.getByLabelText('Title'), 'Visita')
 }
 
 describe('AddMeetingDialog (Story 13.5)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    // Radix Select uses pointer capture and scrollIntoView, which happy-dom lacks
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
+
     svc.getProjects.mockResolvedValue([{ id: 'p1', name: 'Obra X', can_share: true }])
     svc.complete.mockResolvedValue({ id: 'src-9', project_id: 'p1', title: 'Visita' })
   })
@@ -111,7 +116,7 @@ describe('AddMeetingDialog (Story 13.5)', () => {
   it('rejects an unsupported video before uploading', async () => {
     const user = userEvent.setup({ applyAccept: false })
     renderDialog()
-    await screen.findByRole('option', { name: 'Obra X' })
+    await screen.findByRole('combobox', { name: 'Project' })
     await user.upload(screen.getByLabelText(/Video/), new File(['x'], 'obra.avi'))
     expect(await screen.findByRole('alert')).toHaveTextContent('Unsupported video type')
     expect(svc.presign).not.toHaveBeenCalled()

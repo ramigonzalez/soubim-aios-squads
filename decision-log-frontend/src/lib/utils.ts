@@ -1,17 +1,13 @@
-import { type ClassValue, clsx } from "clsx"
 import i18n, { dateLocale } from '../i18n'
-import { twMerge } from "tailwind-merge"
 import { CheckCircle2, MessageCircle, Target, Lightbulb, Info, Video, Mail, FileText, PenLine, HelpCircle, FileQuestion } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ItemType, SourceType, Discipline, ProjectItem } from '../types/projectItem'
 
 /**
- * Combine Tailwind CSS classes with proper precedence
- * Used throughout the app for dynamic className composition
+ * Combine Tailwind CSS classes with proper precedence (Promem-aware: knows the
+ * design-system type scale and shadows).
  */
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+export { cn } from '../design-system/cn'
 
 /**
  * Format date for display

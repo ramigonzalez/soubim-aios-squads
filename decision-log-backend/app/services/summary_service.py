@@ -10,6 +10,7 @@ from app.config import settings
 from app.database.models import Source
 from app.database.session import SessionLocal
 from app.services.llm_client import get_llm_client
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def generate_ai_summary(source_id: str) -> None:
             messages=[{"role": "user", "content": prompt}],
         )
 
-        source.ai_summary = response.content[0].text.strip()
+        source.ai_summary = response_text(response).strip()
         db.commit()
         logger.info(f"AI summary generated for source {source_id}")
 

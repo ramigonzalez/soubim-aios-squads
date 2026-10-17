@@ -1,4 +1,5 @@
 {
+  "eyebrow": "Settings",
   "title": "Team",
   "subtitle": "People and invitations of {{organization}}",
   "noAccess": "Only owners and admins can manage the team.",
@@ -17,7 +18,13 @@
     "role": "Role",
     "remove": "Remove",
     "confirmRemove": "Remove {{name}} from this organization?",
-    "error": "Could not update the member."
+    "error": "Could not update the member.",
+    "you": "You",
+    "loadError": "Could not load the members. Nothing was lost.",
+    "roleChanged": "{{name}}'s role changed to {{role}}",
+    "removeTitle": "Remove {{name}}?",
+    "removeText": "{{name}} loses access to {{organization}} and all of its projects immediately. To come back, they will need a new invitation.",
+    "removeConfirm": "Remove person"
   },
   "projects": {
     "hint": "Members and reviewers only see the projects they are assigned to. Reviewers also approve items and meetings of those projects.",
@@ -37,28 +44,38 @@
     "created": "Invitation created for {{email}}. Send them this link (it is shown only once):",
     "copy": "Copy link",
     "copied": "Copied",
-    "error": "Could not create the invitation."
+    "error": "Could not create the invitation.",
+    "description": "Emails are not sent yet: the invitation link appears here for you to copy and send.",
+    "emailPlaceholder": "e.g. maria@firm.com",
+    "link": "Invitation link"
   },
   "pending": {
     "title": "Pending invitations",
     "empty": "No pending invitations.",
     "expires": "expires {{date}}",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "expiresLabel": "expires",
+    "emptyText": "Invitations you send appear here until they are accepted, revoked or expire.",
+    "loadError": "Could not load the pending invitations.",
+    "revokeTitle": "Revoke invitation?",
+    "revokeText": "The link sent to {{email}} stops working immediately. To invite them again, create a new invitation.",
+    "revokeConfirm": "Revoke invitation",
+    "revokeError": "Could not revoke the invitation. Try again."
   },
   "accept": {
     "title": "Join {{organization}}",
-    "loading": "Loading invitation...",
+    "loading": "Loading invitation…",
     "invitedAs": "{{email}} was invited as {{role}}.",
     "notFound": "This invitation does not exist.",
     "gone": "This invitation has already been used, revoked or has expired. Ask for a new one.",
     "name": "Your name",
     "password": "Password (at least 8 characters)",
     "createAccount": "Create account and join",
-    "creating": "Creating...",
+    "creating": "Creating…",
     "haveAccount": "This email already has an account. Log in to accept the invitation.",
     "login": "Log in",
     "accept": "Accept invitation",
-    "accepting": "Joining...",
+    "accepting": "Joining…",
     "wrongAccount": "You are logged in as {{current}}, but this invitation is for {{email}}. Log out and log in with the invited email.",
     "logout": "Log out",
     "error": "Could not accept the invitation.",
@@ -69,6 +86,10 @@
     "projectInvitedAs": "Invitation for {{email}}, with external access to this project only.",
     "reject": "Decline invitation",
     "rejected": "Invitation declined. You can close this page.",
-    "alreadyMember": "You are already a member of this organization."
-  }
+    "alreadyMember": "You are already a member of this organization.",
+    "nameLabel": "Name",
+    "passwordLabel": "Password",
+    "passwordHelp": "At least 8 characters."
+  },
+  "cancel": "Cancel"
 }

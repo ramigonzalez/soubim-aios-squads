@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import i18n from '../../i18n'
@@ -27,6 +27,18 @@ const OPTIONS = [
   { id: 'f2', name: 'Outro', shared_by: 'ana@eusoubim.com', shared_at: null, url: null },
 ]
 
+/** Opens the Radix folder picker once the options have loaded */
+async function openFolders(user: ReturnType<typeof userEvent.setup>) {
+  const picker = await screen.findByRole('combobox', { name: 'Folder' })
+  await waitFor(() => expect(picker).toBeEnabled())
+  await user.click(picker)
+}
+
+async function pickFolder(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+  await openFolders(user)
+  await user.click(await screen.findByRole('option', { name }))
+}
+
 function wrap() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(<QueryClientProvider client={queryClient}><DriveFolderSection projectId="p1" /></QueryClientProvider>)
@@ -35,6 +47,10 @@ function wrap() {
 describe('DriveFolderSection (Story 12.9)', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    // Radix Select uses pointer capture and scrollIntoView, which happy-dom lacks
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.releasePointerCapture = () => undefined
+    Element.prototype.scrollIntoView = () => undefined
     await i18n.changeLanguage('en')
     service.getDriveFolder.mockResolvedValue(EMPTY)
     service.listDriveFolderOptions.mockResolvedValue(OPTIONS)
@@ -43,9 +59,12 @@ describe('DriveFolderSection (Story 12.9)', () => {
   })
 
   it('shows the service account e-mail and the folders shared by the organization', async () => {
+    const user = userEvent.setup()
     wrap()
     expect(await screen.findByRole('heading', { name: 'Google Drive folder' })).toBeInTheDocument()
     expect(screen.getByText(ROBOT)).toBeInTheDocument()
+    expect(screen.getByText('Not connected')).toBeInTheDocument()
+    await openFolders(user)
     expect(await screen.findByRole('option', { name: /D\/SEASON — shared by gabriela@eusoubim.com/ })).toBeInTheDocument()
   })
 
@@ -53,23 +72,23 @@ describe('DriveFolderSection (Story 12.9)', () => {
     service.getDriveFolder.mockRejectedValue({ response: { status: 403 } })
     const { container } = wrap()
     await waitFor(() => expect(service.getDriveFolder).toHaveBeenCalled())
-    await new Promise(resolve => setTimeout(resolve, 0)) // let the rejected query settle
-    expect(container).toBeEmptyDOMElement()
+    await waitFor(() => expect(container).toBeEmptyDOMElement()) // once the rejected query settles
     expect(service.listDriveFolderOptions).not.toHaveBeenCalled()
   })
 
   it('shows an error when the state request fails for another reason', async () => {
     service.getDriveFolder.mockRejectedValue({ response: { status: 500 } })
     wrap()
-    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Could not load the Google Drive folder')
+    expect(within(alert).getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('explains a folder that already feeds another project', async () => {
     service.setDriveFolder.mockRejectedValue({ response: { status: 409, data: { detail: 'folder_in_use' } } })
     const user = userEvent.setup()
     wrap()
-    await screen.findByRole('option', { name: /D\/SEASON/ })
-    await user.selectOptions(screen.getByLabelText('Folder'), 'f1')
+    await pickFolder(user, /D\/SEASON/)
     await user.click(screen.getByRole('button', { name: 'Use this folder' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('already feeds another project')
   })
@@ -84,8 +103,7 @@ describe('DriveFolderSection (Story 12.9)', () => {
   it('chooses a folder', async () => {
     const user = userEvent.setup()
     wrap()
-    await screen.findByRole('option', { name: /D\/SEASON/ })
-    await user.selectOptions(screen.getByLabelText('Folder'), 'f1')
+    await pickFolder(user, /D\/SEASON/)
     await user.click(screen.getByRole('button', { name: 'Use this folder' }))
     await waitFor(() => expect(service.setDriveFolder).toHaveBeenCalledWith('p1', 'f1'))
     expect(await screen.findByText('Current folder: D/SEASON')).toBeInTheDocument()
@@ -95,8 +113,7 @@ describe('DriveFolderSection (Story 12.9)', () => {
     service.setDriveFolder.mockRejectedValue({ response: { status: 403, data: { detail: 'folder_not_shared_by_organization' } } })
     const user = userEvent.setup()
     wrap()
-    await screen.findByRole('option', { name: /D\/SEASON/ })
-    await user.selectOptions(screen.getByLabelText('Folder'), 'f1')
+    await pickFolder(user, /D\/SEASON/)
     await user.click(screen.getByRole('button', { name: 'Use this folder' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('not shared by someone in your organization')
   })
@@ -107,10 +124,15 @@ describe('DriveFolderSection (Story 12.9)', () => {
     wrap()
     expect(await screen.findByText('Current folder: D/SEASON')).toBeInTheDocument()
     expect(screen.getByText(/Is it still shared/)).toBeInTheDocument()
+    await openFolders(user)
+    expect(await screen.findByRole('option', { name: /Outro/ })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /D\/SEASON/ })).not.toBeInTheDocument() // the current one is not offered again
+    await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: 'Remove folder' }))
-    expect(screen.getByText(/Stop monitoring this folder/)).toBeInTheDocument()
-    await user.click(screen.getAllByRole('button', { name: 'Remove folder' })[0])
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toHaveTextContent(/Stop monitoring this folder/)
+    expect(service.clearDriveFolder).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Remove folder' }))
     await waitFor(() => expect(service.clearDriveFolder).toHaveBeenCalledWith('p1'))
   })
 

@@ -1,6 +1,7 @@
 {
   "title": "Integrations",
-  "subtitle": "Connect your accounts to import meetings into DecisionLog.",
+  "subtitle": "Connect your accounts to import meetings into Promem.",
+  "eyebrow": "Settings",
   "fathom": {
     "name": "Fathom",
     "description": "Import recordings and transcripts of your Fathom meetings.",
@@ -14,22 +15,22 @@
     "notConnected": "Not connected",
     "needsReconnect": "The connection expired. Reconnect your Fathom account.",
     "notConfigured": "The Fathom integration is not available on this server yet.",
-    "confirmDisconnect": "Disconnect your Fathom account? Meetings already imported stay in DecisionLog.",
     "result": {
       "connected": "Fathom account connected.",
       "error": "Could not connect to Fathom. Please try again.",
       "confirming": "Finishing the Fathom connection...",
-      "otherUser": "This Fathom connection was started from another DecisionLog account, so it was discarded. Click \"Connect to Fathom\" yourself to connect.",
+      "otherUser": "This Fathom connection was started from another Promem account, so it was discarded. Click \"Connect to Fathom\" yourself to connect.",
       "expired": "The Fathom connection request expired. Please connect again."
     },
     "errors": {
       "load": "Could not load the integration status.",
-      "action": "Something went wrong. Please try again."
+      "action": "Something went wrong. Please try again.",
+      "disconnect": "Could not disconnect Fathom. Try again."
     },
     "browse": "Browse Fathom meetings",
     "autoImport": {
       "title": "Automatic import",
-      "description": "Off by default. When on, new meetings of your Fathom account arrive in DecisionLog by themselves. Personal meetings of your account would arrive too, so only turn it on if that is what you want.",
+      "description": "Off by default. When on, new meetings of your Fathom account arrive in Promem by themselves. Personal meetings of your account would arrive too, so only turn it on if that is what you want.",
       "enable": "Import new Fathom meetings automatically",
       "routing": "Each meeting goes to the project whose Fathom rules it matches (set them in each project's settings). A meeting that matches no project, or more than one, waits in Ingestion for you to pick the project.",
       "visibility": "Visibility",
@@ -42,7 +43,15 @@
         "forbidden": "You cannot use this visibility.",
         "generic": "Could not save. Try again."
       }
-    }
+    },
+    "expired": "Connection expired",
+    "unavailable": "Unavailable",
+    "disconnectSection": "Disconnect the account",
+    "disconnectHelp": "Meetings already imported stay in Promem.",
+    "disconnectTitle": "Disconnect Fathom?",
+    "disconnectText": "Meetings already imported stay in Promem. Automatic import stops, and to import new meetings you need to connect the account again.",
+    "disconnectConfirm": "Disconnect Fathom",
+    "cancel": "Cancel"
   },
   "meetings": {
     "title": "Fathom meetings",
@@ -107,7 +116,24 @@
         "alreadyImported": "This meeting is already imported into this project.",
         "storage": "Recording storage is not configured on this server.",
         "generic": "Could not import. Try again."
-      }
+      },
+      "meeting": "Meeting",
+      "projectsError": "Could not load the projects."
+    },
+    "emptyText": "Meetings recorded in your Fathom account appear here. After recording a meeting in Fathom, refresh the list.",
+    "refresh": "Refresh list",
+    "clearSearch": "Clear search",
+    "sourceStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "processed": "Processed",
+      "failed": "Failed"
+    },
+    "job": {
+      "queued": "Queued",
+      "running": "Processing",
+      "retrying": "Retrying ({{attempt}}/{{max}})"
     }
   }
 }

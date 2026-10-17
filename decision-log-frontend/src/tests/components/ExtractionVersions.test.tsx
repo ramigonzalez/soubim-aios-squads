@@ -41,7 +41,6 @@ describe('ExtractionVersions (Story 13.7)', () => {
   beforeEach(() => {
     activate.mockReset()
     reExtract.mockReset()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   it('lists the versions with model, item count and the active mark', async () => {
@@ -70,16 +69,19 @@ describe('ExtractionVersions (Story 13.7)', () => {
     await userEvent.click(screen.getByRole('button', { name: /Versions/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Use this version' }))
 
-    expect(window.confirm).toHaveBeenCalled()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Show version 1 everywhere?')
+    expect(activate).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Use version 1' }))
     expect(activate).toHaveBeenCalledWith('run-1')
   })
 
   it('does not switch when the confirmation is declined', async () => {
     respond()
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<ExtractionVersions sourceId="s1" />)
     await userEvent.click(screen.getByRole('button', { name: /Versions/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Use this version' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     expect(activate).not.toHaveBeenCalled()
   })

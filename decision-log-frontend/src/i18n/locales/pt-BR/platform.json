@@ -1,4 +1,5 @@
 {
+  "eyebrow": "Operação da plataforma",
   "title": "Plataforma",
   "subtitle": "Organizações clientes e convites para novas empresas. Somente contagens: o conteúdo dos clientes não aparece aqui.",
   "organizations": {
@@ -16,7 +17,13 @@
     "hideDetails": "Ocultar",
     "statusLabel": "Situação de {{name}}",
     "statusError": "Não foi possível alterar a situação.",
-    "confirmBlock": "Bloquear {{name}}? Os membros perdem o acesso a esta organização imediatamente."
+    "confirmBlock": "Bloquear {{name}}? Os membros perdem o acesso a esta organização imediatamente.",
+    "count_one": "{{count}} organização cliente",
+    "count_other": "{{count}} organizações clientes",
+    "emptyText": "As organizações aparecem aqui quando alguém aceita um convite para nova empresa.",
+    "statusChanged": "{{name}}: situação alterada para {{status}}",
+    "blockTitle": "Bloquear {{name}}?",
+    "blockConfirm": "Bloquear organização"
   },
   "status": {
     "active": "Ativa",
@@ -27,7 +34,8 @@
     "loading": "Carregando membros...",
     "empty": "Nenhum membro.",
     "error": "Não foi possível carregar os membros.",
-    "membersOf": "Membros de {{name}}"
+    "membersOf": "Membros de {{name}}",
+    "retry": "Tentar de novo"
   },
   "roles": {
     "owner": "Proprietário(a)",
@@ -46,13 +54,55 @@
     "link": "Link do convite",
     "copy": "Copiar link",
     "copied": "Copiado",
-    "error": "Não foi possível criar o convite."
+    "error": "Não foi possível criar o convite.",
+    "companyPlaceholder": "ex.: Arquitetura Exemplo Ltda.",
+    "emailPlaceholder": "ex.: socia@exemplo.com.br"
   },
   "pending": {
     "title": "Convites pendentes",
     "empty": "Nenhum convite pendente.",
     "expires": "expira em {{date}}",
     "revoke": "Revogar",
-    "revokeError": "Não foi possível revogar o convite."
+    "revokeError": "Não foi possível revogar o convite.",
+    "expiresLabel": "expira em",
+    "emptyText": "Os convites para novas empresas aparecem aqui até serem aceitos, revogados ou expirarem.",
+    "loadError": "Não foi possível carregar os convites pendentes.",
+    "revokeTitle": "Revogar convite?",
+    "revokeText": "O link enviado para {{email}} ({{name}}) deixa de funcionar imediatamente e a organização não será criada. Para convidar de novo, crie um novo convite.",
+    "revokeConfirm": "Revogar convite"
+  },
+  "cancel": "Cancelar",
+  "leads": {
+    "title": "Pedidos do site",
+    "subtitle": "Pedidos de demonstração e de piloto feitos no formulário da landing page. O destino final (e-mail ou CRM) ainda será definido; até lá, ficam aqui.",
+    "count_one": "{{count}} pedido · {{open}} em aberto",
+    "count_other": "{{count}} pedidos · {{open}} em aberto",
+    "empty": "Nenhum pedido ainda",
+    "emptyText": "Os pedidos do formulário de contato da landing page aparecem aqui.",
+    "error": "Não foi possível carregar os pedidos",
+    "mode": {
+      "demo": "Demonstração",
+      "pilot": "Piloto gratuito"
+    },
+    "role": {
+      "partner": "Sócio(a) ou diretor(a)",
+      "coordinator": "Coordenador(a) de projetos",
+      "architect": "Arquiteto(a) ou engenheiro(a)",
+      "other": "Outro"
+    },
+    "teamSize": {
+      "1-9": "1 a 9 pessoas",
+      "10-24": "10 a 24 pessoas",
+      "25-50": "25 a 50 pessoas",
+      "50+": "Mais de 50"
+    },
+    "markHandled": "Marcar como atendido",
+    "reopen": "Reabrir",
+    "handled": "Atendido por {{name}} · {{date}}",
+    "handledToast": "Pedido de {{name}} marcado como atendido",
+    "updateError": "Não foi possível atualizar o pedido.",
+    "whatsapp": "WhatsApp {{phone}}",
+    "handledBadge": "Atendido",
+    "handledOn": "Atendido em {{date}}"
   }
 }

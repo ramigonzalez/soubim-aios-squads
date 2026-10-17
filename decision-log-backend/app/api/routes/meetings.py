@@ -6,12 +6,29 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
 from app.database.session import get_db
-from app.services.access import can_change_visibility, require_source_access
+from app.services.access import (
+    READ,
+    WRITE,
+    can_change_visibility,
+    has_access,
+    project_access_level,
+    require_project_access,
+    require_source_access,
+)
+from app.services.meeting_view import (
+    apply_speaker_corrections,
+    corrections_for,
+    item_counts,
+    participant_names,
+    project_meetings,
+    speaker_candidates,
+)
+from app.database.models import TranscriptSpeakerCorrection
 from app.services.project_externals import external_user_ids
 from app.services.thumbnails import thumbnail_url
 from app.services.recordings import (
@@ -50,8 +67,15 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
         "occurred_at": source.occurred_at.isoformat() if source.occurred_at else None,
         "duration_minutes": source.duration_minutes,
         "summary": source.ai_summary,
-        "transcript": source.raw_content,
+        # Promem revamp G4: speaker corrections applied; the stored transcript is unchanged
+        "transcript": apply_speaker_corrections(source.raw_content, corrections_for(db, source.id)),
         "recording": recording,
+        # Promem revamp: header pills, tool label and candidates for uncertain speakers
+        "participants": participant_names(source.participants),
+        "label": source.source_label,
+        "meeting_type": source.meeting_type,
+        "speaker_candidates": speaker_candidates(db, source),
+        "can_correct_speakers": _can_write(db, user, source),
         "thumbnail_url": thumbnail_url(source),  # Story 13.12: only after the access + visibility check above
         # Story 12.4
         "visibility": source.visibility,
@@ -60,6 +84,69 @@ async def get_meeting(source_id: UUID, db: Session = Depends(get_db), user=Depen
         "created_by_name": source.creator.name if source.creator else None,
         "created_by_external": source.created_by is not None
         and str(source.created_by) in external_user_ids(db, source.project),
+    }
+
+
+def _can_write(db: Session, user, source) -> bool:
+    return has_access(project_access_level(db, user, source.project), WRITE)
+
+
+class SpeakerCorrection(BaseModel):
+    start: int = Field(..., ge=0, description="Turn start, seconds from the beginning of the recording")
+    speaker: str = Field(..., min_length=1, max_length=255)
+
+
+@router.put("/sources/{source_id}/speakers")
+async def correct_speaker(
+    source_id: UUID, body: SpeakerCorrection, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    """Promem revamp G4: pick who spoke in a turn the transcription marked as uncertain.
+
+    Needs write access to the project. Stored as a correction (upsert per turn); the meeting endpoint
+    applies it, so the transcript, the item excerpts and later re-extractions see the right name.
+    """
+    source = require_source_access(db, user, source_id, WRITE)
+    speaker = body.speaker.strip()
+    row = (
+        db.query(TranscriptSpeakerCorrection)
+        .filter(TranscriptSpeakerCorrection.source_id == source.id, TranscriptSpeakerCorrection.turn_start == body.start)
+        .one_or_none()
+    )
+    if row is None:
+        row = TranscriptSpeakerCorrection(source_id=source.id, turn_start=body.start, speaker=speaker, corrected_by=user.id)
+        db.add(row)
+    else:
+        row.speaker = speaker
+        row.corrected_by = user.id
+    db.commit()
+    return {"start": body.start, "speaker": speaker}
+
+
+@router.get("/projects/{project_id}/meetings")
+async def list_project_meetings(project_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Promem revamp G3: the project's approved meetings for the Reuniões list, newest first,
+    with duration, tool, participants, AI summary and the items extracted from each (by type)."""
+    require_project_access(db, user, project_id, READ)
+    meetings = project_meetings(db, user, project_id)
+    counts = item_counts(db, user, [m.id for m in meetings])
+    return {
+        "meetings": [
+            {
+                "id": str(m.id),
+                "title": m.title,
+                "occurred_at": m.occurred_at.isoformat() if m.occurred_at else None,
+                "duration_minutes": m.duration_minutes,
+                "label": m.source_label,
+                "meeting_type": m.meeting_type,
+                "participants": participant_names(m.participants),
+                "summary": m.ai_summary,
+                "visibility": m.visibility,
+                "thumbnail_url": thumbnail_url(m),
+                "item_counts": counts.get(str(m.id), {}),
+                "item_count": sum(counts.get(str(m.id), {}).values()),
+            }
+            for m in meetings
+        ]
     }
 
 

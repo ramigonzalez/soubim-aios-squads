@@ -93,6 +93,7 @@ _PUBLIC_RULES: List[Tuple[str, Rule]] = [
     ("/api/fathom/webhook/", Rule("webhook_fathom", lambda: settings.rate_limit_webhook, _fathom_webhook_key)),
     ("/api/webhooks/", Rule("webhook", lambda: settings.rate_limit_webhook, _ip_key)),
     ("/api/shared/", Rule("public_link", lambda: settings.rate_limit_public_link, _ip_key)),
+    ("/api/leads", Rule("leads", lambda: settings.rate_limit_leads, _ip_key)),  # Promem revamp Phase 5
     ("/api/recordings/", Rule("public_link", lambda: settings.rate_limit_public_link, _ip_key)),
 ]
 _LOGIN = Rule("login_ip", lambda: settings.rate_limit_login_ip, _ip_key)

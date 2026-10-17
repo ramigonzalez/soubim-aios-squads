@@ -32,6 +32,12 @@ export interface Meeting {
   /** Story 12.15: who added the meeting; "Externo" badge when they are an external person */
   created_by_name?: string | null
   created_by_external?: boolean
+  /** Promem revamp: header pills, tool, candidates for uncertain speakers (G4) */
+  participants?: string[]
+  label?: string | null
+  meeting_type?: string | null
+  speaker_candidates?: string[]
+  can_correct_speakers?: boolean
 }
 
 /**
@@ -74,5 +80,14 @@ export function useSetMeetingVisibility(sourceId: string) {
         void queryClient.invalidateQueries('milestones')
       },
     }
+  )
+}
+
+/** Promem revamp G4: pick who spoke in an uncertain turn; the meeting is refetched with the name. */
+export function useCorrectSpeaker(sourceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation<{ start: number; speaker: string }, Error, { start: number; speaker: string }>(
+    async (body) => (await api.put(`/sources/${sourceId}/speakers`, body)).data,
+    { onSuccess: () => queryClient.invalidateQueries(['meeting', sourceId]) },
   )
 }

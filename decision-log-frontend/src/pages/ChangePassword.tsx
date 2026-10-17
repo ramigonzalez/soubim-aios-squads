@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { changePasswordErrorKey, useChangePassword } from '../hooks/useChangePassword'
+import { Banner, Button, Field, Input } from '../design-system'
+import { FormSection, FormShell } from '../components/templates/FormShell'
 
 /** Same minimum as the backend (invitation accept, Story 12.5). */
 export const PASSWORD_MIN_LENGTH = 8
@@ -47,78 +49,36 @@ export default function ChangePassword() {
   }
 
   const errorKey = localError ?? (change.isError ? changePasswordErrorKey(change.error) : null)
-  const field = 'mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm'
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <header>
-          <h1 className="text-2xl font-bold text-gray-900">{t('changePassword.title')}</h1>
-          <p className="mt-1 text-sm text-gray-600">{t('changePassword.subtitle')}</p>
-        </header>
-        <form onSubmit={submit} className="bg-white rounded-lg border border-gray-200 p-4 space-y-4" noValidate>
-          <div>
-            <label htmlFor="current-password" className="block text-sm font-medium text-gray-700">
-              {t('changePassword.current')}
-            </label>
-            <input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={current}
-              onChange={edit(setCurrent)}
-              className={field}
-            />
+    <FormShell
+      eyebrow={t('changePassword.eyebrow')}
+      title={t('changePassword.title')}
+      subtitle={t('changePassword.subtitle')}
+      onSubmit={submit}
+      footer={
+        <Button type="submit" variant="primary" loading={change.isLoading} disabled={!current || !next || !confirm}>
+          {change.isLoading ? t('changePassword.saving') : t('changePassword.submit')}
+        </Button>
+      }
+    >
+      <FormSection title={t('changePassword.section')}>
+        <Field label={t('changePassword.current')}>
+          <Input id="current-password" type="password" autoComplete="current-password" required value={current} onChange={edit(setCurrent)} />
+        </Field>
+        <Field label={t('changePassword.new')} help={t('changePassword.hint', { n: PASSWORD_MIN_LENGTH })}>
+          <Input id="new-password" type="password" autoComplete="new-password" required value={next} onChange={edit(setNext)} />
+        </Field>
+        <Field label={t('changePassword.confirm')}>
+          <Input id="confirm-password" type="password" autoComplete="new-password" required value={confirm} onChange={edit(setConfirm)} />
+        </Field>
+        {errorKey && <Banner tone="danger">{t(errorKey, { n: PASSWORD_MIN_LENGTH })}</Banner>}
+        {done && (
+          <div role="status">
+            <Banner>{t('changePassword.success')}</Banner>
           </div>
-          <div>
-            <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">
-              {t('changePassword.new')}
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={next}
-              onChange={edit(setNext)}
-              className={field}
-            />
-            <p className="mt-1 text-xs text-gray-500">{t('changePassword.hint', { n: PASSWORD_MIN_LENGTH })}</p>
-          </div>
-          <div>
-            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
-              {t('changePassword.confirm')}
-            </label>
-            <input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={confirm}
-              onChange={edit(setConfirm)}
-              className={field}
-            />
-          </div>
-          {errorKey && (
-            <p role="alert" className="text-sm text-red-700">
-              {t(errorKey, { n: PASSWORD_MIN_LENGTH })}
-            </p>
-          )}
-          {done && (
-            <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">
-              {t('changePassword.success')}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={change.isLoading || !current || !next || !confirm}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {change.isLoading ? t('changePassword.saving') : t('changePassword.submit')}
-          </button>
-        </form>
-      </div>
-    </main>
+        )}
+      </FormSection>
+    </FormShell>
   )
 }

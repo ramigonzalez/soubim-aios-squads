@@ -15,6 +15,7 @@ from typing import Callable, Dict
 from sqlalchemy.orm import Session
 
 from app.database.models import Source
+from app.services import candidate_preview as _candidate_preview  # noqa: F401  Promem revamp G2: queues a preview for each new pending source
 from app.database.session import SessionLocal
 from app.services import jobs
 from app.services.extraction_v2 import ExtractionError
@@ -62,6 +63,13 @@ def handle_fathom_preview(payload: dict) -> None:
     fathom_previews.run(payload["preview_id"])
 
 
+def handle_preview_candidates(payload: dict) -> None:
+    """Promem revamp G2: candidate items for a pending source (small model, before approval)."""
+    from app.services import candidate_preview
+
+    candidate_preview.run(payload["source_id"])
+
+
 def _not_implemented(story: str) -> Callable[[dict], None]:
     def handler(payload: dict) -> None:
         raise jobs.PermanentJobError(f"Job type not implemented yet (Story {story})")
@@ -73,6 +81,7 @@ HANDLERS: Dict[str, Callable[[dict], None]] = {
     "fathom_import": handle_fathom_import,
     "thumbnail": handle_thumbnail,  # Story 13.12
     "fathom_preview": handle_fathom_preview,  # Story 13.15
+    "preview_candidates": handle_preview_candidates,  # Promem revamp G2
     "transcribe": _not_implemented("14.1"),
 }
 

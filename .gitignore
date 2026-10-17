@@ -40,3 +40,9 @@ decision-log-backend/docker/seaweedfs-s3.json
 # Google OAuth client secrets (downloaded from Google Cloud Console)
 *google-oauth*.json
 client_secret_*.json
+
+# Browser automation screenshots/snapshots (local only)
+.playwright-mcp/
+
+# Promem landing build output (npm run landing:build)
+decision-log-frontend/dist-landing/

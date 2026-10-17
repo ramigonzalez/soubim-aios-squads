@@ -41,7 +41,7 @@ class Discipline(str, Enum):
 
 
 class ConsensusEntry(BaseModel):
-    status: str = Field(..., pattern=r"^(AGREE|DISAGREE|ABSTAIN)$")
+    status: str = Field(..., pattern=r"^(AGREE|MIXED|DISAGREE|ABSTAIN)$")  # Promem revamp: MIXED = "Com ressalvas"
     notes: Optional[str] = None
 
 
@@ -55,6 +55,8 @@ class ImpactsSchema(BaseModel):
 
 class ProjectItemCreate(BaseModel):
     statement: str
+    title: Optional[str] = None  # Promem revamp: short headline
+    occurred_at: Optional[datetime] = None  # Promem revamp: when it happened (defaults to now)
     item_type: ItemType
     who: str
     affected_disciplines: List[Discipline]
@@ -81,6 +83,11 @@ class SourceInfo(BaseModel):
     summary: Optional[str] = None  # Story 7.12: meeting summary (Source.ai_summary)
     visibility: Optional[str] = None  # Story 12.4: 'internal' | 'shared'
     thumbnail_url: Optional[str] = None  # Story 13.12: presigned thumbnail, only for visible meetings
+    # Promem revamp: shown in the History source bands
+    duration_minutes: Optional[int] = None
+    participants: List[str] = []
+    label: Optional[str] = None  # tool: Fathom, Fireflies, Gmail, Google Drive, Upload
+    meeting_type: Optional[str] = None  # free text set at ingestion ("Coordination", "Design Review"…)
 
 
 class ProjectItemResponse(BaseModel):

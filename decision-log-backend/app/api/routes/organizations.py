@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.api.middleware.auth import get_current_user
 from app.api.models.auth import TokenResponse
-from app.database.models import OrganizationInvitation
+from app.database.models import Organization, OrganizationInvitation
+from app.services.branding import branding, validate_logo
 from app.database.session import get_db
 from app.services import invitations as inv
 from app.services.auth_service import user_response
@@ -43,6 +44,36 @@ async def my_organizations(db: Session = Depends(get_db), user=Depends(get_curre
         }
         for m in get_memberships(db, user)
     ]
+
+
+# ─── Branding (Promem revamp G7) ───────────────────────────────────────────────
+
+
+class BrandingUpdate(BaseModel):
+    tagline: str | None = None
+    contact_email: EmailStr | None = None
+    logo: str | None = None  # data URL; null or "" clears it
+
+
+@router.get("/organizations/{organization_id}/branding")
+async def get_branding(organization_id: UUID, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """What clients see on the firm's public links: name, tagline, contact e-mail and logo."""
+    require_org_admin(db, user, organization_id)
+    return branding(db.get(Organization, organization_id))
+
+
+@router.put("/organizations/{organization_id}/branding")
+async def update_branding(
+    organization_id: UUID, body: BrandingUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    """Owners and admins of the organization."""
+    require_org_admin(db, user, organization_id)
+    org = db.get(Organization, organization_id)
+    org.tagline = (body.tagline or "").strip()[:255] or None
+    org.contact_email = str(body.contact_email) if body.contact_email else None
+    org.logo_data = validate_logo(body.logo)
+    db.commit()
+    return branding(org)
 
 
 # ─── Members ─────────────────────────────────────────────────────────────────

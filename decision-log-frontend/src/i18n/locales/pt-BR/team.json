@@ -1,4 +1,5 @@
 {
+  "eyebrow": "Configurações",
   "title": "Equipe",
   "subtitle": "Pessoas e convites de {{organization}}",
   "noAccess": "Somente proprietários e administradores podem gerenciar a equipe.",
@@ -17,7 +18,13 @@
     "role": "Papel",
     "remove": "Remover",
     "confirmRemove": "Remover {{name}} desta organização?",
-    "error": "Não foi possível atualizar o membro."
+    "error": "Não foi possível atualizar o membro.",
+    "you": "Você",
+    "loadError": "Não foi possível carregar os membros. Nada foi perdido.",
+    "roleChanged": "Papel de {{name}} alterado para {{role}}",
+    "removeTitle": "Remover {{name}}?",
+    "removeText": "{{name}} perde o acesso a {{organization}} e a todos os projetos dela imediatamente. Para voltar, precisará de um novo convite.",
+    "removeConfirm": "Remover pessoa"
   },
   "projects": {
     "hint": "Membros e revisores só veem os projetos aos quais estão atribuídos. Revisores também aprovam itens e reuniões desses projetos.",
@@ -37,28 +44,38 @@
     "created": "Convite criado para {{email}}. Envie este link (ele é exibido apenas uma vez):",
     "copy": "Copiar link",
     "copied": "Copiado",
-    "error": "Não foi possível criar o convite."
+    "error": "Não foi possível criar o convite.",
+    "description": "Os e-mails ainda não são enviados: o link do convite aparece aqui para você copiar e enviar.",
+    "emailPlaceholder": "ex.: maria@escritorio.com.br",
+    "link": "Link do convite"
   },
   "pending": {
     "title": "Convites pendentes",
     "empty": "Nenhum convite pendente.",
     "expires": "expira em {{date}}",
-    "revoke": "Revogar"
+    "revoke": "Revogar",
+    "expiresLabel": "expira em",
+    "emptyText": "Os convites que você enviar aparecem aqui até serem aceitos, revogados ou expirarem.",
+    "loadError": "Não foi possível carregar os convites pendentes.",
+    "revokeTitle": "Revogar convite?",
+    "revokeText": "O link enviado para {{email}} deixa de funcionar imediatamente. Para convidar de novo, crie um novo convite.",
+    "revokeConfirm": "Revogar convite",
+    "revokeError": "Não foi possível revogar o convite. Tente de novo."
   },
   "accept": {
     "title": "Entrar em {{organization}}",
-    "loading": "Carregando convite...",
+    "loading": "Carregando convite…",
     "invitedAs": "{{email}} foi convidado(a) como {{role}}.",
     "notFound": "Este convite não existe.",
     "gone": "Este convite já foi usado, revogado ou expirou. Peça um novo.",
     "name": "Seu nome",
     "password": "Senha (mínimo de 8 caracteres)",
     "createAccount": "Criar conta e entrar",
-    "creating": "Criando...",
+    "creating": "Criando…",
     "haveAccount": "Este e-mail já tem uma conta. Entre para aceitar o convite.",
     "login": "Entrar",
     "accept": "Aceitar convite",
-    "accepting": "Entrando...",
+    "accepting": "Entrando…",
     "wrongAccount": "Você está conectado como {{current}}, mas este convite é para {{email}}. Saia e entre com o e-mail convidado.",
     "logout": "Sair",
     "error": "Não foi possível aceitar o convite.",
@@ -69,6 +86,10 @@
     "projectInvitedAs": "Convite para {{email}}, com acesso externo somente a este projeto.",
     "reject": "Recusar convite",
     "rejected": "Convite recusado. Você pode fechar esta página.",
-    "alreadyMember": "Você já é membro desta organização."
-  }
+    "alreadyMember": "Você já é membro desta organização.",
+    "nameLabel": "Nome",
+    "passwordLabel": "Senha",
+    "passwordHelp": "Pelo menos 8 caracteres."
+  },
+  "cancel": "Cancelar"
 }

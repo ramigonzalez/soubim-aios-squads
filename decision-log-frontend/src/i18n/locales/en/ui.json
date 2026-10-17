@@ -1,0 +1,87 @@
+{
+  "loading": "Loading…",
+  "close": "Close",
+  "closePanel": "Close panel",
+  "optional": "optional",
+  "selectPlaceholder": "Select…",
+  "toast": {
+    "undo": "Undo",
+    "retry": "Try again",
+    "dismiss": "Dismiss notice"
+  },
+  "chip": {
+    "remove": "Remove filter: {{label}}"
+  },
+  "dateRange": {
+    "placeholder": "Period",
+    "from": "From",
+    "to": "To",
+    "clear": "Clear"
+  },
+  "state": {
+    "retry": "Try again"
+  },
+  "milestone": {
+    "mark": "Mark as milestone",
+    "unmark": "Remove from milestones"
+  },
+  "action": {
+    "markDone": "Mark action as done",
+    "reopen": "Reopen action"
+  },
+  "due": {
+    "open": "due {{date}}",
+    "late": "late · {{date}}",
+    "done": "done · {{date}}"
+  },
+  "impact": {
+    "high": "High impact",
+    "medium": "Medium impact",
+    "low": "Low impact"
+  },
+  "consensus": {
+    "label": "Consensus",
+    "summary": "{{agree}} of {{total}} agree",
+    "AGREE": "Agrees",
+    "MIXED": "With reservations",
+    "DISAGREE": "Disagrees",
+    "ABSTAIN": "No position"
+  },
+  "disciplines": {
+    "more": "+{{count}}",
+    "all": "Disciplines: {{names}}"
+  },
+  "stage": {
+    "today": "today, {{date}}",
+    "daysLeft_zero": "ends today",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "todayMarker": "Today",
+    "progress": "{{name}} · {{percent}}% of stage",
+    "current": "current",
+    "stepperLine": "Today {{date}} · {{percent}}% of stage · due {{end}}",
+    "stepperBefore": "Starts on {{date}}",
+    "stepperDone": "All stages done",
+    "stepperGap": "Today {{date}} · next stage on {{next}}"
+  },
+  "date": {
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "at": "{{date}} at {{time}}"
+  },
+  "duration": {
+    "minutes": "{{count}} min",
+    "hours": "{{hours}} h {{minutes}} min",
+    "hoursOnly": "{{hours}} h"
+  },
+  "wordmark": {
+    "label": "Promem",
+    "endorsed": "by souBIM"
+  },
+  "shortcut": "Shortcut: {{key}}",
+  "list": {
+    "and": "{{rest}} and {{last}}"
+  }
+}

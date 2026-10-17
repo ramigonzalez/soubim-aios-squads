@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
@@ -68,25 +68,27 @@ describe('IntegrationsSettings (Story 13.3)', () => {
     expect(screen.queryByRole('button', { name: 'Disconnect' })).not.toBeInTheDocument()
   })
 
-  it('connected: shows the account and disconnects after confirmation', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('connected: shows the account and disconnects after confirming in a dialog', async () => {
     renderPage({ connected: true, account_label: 'rami@example.com', connected_at: '2026-10-06T12:00:00' })
     expect(await screen.findByText('Connected as rami@example.com')).toBeInTheDocument()
     expect(screen.getByText('Connected')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Connect to Fathom' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
-    expect(confirm).toHaveBeenCalled()
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText(/Meetings already imported stay in Promem/)).toBeInTheDocument()
+    expect(service.disconnectFathom).not.toHaveBeenCalled()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Disconnect Fathom' }))
     await waitFor(() => expect(service.disconnectFathom).toHaveBeenCalledTimes(1))
-    confirm.mockRestore()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('does not disconnect when the confirmation is cancelled', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('does not disconnect when the dialog is cancelled', async () => {
     renderPage({ connected: true })
     await userEvent.click(await screen.findByRole('button', { name: 'Disconnect' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(service.disconnectFathom).not.toHaveBeenCalled()
-    confirm.mockRestore()
   })
 
   it('needs reconnect: warns and offers to reconnect', async () => {
@@ -136,7 +138,7 @@ describe('IntegrationsSettings (Story 13.3)', () => {
     it('explains when the flow was started by another account (403)', async () => {
       service.confirmFathom.mockRejectedValue({ response: { status: 403 } })
       renderPage({}, pendingUrl)
-      expect(await screen.findByRole('alert')).toHaveTextContent('started from another DecisionLog account')
+      expect(await screen.findByRole('alert')).toHaveTextContent('started from another Promem account')
       expect(screen.getByTestId('location')).toHaveTextContent('fathom=error&reason=other_user')
       expect(screen.getByTestId('location')).not.toHaveTextContent('n-123')
     })

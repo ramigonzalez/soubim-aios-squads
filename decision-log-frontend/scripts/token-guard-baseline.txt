@@ -1,0 +1,4 @@
+# Legacy files with raw colours/px, skipped by scripts/check-tokens.sh.
+# Remove a file from this list when its screen migrates to the design system.
+src/lib/exportTimeline.ts
+src/lib/utils.ts

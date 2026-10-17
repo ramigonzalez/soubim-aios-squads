@@ -15,6 +15,44 @@ export interface ProjectStats {
 }
 
 import type { ProjectCapabilities } from './organization'
+import type { SourceType } from './projectItem'
+
+/** Promem revamp: a stage as the list/detail endpoints send it (current stage is derived from dates). */
+export interface ProjectStageRef {
+  id: string
+  name: string
+  start: string
+  end: string
+}
+
+/** Items created since the user's last visit, or in the last 7 days without a recorded visit. */
+export interface ProjectNewItems {
+  count: number
+  since: string
+  basis: 'last_visit' | 'last_7_days'
+}
+
+export interface ProjectLastActivity {
+  at: string
+  label: string
+  source_type: SourceType
+}
+
+/** Promem revamp G7: how the firm appears on public links. */
+export interface Branding {
+  name: string
+  tagline: string | null
+  contact_email: string | null
+  /** data URL */
+  logo: string | null
+}
+
+/** Promem revamp: counts next to the project sections in the sidebar. */
+export interface ProjectSectionCounts {
+  items: number
+  milestones: number
+  meetings: number
+}
 
 /** Story 12.7: list and detail responses carry the user's capabilities on the project. */
 export interface Project extends ProjectCapabilities {
@@ -30,6 +68,13 @@ export interface Project extends ProjectCapabilities {
   latest_decision?: string
   members?: ProjectMember[]
   stats?: ProjectStats
+  // Promem revamp aggregates (list endpoint)
+  stages?: ProjectStageRef[]
+  new_items?: ProjectNewItems
+  last_visit_at?: string | null
+  last_activity?: ProjectLastActivity | null
+  late_actions?: number
+  pending_ingestion?: number
 }
 
 export interface ProjectsResponse {

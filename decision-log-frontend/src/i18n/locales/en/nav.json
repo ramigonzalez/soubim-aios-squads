@@ -14,5 +14,93 @@
   },
   "platform": "Platform",
   "paymentPending": "Payment pending. Please contact support to keep access to {{organization}}.",
-  "changePassword": "Change password"
+  "changePassword": "Change password",
+  "mainNav": "Main navigation",
+  "projectNav": "Project sections",
+  "firm": "Firm",
+  "allProjects": "All projects",
+  "openMenu": "Open menu",
+  "sections": {
+    "overview": "Overview",
+    "milestones": "Milestones",
+    "history": "History",
+    "meetings": "Meetings",
+    "summary": "Executive summary",
+    "more": "More"
+  },
+  "switcher": {
+    "label": "Switch project",
+    "choose": "Choose project",
+    "search": "Search project…",
+    "active": "Active projects",
+    "create": "Create project",
+    "empty": "No project found.",
+    "stageOf": "{{stage}} · {{index}} of {{total}}",
+    "noStages": "No stages defined",
+    "new_zero": "Nothing new",
+    "new_one": "{{count}} new",
+    "new_other": "{{count}} new",
+    "loadError": "Could not load the projects.",
+    "notStarted": "Starts on {{date}}",
+    "finished": "All stages done"
+  },
+  "orgRoles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "reviewer": "Reviewer",
+    "member": "Member",
+    "external": "External"
+  },
+  "userMenu": "Account menu",
+  "more": {
+    "approvals": "Waiting for approval",
+    "share": "Share with the client",
+    "account": "Account",
+    "edit": "Edit project",
+    "fathomRules": "Fathom rules"
+  },
+  "skipToContent": "Skip to content",
+  "workspace": "Firm",
+  "search": {
+    "open": "Search",
+    "shortcut": "⌘K",
+    "placeholder": "Search projects, items and meetings…",
+    "label": "Search all projects",
+    "hint": "Type at least 2 letters. Search covers the projects, items and meetings you can see.",
+    "empty": "Nothing found for “{{q}}”",
+    "emptyText": "Check the spelling or try another word. Every word must appear.",
+    "error": "Could not search",
+    "groups": {
+      "projects": "Projects",
+      "items": "Items",
+      "meetings": "Meetings"
+    },
+    "more": "Showing the first results. Refine the search to see more.",
+    "keys": {
+      "move": "↑↓ move",
+      "open": "Enter open",
+      "close": "Esc close"
+    },
+    "archived": "Archived",
+    "close": "Close search",
+    "milestone": "Milestone",
+    "shortcutOther": "Ctrl K"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openCount_one": "Notifications · {{count}} unread",
+    "openCount_other": "Notifications · {{count}} unread",
+    "markAll": "Mark all as read",
+    "empty": "Nothing new here",
+    "emptyText": "You're told when a source arrives for your approval, when items are extracted and when someone marks a milestone. Last 14 days.",
+    "error": "Could not load notifications",
+    "pending": "Awaiting your approval · {{type}}",
+    "extracted_one": "{{count}} item extracted · {{type}}",
+    "extracted_other": "{{count}} items extracted · {{type}}",
+    "milestone": "{{who}} marked it as a milestone",
+    "milestoneSomeone": "Marked as a milestone",
+    "unread": "Unread",
+    "window": "Last 14 days"
+  }
 }

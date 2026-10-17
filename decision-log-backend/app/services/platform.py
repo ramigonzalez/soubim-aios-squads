@@ -12,7 +12,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.database.models import Organization, OrganizationInvitation, OrganizationMember, Project, Source, User
+from app.database.models import Lead, Organization, OrganizationInvitation, OrganizationMember, Project, Source, User
 from app.services import invitations as inv
 from app.services.organizations import ORGANIZATION_STATUSES, list_members
 
@@ -142,3 +142,44 @@ def revoke_company_invitation(db: Session, invitation_id) -> None:
     if invitation.accepted_at is None and invitation.revoked_at is None:
         invitation.revoked_at = inv.now()
         db.commit()
+
+
+# ─── Promem revamp Phase 5: requests from the landing page ──────────────────
+
+
+def _lead(lead: Lead, handler: Optional[str]) -> dict:
+    return {
+        "id": str(lead.id),
+        "mode": lead.mode,
+        "name": lead.name,
+        "company": lead.company,
+        "whatsapp": lead.whatsapp,
+        "email": lead.email,
+        "role": lead.role,
+        "team_size": lead.team_size,
+        "created_at": _iso(lead.created_at),
+        "handled_at": _iso(lead.handled_at),
+        "handled_by": handler,
+    }
+
+
+def list_leads(db: Session, limit: int = 200) -> List[dict]:
+    rows = (
+        db.query(Lead, User.name)
+        .outerjoin(User, User.id == Lead.handled_by)
+        .order_by(Lead.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [_lead(lead, name) for lead, name in rows]
+
+
+def set_lead_handled(db: Session, lead_id, handled: bool, user) -> dict:
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    lead.handled_at = datetime.utcnow() if handled else None
+    lead.handled_by = user.id if handled else None
+    db.commit()
+    return _lead(lead, user.name if handled else None)
+
