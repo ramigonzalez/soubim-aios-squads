@@ -16,6 +16,7 @@ from app.database.models import Source
 from app.database.session import get_db
 from app.services.access import WRITE, acting_organization_id, require_project_access
 from app.services.document_processor import DocumentProcessor
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ def _generate_summary(text: str) -> str:
                 }
             ],
         )
-        summary = response.content[0].text.strip()
+        summary = response_text(response).strip()
         return summary[:200]  # Safety cap
     except Exception as e:
         logger.warning(f"AI summary generation failed, using fallback: {e}")

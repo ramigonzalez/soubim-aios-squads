@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.models import Job, Source
 from app.services.llm_client import get_llm_client
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ def generate(db: Session, source: Source, client=None) -> List[Dict]:
         max_tokens=800,
         messages=[{"role": "user", "content": prompt}],
     )
-    data = _parse(response.content[0].text)
+    data = _parse(response_text(response))
     source.candidates = clean_candidates(data.get("items"))
     source.candidates_at = datetime.utcnow()
     summary = " ".join(str(data.get("summary") or "").split())
