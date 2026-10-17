@@ -57,6 +57,17 @@ def get_llm_client(settings=None):
     return anthropic.Anthropic(api_key=key)
 
 
+def response_text(response) -> str:
+    """The text of a Messages API response, skipping non-text blocks (e.g. a leading thinking block)."""
+    parts = []
+    for block in response.content:
+        kind = getattr(block, "type", "text")
+        if isinstance(kind, str) and kind != "text":
+            continue
+        parts.append(getattr(block, "text", "") or "")
+    return "".join(parts)
+
+
 def supports_server_side_fallback(settings=None) -> bool:
     """Only the Claude API knows the server-side refusal fallback (beta header + ``fallbacks``)."""
     return _settings(settings).llm_provider == ANTHROPIC

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.models import Source
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ class DocumentExtractor:
                     }
                 ],
             )
-            raw_response = response.content[0].text.strip()
+            raw_response = response_text(response).strip()
         except Exception as e:
             logger.error(f"Claude API call failed for document extraction: {e}")
             return []

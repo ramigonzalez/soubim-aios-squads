@@ -12,6 +12,7 @@ from pathlib import Path
 from app.config import settings
 from app.database.models import Source, ProjectParticipant
 from app.services.llm_client import get_llm_client
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class EmailExtractor:
                 max_tokens=4096,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw_text = response.content[0].text.strip()
+            raw_text = response_text(response).strip()
             # Extract JSON from response (handle markdown code blocks)
             if raw_text.startswith("```"):
                 raw_text = raw_text.split("\n", 1)[1].rsplit("```", 1)[0]

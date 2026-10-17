@@ -7,6 +7,7 @@ V2 Migration (Story 5.1): Decision → ProjectItem taxonomy.
 """
 
 import uuid
+from datetime import timezone
 
 from sqlalchemy import (
     JSON,
@@ -39,6 +40,31 @@ except ImportError:
 JSONType = JSON
 
 # Create a hybrid UUID type that works with both PostgreSQL and SQLite
+class UTCDateTime(TypeDecorator):
+    """DateTime that always reaches Python as a naive UTC value.
+
+    The app compares timestamps with naive ``datetime.utcnow()`` values. Databases built by
+    ``create_all`` have ``timestamp without time zone`` columns, but migration 001 created several
+    columns as ``timestamp with time zone`` (as in a database built only by Alembic), which psycopg2
+    returns as aware datetimes. Normalising on load and bind makes both schemas behave the same.
+    """
+
+    impl = DateTime
+    cache_ok = True
+
+    @staticmethod
+    def _naive_utc(value):
+        if value is not None and value.tzinfo is not None:
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+
+    def process_bind_param(self, value, dialect):
+        return self._naive_utc(value)
+
+    def process_result_value(self, value, dialect):
+        return self._naive_utc(value)
+
+
 class GUID(TypeDecorator):
     """Platform-independent GUID type that uses CHAR(32) on SQLite and UUID on PostgreSQL."""
     impl = String
@@ -89,9 +115,9 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    last_login_at = Column(DateTime)
-    deleted_at = Column(DateTime)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    last_login_at = Column(UTCDateTime)
+    deleted_at = Column(UTCDateTime)
     # Story 12.8: Google account id (ID token ``sub``) bound on the first Google sign-in; later
     # Google sign-ins must present the same ``sub`` (never overwritten silently). Unique: one
     # Google account signs in to one DecisionLog account.
@@ -100,7 +126,7 @@ class User(Base):
     # scripts/create_platform_operator.py, never through the API. Grants no access to tenant data.
     is_platform_operator = Column(Boolean, nullable=False, default=False, server_default=sql_false())
     # Promem revamp Phase 4e: "Marcar todas como lidas" — notifications up to then are read
-    notifications_seen_at = Column(DateTime)
+    notifications_seen_at = Column(UTCDateTime)
     # Story 12.13: false for accounts created with an unusable random password (Google sign-in,
     # create_platform_operator --no-password); they cannot use "change password" (setting a first one is phase 2)
     has_password = Column(Boolean, nullable=False, default=True, server_default=text("true"))
@@ -133,7 +159,7 @@ class Organization(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     slug = Column(String(100), unique=True, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
     # Story 12.13: set by the platform operator. ``payment_pending`` keeps access (banner);
     # ``blocked`` makes every membership of the organization grant nothing.
     status = Column(String(20), nullable=False, default="active", server_default="active")
@@ -160,7 +186,7 @@ class OrganizationMember(Base):
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
     role = Column(String(20), nullable=False, default="member")
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     organization = relationship("Organization", back_populates="members")
 
@@ -192,12 +218,12 @@ class OrganizationInvitation(Base):
     role = Column(String(20), nullable=False, default="member")
     token_hash = Column(String(64), unique=True, nullable=False)
     invited_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
-    expires_at = Column(DateTime, nullable=False)
-    accepted_at = Column(DateTime)
-    revoked_at = Column(DateTime)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    expires_at = Column(UTCDateTime, nullable=False)
+    accepted_at = Column(UTCDateTime)
+    revoked_at = Column(UTCDateTime)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"))  # Story 12.15
-    rejected_at = Column(DateTime)  # Story 12.15
+    rejected_at = Column(UTCDateTime)  # Story 12.15
 
     organization = relationship("Organization")
     project = relationship("Project")
@@ -227,14 +253,14 @@ class Project(Base):
     actual_stage_id = Column(GUID())    # V2: FK to project_stages (added in future migration)
     # Story 12.1: organization that owns the project; Story 12.2: required (authorization is org-scoped)
     owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    archived_at = Column(DateTime)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    archived_at = Column(UTCDateTime)
 
     # Google Drive monitoring (Story 10.3)
     drive_folder_id = Column(String(255))
     drive_folder_name = Column(String(255))  # Story 12.9: name when chosen
     drive_poll_error = Column(String(255))  # Story 12.9: last poll failure, NULL when it worked
-    last_drive_poll = Column(DateTime)
+    last_drive_poll = Column(UTCDateTime)
 
     # Relationships
     items = relationship("ProjectItem", back_populates="project", cascade="all, delete-orphan")
@@ -256,7 +282,7 @@ class ProjectMember(Base):
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     role = Column(String(50), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
     # Story 12.15: an external person's level on the project ('viewer' / 'contributor'); NULL for members
     access = Column(String(20))
 
@@ -279,8 +305,8 @@ class Lead(Base):
     email = Column(String(255), nullable=False)
     role = Column(String(20))  # partner | coordinator | architect | other
     team_size = Column(String(10))  # 1-9 | 10-24 | 25-50 | 50+
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    handled_at = Column(DateTime)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    handled_at = Column(UTCDateTime)
     handled_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
 
     __table_args__ = (
@@ -296,7 +322,7 @@ class NotificationRead(Base):
 
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     key = Column(String(120), primary_key=True)
-    read_at = Column(DateTime, nullable=False)
+    read_at = Column(UTCDateTime, nullable=False)
 
 
 class ProjectVisit(Base):
@@ -310,8 +336,8 @@ class ProjectVisit(Base):
 
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True)
-    last_seen_at = Column(DateTime, nullable=False)
-    previous_seen_at = Column(DateTime, nullable=True)
+    last_seen_at = Column(UTCDateTime, nullable=False)
+    previous_seen_at = Column(UTCDateTime, nullable=True)
 
     __table_args__ = (
         Index("idx_project_visits_project", "project_id"),
@@ -332,7 +358,7 @@ class TranscriptSpeakerCorrection(Base):
     turn_start = Column(Integer, nullable=False)  # seconds from the start of the recording
     speaker = Column(String(255), nullable=False)
     corrected_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
-    corrected_at = Column(DateTime, nullable=False, default=func.now())
+    corrected_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (
         UniqueConstraint("source_id", "turn_start", name="uq_speaker_correction_turn"),
@@ -354,7 +380,7 @@ class ProjectOrganization(Base):
     organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
     access = Column(String(20), nullable=False)
     invited_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     organization = relationship("Organization")
 
@@ -376,8 +402,8 @@ class ProjectStage(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     project_id = Column(GUID(), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     stage_name = Column(String(255), nullable=False)
-    stage_from = Column(DateTime, nullable=False)
-    stage_to = Column(DateTime, nullable=False)
+    stage_from = Column(UTCDateTime, nullable=False)
+    stage_to = Column(UTCDateTime, nullable=False)
     sort_order = Column(Integer, nullable=False, default=0)
 
     __table_args__ = (
@@ -414,8 +440,8 @@ class Transcript(Base):
     participants = Column(JSONType, nullable=False)
     transcript_text = Column(Text, nullable=False)
     duration_minutes = Column(String)
-    meeting_date = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    meeting_date = Column(UTCDateTime, nullable=False)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (
         Index("idx_transcripts_project", "project_id"),
@@ -438,17 +464,17 @@ class Source(Base):
     visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
     source_type = Column(String(50), nullable=False)
     title = Column(String(500))
-    occurred_at = Column(DateTime, nullable=False)
+    occurred_at = Column(UTCDateTime, nullable=False)
     ingestion_status = Column(String(50), nullable=False, default="pending")
     # Promem revamp G2: cheap AI preview made on arrival, before approval —
     # [{type, title, discipline}] — and when it was made (NULL = not yet)
     candidates = Column(JSONType)
-    candidates_at = Column(DateTime)
+    candidates_at = Column(UTCDateTime)
     ai_summary = Column(Text)
     approved_by = Column(GUID(), ForeignKey("users.id"))
-    approved_at = Column(DateTime)
+    approved_at = Column(UTCDateTime)
     rejected_by = Column(GUID(), ForeignKey("users.id"))
-    rejected_at = Column(DateTime)
+    rejected_at = Column(UTCDateTime)
     extraction_error = Column(Text)
     raw_content = Column(Text)
 
@@ -481,10 +507,10 @@ class Source(Base):
 
     # Curation workflow fields (Story 7.7)
     curation_status = Column(String(50), default="raw")  # raw → uploaded → curated → synced
-    last_synced_at = Column(DateTime, nullable=True)
+    last_synced_at = Column(UTCDateTime, nullable=True)
 
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     # Relationships
     project = relationship("Project", back_populates="sources")
@@ -525,14 +551,14 @@ class Job(Base):
     status = Column(String(20), nullable=False, default="queued")
     attempts = Column(Integer, nullable=False, default=0)
     max_attempts = Column(Integer, nullable=False, default=3)
-    run_after = Column(DateTime, nullable=False, default=func.now())
+    run_after = Column(UTCDateTime, nullable=False, default=func.now())
     locked_by = Column(String(100))
-    locked_at = Column(DateTime)
+    locked_at = Column(UTCDateTime)
     last_error = Column(Text)
     source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"))
     organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="SET NULL"))
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         CheckConstraint("status IN ('queued', 'running', 'succeeded', 'failed')", name="ck_job_status"),
@@ -556,11 +582,11 @@ class FathomConnection(Base):
     organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="SET NULL"))
     access_token_enc = Column(Text, nullable=False)
     refresh_token_enc = Column(Text)
-    expires_at = Column(DateTime)
+    expires_at = Column(UTCDateTime)
     scope = Column(String(255))
     account_label = Column(String(255))
-    connected_at = Column(DateTime, nullable=False, default=func.now())
-    revoked_at = Column(DateTime)
+    connected_at = Column(UTCDateTime, nullable=False, default=func.now())
+    revoked_at = Column(UTCDateTime)
     # Story 13.9: opt-in auto-import (off by default). The webhook is registered at Fathom with the
     # user's token; its signing secret is stored encrypted. Meetings go to the default project
     # (``internal`` unless chosen otherwise) or, without one, to the Unassigned list.
@@ -602,10 +628,10 @@ class GoogleLoginRequest(Base):
     name = Column(String(255))
     google_sub = Column(String(255))  # verified ``sub`` of the ID token, set by the callback
     login_code_hash = Column(String(64), unique=True)
-    callback_at = Column(DateTime)
-    consumed_at = Column(DateTime)
-    expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    callback_at = Column(UTCDateTime)
+    consumed_at = Column(UTCDateTime)
+    expires_at = Column(UTCDateTime, nullable=False)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (Index("idx_google_login_requests_expires", "expires_at"),)
 
@@ -631,11 +657,11 @@ class FathomPendingConnection(Base):
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)  # from the OAuth state
     access_token_enc = Column(Text)
     refresh_token_enc = Column(Text)
-    token_expires_at = Column(DateTime)
+    token_expires_at = Column(UTCDateTime)
     scope = Column(String(255))
-    expires_at = Column(DateTime, nullable=False)
-    consumed_at = Column(DateTime)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    expires_at = Column(UTCDateTime, nullable=False)
+    consumed_at = Column(UTCDateTime)
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
 
 class FathomImport(Base):
@@ -663,8 +689,8 @@ class FathomImport(Base):
     # flush: the project's owning organization.
     owner_organization_id = Column(GUID(), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
     visibility = Column(String(20), nullable=False, default="internal", server_default="internal")
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     project = relationship("Project")
     source = relationship("Source")
@@ -696,8 +722,8 @@ class FathomPreview(Base):
     download_id = Column(String(128))  # Fathom download being prepared; reused across retries (and on import)
     job_id = Column(GUID(), ForeignKey("jobs.id", ondelete="SET NULL"))
     error = Column(Text)
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         UniqueConstraint("user_id", "recording_id", name="uq_fathom_previews_user_recording"),
@@ -714,7 +740,7 @@ class FathomWebhookEvent(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     connection_id = Column(GUID(), ForeignKey("fathom_connections.id", ondelete="CASCADE"), nullable=False)
     webhook_id = Column(String(128), nullable=False)
-    received_at = Column(DateTime, nullable=False, default=func.now())
+    received_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (UniqueConstraint("connection_id", "webhook_id", name="uq_fathom_webhook_event"),)
 
@@ -729,11 +755,11 @@ class FathomUnassignedMeeting(Base):
     user_id = Column(GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     recording_id = Column(String(128), nullable=False)
     title = Column(String(255))
-    started_at = Column(DateTime)
+    started_at = Column(UTCDateTime)
     # Story 13.16: no_match | conflict (13.9 rows: no_default_project | project_unavailable)
     reason = Column(String(40), nullable=False)
     matched_project_ids = Column(JSONType)  # Story 13.16: projects a ``conflict`` meeting matched (ids)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (UniqueConstraint("user_id", "recording_id", name="uq_fathom_unassigned_user_recording"),)
 
@@ -754,8 +780,8 @@ class ProjectFathomRule(Base):
     operator = Column(String(20), nullable=False)
     value = Column(String(200), nullable=False)
     created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         CheckConstraint(
@@ -775,8 +801,8 @@ class ProjectParticipant(Base):
     email = Column(String(255))
     discipline = Column(String(100))
     role = Column(String(100))
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     # Relationships
     project = relationship("Project", back_populates="participants")
@@ -809,7 +835,7 @@ class ProjectItem(Base):
     # reviewer edits the item ({title, statement, why, owner, due_date}); NULL = never edited.
     review_status = Column(String(20), nullable=False, default="approved", server_default="approved")
     reviewed_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
-    reviewed_at = Column(DateTime)
+    reviewed_at = Column(UTCDateTime)
     original = Column(JSONType)
 
     # V2 taxonomy fields
@@ -817,12 +843,12 @@ class ProjectItem(Base):
     source_type = Column(String(50), nullable=False, default="meeting")
     is_milestone = Column(Boolean, nullable=False, default=False)
     # Promem revamp Phase 4e: when / by whom the item became a marco (notifications)
-    milestone_at = Column(DateTime)
+    milestone_at = Column(UTCDateTime)
     milestone_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
     is_done = Column(Boolean, nullable=False, default=False)
     affected_disciplines = Column(JSONType, nullable=False, default=list)
     owner = Column(String(255))  # Nullable — primarily for action_items
-    due_date = Column(DateTime, nullable=True)  # Story 9.6: action item due date
+    due_date = Column(UTCDateTime, nullable=True)  # Story 9.6: action item due date
     source_excerpt = Column(Text)
 
     # Core item data
@@ -852,10 +878,10 @@ class ProjectItem(Base):
 
     # Promem revamp: when a manual item happened (a site visit, a call); NULL for extracted items,
     # which take their date from the source.
-    occurred_at = Column(DateTime, nullable=True)
+    occurred_at = Column(UTCDateTime, nullable=True)
 
-    created_at = Column(DateTime, nullable=False, default=func.now())
-    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
+    updated_at = Column(UTCDateTime, nullable=False, default=func.now(), onupdate=func.now())
 
     # Relationships
     project = relationship("Project", back_populates="items")
@@ -901,7 +927,7 @@ class ExtractionRun(Base):
     id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     source_id = Column(GUID(), ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
     version = Column(Integer, nullable=False)  # 1, 2, ... per source
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
     created_by = Column(GUID(), ForeignKey("users.id", ondelete="SET NULL"))
     model = Column(String(100))
     prompt_version = Column(String(64))  # hash of the prompt file used
@@ -933,9 +959,9 @@ class SharedLink(Base):
     share_token = Column(String(64), unique=True, nullable=False)
     resource_type = Column(String(50), nullable=False, default='milestone_timeline')
     created_by = Column(GUID(), ForeignKey("users.id"))
-    created_at = Column(DateTime, default=func.now())
-    expires_at = Column(DateTime, nullable=True)  # Promem revamp G8: NULL = never expires
-    revoked_at = Column(DateTime)
+    created_at = Column(UTCDateTime, default=func.now())
+    expires_at = Column(UTCDateTime, nullable=True)  # Promem revamp G8: NULL = never expires
+    revoked_at = Column(UTCDateTime)
     view_count = Column(Integer, default=0)
 
     __table_args__ = (
@@ -956,7 +982,7 @@ class DecisionRelationship(Base):
     from_decision_id = Column(GUID(), ForeignKey("project_items.id", ondelete="CASCADE"), primary_key=True)
     to_decision_id = Column(GUID(), ForeignKey("project_items.id", ondelete="CASCADE"), primary_key=True)
     relationship_type = Column(String(50), primary_key=True)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(UTCDateTime, nullable=False, default=func.now())
 
     __table_args__ = (
         Index("idx_relationships_from", "from_decision_id"),

@@ -24,6 +24,7 @@ from app.database.session import SessionLocal
 from app.services.email_matcher import email_matcher_service
 from app.services.llm_client import get_llm_client
 from app.services.gmail_auth import gmail_auth_service
+from app.services.llm_client import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +309,7 @@ class GmailPollerService:
                 ],
             )
 
-            summary = response.content[0].text.strip()
+            summary = response_text(response).strip()
 
             # Enforce 150-character cap
             if len(summary) > 150:
